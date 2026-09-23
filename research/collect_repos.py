@@ -25,6 +25,7 @@ REPOS = {
  'qwen-docs':'QwenLM/qwen-code-docs',
  'grok-build':'xai-org/grok-build',
  'avante':'yetone/avante.nvim', 'codecompanion':'olimorris/codecompanion.nvim',
+ 'step-code':'stepfun-ai/Step-Code',
 }
 HEADERS={'User-Agent':'harness-comparison-research/1.0','Accept':'application/vnd.github+json'}
 

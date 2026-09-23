@@ -18,7 +18,7 @@ for u,x in refs.items():
  c=byurl.get(u)
  if c and c['kind']=='pinned-source':groups[c['key']].append(c)
  else:docs.append((u,x))
-out=['# 参考资料索引\n\n资料截点：2026-09-22。正文中的具体事实优先链接相应源码或官方页面；这里提供集中查阅入口。星数与提交详情另见[仓库快照](../research/repository-snapshot.csv)。本表不表示全部来源已逐行阅读，研究边界见[方法说明](08-方法与参考资料.md)。\n\n## 一、固定提交的源码与仓库内文档\n']
+out=['# 参考资料索引\n\n原始基线：2026-09-22；Step 专项增补核验：2026-09-23。正文中的具体事实优先链接相应源码或官方页面；这里提供集中查阅入口。星数与提交详情另见[仓库快照](../research/repository-snapshot.csv)。本表不表示全部来源已逐行阅读，研究边界见[方法说明](08-方法与参考资料.md)。\n\n## 一、固定提交的源码与仓库内文档\n']
 for k,items in sorted(groups.items()):
  m=repo_map[k];out.append(f"\n### {m['repository']}\n\n固定提交：`{m['sha']}`；抓取：{m['retrieved_at']}。\n\n")
  for x in sorted(items,key=lambda x:x['path']):out.append(f"- [{x['path']}]({x['url']})\n")

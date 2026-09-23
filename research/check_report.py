@@ -17,7 +17,8 @@ alltext='\n'.join(p.read_text() for p in files)
 ids=re.findall(r'^## ([ABC]\d{2}) ',alltext,re.M)
 scenario_text=(ROOT/'report/05-按场景选择组合.md').read_text()
 scenes=re.findall(r'^\| (\d{2}) ',scenario_text,re.M)
-if len(ids)!=45:issues.append(f'Expected 45 core profiles, got {len(ids)}')
+expected_core=sum(x['id'][0] in 'ABC' for x in json.loads((ROOT/'research/catalog.json').read_text()))
+if len(ids)!=expected_core:issues.append(f'Expected {expected_core} core profiles, got {len(ids)}')
 if len(scenes)!=40 or len(set(scenes))!=40:issues.append(f'Expected 40 scenarios, got {len(scenes)}')
 refs=json.loads((ROOT/'research/citations.json').read_text());source_count=0
 for r in refs:
