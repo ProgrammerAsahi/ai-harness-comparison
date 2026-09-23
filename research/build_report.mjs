@@ -18,6 +18,10 @@ for(const f of files){
  const cid=chapterIds.get(f);let headingIndex=0;const headings=[];
  const tokens=marked.lexer(fs.readFileSync(path.join(root,'report',f),'utf8'));
  marked.walkTokens(tokens,t=>{
+  // Pipe-delimited rows parsed as prose usually mean a broken table boundary.
+  if(t.type==='paragraph' && /^\s*\|[^\n]+\|\s*$/m.test(t.text)){
+   throw Error(`Unrendered Markdown table rows in ${f}: ${t.text.split('\n')[0]}`);
+  }
   if(t.type==='link' && !/^(?:https?:|#|mailto:)/.test(t.href)){
    const parts=decodeURI(t.href).split('#'); const target=path.posix.normalize(path.posix.join('report',parts[0]));const bn=path.posix.basename(target);
    if(target.startsWith('report/') && chapterIds.has(bn))t.href='#'+(parts[1]||chapterIds.get(bn));

@@ -239,9 +239,10 @@ extra_terms='''| Turn / Step / Run | 一次交互轮次／一次模型与工具�
 | Work / Mission / Quest | 不同产品给工作模式、成组任务或目标执行起的名称 | 不能凭同类营销词推断它们使用同一种调度和恢复机制 |
 | k / M / B，bit / GB / TB | 千／百万／十亿；数字位数与存储容量单位 | 600B 参数约六千亿；Token 数、参数量与文件大小不能混用 |
 '''
-t=t.replace('## 一次任务究竟经过哪些地方',extra_terms+'\n## 一次任务究竟经过哪些地方')
-# Keep the additional rows in the preceding glossary table.
-t=t.replace('| avg@4 | 对四次尝试的评测结果取平均的统计标记 | 应按该评测的具体规则理解，不等于一次必然成功，也不等于四次取最好成绩 |\n\n| YAML', '| avg@4 | 对四次尝试的评测结果取平均的统计标记 | 应按该评测的具体规则理解，不等于一次必然成功，也不等于四次取最好成绩 |\n| YAML')
+# Append rows without a blank line: a blank line ends the Markdown table.
+glossary_end='\n\n## 一次任务究竟经过哪些地方'
+assert t.count(glossary_end)==1, 'Expected a single glossary insertion boundary'
+t=t.replace(glossary_end,'\n'+extra_terms+'\n## 一次任务究竟经过哪些地方')
 p.write_text(t)
 p=OUT/'08-方法与参考资料.md';t=(BASE/p.name).read_text();t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
 t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','所有工具按相同的七个维度编排，配有责任分工图、能力表、操作步骤与任务卡。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
