@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-import pathlib,json,csv,datetime
+import pathlib,json,csv,datetime,sys
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 R=ROOT/'research'
-rows=[]
-for p in sorted((R/'repos').iterdir()):
- if not (p/'manifest.json').exists():continue
- m=json.loads((p/'manifest.json').read_text());a=json.loads((p/'metadata.json').read_text())
- rows.append({'id':p.name,'repository':m['repo'],'sha':m['sha'],'retrieved_at':m['retrieved_at'],'stars':a['stargazers_count'],'pushed_at':a['pushed_at'],'archived':a['archived'],'license_metadata':(a.get('license') or {}).get('spdx_id','unknown'),'inventory_files':len(json.loads((p/'tree.json').read_text())),'captured_files':len(m['files']),'url':'https://github.com/'+m['repo']})
+snapshot=R/'repository-snapshot.json'
+rows=json.loads(snapshot.read_text()) if snapshot.exists() else []
+if '--refresh-local-snapshot' in sys.argv:
+ updated={row['id']:row for row in rows}
+ for p in sorted((R/'repos').glob('*')):
+  if not all((p/f).exists() for f in ['manifest.json','metadata.json','tree.json']):continue
+  m=json.loads((p/'manifest.json').read_text());a=json.loads((p/'metadata.json').read_text())
+  updated[p.name]={'id':p.name,'repository':m['repo'],'sha':m['sha'],'retrieved_at':m['retrieved_at'],'stars':a['stargazers_count'],'pushed_at':a['pushed_at'],'archived':a['archived'],'license_metadata':(a.get('license') or {}).get('spdx_id','unknown'),'inventory_files':len(json.loads((p/'tree.json').read_text())),'captured_files':len(m['files']),'url':'https://github.com/'+m['repo']}
+ rows=sorted(updated.values(),key=lambda row:row['id'])
+if not rows:raise SystemExit('Missing repository-snapshot.json; collect and explicitly refresh the source snapshot first.')
 with (R/'repository-snapshot.csv').open('w') as f:
  w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
 (R/'repository-snapshot.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))

@@ -208,6 +208,8 @@ p=OUT/'07-试用迁移与验收.md';t=(BASE/p.name).read_text();t=t[:t.index('##
 # Cover and methodology describe the report, not the history of a singled-out addition.
 p=ROOT/'README.md';t=(BASE/p.name).read_text();t=re.sub(r'\*\*中文研究报告｜.*?\*\*','**中文研究报告｜设计原理、工具档案、场景选型与试用方法**',t)
 t=re.sub(r'本次新增 \*\*Step Code[\s\S]*?\n\n## 怎么读','A、B、C、D 四组及维护观察项目共 **55 份统一结构档案**。每份包含设计理念、架构图、能力与边界表、五步上手流程、任务示例、模型选择表和原始资料链接。\n\n## 怎么读',t);p.write_text(t)
+t+='\n## 维护项目\n\n项目使用 Git 管理。继续研究或修改前，请阅读 [AGENTS.md](AGENTS.md)；构建、来源缓存与检查方法见 [维护指南](CONTRIBUTING.md)，前三轮报告及其恢复依据见 [版本沿革](HISTORY.md)。\n\n```bash\nnpm ci --ignore-scripts\nnpm run build\nnpm run check\n```\n\n需要 Python 3.10+ 与 Node.js 20+。第三方源码和网页缓存不入库；固定提交、引用 URL 与内容哈希保留在 `research/`，干净克隆可直接构建和进行记录级检查。\n'
+p.write_text(t)
 p=OUT/'01-从零理解.md';t=(BASE/p.name).read_text();t=re.sub(r'> 本报告原始观察截面.*?\n','> 建议先读本章，再看工具地图；已经有使用经验的读者，可以直接查工具档案和场景推荐。资料的采集时间与版本见参考索引。\n',t)
 t=t.replace('增补条目中还会用到以下几个词：','任务控制、部署与资料处理还会用到以下词语：')
 t=t.replace('| JSON Schema | 为数据规定字段、类型和格式的结构说明 | 格式合规不代表字段里的事实正确 |\n','')

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import pathlib,re,json,urllib.parse,collections
+import pathlib,re,json,urllib.parse,collections,sys
+from source_records import verify_source
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 issues=[];checked=0
 files=[ROOT/'README.md',*sorted((ROOT/'report').glob('*.md'))]
@@ -20,11 +21,14 @@ scenes=re.findall(r'^\| (\d{2}) ',scenario_text,re.M)
 expected_core=sum(x['id'][0] in 'ABC' for x in json.loads((ROOT/'research/catalog.json').read_text()))
 if len(ids)!=expected_core:issues.append(f'Expected {expected_core} core profiles, got {len(ids)}')
 if len(scenes)!=40 or len(set(scenes))!=40:issues.append(f'Expected 40 scenarios, got {len(scenes)}')
-refs=json.loads((ROOT/'research/citations.json').read_text());source_count=0
+refs=json.loads((ROOT/'research/citations.json').read_text());source_count=0;cached_count=0;manifest_only_count=0
 for r in refs:
- if r['kind']=='pinned-source':
-  source_count+=r['url'] in alltext
-  if not (ROOT/'research/repos'/r['key']/'files'/r['path']).exists():issues.append('Missing source '+r['url'])
-metrics={'markdown_files':len(files),'core_profiles':len(ids),'scenarios':len(scenes),'local_links_checked':checked,'cited_source_files':source_count,'chinese_characters':len(re.findall(r'[\u4e00-\u9fff]',alltext)),'issues':issues}
+ if r['kind']=='pinned-source' and r['url'] in alltext:
+  source_count+=1
+  try:
+   cached=verify_source(r['key'],r['path'],require_cache='--require-cache' in sys.argv)
+   cached_count+=cached;manifest_only_count+=not cached
+  except (KeyError,ValueError) as error:issues.append(str(error))
+metrics={'markdown_files':len(files),'core_profiles':len(ids),'scenarios':len(scenes),'local_links_checked':checked,'cited_source_files':source_count,'cached_source_hashes_verified':cached_count,'manifest_only_source_checks':manifest_only_count,'chinese_characters':len(re.findall(r'[\u4e00-\u9fff]',alltext)),'issues':issues}
 (ROOT/'research/report-check.json').write_text(json.dumps(metrics,ensure_ascii=False,indent=2))
 print(json.dumps(metrics,ensure_ascii=False,indent=2));raise SystemExit(bool(issues))

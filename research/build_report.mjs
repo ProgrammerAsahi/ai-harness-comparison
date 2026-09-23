@@ -3,9 +3,10 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const deps=process.env.HARNESS_NODE_MODULES || '/Users/asahi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules';
 const require=createRequire(import.meta.url);
-const { marked }=require(path.join(deps,'marked'));
+const { marked }=process.env.HARNESS_NODE_MODULES
+ ? require(path.join(process.env.HARNESS_NODE_MODULES,'marked'))
+ : require('marked');
 const files=fs.readdirSync(path.join(root,'report')).filter(x=>x.endsWith('.md')).sort((a,b)=>a==='参考资料索引.md'?1:b==='参考资料索引.md'?-1:a.localeCompare(b,'en'));
 const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const chapterIds=new Map(files.map((f,i)=>[f,`chapter-${i+1}`]));
