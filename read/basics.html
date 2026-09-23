@@ -1,0 +1,539 @@
+<!doctype html><!--
+Page structure and interaction code: MIT.
+MIT License
+
+Copyright (c) 2026 ProgrammerAsahi and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Report text and original figures: CC BY 4.0.
+Copyright (c) 2026 ProgrammerAsahi and contributors.
+Third-party materials retain their original rights.
+--><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="从零理解：模型、Agent 与 Harness。阅读原理、证据与实际使用方法。"><script src="../site-assets/theme.js"></script><title>从零理解：模型、Agent 与 Harness · AI Harness 报告</title><link rel="stylesheet" href="../site-assets/reading.css"></head><body id="top" class="paged-site" data-site-base="../"><aside class="sidebar"><a class="brand" href="../index.html">HARNESS / 研究与选型</a><div class="stamp">从零理解</div><button type="button" class="open-search" data-open-search>搜索全站 <kbd>⌘ / Ctrl K</kbd></button><details class="site-map"><summary>全部章节</summary><div role="navigation" aria-label="全站章节"><a aria-current="page" href="basics.html">从零理解</a><a  href="landscape.html">工具全景</a><a  href="terminal-agents.html">终端与开放代理</a><a  href="coding-workspaces.html">编辑器与托管工作台</a><a  href="personal-assistants.html">个人助理与知识工作台</a><a  href="workflows-and-history.html">相邻路线与维护观察</a><a  href="architecture.html">架构与取舍</a><a  href="scenarios.html">按场景选择</a><a  href="models-and-costs.html">模型与成本</a><a  href="evaluation.html">试用与验收</a><a  href="methodology.html">研究方法</a><a  href="references.html">参考资料</a></div></details><div class="toolbar"><button id="toggle-nav" aria-expanded="false">本页目录</button></div><label class="search-label" for="toc-search">本页目录</label><input type="search" id="toc-search" placeholder="筛选本页标题" autocomplete="off"><nav aria-label="本页目录"><details class="nav-group" open><summary><a href="#chapter-1">从零理解：模型、Agent 与 Harness</a></summary><div class="nav-children"></div></details><details class="nav-group" open><summary><a href="#chapter-1-h1">先用一个例子讲清楚</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-1-h2">术语表：遇到不熟悉的词，可以回来看</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-1-h3">一次任务究竟经过哪些地方</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-1-h4">六个最容易误解的地方</a></summary><div class="nav-children"></div></details><p class="empty">没有匹配的本页标题。试试“搜索全站”。</p></nav><div class="nav-foot"><a href="../AI-Harness调研报告.html#chapter-1">完整单页版</a> · <button class="print" onclick="window.print()">打印本页</button><br><a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错</a></div></aside><main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><div class="breadcrumb" aria-label="当前位置"><a href="../index.html">首页</a><span>／</span><span>从零理解</span></div><section class="chapter" data-chapter="chapter-1"><h1 id="chapter-1">从零理解：模型、Agent 与 Harness</h1>
+<blockquote>
+<p>建议先读本章，再看工具地图；已经有使用经验的读者，可以直接查工具档案和场景推荐。资料的采集时间与版本见参考索引。</p>
+</blockquote>
+<h2 id="chapter-1-h1">先用一个例子讲清楚</h2>
+<p>你对 AI 说：“这个网站的登录有问题，帮我修好。”</p>
+<p>普通聊天模型可以给出建议。但是，真正修好网站通常需要先读项目文件，找到登录逻辑，复现问题，修改代码，运行测试，最后解释改了什么。完成这些工作，需要有软件负责把模型和文件、终端、浏览器连接起来，并决定它可以做什么、做到哪一步需要停下来。</p>
+<p>这套软件就是我们讨论的 <strong>Harness</strong>。中文可以理解为“让模型实际干活的运行外壳”。“外壳”并不意味着简单：成熟的 Harness 往往承担了整个工作现场的组织工作。</p>
+<p>模型像有能力的工作人员；工具像电脑、文件柜和仪器；Harness 像工作台、流程和权限制度。把它们组合起来，才形成一个可以观察环境、采取行动、根据结果继续行动的 <strong>Agent（智能代理）</strong>。</p>
+<p>这个比喻有一个边界：模型并不是可靠的人类员工。它可能误解任务，遗漏条件，甚至把一份看起来很完整的结果误认为正确。所以，还需要测试、来源核对、差异审查等验收办法。</p>
+<h2 id="chapter-1-h2">术语表：遇到不熟悉的词，可以回来看</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>通俗解释</th>
+<th>和选工具有什么关系</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>大语言模型，LLM</td>
+<td>根据输入生成文字、代码或工具调用的模型</td>
+<td>决定理解、推理、表达等基础能力，但不能单独决定任务能否完成</td>
+</tr>
+<tr>
+<td>Harness</td>
+<td>负责上下文、工具、权限、会话和执行过程的软件</td>
+<td>本报告的主要研究对象</td>
+</tr>
+<tr>
+<td>Agent</td>
+<td>模型通过 Harness 使用工具，反复行动以完成任务的系统</td>
+<td>不是某一种模型，也不等于一个聊天窗口</td>
+</tr>
+<tr>
+<td>Agent loop，代理循环</td>
+<td>“看情况→想下一步→调用工具→看结果”的循环</td>
+<td>能否恢复、停止、纠错，比能否发起第一轮调用更重要</td>
+</tr>
+<tr>
+<td>工具调用，Tool calling</td>
+<td>模型提出结构化请求，例如读取文件或执行测试</td>
+<td>模型提出请求，真正执行的是软件；权限必须由软件控制</td>
+</tr>
+<tr>
+<td>上下文，Context</td>
+<td>本轮实际交给模型看的资料</td>
+<td>保存在磁盘上的文件、全部聊天记录，不一定都在上下文里</td>
+</tr>
+<tr>
+<td>上下文窗口</td>
+<td>模型一次能接收的资料上限</td>
+<td>窗口大不等于它能同样可靠地使用其中每个细节</td>
+</tr>
+<tr>
+<td>Token</td>
+<td>模型处理文本时使用的小单位，可能是一个字、词或词的一部分</td>
+<td>用量、价格和上下文长度通常按它计；不能简单等同于汉字数</td>
+</tr>
+<tr>
+<td>系统提示词，System prompt</td>
+<td>给模型的基础工作要求</td>
+<td>同一个模型在不同外壳里的行为差异，部分来自这里</td>
+</tr>
+<tr>
+<td>规则文件</td>
+<td>项目里写给代理看的说明，如 <code>AGENTS.md</code>、<code>CLAUDE.md</code></td>
+<td>适合保存测试命令、项目约定；它不是强制执行的安全边界</td>
+</tr>
+<tr>
+<td>会话，Session / Thread</td>
+<td>一段可继续、保存和恢复的任务对话</td>
+<td>“能找回记录”和“恢复后完整理解之前的工作”是两件事</td>
+</tr>
+<tr>
+<td>上下文压缩，Compaction</td>
+<td>把长对话整理成较短内容，腾出继续工作的空间</td>
+<td>通常会丢细节；要关注保存了哪些决定和未完成事项</td>
+</tr>
+<tr>
+<td>检索，Retrieval</td>
+<td>从大量资料中找到本次需要的一部分</td>
+<td>好比先查目录再翻书，而不是把整间图书馆搬上桌</td>
+</tr>
+<tr>
+<td>RAG</td>
+<td>先检索资料，再让模型根据资料回答</td>
+<td>适合知识库问答；检索错了，回答仍可能错</td>
+</tr>
+<tr>
+<td>Embedding，向量表示</td>
+<td>把文字转成可用于比较相似程度的数字</td>
+<td>常用于语义搜索；不是普通聊天模型的替代品</td>
+</tr>
+<tr>
+<td>Reranker，重排模型</td>
+<td>再检查搜索结果，把更相关的排到前面</td>
+<td>资料多时，改善找资料可能比升级回答模型更有效</td>
+</tr>
+<tr>
+<td>记忆，Memory</td>
+<td>跨轮次或跨会话保留的事实、偏好和经验</td>
+<td>可以是文件、数据库或检索系统，并不等于模型被重新训练</td>
+</tr>
+<tr>
+<td>Skill，技能</td>
+<td>一份可重复使用的工作说明，有时附带脚本、模板</td>
+<td>比如“按公司格式写周报”；通常仍需要模型解释和执行</td>
+</tr>
+<tr>
+<td>Plugin / Extension，插件／扩展</td>
+<td>为宿主增加能力的一种安装和集成方式</td>
+<td>有的只增加提示词，有的能运行程序，两者风险和能力不同</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>让代理连接外部工具和数据源的一种通用协议</td>
+<td>像工具插座；支持插座并不表示已经安装了所有工具</td>
+</tr>
+<tr>
+<td>ACP</td>
+<td>让编辑器或界面连接一个完整代理的协议</td>
+<td>MCP 常连接“工具”，ACP 常连接“另一个已经会干活的代理”</td>
+</tr>
+<tr>
+<td>API / Provider</td>
+<td>模型服务接口／提供该接口的服务商</td>
+<td>同一个模型可能由多家平台提供，速度、价格和功能支持可能不同</td>
+</tr>
+<tr>
+<td>BYOK</td>
+<td>Bring Your Own Key，自带服务商 API 密钥</td>
+<td>外壳费用和模型费用可能分开；订阅会员通常不自动等于 API 额度</td>
+</tr>
+<tr>
+<td>OpenAI-compatible</td>
+<td>接口模仿 OpenAI 的部分格式</td>
+<td>不能据此推断所有工具调用、图片、推理状态和缓存都兼容</td>
+</tr>
+<tr>
+<td>子代理，Subagent</td>
+<td>主代理委派出去处理一部分工作的代理</td>
+<td>通常有独立上下文；是否能写文件、继续对话、再派任务，各工具不同</td>
+</tr>
+<tr>
+<td>多代理，Multi-agent</td>
+<td>多个代理共同完成工作</td>
+<td>可能只是几个并列聊天，也可能有任务板、消息和调度，不能混为一谈</td>
+</tr>
+<tr>
+<td>编排，Orchestration</td>
+<td>安排谁先做、谁并行做、结果交给谁</td>
+<td>工作拆得合理时有效，拆得不合理会增加协调和返工</td>
+</tr>
+<tr>
+<td>Checkpoint，检查点</td>
+<td>保存某个阶段的状态或文件版本</td>
+<td>要查清楚保存的是对话、代码还是运行环境；未必都能恢复</td>
+</tr>
+<tr>
+<td>Git / Diff / PR</td>
+<td>代码版本管理／修改前后差异／请求合并代码的审查单</td>
+<td>是检查代理修改和撤销错误的重要手段</td>
+</tr>
+<tr>
+<td>Worktree</td>
+<td>同一个代码仓库的另一份独立工作目录</td>
+<td>有助于让并行代理不直接争改同一份文件；不是操作系统沙箱</td>
+</tr>
+<tr>
+<td>Sandbox，沙箱</td>
+<td>用操作系统、容器或虚拟机限制程序可接触的资源</td>
+<td>和“模型答应不乱改”“每次点批准”不同，属于实际执行边界</td>
+</tr>
+<tr>
+<td>审批，Approval</td>
+<td>对某次操作询问是否允许</td>
+<td>能增加控制，但点过一次批准不代表之后所有操作都安全</td>
+</tr>
+<tr>
+<td>Hook，钩子</td>
+<td>在特定时机自动执行的程序或规则</td>
+<td>可以在改文件前后检查、记录、阻止操作；具体能力看宿主实现</td>
+</tr>
+<tr>
+<td>CLI / TUI</td>
+<td>命令行程序／带交互界面的终端程序</td>
+<td>适合熟悉终端的人，也容易接入脚本</td>
+</tr>
+<tr>
+<td>IDE</td>
+<td>集成开发环境，写代码、运行和调试的一体化软件</td>
+<td>能把当前文件、报错和项目结构自然交给代理</td>
+</tr>
+<tr>
+<td>LSP</td>
+<td>编辑器与语言分析服务之间的协议</td>
+<td>帮助查符号、类型和错误；不等于理解整个业务</td>
+</tr>
+<tr>
+<td>Headless</td>
+<td>不打开交互界面，直接从脚本执行</td>
+<td>适合批处理和流水线，要另行处理权限、日志和失败</td>
+</tr>
+<tr>
+<td>本地运行</td>
+<td>Harness 或工具程序运行在自己的电脑上</td>
+<td>不代表推理也在本地；调用云模型时相关输入仍会发到服务商</td>
+</tr>
+<tr>
+<td>本地模型</td>
+<td>模型推理在自己的设备或受控服务器上进行</td>
+<td>有硬件和运维要求，尤其不能把超大开放权重模型理解为笔记本可运行</td>
+</tr>
+<tr>
+<td>开放权重</td>
+<td>可以获得模型参数文件</td>
+<td>不等于训练数据公开，也不等于没有使用许可限制</td>
+</tr>
+<tr>
+<td>开源／源码可见</td>
+<td>前者通常符合开源许可；后者只是能读到源码</td>
+<td>商业使用、再分发和做竞争服务的权利可能不同</td>
+</tr>
+<tr>
+<td>Benchmark，基准测试</td>
+<td>用一组规定任务测系统表现</td>
+<td>分数属于“模型＋外壳＋设置＋环境”的组合，不能随意移植</td>
+</tr>
+<tr>
+<td>缓存，Cache</td>
+<td>重复输入的一部分无需重新完整处理</td>
+<td>常影响成本和延迟；频繁换模型或改提示词可能损失缓存</td>
+</tr>
+<tr>
+<td>长任务，Long-horizon task</td>
+<td>需要很多轮行动、甚至跨会话才能完成的任务</td>
+<td>核心问题是状态、目标、恢复和验收，不只是上下文够不够长</td>
+</tr>
+<tr>
+<td>SDK</td>
+<td>给开发者调用的一组现成程序接口</td>
+<td>用它把代理嵌入自己的应用，比从零实现整套循环省事</td>
+</tr>
+<tr>
+<td>Runtime，运行时</td>
+<td>真正管理代理执行的程序部分</td>
+<td>界面相同，运行时仍可能不同</td>
+</tr>
+<tr>
+<td>Adapter / Driver，适配器／驱动</td>
+<td>把一种模型或代理转换成宿主能理解的接口</td>
+<td>协议、工具和状态能否正确衔接，常取决于它</td>
+</tr>
+<tr>
+<td>Gateway，网关</td>
+<td>位于客户端和后端之间，管理连接、路由或访问的服务</td>
+<td>要看它是否保存数据，以及真正把请求发给谁</td>
+</tr>
+<tr>
+<td>Profile，配置档案</td>
+<td>一组模型、工具、权限或插件的预设</td>
+<td>两个人用同一产品、不同配置档案，行为仍可能差很多</td>
+</tr>
+<tr>
+<td>Markdown / JSON / TOML</td>
+<td>常见的文档／结构化数据／配置文件格式</td>
+<td>规则、会话和设置常用这些格式保存，不是新的模型类型</td>
+</tr>
+<tr>
+<td>Python / TypeScript / Rust / Go / Lua</td>
+<td>编写软件的不同编程语言</td>
+<td>能帮助开发者理解源码组织；语言本身不决定代理聪明程度</td>
+</tr>
+<tr>
+<td>Node.js / Electron / QuickJS</td>
+<td>分别是常用 JavaScript 运行环境、桌面应用框架、另一种 JavaScript 引擎</td>
+<td>“脚本引擎被限制”不等于它调用的外部工具也被隔离</td>
+</tr>
+<tr>
+<td>Docker / Kubernetes / 虚拟机</td>
+<td>容器打包工具／容器管理平台／虚拟的计算机环境</td>
+<td>用来准备、隔离和管理任务运行环境，仍需配置权限与网络</td>
+</tr>
+<tr>
+<td>CI / CD</td>
+<td>自动检查、构建和交付软件的流水线</td>
+<td>无界面代理可以进入流水线，但需要失败与验收机制</td>
+</tr>
+<tr>
+<td>Webhook</td>
+<td>某个系统发生事件后，向另一个系统发通知的接口</td>
+<td>可用来自动触发任务，需要辨认事件来源和避免重复执行</td>
+</tr>
+<tr>
+<td>RBAC</td>
+<td>按角色给用户分配权限</td>
+<td>多人工作台需要控制谁能读资料、用工具和改设置</td>
+</tr>
+<tr>
+<td>MoE，混合专家模型</td>
+<td>每一步只选择部分子网络参与计算的模型结构</td>
+<td>活跃参数较少，不等于只需存放那部分权重</td>
+</tr>
+<tr>
+<td>量化，Quantization</td>
+<td>用更少的数字位数保存模型参数等数据</td>
+<td>可减少内存，但效果与速度需按具体实现测试</td>
+</tr>
+<tr>
+<td>索引，Index</td>
+<td>提前建立的资料目录与检索结构</td>
+<td>更新是否及时、哪些文件被排除，会影响代理找到什么</td>
+</tr>
+<tr>
+<td>事件日志／状态快照</td>
+<td>逐条记录发生的事／保存某一刻的状态</td>
+<td>方便恢复和排查，但不能自动撤销已经发生的外部动作</td>
+</tr>
+<tr>
+<td>Preview / Beta，预览／测试版</td>
+<td>尚在调整中的公开或受限版本</td>
+<td>应固定版本并保留回退，不按成熟稳定版作同等承诺</td>
+</tr>
+</tbody></table></div>
+<p>任务控制、部署与资料处理还会用到以下词语：</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>通俗解释</th>
+<th>容易误解的地方</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Goal，持续目标</td>
+<td>保存一个目标，让代理在一轮结束后继续推进</td>
+<td>自动继续不代表自动证明任务已完成</td>
+</tr>
+<tr>
+<td>Cron，时间调度</td>
+<td>按规定时间触发任务的机制</td>
+<td>保存时间表不代表电脑关机后仍会运行</td>
+</tr>
+<tr>
+<td>Workflow，工作流</td>
+<td>把若干任务按顺序、并行或条件组织起来</td>
+<td>在不同软件里可能指固定业务流程，也可能指代理临时生成的编排脚本</td>
+</tr>
+<tr>
+<td>Credits，额度点数</td>
+<td>服务商把不同消耗换算成统一单位记账</td>
+<td>不是 Token；不能把额度点数直接当成可生成字数</td>
+</tr>
+<tr>
+<td>动态模型目录</td>
+<td>登录后向服务查询账户当前能用的模型和能力</td>
+<td>默认写着某个模型，不保证账户可调用，也不保证元数据完整</td>
+</tr>
+<tr>
+<td>Bun／isolated-vm</td>
+<td>JavaScript 运行环境／在独立环境中执行脚本的组件</td>
+<td>原生组件可能只支持特定运行环境，因此不同安装包功能会有差异</td>
+</tr>
+<tr>
+<td>avg@4</td>
+<td>对四次尝试的评测结果取平均的统计标记</td>
+<td>应按该评测的具体规则理解，不等于一次必然成功，也不等于四次取最好成绩</td>
+</tr>
+<tr>
+<td>Turn / Step / Run</td>
+<td>一次交互轮次／一次模型与工具步骤／一段被宿主管理的运行</td>
+<td>一轮可有多个步骤；文字停止、工具结束与整段运行结束不是一回事</td>
+</tr>
+<tr>
+<td>Host / Core / Coordinator</td>
+<td>宿主／核心执行逻辑／协调器</td>
+<td>分别可负责承载会话、推进任务、安排交接，实际边界要看具体工具</td>
+</tr>
+<tr>
+<td>State Machine / 状态机</td>
+<td>用有限状态和转换规则管理过程</td>
+<td>排队、等待批准、执行、取消与完成应分清，不能都用“加载中”表示</td>
+</tr>
+<tr>
+<td>Event Bus / 事件总线</td>
+<td>模块之间发布和接收事件的通信机制</td>
+<td>实时通知不一定已经写入可恢复的日志</td>
+</tr>
+<tr>
+<td>Projection / 状态投影</td>
+<td>从事件或历史记录重新计算某种可用视图</td>
+<td>屏幕显示、运行状态和模型输入可能来自同一记录的不同视图</td>
+</tr>
+<tr>
+<td>Tool Registry / 工具契约</td>
+<td>可用工具的登记表／参数与结果格式约定</td>
+<td>模型看见哪些工具、怎样调用，由宿主和配置共同决定</td>
+</tr>
+<tr>
+<td>Buffer / 进程 / 副作用</td>
+<td>编辑器中的未必已保存的内容／正在运行的程序／对文件或外部系统造成的实际改变</td>
+<td>对话分叉通常不能复制进程，也不自动撤销文件和外部操作</td>
+</tr>
+<tr>
+<td>Embedding / 分块 / 变量池</td>
+<td>把材料表示为可检索数字／把长文切成片段／保存流程步骤之间交接的数据</td>
+<td>导入资料、检索证据和跨步骤传数据，是不同环节</td>
+</tr>
+<tr>
+<td>Bundle / Fan-out / Sidecar</td>
+<td>一组装配部件／从主任务分出子任务／伴随主任务工作的辅助组件</td>
+<td>这些结构名称本身不能证明隔离、并行或长期保存能力</td>
+</tr>
+<tr>
+<td>YAML / JSONL</td>
+<td>常见配置格式／每行一条 JSON 记录的文件格式</td>
+<td>前者常写模型与流程配置，后者常保存可追加的会话事件</td>
+</tr>
+<tr>
+<td>HTTP / RPC / IPC</td>
+<td>网络请求协议／远程过程调用／进程之间通信</td>
+<td>界面、运行核心与服务不一定在同一个程序或机器里</td>
+</tr>
+<tr>
+<td>Base URL，服务基地址</td>
+<td>API 请求要发往的服务入口地址</td>
+<td>地址可能决定地区、协议与计费渠道，不只是网络连通</td>
+</tr>
+<tr>
+<td>OAuth</td>
+<td>用户通过服务商登录并授予应用访问权的一套机制</td>
+<td>登录成功不代表所有模型、工具或订阅额度都能共用</td>
+</tr>
+<tr>
+<td>JSON Mode / JSON Schema</td>
+<td>返回 JSON 的模式／约束字段和类型的规则</td>
+<td>能输出 JSON 不保证字段、内容和事实都正确</td>
+</tr>
+<tr>
+<td>Streaming，流式返回</td>
+<td>内容或事件产生一点就返回一点</td>
+<td>界面看到文字，不代表工具已经执行或任务已经结束</td>
+</tr>
+<tr>
+<td>Spec / Steering</td>
+<td>可检查的需求设计材料／持续指导项目的规则</td>
+<td>前者帮助对齐当前功能，后者保存更稳定的工作约定</td>
+</tr>
+<tr>
+<td>Plan / Build / Act</td>
+<td>常见的规划／构建／执行模式名称</td>
+<td>名字相近不保证工具权限、审批或操作范围相同</td>
+</tr>
+<tr>
+<td>RepoMap / Repo Wiki</td>
+<td>仓库结构摘要／项目知识说明</td>
+<td>都帮助理解项目，但来源、生成方式与更新时效不同</td>
+</tr>
+<tr>
+<td>Dry-run，预演</td>
+<td>只展示将做的操作，尽量不真正修改对象</td>
+<td>是否真的没有副作用必须测试，不能只看开关名称</td>
+</tr>
+<tr>
+<td>幂等</td>
+<td>同一请求执行多次，不产生额外的重复效果</td>
+<td>自动重试、重复触发和恢复任务时特别重要</td>
+</tr>
+<tr>
+<td>Schema / 序列化</td>
+<td>数据结构约定／把对象转换成可传输或保存的形式</td>
+<td>字段、类型和格式错了，下游模型再强也可能拿错材料</td>
+</tr>
+<tr>
+<td>依赖图，DAG</td>
+<td>用连线说明哪些任务要等前面的任务完成</td>
+<td>并行前先辨认依赖，不能所有工作同时开始</td>
+</tr>
+<tr>
+<td>SDK／解释器／构建依赖</td>
+<td>程序开发接口／执行程序的环境／生成软件需要的部件</td>
+<td>在这里主要提醒：项目环境没准备好，模型也无法正确验证</td>
+</tr>
+<tr>
+<td>Oracle / Librarian</td>
+<td>部分产品给推理咨询／资料调查等职责起的角色名</td>
+<td>名称是产品约定，要看实际工具、上下文与权限</td>
+</tr>
+<tr>
+<td>Work / Mission / Quest</td>
+<td>不同产品给工作模式、成组任务或目标执行起的名称</td>
+<td>不能凭同类营销词推断它们使用同一种调度和恢复机制</td>
+</tr>
+<tr>
+<td>k / M / B，bit / GB / TB</td>
+<td>千／百万／十亿；数字位数与存储容量单位</td>
+<td>600B 参数约六千亿；Token 数、参数量与文件大小不能混用</td>
+</tr>
+</tbody></table></div>
+<h2 id="chapter-1-h3">一次任务究竟经过哪些地方</h2>
+<figure class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 355" role="img" aria-label="任务执行循环"><title>任务执行循环</title><defs><marker id="arrow-1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}.title{font-size:19px;font-weight:600;fill:#142e39}.label{font-size:15px;fill:#233e48}.small{font-size:13px;fill:#59717a}.edge{fill:none;stroke:#508984;stroke-width:1.7;marker-end:url(#arrow-1)}</style><rect width="100%" height="100%" rx="16" fill="#f3f7f6"/><text class="title" x="24" y="34">一次任务：模型提出行动，运行时执行并核对</text><rect x="30" y="70" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="125.0" y="100.0" text-anchor="middle">用户目标</text><text class="label" x="125.0" y="122.0" text-anchor="middle">与验收条件</text><rect x="260" y="70" width="190" height="72" rx="10" fill="#dceee9" stroke="#85b8aa"/><text class="label" x="355.0" y="100.0" text-anchor="middle">Harness</text><text class="label" x="355.0" y="122.0" text-anchor="middle">组织上下文</text><rect x="490" y="70" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="585.0" y="100.0" text-anchor="middle">模型</text><text class="label" x="585.0" y="122.0" text-anchor="middle">提出下一步</text><rect x="720" y="70" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="815.0" y="100.0" text-anchor="middle">权限</text><text class="label" x="815.0" y="122.0" text-anchor="middle">与执行检查</text><rect x="720" y="225" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="815.0" y="255.0" text-anchor="middle">文件、终端</text><text class="label" x="815.0" y="277.0" text-anchor="middle">浏览器等工具</text><rect x="490" y="225" width="190" height="72" rx="10" fill="#dceee9" stroke="#85b8aa"/><text class="label" x="585.0" y="255.0" text-anchor="middle">观察结果</text><text class="label" x="585.0" y="277.0" text-anchor="middle">记录状态</text><rect x="260" y="225" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="355.0" y="255.0" text-anchor="middle">验证结果</text><text class="label" x="355.0" y="277.0" text-anchor="middle">是否达标</text><rect x="30" y="225" width="190" height="72" rx="10" fill="#fff" stroke="#cadbd8"/><text class="label" x="125.0" y="255.0" text-anchor="middle">交付</text><text class="label" x="125.0" y="277.0" text-anchor="middle">可检查的成果</text><path class="edge" d="M220 106 H258"/><path class="edge" d="M450 106 H488"/><path class="edge" d="M680 106 H718"/><path class="edge" d="M815 142 V223"/><path class="edge" d="M720 261 H682"/><path class="edge" d="M490 261 H452"/><path class="edge" d="M260 261 H222"/><path class="edge" d="M585 225 V182 H355 V144"/><text class="small" x="452" y="172" text-anchor="middle">继续工作</text><text class="small" x="30" y="331">文件、历史、规则和检索材料按需进入上下文；交付前还要检验真实结果。</text></svg><figcaption>图 1 · 本报告绘制的概念图，具体实现以各产品文档为准。</figcaption></figure><p>比如修登录问题时，“测试失败”是工具返回的事实；“可能是登录令牌过期”是模型的判断；“运行这条测试命令是否允许”是 Harness 的职责。分清这三层，才能找到出问题的原因。</p>
+<p>同样的模型接到不同 Harness 上，可能看到不同文件、拿到不同工具、收到不同错误反馈，最终表现自然会不同。反过来，即便 Harness 很完善，模型如果不善于遵守工具格式、理解反馈或识别任务完成条件，也仍会卡住。</p>
+<h2 id="chapter-1-h4">六个最容易误解的地方</h2>
+<p><strong>第一，能聊天、能调用一个工具、能持续完成任务，是不同层次。</strong> 聊天客户端也能增加 Agent 能力，但需要检查实际执行、状态管理和验收方式；不能只凭产品分类判断“它什么都做不了”。</p>
+<p><strong>第二，长上下文不等于长期记忆。</strong> 一百万 Token 的窗口仍然有限，而且保留大量历史会增加成本。把关键决定写进项目文件，往往比永远延长聊天更可靠。</p>
+<p><strong>第三，多代理不保证更强。</strong> 两个人同时调查不同模块可能节约时间；两个人同时重写同一个函数，可能只是制造冲突。判断标准是任务能否独立、结果能否检查。</p>
+<p><strong>第四，本地客户端不等于数据不出电脑。</strong> 要分别看聊天记录放在哪里、模型在哪里推理、文件如何检索、外部工具由谁执行。</p>
+<p><strong>第五，模型能接通不等于适配完成。</strong> 接口正确只是第一步。工具参数、错误处理、长对话恢复、图片输入和模型特有的推理状态，都可能影响后续执行。</p>
+<p><strong>第六，“自我改进”通常不是训练模型。</strong> 在本报告涉及的软件里，它经常指保存经验、编写技能、更新记忆和调整工作流程。模型参数是否改变，是另一件事。</p>
+<p>这些解释是本报告的分析框架。对应实现可在 <a href="terminal-agents.html#chapter-3">工具档案</a>、<a href="architecture.html#chapter-7">架构比较</a> 以及 <a href="methodology.html#chapter-11">证据与方法</a> 中核查。</p>
+</section><div class="pagination" aria-label="顺序阅读"><a rel="prev" href="../index.html"><small>← 上一页</small>AI Harness 调研与选型报告</a><a rel="next" href="landscape.html"><small>下一页 →</small>工具全景</a></div><footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><dialog id="site-search" aria-labelledby="search-title"><div class="search-head"><h2 id="search-title">搜索全站</h2><button type="button" id="close-search" aria-label="关闭搜索">关闭 ×</button></div><label for="global-search">工具、原理或任务关键词</label><input id="global-search" type="search" placeholder="例如：Pi、小说、上下文压缩" autocomplete="off"><p id="search-status" role="status" aria-live="polite">输入关键词，搜索所有章节与工具正文。</p><ol id="search-results"></ol><noscript>搜索需要 JavaScript；也可使用首页章节入口或完整单页版的浏览器查找。</noscript></dialog><a class="to-top" href="#top">回到顶部 ↑</a><script src="../site-assets/search.js"></script><script src="../site-assets/site.js"></script><script src="../site-assets/navigation.js"></script></body></html>

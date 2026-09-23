@@ -1,0 +1,167 @@
+<!doctype html><!--
+Page structure and interaction code: MIT.
+MIT License
+
+Copyright (c) 2026 ProgrammerAsahi and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Report text and original figures: CC BY 4.0.
+Copyright (c) 2026 ProgrammerAsahi and contributors.
+Third-party materials retain their original rights.
+--><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="B16 ZCode：把 GLM 的长任务能力放进目标管理流程。阅读原理、证据与实际使用方法。"><script src="../site-assets/theme.js"></script><title>B16 ZCode：把 GLM 的长任务能力放进目标管理流程 · AI Harness 报告</title><link rel="stylesheet" href="../site-assets/reading.css"></head><body id="top" class="paged-site" data-site-base="../"><aside class="sidebar"><a class="brand" href="../index.html">HARNESS / 研究与选型</a><div class="stamp">编辑器与托管工作台</div><button type="button" class="open-search" data-open-search>搜索全站 <kbd>⌘ / Ctrl K</kbd></button><details class="site-map"><summary>全部章节</summary><div role="navigation" aria-label="全站章节"><a  href="basics.html">从零理解</a><a  href="landscape.html">工具全景</a><a  href="terminal-agents.html">终端与开放代理</a><a aria-current="page" href="coding-workspaces.html">编辑器与托管工作台</a><a  href="personal-assistants.html">个人助理与知识工作台</a><a  href="workflows-and-history.html">相邻路线与维护观察</a><a  href="architecture.html">架构与取舍</a><a  href="scenarios.html">按场景选择</a><a  href="models-and-costs.html">模型与成本</a><a  href="evaluation.html">试用与验收</a><a  href="methodology.html">研究方法</a><a  href="references.html">参考资料</a></div></details><div class="toolbar"><button id="toggle-nav" aria-expanded="false">本页目录</button></div><label class="search-label" for="toc-search">本页目录</label><input type="search" id="toc-search" placeholder="筛选本页标题" autocomplete="off"><nav aria-label="本页目录"><details class="nav-group" open><summary><a href="#chapter-4-h136">B16 ZCode：把 GLM 的长任务能力放进目标管理流程</a></summary><div class="nav-children"></div></details><details class="nav-group" open><summary><a href="#chapter-4-h137">定位与设计理念</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-4-h138">工作原理与架构图</a></summary><div class="nav-children"><a href="#chapter-4-h139">深入一层：主会话、侧边讨论与分叉历史的不同语义</a></div></details><details class="nav-group" ><summary><a href="#chapter-4-h140">能力、状态与边界</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-4-h141">从安装到完成第一个任务</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-4-h142">典型任务与验收方法</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-4-h143">模型搭配、适用方向与取舍</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-4-h144">资料依据与继续阅读</a></summary><div class="nav-children"></div></details><p class="empty">没有匹配的本页标题。试试“搜索全站”。</p></nav><div class="nav-foot"><a href="../AI-Harness调研报告.html#b16">完整单页版</a> · <button class="print" onclick="window.print()">打印本页</button><br><a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错</a></div></aside><main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><div class="breadcrumb" aria-label="当前位置"><a href="../index.html">首页</a><span>／</span><a href="coding-workspaces.html">编辑器与托管工作台</a><span>／</span><span>B16 ZCode</span></div><section class="chapter" data-chapter="b16"><a id="b16"></a></p>
+<h1 id="chapter-4-h136" class="tool-heading"><a class="tool-logo" href="https://zcode.z.ai/" title="官方项目或产品网站发布的标识。 点击查看官方来源。" aria-label="B16 标识来源：官方项目或产品网站发布的标识。"><img src="data:image/png;base64,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" width="48" height="48" alt="" decoding="async"></a><span>B16 ZCode：把 GLM 的长任务能力放进目标管理流程</span></h1>
+<h2 id="chapter-4-h137">定位与设计理念</h2>
+<p>ZCode 官方明确围绕 GLM-5.3 适配，重点包括复杂项目理解、长任务、连续代码修改和恢复。Goal Mode 将目标、完成检查和状态恢复放在一个流程里，方向类似“任务尚未完成，就保留继续工作的依据”。<a href="https://zcode.z.ai/en/docs/agents" target="_blank" rel="noopener noreferrer">Agent 文档</a></p>
+<p>ZCode 将长任务与目标管理结合，希望代理不仅处理当前一句话，还能保留继续工作的依据。对跨多次会话的改造，这比单纯增加窗口长度更有意义。但目标保存只解决“回来时知道要做什么”，完成判断仍需要测试、文件和需求证据，不能由一句自我报告决定。</p>
+<h2 id="chapter-4-h138">工作原理与架构图</h2>
+<p>下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。</p>
+<figure class="diagram profile-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="B16 ZCode 架构示意"><title>B16 ZCode 架构示意</title><defs><marker id="profile-arrow-67" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">B16 · ZCode</text><rect x="30" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="162.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">ZCode 工作入口</text><text x="162.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">目标及项目</text><rect x="347" y="75" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="479.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">工作空间与项目指令</text><text x="479.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">文件、分支、AGENTS.md</text><rect x="664" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">原生 GLM 路线</text><text x="796.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">模型及推理档位</text><rect x="30" y="305" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="162.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">目标状态与任务成果</text><text x="162.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">恢复和完成检查</text><rect x="347" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="479.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">代码与命令环境</text><text x="479.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">修改及验证</text><rect x="664" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">Agent／Goal Mode</text><text x="796.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">持续推进任务</text><path d="M295 118 H344" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><path d="M612 118 H661" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><path d="M796 161 V302" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><path d="M664 348 H615" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><path d="M347 348 H298" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><path d="M162 305 V238 H479 V164" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-67)"/><text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text><text x="30" y="437" font-size="13" fill="#60796f">公开接口与文档中的责任分工；图中能力不表示每种入口与安装方式都默认开放。</text></svg><figcaption>B16 ZCode：工作原理与责任分工。图示依据与适用边界见相邻正文。</figcaption></figure>
+<p>文件引用、工作空间、Git 分支、执行模式和推理档位共同决定代理的工作上下文。持久目标不等于模型拥有无限记忆，仍依赖任务状态被正确保存和重新装载。官方还特别说明 <code>CLAUDE.md</code> 在迁移时可作为一次性来源，后续使用 <code>AGENTS.md</code>；不能看到熟悉的文件名就假定运行时一直自动读取它。</p>
+<p>持续目标可以在一轮结束后帮助决定是否继续，也能在暂停后装载当前进度。真正关键的是恢复材料包含哪些事实：已经改过的文件、验证结果、仍未解决的问题和下一步。若只是重复初始需求，模型仍可能重做工作。项目指令迁移同样需要明确：将旧 CLAUDE.md 导入一次，与每次运行持续读取该文件，是不同机制。</p>
+<h3 id="chapter-4-h139">深入一层：主会话、侧边讨论与分叉历史的不同语义</h3>
+<p>ZCode 的会话分叉有明确的产品语义：从干净完成的助手消息处分出历史，而不是复制所有后台运行状态；排队输入、在途工作和后台任务不会一并复制。更重要的是，分叉不回滚磁盘文件，两个会话仍面对同一个工作区。侧边讨论也应和分叉分别理解，不要仅凭多个聊天面板推断隔离。</p>
+<figure class="diagram profile-diagram detail-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" role="img" aria-label="B16 · 主会话、侧边讨论与分叉历史的不同语义"><title>B16 · 主会话、侧边讨论与分叉历史的不同语义</title><desc>本图为相邻正文所述的架构切面。箭头表示主要信息或控制交接；具体证据和省略范围见正文。</desc><defs><marker id="profile-arrow-68" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="630" rx="16" fill="#f3f7f6"/><text x="40" y="38" font-size="20" font-weight="600" fill="#163d34">B16 · 主会话、侧边讨论与分叉历史的不同语义</text><text x="40" y="66" font-size="14" fill="#60796f">深入一层 · 模块、交接与状态；配合图下的机制表阅读</text><path class="edge-halo" d="M300 150 L350 150" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="1-2" d="M300 150 L350 150" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M610 150 L660 150" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="2-3" d="M610 150 L660 150" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M790 200 L790 270" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="3-4" d="M790 200 L790 270" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M480 200 L480 270" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="2-5" d="M480 200 L480 270" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M350 340 L320 340 L320 470 L300 470" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="5-6" d="M350 340 L320 340 L320 470 L300 470" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M480 370 L480 440" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="5-7" d="M480 370 L480 440" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M300 490 L330 490 L330 390 L640 390 L640 340 L660 340" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="6-4" d="M300 490 L330 490 L330 390 L640 390 L640 340 L660 340" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M610 470 L630 470 L630 320 L660 320" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="7-4" d="M610 470 L630 470 L630 320 L660 320" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><path class="edge-halo" d="M790 440 L790 390 L940 390 L940 220 L630 220 L630 170 L610 170" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="8-2" d="M790 440 L790 390 L940 390 L940 220 L630 220 L630 170 L610 170" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-68)"/><rect data-node="1" x="40" y="100" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">用户与工作区</text><text x="170.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">项目或无项目任务</text><rect data-node="2" x="350" y="100" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="480.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">主 Agent 会话</text><text x="480.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">目标与执行模式</text><rect data-node="3" x="660" y="100" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">模型与可用工具</text><text x="790.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">按产品配置执行</text><rect data-node="4" x="660" y="270" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">工作区文件</text><text x="790.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">实际变更与运行结果</text><rect data-node="5" x="350" y="270" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="480.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">已完成消息节点</text><text x="480.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">可作为分叉起点</text><rect data-node="6" x="40" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">新的对话分支</text><text x="170.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">继承允许的历史</text><rect data-node="7" x="350" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">原会话继续保留</text><text x="480.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">两者共享工作区</text><rect data-node="8" x="660" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">侧边讨论与记忆</text><text x="790.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">另按各自契约使用</text><text x="40" y="600" font-size="14" fill="#60796f">主路径经过裁剪；同色框仅用于突出阅读重点，不代表相同进程或权限。</text></svg><figcaption>B16 深入一层：主会话、侧边讨论与分叉历史的不同语义。图示依据与适用边界见相邻正文。</figcaption></figure>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>模块／交接点</th>
+<th>怎样工作</th>
+<th>状态与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>分叉起点</td>
+<td>已完成的助手消息才可作为起点</td>
+<td>失败的半条回复或工具结果不能随意当恢复点。</td>
+</tr>
+<tr>
+<td>共享文件</td>
+<td>两条会话操作相同工作区</td>
+<td>同时实施不同方案可能互相覆盖。</td>
+</tr>
+<tr>
+<td>接续状态</td>
+<td>队列与后台工作不随历史复制</td>
+<td>新会话需要重新确认正在运行的操作。</td>
+</tr>
+</tbody></table></div>
+<p><strong>沿着一次任务看数据怎样走。</strong> 例如在方案 A 后分叉讨论方案 B：新对话有继承的历史，但文件仍含当前改动。应先查看 diff，再决定只讨论、创建代码分支或实施；不能以为“新分支”已经自动给你一份干净仓库。</p>
+<p><strong>与相近工具的实质差别。</strong> 与 Qoder 编辑旧消息触发的回滚不同，ZCode 明确把对话分叉和文件回滚分开。与 Pi 的树状历史相似之处在于上下文分支，具体宿主状态仍各自管理。</p>
+<p>本节细图与机制依据：<a href="https://zcode.z.ai/en/docs/agents" target="_blank" rel="noopener noreferrer">zcode-agent</a>。箭头表示主要信息或控制交接，不表示所有分支必然并行；省略的模块不能视为不存在。</p>
+<h2 id="chapter-4-h140">能力、状态与边界</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>观察项</th>
+<th>实际机制／公开能力</th>
+<th>对使用者意味着什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原生适配</td>
+<td>围绕 GLM-5.3 的官方路线</td>
+<td>产品适配主张与跨产品胜负分开理解</td>
+</tr>
+<tr>
+<td>目标管理</td>
+<td>Goal Mode、状态及恢复</td>
+<td>完成标准需外部可查，不能只凭目标状态</td>
+</tr>
+<tr>
+<td>项目上下文</td>
+<td>工作空间、文件引用与指令</td>
+<td>让关键约束进入实际读取的文件</td>
+</tr>
+<tr>
+<td>迁移规则</td>
+<td>旧指令可作迁移来源，后续使用 AGENTS.md</td>
+<td>修改旧文件后不要假定当前任务自动更新</td>
+</tr>
+<tr>
+<td>执行设置</td>
+<td>模式、分支与推理档位</td>
+<td>目录隔离、权限和模型能力分别核对</td>
+</tr>
+<tr>
+<td>兼容性</td>
+<td>其他 Provider 按实际版本确认</td>
+<td>不把原生模型表现推及任意自定义后端</td>
+</tr>
+</tbody></table></div>
+<p><strong>把机制放进实际工作。</strong></p>
+<p>持续目标需要明确结束条件。比如“完成配置迁移”应包含哪些调用方必须替换、哪些兼容测试必须通过，而不是只凭模型觉得工作差不多。目标越抽象，自动继续越可能变成无止境扩展；设置阶段成果与验收有助于让任务及时停下。</p>
+<p>暂停恢复是检查状态质量的好方法。让代理指出已完成文件、实际验证和下一步，再与磁盘核对；若只复述最初目标，说明恢复材料不够。人手修改过文件后尤其要重新核对，避免旧检查点覆盖最新进展。</p>
+<p>项目指令迁移也需区分一次导入与持续读取。修改旧规则文件后行为没有变化，可能是当前运行时已经使用另一份文件，而非模型故意不遵守。先核对真实来源与生效范围，再调整提示或推理档位。原生模型适配能改善部分执行，不能替代任务状态和项目配置正确性。</p>
+<h2 id="chapter-4-h141">从安装到完成第一个任务</h2>
+<ol>
+<li><p>导入一个已有仓库，确认模型、项目目录和执行模式；核对当前项目指令实际来自哪里。</p>
+</li>
+<li><p>用一个当天可以完成的需求试 Goal Mode，写清完成条件和改动范围，不使用“尽可能完善”这类无终点目标。</p>
+</li>
+<li><p>要求在阶段结束保存文件、检查和待办，主动暂停一次，再恢复并核对这些事实。</p>
+</li>
+<li><p>实施过程中遇到目标变化，明确更新目标与验收，而不是继续沿用旧任务清单。</p>
+</li>
+<li><p>交付后查看 diff 和真实测试，记录恢复是否减少重复工作；稳定后再扩大任务长度或尝试其他模型路线。</p>
+</li>
+</ol>
+<p>下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。</p>
+<pre><code>长任务检查点建议：
+目标与不可改变的约束
+已完成文件与验证证据
+失败尝试及原因
+下一步和仍需决定的问题
+恢复时先核对检查点，再继续修改。</code></pre><h2 id="chapter-4-h142">典型任务与验收方法</h2>
+<p>下面是一份<strong>可直接改写使用的试用任务</strong>，属于本报告设计的验收示例，并非已完成的运行测试。</p>
+<blockquote>
+<p>分阶段替换项目中的旧配置读取方式。每完成一个模块保存进度与检查结果；暂停后从未完成部分继续，保持旧配置兼容。</p>
+</blockquote>
+<p>恢复测试要检查是否重复修改已完成模块、是否遗漏兼容要求，以及结束时是否仍有旧调用残留。运行时间长不是质量指标，能够准确推进和停在真正完成的位置才是。</p>
+<h2 id="chapter-4-h143">模型搭配、适用方向与取舍</h2>
+<p>原生优先 GLM-5.3。官方的性能描述属于厂商主张，本报告确认其适配方向，不将“长任务更强”当作已经独立验证的跨产品结论。适合 GLM 用户、中文开发、需要持续目标管理的任务。难度：低中；涉及其他 Provider 的完整兼容程度仍需按版本核实。<a href="https://docs.z.ai/guides/llm/glm-5.3" target="_blank" rel="noopener noreferrer">模型介绍</a></p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>选择路线</th>
+<th>候选组合</th>
+<th>怎样决定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>原生基线</td>
+<td>GLM-5.3</td>
+<td>优先验证长任务与目标恢复，而非只看单轮生成。</td>
+</tr>
+<tr>
+<td>较难任务</td>
+<td>原生模型的合适推理档位</td>
+<td>先检查目标与材料是否充分，再提高投入。</td>
+</tr>
+<tr>
+<td>跨模型对照</td>
+<td>实际版本确认支持的 Provider</td>
+<td>无充分兼容证据时不当默认推荐，先跑基础工具测试。</td>
+</tr>
+</tbody></table></div>
+<p>适合 GLM 用户、中文工程沟通和持续目标改造。若需求经常变化，应先建立规范或任务边界；若只修一个小问题，目标模式可能没有额外收益。与 Step Code 比较时看持续控制，与 Kiro 比较时看前期规范，三者不必互相替代。</p>
+<h2 id="chapter-4-h144">资料依据与继续阅读</h2>
+<p><a href="https://zcode.z.ai/en/docs/agents" target="_blank" rel="noopener noreferrer">Agent 文档</a>、<a href="https://docs.z.ai/guides/llm/glm-5.3" target="_blank" rel="noopener noreferrer">模型介绍</a>。</p>
+<p>完整商业运行时未公开，结构判断以官方可见行为和接口为限。上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。</p>
+<p></section><div class="pagination" aria-label="顺序阅读"><a rel="prev" href="b15.html"><small>← 上一页</small>B15 腾讯 CodeBuddy：面向中文开发生态的多入口代理</a><a rel="next" href="b17.html"><small>下一页 →</small>B17 Avante.nvim：在 Neovim 里获得可直接应用的代理修改</a></div><footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><dialog id="site-search" aria-labelledby="search-title"><div class="search-head"><h2 id="search-title">搜索全站</h2><button type="button" id="close-search" aria-label="关闭搜索">关闭 ×</button></div><label for="global-search">工具、原理或任务关键词</label><input id="global-search" type="search" placeholder="例如：Pi、小说、上下文压缩" autocomplete="off"><p id="search-status" role="status" aria-live="polite">输入关键词，搜索所有章节与工具正文。</p><ol id="search-results"></ol><noscript>搜索需要 JavaScript；也可使用首页章节入口或完整单页版的浏览器查找。</noscript></dialog><a class="to-top" href="#top">回到顶部 ↑</a><script src="../site-assets/search.js"></script><script src="../site-assets/site.js"></script><script src="../site-assets/navigation.js"></script></body></html>

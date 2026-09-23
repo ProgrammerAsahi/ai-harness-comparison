@@ -1,0 +1,165 @@
+<!doctype html><!--
+Page structure and interaction code: MIT.
+MIT License
+
+Copyright (c) 2026 ProgrammerAsahi and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Report text and original figures: CC BY 4.0.
+Copyright (c) 2026 ProgrammerAsahi and contributors.
+Third-party materials retain their original rights.
+--><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="C07 LibreChat：以对话产品为入口，扩展到可配置的 Agent 运行。阅读原理、证据与实际使用方法。"><script src="../site-assets/theme.js"></script><title>C07 LibreChat：以对话产品为入口，扩展到可配置的 Agent 运行 · AI Harness 报告</title><link rel="stylesheet" href="../site-assets/reading.css"></head><body id="top" class="paged-site" data-site-base="../"><aside class="sidebar"><a class="brand" href="../index.html">HARNESS / 研究与选型</a><div class="stamp">个人助理与知识工作台</div><button type="button" class="open-search" data-open-search>搜索全站 <kbd>⌘ / Ctrl K</kbd></button><details class="site-map"><summary>全部章节</summary><div role="navigation" aria-label="全站章节"><a  href="basics.html">从零理解</a><a  href="landscape.html">工具全景</a><a  href="terminal-agents.html">终端与开放代理</a><a  href="coding-workspaces.html">编辑器与托管工作台</a><a aria-current="page" href="personal-assistants.html">个人助理与知识工作台</a><a  href="workflows-and-history.html">相邻路线与维护观察</a><a  href="architecture.html">架构与取舍</a><a  href="scenarios.html">按场景选择</a><a  href="models-and-costs.html">模型与成本</a><a  href="evaluation.html">试用与验收</a><a  href="methodology.html">研究方法</a><a  href="references.html">参考资料</a></div></details><div class="toolbar"><button id="toggle-nav" aria-expanded="false">本页目录</button></div><label class="search-label" for="toc-search">本页目录</label><input type="search" id="toc-search" placeholder="筛选本页标题" autocomplete="off"><nav aria-label="本页目录"><details class="nav-group" open><summary><a href="#chapter-5-h56">C07 LibreChat：以对话产品为入口，扩展到可配置的 Agent 运行</a></summary><div class="nav-children"></div></details><details class="nav-group" open><summary><a href="#chapter-5-h57">定位与设计理念</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h58">工作原理与架构图</a></summary><div class="nav-children"><a href="#chapter-5-h59">深入一层：聊天 API、Agent 图与工具审批的连接</a></div></details><details class="nav-group" ><summary><a href="#chapter-5-h60">能力、状态与边界</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h61">从安装到完成第一个任务</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h62">典型任务与验收方法</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h63">模型搭配、适用方向与取舍</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h64">资料依据与继续阅读</a></summary><div class="nav-children"></div></details><p class="empty">没有匹配的本页标题。试试“搜索全站”。</p></nav><div class="nav-foot"><a href="../AI-Harness调研报告.html#c07">完整单页版</a> · <button class="print" onclick="window.print()">打印本页</button><br><a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错</a></div></aside><main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><div class="breadcrumb" aria-label="当前位置"><a href="../index.html">首页</a><span>／</span><a href="personal-assistants.html">个人助理与知识工作台</a><span>／</span><span>C07 LibreChat</span></div><section class="chapter" data-chapter="c07"><a id="c07"></a></p>
+<h1 id="chapter-5-h56" class="tool-heading"><a class="tool-logo" href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/client/public/assets/logo.svg" title="官方项目或产品网站发布的标识。 点击查看官方来源。" aria-label="C07 标识来源：官方项目或产品网站发布的标识。"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmVyc2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjI3MDgiPgogICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjMjFmYWNmIiBvZmZzZXQ9IjAiLz4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzA5NzBlZiIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDY5NDkiIHgxPSI2OC40NTQiIHgyPSIxOTguNTkiIHkxPSIyNDYuNzMiIHkyPSI5Ni4zNSIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgtNS43NTQsLTU2LjU5NCkiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzcyMDA0ZSIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMwMDE1YjEiIG9mZnNldD0iMSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibGluZWFyR3JhZGllbnQyMjcxOCIgeDE9IjU2LjczNSIgeDI9IjE1NS4yIiB5MT0iMjQ2Ljk2IiB5Mj0iNTguNTc1IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiM0ZjAwZGEiIG9mZnNldD0iMCIvPgogICAgICA8c3RvcCBzdG9wLWNvbG9yPSIjZTUzMTFiIiBvZmZzZXQ9IjEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50MjM0NjMiIHgxPSI2OC40NTQiIHgyPSIxOTguNTkiIHkxPSIyNDYuNzMiIHkyPSI5Ni4zNSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHhsaW5rOmhyZWY9IiNsaW5lYXJHcmFkaWVudDIyNzA4Ii8+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhckdyYWRpZW50OTAzIiB4MT0iNTQuNDc4IiB4Mj0iMTkyLjEiIHkxPSIyNDcuNTYiIHkyPSI5LjgwOTUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoLjg3OTIzIDAgMCAuODc5MjMgLTkuNTUxIDQ4Ljc4NykiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2RjMTgwZCIgb2Zmc2V0PSIwIi8+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiNmOTZlMjAiIG9mZnNldD0iLjUiLz4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iI2Y0Y2U0MSIgb2Zmc2V0PSIxIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXJHcmFkaWVudDkxOCIgeDE9IjM5LjQ2OCIgeDI9IjE1NC45OSIgeTE9IjIwNC4yMiIgeTI9IjEyNC40NyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHhsaW5rOmhyZWY9IiNsaW5lYXJHcmFkaWVudDIyNzA4Ii8+CiAgPC9kZWZzPgogIDxnIHRyYW5zZm9ybT0ibWF0cml4KDIuNDczIDAgMCAyLjQ3MyAtNC44OTc4IC00Ljg4MTIpIj4KICAgIDxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01LjU0OTYsLTU3LjQxMikiIGQ9Im0xNDguMTYgNTkuMzkzYy03LjcwOTggOS4zOTg1LTE5Ljk1MSA0Mi44ODgtMjAuNjk2IDQ5LjIwNC0wLjE2OTk0IDQuNjczNyAxLjM3MzEgMTQuMjMxIDAuNjcxODIgMTUuODA1LTAuNzE5MDkgMS42MTM0LTUuMTE3LTkuNDQ2MS03LjIxNTEtNi4zMjY2LTEyLjIxOSAxOC4xNjgtMTAuNyAxNy43MzEtMTUuNTgyIDMxLjM3OC0xLjgzNTcgNS4xMzE1LTAuNDI0NDcgMjEuOTktMS41NjY2IDIzLjc3My0xLjI3MyAxLjk4NjYtMy45NjItMTIuMzEtNi44MDYzLTkuMjM2LTExLjYwMyAxMi41NC0xNi4yNzkgMjAuMzc5LTIyLjMzNiAzMC42MDctMy4zNTg5IDUuNjcyNS0yLjE4MTcgMjMuMzMtMy41MDYgMjQuNjc0LTEuMzAyMyAxLjMyMTUtMy44NTY2LTE4LjMyNi03LjY0MzctMTQuMzA5LTguNTE5MyA5LjAzOC0xNC4wNTQgMTMuNDQxLTE4Ljk0NiAxOS4yNTItNS4xOTgxIDYuMTczOS0wLjc4MjUxIDE3LjU4NC01LjA2NzIgMzUuMzgzbDAuMTQ0OCAwLjIyMDczYzc3LjQ0Ny01MC4zMDggMTAxLjUyLTEyNy4xNiAxMDcuNjEtMTgxLjE5LTAuNjgwNTEgNjMuOTMtMjkuNDEgMTQyLjc4LTEwNS4zMyAxODQuNjVsMC4xMTI3IDAuMTcxNDFjMjAuMjQxLTIuMTgxIDIyLjMwNyAxMC40NTggNDQuNTYyLTQuMjgzNyA1NS43OTItNDguMjc3IDgxLjg1Ni0xMjQuMjkgNjEuNTkzLTE5OS43OHoiIGRpc3BsYXk9Im5vbmUiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQ5MDMpIi8+CiAgICA8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNS41NDk4LC01Ny40MTIpIiBkPSJtMTQ4LjE2IDU5LjM5M2MtNy43MDk4IDkuMzk4NS0xOS45NTEgNDIuODg4LTIwLjY5NiA0OS4yMDQtMC4xNjk5NCA0LjY3MzcgMS4zNzMxIDE0LjIzMSAwLjY3MTgyIDE1LjgwNS0wLjcxOTA5IDEuNjEzNC01LjExNy05LjQ0NjEtNy4yMTUxLTYuMzI2Ni0xMi4yMTkgMTguMTY4LTEwLjcgMTcuNzMxLTE1LjU4MiAzMS4zNzgtMS44MzU3IDUuMTMxNS0wLjQyNDQ3IDIxLjk5LTEuNTY2NiAyMy43NzMtMS4yNzMgMS45ODY2LTMuOTYyLTEyLjMxLTYuODA2My05LjIzNi0xMS42MDMgMTIuNTQtMTYuMjc5IDIwLjM3OS0yMi4zMzYgMzAuNjA3LTMuMzU4OSA1LjY3MjUtMi4xODE3IDIzLjMzLTMuNTA2IDI0LjY3NC0xLjMwMjMgMS4zMjE1LTMuODU2Ni0xOC4zMjYtNy42NDM3LTE0LjMwOS04LjUxOTMgOS4wMzgtMTQuMDU0IDEzLjQ0MS0xOC45NDYgMTkuMjUyLTUuMTk4MSA2LjE3MzktMC43ODI1MSAxNy41ODQtNS4wNjcyIDM1LjM4M2wwLjE0NDggMC4yMjA3M2M3Ny40NDctNTAuMzA4IDEwMS41Mi0xMjcuMTYgMTA3LjYxLTE4MS4xOS0wLjY4MDUxIDYzLjkzLTI5LjQxIDE0Mi43OC0xMDUuMzMgMTg0LjY1bDAuMTEyNyAwLjE3MTQxYzIwLjI0MS0yLjE4MSAyMi4zMDcgMTAuNDU4IDQ0LjU2Mi00LjI4MzcgNTUuNzkyLTQ4LjI3NyA4MS44NTYtMTI0LjI5IDYxLjU5My0xOTkuNzh6IiBmaWxsPSJ1cmwoI2xpbmVhckdyYWRpZW50OTE4KSIvPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAyLjAyMThlLTUpIj4KICAgICAgPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTUuNzU0MywtNTYuNTk0KSIgZD0ibTExMS4yNSA4MS4wMjRjLTQ4LjM5NC0xLjVlLTUgLTg3LjYyNSAzOS4yMzEtODcuNjI1IDg3LjYyNSAwLjAxNzQgMjAuNDQzIDcuMTgxOCA0MC4yMzYgMjAuMjUzIDU1Ljk1NCAwLjI1MjMtMC40MjIyNCAwLjUzNjI5LTAuODI0MjMgMC44NTc4My0xLjIwNjEgNC44OTItNS44MTA0IDEwLjQyNy0xMC4yMTQgMTguOTQ2LTE5LjI1MiAzLjc4NzEtNC4wMTc2IDYuMzQxMiAxNS42MyA3LjY0MzUgMTQuMzA5IDEuMzI0My0xLjM0MzkgMC4xNDczLTE5LjAwMSAzLjUwNjItMjQuNjc0IDYuMDU2My0xMC4yMjggMTAuNzMzLTE4LjA2NyAyMi4zMzYtMzAuNjA3IDIuODQ0My0zLjA3NDEgNS41MzMzIDExLjIyMyA2LjgwNjMgOS4yMzYxIDEuMTQyMS0xLjc4MjMtMC4yNjk0MS0xOC42NDEgMS41NjYzLTIzLjc3MyA0Ljg4MTktMTMuNjQ3IDMuMzYzMS0xMy4yMSAxNS41ODItMzEuMzc4IDIuMDk4LTMuMTE5NSA2LjQ5NiA3Ljk0MDIgNy4yMTUxIDYuMzI2OCAwLjcwMTI2LTEuNTczNC0wLjg0MTczLTExLjEzMS0wLjY3MTc5LTE1LjgwNSAwLjM3MTYxLTMuMTQ5OCAzLjYwMzYtMTMuMDU5IDcuNzA1NS0yMy4zNjctNy44NDMyLTIuMjQ3Mi0xNS45NjItMy4zODgxLTI0LjEyLTMuMzg5NXptNDMuMTQyIDExLjM1NmM1LjU2NjIgNjEuNTk1LTE4LjQyNiAxMjAuNy02Mi43OTYgMTYxLjY1IDYuNDQ2IDEuNDg1NyAxMy4wNCAyLjIzNjcgMTkuNjU1IDIuMjM4NiA0OC4zOTQgMWUtNSA4Ny42MjUtMzkuMjMxIDg3LjYyNS04Ny42MjUtMy4xZS00IC0zMS41ODEtMTYuOTk1LTYwLjcxOS00NC40ODQtNzYuMjY4eiIgZGlzcGxheT0ibm9uZSIgZmlsbD0idXJsKCNsaW5lYXJHcmFkaWVudDIyNzE4KSIvPgogICAgICA8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNS43NTQsLTU2LjU5NCkiIGQ9Im0xMTEuMjUgODEuMDI0Yy00OC4zOTQtMS41ZS01IC04Ny42MjUgMzkuMjMxLTg3LjYyNSA4Ny42MjUgMC4wMTc0IDIwLjQ0MyA3LjE4MTggNDAuMjM2IDIwLjI1MyA1NS45NTQgMC4yNTIzLTAuNDIyMjQgMC41MzYyOS0wLjgyNDIzIDAuODU3ODMtMS4yMDYxIDQuODkyLTUuODEwNCAxMC40MjctMTAuMjE0IDE4Ljk0Ni0xOS4yNTIgMy43ODcxLTQuMDE3NiA2LjM0MTIgMTUuNjMgNy42NDM1IDE0LjMwOSAxLjMyNDMtMS4zNDM5IDAuMTQ3My0xOS4wMDEgMy41MDYyLTI0LjY3NCA2LjA1NjMtMTAuMjI4IDEwLjczMy0xOC4wNjcgMjIuMzM2LTMwLjYwNyAyLjg0NDMtMy4wNzQxIDUuNTMzMyAxMS4yMjMgNi44MDYzIDkuMjM2MSAxLjE0MjEtMS43ODIzLTAuMjY5NDEtMTguNjQxIDEuNTY2My0yMy43NzMgNC44ODE5LTEzLjY0NyAzLjM2MzEtMTMuMjEgMTUuNTgyLTMxLjM3OCAyLjA5OC0zLjExOTUgNi40OTYgNy45NDAyIDcuMjE1MSA2LjMyNjggMC43MDEyNi0xLjU3MzQtMC44NDE3My0xMS4xMzEtMC42NzE3OS0xNS44MDUgMC4zNzE2MS0zLjE0OTggMy42MDM2LTEzLjA1OSA3LjcwNTUtMjMuMzY3LTcuODQzMi0yLjI0NzItMTUuOTYyLTMuMzg4MS0yNC4xMi0zLjM4OTV6bTQzLjE0MiAxMS4zNTZjNS41NjYyIDYxLjU5NS0xOC40MjYgMTIwLjctNjIuNzk2IDE2MS42NSA2LjQ0NiAxLjQ4NTcgMTMuMDQgMi4yMzY3IDE5LjY1NSAyLjIzODYgNDguMzk0IDFlLTUgODcuNjI1LTM5LjIzMSA4Ny42MjUtODcuNjI1LTMuMWUtNCAtMzEuNTgxLTE2Ljk5NS02MC43MTktNDQuNDg0LTc2LjI2OHoiIGRpc3BsYXk9Im5vbmUiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQyMzQ2MykiLz4KICAgICAgPHBhdGggZD0ibTEwNS41IDI0LjQzYy00OC4zOTQtMS41ZS01IC04Ny42MjUgMzkuMjMxLTg3LjYyNSA4Ny42MjUgMC4wMTc0IDIwLjQ0MyA3LjE4MTggNDAuMjM2IDIwLjI1MyA1NS45NTQgMC4yNTIzLTAuNDIyMjQgMC41MzYyOS0wLjgyNDIzIDAuODU3ODMtMS4yMDYxIDQuODkyLTUuODEwNCAxMC40MjctMTAuMjE0IDE4Ljk0Ni0xOS4yNTIgMy43ODcxLTQuMDE3NiA2LjM0MTIgMTUuNjMgNy42NDM1IDE0LjMwOSAxLjMyNDMtMS4zNDM5IDAuMTQ3My0xOS4wMDEgMy41MDYyLTI0LjY3NCA2LjA1NjMtMTAuMjI4IDEwLjczMy0xOC4wNjcgMjIuMzM2LTMwLjYwNyAyLjg0NDMtMy4wNzQxIDUuNTMzMyAxMS4yMjMgNi44MDYzIDkuMjM2MSAxLjE0MjEtMS43ODIzLTAuMjY5NDEtMTguNjQxIDEuNTY2My0yMy43NzMgNC44ODE5LTEzLjY0NyAzLjM2MzEtMTMuMjEgMTUuNTgyLTMxLjM3OCAyLjA5OC0zLjExOTUgNi40OTYgNy45NDAyIDcuMjE1MSA2LjMyNjggMC43MDEyNi0xLjU3MzQtMC44NDE3My0xMS4xMzEtMC42NzE3OS0xNS44MDUgMC4zNzE2MS0zLjE0OTggMy42MDM2LTEzLjA1OSA3LjcwNTUtMjMuMzY3LTcuODQzMi0yLjI0NzItMTUuOTYyLTMuMzg4MS0yNC4xMi0zLjM4OTV6bTQzLjE0MiAxMS4zNTZjNS41NjYyIDYxLjU5NS0xOC40MjYgMTIwLjctNjIuNzk2IDE2MS42NSA2LjQ0NiAxLjQ4NTcgMTMuMDQgMi4yMzY3IDE5LjY1NSAyLjIzODYgNDguMzk0IDFlLTUgODcuNjI1LTM5LjIzMSA4Ny42MjUtODcuNjI1LTMuMWUtNCAtMzEuNTgxLTE2Ljk5NS02MC43MTktNDQuNDg0LTc2LjI2OHoiIGZpbGw9InVybCgjbGluZWFyR3JhZGllbnQ2OTQ5KSIvPgogICAgPC9nPgogIDwvZz4KPC9zdmc+Cg==" width="48" height="48" alt="" decoding="async"></a><span>C07 LibreChat：以对话产品为入口，扩展到可配置的 Agent 运行</span></h1>
+<h2 id="chapter-5-h57">定位与设计理念</h2>
+<p>LibreChat 将多 Provider、用户系统、历史和工具放在熟悉的聊天界面中，同时提供 Agent Builder、子代理／多代理和代码执行等能力。它适合希望自行托管一个统一 AI 工作入口的团队。<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/README.md" target="_blank" rel="noopener noreferrer">README</a></p>
+<p>LibreChat 将熟悉的对话产品与可配置 Agent 结合，适合团队自建统一入口。用户系统、历史、模型、工具和 Agent Builder 在同一服务中组织，但共享一个 Agent 不等于共享所有人的权限。设计团队助理时，最重要的问题是资料从哪里来、工具以谁的身份执行、谁可以修改职责与配置。</p>
+<h2 id="chapter-5-h58">工作原理与架构图</h2>
+<p>下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。</p>
+<figure class="diagram profile-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="C07 LibreChat 架构示意"><title>C07 LibreChat 架构示意</title><defs><marker id="profile-arrow-90" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">C07 · LibreChat</text><rect x="30" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="162.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">网页用户与 Agent Builder</text><text x="162.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">任务和角色配置</text><rect x="347" y="75" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="479.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">服务端会话与运行创建</text><text x="479.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">模型、消息、工具和摘要</text><rect x="664" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">Provider／Agent 执行包</text><text x="796.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">具体模型与运行能力</text><rect x="30" y="305" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="162.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">历史、追踪及结果</text><text x="162.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">返回对应用户</text><rect x="347" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="479.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">工具、代码执行、子代理</text><text x="479.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">按配置接入</text><rect x="664" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">运行生命周期管理</text><text x="796.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">调用、交接和结束</text><path d="M295 118 H344" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><path d="M612 118 H661" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><path d="M796 161 V302" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><path d="M664 348 H615" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><path d="M347 348 H298" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><path d="M162 305 V238 H479 V164" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-90)"/><text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text><text x="30" y="437" font-size="13" fill="#60796f">公开源码与文档中的关键责任分工；图中能力不表示每种入口与安装方式都默认开放。</text></svg><figcaption>C07 LibreChat：工作原理与责任分工。图示依据与适用边界见相邻正文。</figcaption></figure>
+<p>服务端创建运行时，将模型、消息、工具、摘要、子代理配置和追踪信息交给 Agent 执行包。它并非只转发一个 HTTP 请求；会话、工具发现和长期运行需要由服务端管理。但底层依赖的完整实现还在其他包里，本报告不把单个仓库的导入语句当作已经审计整个依赖树。<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/run.ts" target="_blank" rel="noopener noreferrer">运行创建</a>、<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/client.ts" target="_blank" rel="noopener noreferrer">客户端衔接</a></p>
+<p>服务端把模型、消息、工具与子代理配置交给执行包，再衔接会话与追踪。它不只是 HTTP 转发，但单个仓库中的封装也不等于底层依赖全被审计。共享 Agent 的配置与调用凭据尤其需要分开：某人能调用“销售助理”，不能据此推定他可以使用创建者的全部业务账户。用只读 Agent 起步，有助于先把知识与身份关系理顺。</p>
+<h3 id="chapter-5-h59">深入一层：聊天 API、Agent 图与工具审批的连接</h3>
+<p>LibreChat 的 Agent 运行路径在服务端组织图配置、工具与事件流。界面中的一条对话可能触发多轮模型和工具交互，不能只看成一次聊天 HTTP 请求。审批、后台任务与子代理相关能力也需要在运行配置中落实，不能因为界面可以选择 Agent 就认定所有工具已开放。</p>
+<figure class="diagram profile-diagram detail-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" role="img" aria-label="C07 · 聊天 API、Agent 图与工具审批的连接"><title>C07 · 聊天 API、Agent 图与工具审批的连接</title><desc>本图为相邻正文所述的架构切面。箭头表示主要信息或控制交接；具体证据和省略范围见正文。</desc><defs><marker id="profile-arrow-91" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="630" rx="16" fill="#f3f7f6"/><text x="40" y="38" font-size="20" font-weight="600" fill="#163d34">C07 · 聊天 API、Agent 图与工具审批的连接</text><text x="40" y="66" font-size="14" fill="#60796f">深入一层 · 模块、交接与状态；配合图下的机制表阅读</text><path class="edge-halo" d="M300 150 L350 150" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="1-2" d="M300 150 L350 150" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M610 150 L660 150" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="2-3" d="M610 150 L660 150" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M660 170 L630 170 L630 250 L320 250 L320 300 L300 300" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="3-4" d="M660 170 L630 170 L630 250 L320 250 L320 300 L300 300" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M300 320 L350 320" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="4-5" d="M300 320 L350 320" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M610 320 L660 320" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="5-6" d="M610 320 L660 320" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M660 300 L610 300" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="6-5" d="M660 300 L610 300" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M480 370 L480 440" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="5-7" d="M480 370 L480 440" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><path class="edge-halo" d="M610 490 L660 490" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="7-8" d="M610 490 L660 490" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-91)"/><rect data-node="1" x="40" y="100" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">浏览器用户</text><text x="170.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">对话与 Agent 选择</text><rect data-node="2" x="350" y="100" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="480.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">API 客户端层</text><text x="480.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">请求、身份与消息</text><rect data-node="3" x="660" y="100" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">工具策略与审批</text><text x="790.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">按运行配置处理</text><rect data-node="4" x="40" y="270" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">Agent 图配置</text><text x="170.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">单代理／协作路径</text><rect data-node="5" x="350" y="270" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="480.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">运行与事件流</text><text x="480.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">模型和工具的多轮工作</text><rect data-node="6" x="660" y="270" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">工具及子任务</text><text x="790.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">实际操作与结果</text><rect data-node="7" x="350" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">消息和运行记录</text><text x="480.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">返回前端并持久化</text><rect data-node="8" x="660" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="790.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">用户继续或停止</text><text x="790.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">检查结果及副作用</text><text x="40" y="600" font-size="14" fill="#60796f">主路径经过裁剪；同色框仅用于突出阅读重点，不代表相同进程或权限。</text></svg><figcaption>C07 深入一层：聊天 API、Agent 图与工具审批的连接。图示依据与适用边界见相邻正文。</figcaption></figure>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>模块／交接点</th>
+<th>怎样工作</th>
+<th>状态与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>客户端层</td>
+<td>把用户请求和消息送入运行流程</td>
+<td>用户身份与会话上下文需要正确关联。</td>
+</tr>
+<tr>
+<td>图与工具</td>
+<td>运行图组织代理行为及工具调用</td>
+<td>图中的角色与实际工具范围共同决定能力。</td>
+</tr>
+<tr>
+<td>事件与中止</td>
+<td>前端消费流，服务端承担实际执行</td>
+<td>停止显示与取消已经发出的操作不能混同。</td>
+</tr>
+</tbody></table></div>
+<p><strong>沿着一次任务看数据怎样走。</strong> 例如让 Agent 查资料后生成文件：先确认知识和工具可用，再观察资料调用、文件生成与结果返回。若浏览器断开，应该根据服务端记录判断任务状态，不能仅凭页面空白就重复提交有副作用的请求。</p>
+<p><strong>与相近工具的实质差别。</strong> 与本地桌面会话工具相比，LibreChat 增加了服务端用户、运行与持久化边界；与 Dify 相比，其入口更偏对话，而非首先要求用户画出完整业务流程。</p>
+<p>本节细图与机制依据：<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/run.ts" target="_blank" rel="noopener noreferrer">run.ts</a>、<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/client.ts" target="_blank" rel="noopener noreferrer">client.ts</a>、<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/README.md" target="_blank" rel="noopener noreferrer">README.md</a>。箭头表示主要信息或控制交接，不表示所有分支必然并行；省略的模块不能视为不存在。</p>
+<h2 id="chapter-5-h60">能力、状态与边界</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>观察项</th>
+<th>实际机制／公开能力</th>
+<th>对使用者意味着什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>对话产品</td>
+<td>多用户、历史与多个 Provider</td>
+<td>历史和资料需要按用户及共享规则管理</td>
+</tr>
+<tr>
+<td>Agent Builder</td>
+<td>配置职责、模型和工具</td>
+<td>职责应包含来源和完成条件，不只是人格描述</td>
+</tr>
+<tr>
+<td>运行层</td>
+<td>服务端衔接独立执行包</td>
+<td>审计边界要包含所依赖模块，不能只看导入语句</td>
+</tr>
+<tr>
+<td>分工</td>
+<td>可配置子代理／多代理等能力</td>
+<td>明确输入、交接和最终核验责任</td>
+</tr>
+<tr>
+<td>凭据</td>
+<td>用户凭据与共享 Agent 配置有不同范围</td>
+<td>逐项验证工具实际使用哪个账户</td>
+</tr>
+<tr>
+<td>运维</td>
+<td>服务、数据库和历史保存</td>
+<td>部署之外还需备份、升级及失败诊断</td>
+</tr>
+</tbody></table></div>
+<p><strong>把机制放进实际工作。</strong></p>
+<p>Agent 配置本身是一种共享资产，既包含职责，也可能关联强工具。谁能修改它、谁能使用它、工具以谁的身份调用，应分别明确。团队试点可以用两个权限不同的用户验证同一任务，观察资料和工具范围是否按预期变化。</p>
+<p>服务端运行跨越模型请求、工具执行和持久化。模型已经返回结果而数据库保存失败，与模型本身失败不同；工具执行成功但客户端断连，也不应直接触发重复操作。排错应查看实际运行与外部状态，再决定继续或重试。</p>
+<p>子代理和代码执行可以提高任务能力，同时增加追踪与资源需求。研究 Agent 的结论应带来源，计算 Agent 的输出应带方法与输入，最终负责人再核对。大量角色若没有清楚交接，只会把一份错误分散到更多对话中。自托管团队应先稳定少数高频职责，再逐步扩展。</p>
+<h2 id="chapter-5-h61">从安装到完成第一个任务</h2>
+<ol>
+<li><p>按官方部署文档准备服务、数据库与模型入口，先建立单用户可用基线并验证历史保存。</p>
+</li>
+<li><p>创建一个只读研究 Agent，限定资料来源和输出格式；先不接会写入外部系统的工具。</p>
+</li>
+<li><p>用两个用户测试共享和私有资料，以及 Agent 配置的查看、修改与调用权限；核对实际工具身份。</p>
+</li>
+<li><p>确需复杂任务再加入代码执行或子代理，要求保存可复查证据并控制资源；同一输入重跑时观察结果和副作用。</p>
+</li>
+<li><p>团队推广前安排备份、模型变更与权限回归。服务失败时从模型请求、工具执行和持久化三层分别定位。</p>
+</li>
+</ol>
+<p>下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。</p>
+<pre><code>共享 Agent 配置检查：
+职责与来源 → 可调用模型 → 可用工具
+谁可使用／谁可修改 → 工具使用谁的凭据
+历史与产物归谁 → 错误如何追踪和恢复</code></pre><h2 id="chapter-5-h62">典型任务与验收方法</h2>
+<p>下面是一份<strong>可直接改写使用的试用任务</strong>，属于本报告设计的验收示例，并非已完成的运行测试。</p>
+<blockquote>
+<p>建立一个团队研究助理，只根据指定资料回答产品问题；遇到证据冲突列出来源，需要计算时保存计算方法，不直接改写业务系统。</p>
+</blockquote>
+<p>除了回答质量，用不同用户核对可见范围与凭据。检查 Agent 是否为没有答案的问题编造结论，子代理的引用能否回到原文，以及服务中断后历史和结果是否一致。</p>
+<h2 id="chapter-5-h63">模型搭配、适用方向与取舍</h2>
+<p>选型建议是针对每个 Agent 的职责固定模型：资料摘要可用经济档，代码执行与复杂工具链用更稳的档位。可选家族以当前适配目录为准。适合共享助理、团队研究、统一模型管理和自定义业务 Agent。难度：中高，尤其需要维护服务与数据库。</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>选择路线</th>
+<th>候选组合</th>
+<th>怎样决定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单 Agent 基线</td>
+<td>当前 Provider 支持的强工具模型</td>
+<td>用受限职责建立可检查结果，再扩展角色。</td>
+</tr>
+<tr>
+<td>分工方案</td>
+<td>研究／执行用强档，摘要用经济档</td>
+<td>交接必须保留来源和约束；角色多不等于更准确。</td>
+</tr>
+<tr>
+<td>组织方案</td>
+<td>批准的云端或私有端点</td>
+<td>同时验证账户、资料与工具身份，模型不能补齐治理。</td>
+</tr>
+</tbody></table></div>
+<p>适合有部署能力、想统一多个模型和业务 Agent 的团队。代价是数据库、权限与扩展维护。与 Open WebUI 比较具体 Agent 配置与知识流程；与 LobeHub 比较协作组织与使用习惯，不必仅按模型数量判断。</p>
+<h2 id="chapter-5-h64">资料依据与继续阅读</h2>
+<p><a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/README.md" target="_blank" rel="noopener noreferrer">README</a>、<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/run.ts" target="_blank" rel="noopener noreferrer">运行创建</a>、<a href="https://github.com/danny-avila/LibreChat/blob/ef89fbd5b3840ef9b628ab0763a862623cdce18b/packages/api/src/agents/client.ts" target="_blank" rel="noopener noreferrer">客户端衔接</a>。</p>
+<p>源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。</p>
+<p></section><div class="pagination" aria-label="顺序阅读"><a rel="prev" href="c06.html"><small>← 上一页</small>C06 Open WebUI：自托管的共享 AI 门户，工具执行能力取决于部署</a><a rel="next" href="c08.html"><small>下一页 →</small>C08 LobeHub：从“助手集合”走向有状态的协作工作台</a></div><footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><dialog id="site-search" aria-labelledby="search-title"><div class="search-head"><h2 id="search-title">搜索全站</h2><button type="button" id="close-search" aria-label="关闭搜索">关闭 ×</button></div><label for="global-search">工具、原理或任务关键词</label><input id="global-search" type="search" placeholder="例如：Pi、小说、上下文压缩" autocomplete="off"><p id="search-status" role="status" aria-live="polite">输入关键词，搜索所有章节与工具正文。</p><ol id="search-results"></ol><noscript>搜索需要 JavaScript；也可使用首页章节入口或完整单页版的浏览器查找。</noscript></dialog><a class="to-top" href="#top">回到顶部 ↑</a><script src="../site-assets/search.js"></script><script src="../site-assets/site.js"></script><script src="../site-assets/navigation.js"></script></body></html>

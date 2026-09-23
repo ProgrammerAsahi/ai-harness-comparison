@@ -54,7 +54,9 @@ npm run check
 | 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json` |
 | 来源与引用 | `research/pages-*.json`、`research/citations.json`、`research/source-manifest.json` |
 | 阅读版 HTML 与通用 SVG | `research/build_report.mjs`、`research/build_figures.py` |
-| 目录跟随、搜索和移动端菜单 | `research/report-navigation.js`；生成时内嵌到 HTML |
+| 分页结构、跨页链接与首页 | `research/build_site.mjs`、`research/site.css`；与单页共用已渲染正文 |
+| 全站搜索、旧首页锚点与页内状态 | `research/site.js`、`research/site-search.js` |
+| 目录跟随、标题筛选和移动端菜单 | `research/report-navigation.js`；生成时内嵌到 HTML |
 
 `research/editorial-baseline/` 是旧稿与当前生成输入。不要仅修改生成后的 Markdown，也不要直接批量改旧稿中的所有事实；先辨认相应生成器怎样组合内容，避免下一次构建覆盖修改。
 
@@ -112,6 +114,18 @@ npm run check:cached-sources
 
 在线地址：<https://programmerasahi.github.io/ai-harness-comparison/>。
 
-GitHub Pages 从 `main` 分支的根目录发布；`index.html` 将访问者带到自包含报告，`.nojekyll` 让 GitHub 直接发布静态文件。无需另外安装网站生成器或配置服务器。
+GitHub Pages 从 `main` 分支的根目录发布；`index.html` 是分页版首页，`read/` 保存章节与工具页，`site-assets/` 保存本地共享资源；完整单页版保留原地址，`.nojekyll` 让 GitHub 直接发布静态文件。无需另外安装网站生成器或配置服务器。
 
-更新报告时，先运行 `npm run build` 和 `npm run check`，把生成的 HTML 与源码一起提交。合并到 `main` 后，GitHub 会自动部署已提交的文件，Pages 不会替你重新生成报告。部署状态见仓库 **Actions**，发布来源见 **Settings → Pages**。页面未更新时先确认部署成功，再刷新浏览器。
+更新报告时，先运行 `npm run build` 和 `npm run check`，把 `index.html`、`read/`、`site-assets/`、完整单页 HTML 与源码一起提交。合并到 `main` 后，GitHub 会自动部署已提交的文件，Pages 不会替你重新生成报告。部署状态见仓库 **Actions**，发布来源见 **Settings → Pages**。页面未更新时先确认部署成功，再刷新浏览器。
+
+## 分页版的维护
+
+`npm run build` 和 `npm run build:html` 同时生成两种阅读版。不要手工修改 `read/` 或 `site-assets/`；页面取自同一次 Markdown 渲染，搜索索引也从同一内容生成，不另写一份工具正文。
+
+- 普通章节一页；四个分类页保留导读及维护说明，每份工具档案单独成页。工具地址使用稳定编号，例如 `read/a02.html`，名称变化不应改变地址。
+- 保留单页中的标题 ID 与工具锚点。生成器将跨页引用重写到目标页面；旧首页锚点通过本地映射跳转，旧单页链接仍保持有效。
+- 搜索按需加载本地索引，结果指向具体小节。所有页面共用深浅模式设置；目录使用现有跟随控制器，并保存各页展开状态。
+- `npm run test:site` 检查搜索、加载失败重试、键盘入口和旧锚点行为；`npm run check` 另核验全部页面链接、工具正文一致性、栏目、图表数量和搜索目标。模拟交互与静态检查不能替代浏览器视觉验收。
+- 删除或迁移页面时，应显式维护旧 URL；不要批量清空输出目录，以免破坏已有引用。
+
+离线查看分页版请保留整个项目目录，直接打开 `index.html`。不需要本地服务器；单独分享一份文件时请使用完整单页 HTML。

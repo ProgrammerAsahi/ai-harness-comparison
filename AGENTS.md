@@ -7,7 +7,7 @@
 1. 阅读 `README.md`、`research/研究材料说明.md` 和 `HISTORY.md`，检查 Git 状态与本次需求涉及的章节。保留用户已有修改。
 2. 报告正文在 `report/`；根目录 `AI-Harness调研报告.html` 是供阅读的自包含产物。不要只修改 HTML，也不要把生成后的 Markdown 改动留在会被下一次生成覆盖的位置。
 3. 工具档案由 `research/profile_expansions*.py`、`profile_deepdives.py`、`profile_models.py`、`profile_diagrams.py` 与 `build_profiles.py` 生成。旧稿 `research/editorial-baseline/` 目前仍是生成输入，不是当前正文，不能仅因“旧”就删除。
-4. 根目录 README 为人工维护入口，不由报告生成器覆盖。通用章节由 `integrate_report.py` 组织；全景清单由 `build_inventory.py` 组织；引用由 `render_references.py` 和 `build_references.py` 维护；通用图由 `build_figures.py` 绘制；HTML 由 `build_report.mjs` 生成。先确认真正的编辑入口。
+4. 根目录 README 为人工维护入口，不由报告生成器覆盖。通用章节由 `integrate_report.py` 组织；全景清单由 `build_inventory.py` 组织；引用由 `render_references.py` 和 `build_references.py` 维护；通用图由 `build_figures.py` 绘制；HTML 由 `build_report.mjs` 生成，分页版由 `build_site.mjs` 使用同一次渲染结果生成。先确认真正的编辑入口。
 5. 不主动安装或运行被研究的 Harness，不发起付费模型测试。需要运行测试时，先确认它属于用户授权的范围；报告生成与本地检查按正常工作直接完成。
 
 ## 所有工具平等编排
@@ -53,6 +53,7 @@
 - 表格用于平行比较；大段解释放在表外。命令、代码和概念配置注明适用版本及前置条件。示例任务属于试用方案，未经执行不能写成成功案例。
 - 新工具或新模型加入时，检查清单、档案、分类、相关场景、模型与成本、验收、术语、引用和导航是否需要同步；不机械地在每一章插一段厂商专属内容。
 - 在线阅读版由 GitHub Pages 从 `main` 根目录发布；保留 `index.html` 入口和 `.nojekyll`，更新时提交重新生成的 HTML。README 同时保留在线与离线阅读方法。
+- 分页版以 `index.html` 为默认入口，普通章节与单个工具分别成页；保留 `read/`、`site-assets/`、完整单页 HTML 及旧锚点。不能另写一份分页正文，必须共用生成来源。搜索覆盖全部正文并定位到小节，标题筛选只作用于本页；跨页链接、顺序导航和旧链接兼容必须检查。
 - 保持报告可离线阅读，避免引入外部字体、脚本或图片依赖。保留直接跳转到工具档案的链接。内容数量由实际覆盖决定，不把当前数量当永久上限。
 - 左侧目录随正文位置指示当前标题，以箭头、深色和加粗突出当前项。当前标题的文字块应居于目录可滚动区域的垂直中心，到达滚动首尾时以边界为限；用户可手动浏览目录，继续滚动正文时恢复居中跟随。只在当前子标题被隐藏时自动展开所属父组；其他组保持用户原有的展开／收起状态，不自动折叠已离开的组。目录跟随只滚动目录自身，不拉动正文，也不覆盖正在使用的目录搜索结果。
 

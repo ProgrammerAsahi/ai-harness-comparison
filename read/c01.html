@@ -1,0 +1,167 @@
+<!doctype html><!--
+Page structure and interaction code: MIT.
+MIT License
+
+Copyright (c) 2026 ProgrammerAsahi and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Report text and original figures: CC BY 4.0.
+Copyright (c) 2026 ProgrammerAsahi and contributors.
+Third-party materials retain their original rights.
+--><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="C01 Hermes Agent：把一次任务的经验变成下一次可用的材料。阅读原理、证据与实际使用方法。"><script src="../site-assets/theme.js"></script><title>C01 Hermes Agent：把一次任务的经验变成下一次可用的材料 · AI Harness 报告</title><link rel="stylesheet" href="../site-assets/reading.css"></head><body id="top" class="paged-site" data-site-base="../"><aside class="sidebar"><a class="brand" href="../index.html">HARNESS / 研究与选型</a><div class="stamp">个人助理与知识工作台</div><button type="button" class="open-search" data-open-search>搜索全站 <kbd>⌘ / Ctrl K</kbd></button><details class="site-map"><summary>全部章节</summary><div role="navigation" aria-label="全站章节"><a  href="basics.html">从零理解</a><a  href="landscape.html">工具全景</a><a  href="terminal-agents.html">终端与开放代理</a><a  href="coding-workspaces.html">编辑器与托管工作台</a><a aria-current="page" href="personal-assistants.html">个人助理与知识工作台</a><a  href="workflows-and-history.html">相邻路线与维护观察</a><a  href="architecture.html">架构与取舍</a><a  href="scenarios.html">按场景选择</a><a  href="models-and-costs.html">模型与成本</a><a  href="evaluation.html">试用与验收</a><a  href="methodology.html">研究方法</a><a  href="references.html">参考资料</a></div></details><div class="toolbar"><button id="toggle-nav" aria-expanded="false">本页目录</button></div><label class="search-label" for="toc-search">本页目录</label><input type="search" id="toc-search" placeholder="筛选本页标题" autocomplete="off"><nav aria-label="本页目录"><details class="nav-group" open><summary><a href="#chapter-5-h1">C01 Hermes Agent：把一次任务的经验变成下一次可用的材料</a></summary><div class="nav-children"></div></details><details class="nav-group" open><summary><a href="#chapter-5-h2">定位与设计理念</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h3">工作原理与架构图</a></summary><div class="nav-children"><a href="#chapter-5-h4">深入一层：当前对话、持久记忆与委派的三种状态</a></div></details><details class="nav-group" ><summary><a href="#chapter-5-h5">能力、状态与边界</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h6">从安装到完成第一个任务</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h7">典型任务与验收方法</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h8">模型搭配、适用方向与取舍</a></summary><div class="nav-children"></div></details><details class="nav-group" ><summary><a href="#chapter-5-h9">资料依据与继续阅读</a></summary><div class="nav-children"></div></details><p class="empty">没有匹配的本页标题。试试“搜索全站”。</p></nav><div class="nav-foot"><a href="../AI-Harness调研报告.html#c01">完整单页版</a> · <button class="print" onclick="window.print()">打印本页</button><br><a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错</a></div></aside><main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><div class="breadcrumb" aria-label="当前位置"><a href="../index.html">首页</a><span>／</span><a href="personal-assistants.html">个人助理与知识工作台</a><span>／</span><span>C01 Hermes Agent</span></div><section class="chapter" data-chapter="c01"><a id="c01"></a></p>
+<h1 id="chapter-5-h1" class="tool-heading"><a class="tool-logo" href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/website/static/img/favicon.svg" title="官方项目或产品网站发布的标识。 点击查看官方来源。" aria-label="C01 标识来源：官方项目或产品网站发布的标识。"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7imKQ8L3RleHQ+Cjwvc3ZnPgo=" width="48" height="48" alt="" decoding="async"></a><span>C01 Hermes Agent：把一次任务的经验变成下一次可用的材料</span></h1>
+<h2 id="chapter-5-h2">定位与设计理念</h2>
+<p>Hermes 将长期使用放在中心：会话可以检索，经验可以写成记忆和 Skills，任务可以从 CLI、消息渠道或自动化入口到来。“会越用越懂你”在工程上主要意味着保存并重新使用材料，不是每聊一次就训练模型权重。<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/README.md" target="_blank" rel="noopener noreferrer">README</a></p>
+<p>Hermes 更关注长期使用而非单次回答。一次任务留下的经验、偏好与方法，可以在下一次被重新读取。其价值取决于保存的信息是否正确、是否能找回来以及是否及时修订。它适合有连续项目与重复工作的人；偶尔聊天的人未必需要承担多渠道和持续服务的配置成本。</p>
+<h2 id="chapter-5-h3">工作原理与架构图</h2>
+<p>下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。</p>
+<figure class="diagram profile-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="C01 Hermes Agent 架构示意"><title>C01 Hermes Agent 架构示意</title><defs><marker id="profile-arrow-77" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">C01 · Hermes Agent</text><rect x="30" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="162.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">CLI／消息渠道／定时入口</text><text x="162.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">任务与身份</text><rect x="347" y="75" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="479.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">上下文及记忆准备</text><text x="479.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">历史检索、Skills、偏好</text><rect x="664" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">Provider 与模型</text><text x="796.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">当前任务的推理</text><rect x="30" y="305" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="162.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">会话、记忆与经验材料</text><text x="162.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">保存供后续使用</text><rect x="347" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="479.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">工具和独立子代理</text><text x="479.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">执行、研究、汇总</text><rect x="664" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">Python 会话循环</text><text x="796.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">动作、纠错与终止</text><path d="M295 118 H344" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><path d="M612 118 H661" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><path d="M796 161 V302" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><path d="M664 348 H615" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><path d="M347 348 H298" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><path d="M162 305 V238 H479 V164" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-77)"/><text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text><text x="30" y="437" font-size="13" fill="#60796f">公开源码与文档中的关键责任分工；图中能力不表示每种入口与安装方式都默认开放。</text></svg><figcaption>C01 Hermes Agent：工作原理与责任分工。图示依据与适用边界见相邻正文。</figcaption></figure>
+<p>Python 会话循环把模型请求、上下文准备、工具分派和结果处理拆成多个部分；模型协议经适配后进入统一执行逻辑。记忆管理又通过独立 Provider 接口工作。在压缩前保存必要信息，是避免长任务丢失关键进展的一条路径。<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/conversation_loop.py" target="_blank" rel="noopener noreferrer">循环</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/memory_manager.py" target="_blank" rel="noopener noreferrer">记忆管理</a></p>
+<p>委派工具为子任务建立独立代理，主代理通常只看见任务与摘要，而不是所有中间步骤。源码还为子任务处理模型覆盖、工作树、取消和预算。特别要注意，子代理可以有自己的运行预算，父任务上限不能直接当作整棵任务树的总成本上限。<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/tools/delegate_tool.py" target="_blank" rel="noopener noreferrer">委派工具</a></p>
+<p>长期信息不应都塞进同一段提示。偏好描述你一般怎样工作，项目事实描述某个项目目前是什么样，Skill 描述一套可复用的方法，当前进度则记录这一项任务做到了哪里。Hermes 的记忆 Provider 和会话循环为这些材料提供保存与使用路径，但内容治理仍然重要。子代理拥有自己的上下文与预算，主任务得到汇总，因此要明确哪些结论值得长期保存，不能把未经核对的探索猜测直接变成记忆。</p>
+<h3 id="chapter-5-h4">深入一层：当前对话、持久记忆与委派的三种状态</h3>
+<p>Hermes 将单轮对话的请求、工具调度、重试与压缩放在 conversation loop 中，持久记忆则由专门模块管理。二者最容易被混淆：对话中出现过一件事，不代表它已经成为长期可用的记忆；记忆中保存了一个结论，也不代表它对今天的任务仍然正确。委派又是第三种状态，应带着明确输入返回结果。</p>
+<figure class="diagram profile-diagram detail-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 970" role="img" aria-label="C01 · 当前对话、持久记忆与委派的三种状态"><title>C01 · 当前对话、持久记忆与委派的三种状态</title><desc>本图为相邻正文所述的架构切面。箭头表示主要信息或控制交接；具体证据和省略范围见正文。</desc><defs><marker id="profile-arrow-78" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="970" rx="16" fill="#f3f7f6"/><text x="40" y="38" font-size="20" font-weight="600" fill="#163d34">C01 · 当前对话、持久记忆与委派的三种状态</text><text x="40" y="66" font-size="14" fill="#60796f">深入一层 · 模块、交接与状态；配合图下的机制表阅读</text><path class="edge-halo" d="M480 200 L480 270" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="1-2" d="M480 200 L480 270" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M300 470 L330 470 L330 340 L350 340" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="3-2" d="M300 470 L330 470 L330 340 L350 340" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M480 440 L480 370" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="4-2" d="M480 440 L480 370" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M610 340 L640 340 L640 470 L660 470" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="2-5" d="M610 340 L640 340 L640 470 L660 470" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M660 510 L630 510 L630 640 L610 640" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="5-6" d="M660 510 L630 510 L630 640 L610 640" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M350 640 L320 640 L320 320 L350 320" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="6-2" d="M350 640 L320 640 L320 320 L350 320" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M350 300 L20 300 L20 590 L150 590 L150 610" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="2-7" d="M350 300 L20 300 L20 590 L150 590 L150 610" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><path class="edge-halo" d="M300 680 L330 680 L330 810 L350 810" fill="none" stroke="#f3f7f6" stroke-width="6"/><path data-edge="7-8" d="M300 680 L330 680 L330 810 L350 810" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-78)"/><rect data-node="1" x="350" y="100" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="144.0" font-size="16" text-anchor="middle" fill="#24453c">用户消息</text><text x="480.0" y="168.0" font-size="16" text-anchor="middle" fill="#24453c">终端或相应消息入口</text><rect data-node="2" x="350" y="270" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="480.0" y="314.0" font-size="16" text-anchor="middle" fill="#24453c">Conversation Loop</text><text x="480.0" y="338.0" font-size="16" text-anchor="middle" fill="#24453c">一轮请求与工具调度</text><rect data-node="3" x="40" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">当前会话历史</text><text x="170.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">含压缩与重试处理</text><rect data-node="4" x="350" y="440" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">Memory Manager</text><text x="480.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">可跨任务保留的资料</text><rect data-node="5" x="660" y="440" width="260" height="100" rx="12" fill="#dceee9" stroke="#adc9bf"/><text x="790.0" y="484.0" font-size="16" text-anchor="middle" fill="#24453c">delegate 工具</text><text x="790.0" y="508.0" font-size="16" text-anchor="middle" fill="#24453c">范围明确的子任务</text><rect data-node="6" x="350" y="610" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="654.0" font-size="16" text-anchor="middle" fill="#24453c">工具观察和子结果</text><text x="480.0" y="678.0" font-size="16" text-anchor="middle" fill="#24453c">回到本轮会话</text><rect data-node="7" x="40" y="610" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="170.0" y="654.0" font-size="16" text-anchor="middle" fill="#24453c">会话记录与记忆更新</text><text x="170.0" y="678.0" font-size="16" text-anchor="middle" fill="#24453c">职责分别管理</text><rect data-node="8" x="350" y="780" width="260" height="100" rx="12" fill="#ffffff" stroke="#adc9bf"/><text x="480.0" y="824.0" font-size="16" text-anchor="middle" fill="#24453c">答复与任务成果</text><text x="480.0" y="848.0" font-size="16" text-anchor="middle" fill="#24453c">核验后再复用</text><text x="40" y="940" font-size="14" fill="#60796f">主路径经过裁剪；同色框仅用于突出阅读重点，不代表相同进程或权限。</text></svg><figcaption>C01 深入一层：当前对话、持久记忆与委派的三种状态。图示依据与适用边界见相邻正文。</figcaption></figure>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>模块／交接点</th>
+<th>怎样工作</th>
+<th>状态与边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>当前会话</td>
+<td>保持正在进行的任务与观察</td>
+<td>压缩改变输入组织，不能代替重要成果归档。</td>
+</tr>
+<tr>
+<td>持久记忆</td>
+<td>为后续任务保留可复用背景</td>
+<td>需要核对适用范围、来源和过期信息。</td>
+</tr>
+<tr>
+<td>委派</td>
+<td>把一部分工作交给子任务</td>
+<td>子结果应经过主任务核验再进入长期资料。</td>
+</tr>
+</tbody></table></div>
+<p><strong>沿着一次任务看数据怎样走。</strong> 例如持续整理个人知识库：当前会话处理这批材料，委派只调查指定主题，最终确认的偏好或事实才作为长期背景。若把一次猜测长期记住，后续任务会反复沿用错误，因此验收应包含“写入了什么记忆”。</p>
+<p><strong>与相近工具的实质差别。</strong> 与以仓库为中心的 CLI 相比，Hermes 更突出跨任务持续性；与 OpenClaw 相比，长期记忆与常驻消息网关仍是不同架构维度。</p>
+<p>本节细图与机制依据：<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/conversation_loop.py" target="_blank" rel="noopener noreferrer">conversation_loop.py</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/memory_manager.py" target="_blank" rel="noopener noreferrer">memory_manager.py</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/tools/delegate_tool.py" target="_blank" rel="noopener noreferrer">delegate_tool.py</a>。箭头表示主要信息或控制交接，不表示所有分支必然并行；省略的模块不能视为不存在。</p>
+<h2 id="chapter-5-h5">能力、状态与边界</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>观察项</th>
+<th>实际机制／公开能力</th>
+<th>对使用者意味着什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>长期材料</td>
+<td>记忆、历史检索与 Skills</td>
+<td>经验复用依赖正确保存和命中，不是训练权重</td>
+</tr>
+<tr>
+<td>压缩</td>
+<td>上下文处理与压缩前的信息保存</td>
+<td>关键事实应有可读出处，便于恢复核对</td>
+</tr>
+<tr>
+<td>委派</td>
+<td>独立代理、可选模型及工作树</td>
+<td>任务描述需包含交付格式和证据要求</td>
+</tr>
+<tr>
+<td>预算</td>
+<td>子任务可以拥有自己的上限</td>
+<td>父任务预算不自动等于整棵任务树总额</td>
+</tr>
+<tr>
+<td>入口</td>
+<td>CLI、消息和自动化等路线</td>
+<td>长期在线增加身份、服务与凭据管理</td>
+</tr>
+<tr>
+<td>记忆治理</td>
+<td>材料可积累，也需要修正</td>
+<td>明确哪些是偏好、事实、临时判断与过期信息</td>
+</tr>
+</tbody></table></div>
+<p><strong>把机制放进实际工作。</strong></p>
+<p>记忆至少有准确性、相关性和时效三个问题。保存的内容可能原本就错，也可能正确但与当前任务无关，还可能已经过期。长期使用应定期抽查重要事实与偏好，保留来源和修订方式。一次成功找回旧对话，只验证了检索的一部分。</p>
+<p>Skill 应保存稳定的方法，例如核对报告数字的步骤；项目进度则记录特定任务现在做到哪里。把临时失败、未经确认的偏好或推测都写入长期方法，会让错误在以后反复出现。更合理的做法是完成任务并核对后，再提炼可复用经验。</p>
+<p>子代理提供独立上下文，减少主任务被探索过程挤满，但也需要完整交接。研究者应返回来源、冲突和不确定项，而不只交一个结论。预算应合计主任务、所有委派、记忆处理与失败重试。消息渠道和定时任务启用后，还要检查身份、服务在线和重复动作，这些属于持续助理的完整成本。</p>
+<h2 id="chapter-5-h6">从安装到完成第一个任务</h2>
+<ol>
+<li><p>先按官方指南只配置本地 CLI 与一个模型，用一份资料整理任务验证工具、输出和保存位置。</p>
+</li>
+<li><p>给代理明确项目材料与引用要求，让它生成报告；检查事实后再决定哪些经验适合写入长期记忆或 Skill。</p>
+</li>
+<li><p>开启新会话询问上次任务，检查它是否能找到正确资料并保留来源；故意更新一项事实，验证旧信息怎样被修正。</p>
+</li>
+<li><p>独立研究较多时再委派子任务，规定输入、输出和预算，汇总时检查证据冲突及总成本。</p>
+</li>
+<li><p>最后才接消息渠道和定时工作。验证触发者身份、任务运行环境与结果投递，并安排对记忆和失败任务的定期检查。</p>
+</li>
+</ol>
+<p>下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。</p>
+<pre><code>建议分开保存四种材料：
+长期偏好：我的报告习惯与表达要求
+项目事实：术语、状态、来源及更新时间
+方法：可复用的资料核对步骤
+当前进度：已完成、失败原因、下一步</code></pre><h2 id="chapter-5-h7">典型任务与验收方法</h2>
+<p>下面是一份<strong>可直接改写使用的试用任务</strong>，属于本报告设计的验收示例，并非已完成的运行测试。</p>
+<blockquote>
+<p>每次根据新访谈补充同一份研究档案，保留来源和冲突观点。记住报告格式偏好，但不要把未证实的市场判断写成永久事实。</p>
+</blockquote>
+<p>做两次相隔的任务，才能观察长期价值。检查第二次是否准确找回既有材料，是否知道哪些事实已改变，以及能否解释来源。记得很多却无法纠错，比少记一些且依据清楚更难维护。</p>
+<h2 id="chapter-5-h8">模型搭配、适用方向与取舍</h2>
+<p>建议用可靠的 GPT／Claude 工具模型建立基线；中文任务与成本敏感场景比较当前适配的 Kimi、Qwen、DeepSeek。接本地模型时应检查真实上下文和工具调用能力，不能只看模型参数。适合持续研究助理、个人工作自动化、跨会话项目管理、从重复工作积累 Skills。难度：CLI 中；长期在线与多渠道运维高。</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>选择路线</th>
+<th>候选组合</th>
+<th>怎样决定</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>执行基线</td>
+<td>已适配的可靠 GPT／Claude 工具模型</td>
+<td>先完成文件、检索、计算和错误恢复，建立可信基线。</td>
+</tr>
+<tr>
+<td>中文与成本</td>
+<td>当前支持的 Kimi／Qwen／DeepSeek／Step</td>
+<td>使用真实任务比较；记忆和工具能力来自运行时，不来自模型名字。</td>
+</tr>
+<tr>
+<td>本地试验</td>
+<td>正确服务的开放模型</td>
+<td>先测短任务和多轮调用，复杂长任务另行验收。</td>
+</tr>
+</tbody></table></div>
+<p>适合持续研究、个人自动化和从重复工作积累方法。代价主要在记忆质量、多入口身份与长期运行。与编码 CLI 比较时看跨会话收益；与 OpenClaw 比较时，一个更突出经验与方法复用，另一个更突出渠道、设备与持续连接。</p>
+<h2 id="chapter-5-h9">资料依据与继续阅读</h2>
+<p><a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/README.md" target="_blank" rel="noopener noreferrer">README</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/conversation_loop.py" target="_blank" rel="noopener noreferrer">循环</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/agent/memory_manager.py" target="_blank" rel="noopener noreferrer">记忆管理</a>、<a href="https://github.com/NousResearch/hermes-agent/blob/42c1a93417fa588e735736a0740787ce37381ffd/tools/delegate_tool.py" target="_blank" rel="noopener noreferrer">委派工具</a>。</p>
+<p>源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。</p>
+<p></section><div class="pagination" aria-label="顺序阅读"><a rel="prev" href="personal-assistants.html"><small>← 上一页</small>个人助理与知识工作台</a><a rel="next" href="c02.html"><small>下一页 →</small>C02 OpenClaw：让个人代理持续在线，连接不同渠道与设备</a></div><footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><dialog id="site-search" aria-labelledby="search-title"><div class="search-head"><h2 id="search-title">搜索全站</h2><button type="button" id="close-search" aria-label="关闭搜索">关闭 ×</button></div><label for="global-search">工具、原理或任务关键词</label><input id="global-search" type="search" placeholder="例如：Pi、小说、上下文压缩" autocomplete="off"><p id="search-status" role="status" aria-live="polite">输入关键词，搜索所有章节与工具正文。</p><ol id="search-results"></ol><noscript>搜索需要 JavaScript；也可使用首页章节入口或完整单页版的浏览器查找。</noscript></dialog><a class="to-top" href="#top">回到顶部 ↑</a><script src="../site-assets/search.js"></script><script src="../site-assets/site.js"></script><script src="../site-assets/navigation.js"></script></body></html>

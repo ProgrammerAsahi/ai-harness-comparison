@@ -2,7 +2,7 @@
 
 一份面向中文读者的 AI 工具研究报告：解释 Claude Code、Codex、OpenCode 等工具怎样把大模型变成能执行任务的代理，以及如何按自己的任务选择工具与模型。
 
-**[在线阅读完整报告 →](https://programmerasahi.github.io/ai-harness-comparison/)**
+**[在线阅读报告 →](https://programmerasahi.github.io/ai-harness-comparison/)**
 
 覆盖 **55 份工具档案、40 个任务场景、120 幅架构与原理图**。内容包括工作原理、上手路线、模型搭配、成本和验收方法，适合从头阅读，也适合按需查阅。
 
@@ -12,12 +12,15 @@
 
 **只看报告，不需要安装 Python、Node.js 或任何 AI 工具。**
 
-- **在线交互版（推荐）：**[直接打开报告](https://programmerasahi.github.io/ai-harness-comparison/)，无需下载，支持深浅模式切换、目录搜索和阅读位置跟随。
+- **在线交互版（推荐）：**[直接打开报告](https://programmerasahi.github.io/ai-harness-comparison/)，无需下载。章节与工具分开成页，支持全站搜索、深浅模式和页内目录跟随。
+- **完整单页版：**[一次打开全部内容](https://programmerasahi.github.io/ai-harness-comparison/AI-Harness%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A.html)，适合全文查找和打印整份报告。
 - **GitHub 文字版：**从下方章节目录进入，Markdown 正文和图表可直接查看。
 - **离线交互版：**打开 [HTML 文件](AI-Harness调研报告.html)，点击文件页的 **Download raw file（下载原始文件）**，再用浏览器打开下载的文件。不要把 GitHub 文件展示页另存为报告。
-- **下载整个项目：**仓库首页选择 **Code → Download ZIP**，解压后打开根目录的 `AI-Harness调研报告.html`。这样也能访问报告旁的来源记录和文档。
+- **下载整个项目：**仓库首页选择 **Code → Download ZIP**，解压后打开根目录的 `index.html`，可离线使用分页与全站搜索；不要移走 `read/` 和 `site-assets/`。也可打开 `AI-Harness调研报告.html` 阅读完整单页。
 
-HTML 内含全部章节、标识、图示和脚本，可离线阅读。点击页面顶部的“深色模式／浅色模式”即可切换，浏览器会记住选择；首次打开时跟随系统。左侧目录支持标题搜索和阅读位置跟随；全文搜索使用 `Ctrl+F`（macOS：`⌘F`），侧栏底部可打印或另存为 PDF。单独下载 HTML 时，报告外的研究文件需要联网查看仓库或下载完整项目。
+分页版顶部点击“搜索全站”（快捷键 `Ctrl+K`，macOS 为 `⌘K`），可搜索全部正文并跳到相关小节；左侧目录只跟随和筛选当前页标题。页尾提供上一页／下一页，工具页顶部可返回所属分类。`Ctrl+F`／`⌘F` 只查当前页面。
+
+顶部按钮切换深浅模式，首次跟随系统，并记住选择。完整单页 HTML 内含全部章节、标识、图示和脚本，可独立保存；侧栏可打印或另存为 PDF。报告外的研究文件需要联网查看仓库或下载完整项目。
 
 ## 按需查阅
 
@@ -55,7 +58,7 @@ npm run build
 npm run check
 ```
 
-成功后，打开根目录的 `AI-Harness调研报告.html`。依赖安装需要网络，后续构建与常规检查可离线运行；无需模型 API Key，也不会安装或运行报告中研究的工具。
+成功后，打开根目录的 `index.html` 查看分页版，或 `AI-Harness调研报告.html` 查看完整单页版。依赖安装需要网络，后续构建与常规检查可离线运行；无需模型 API Key，也不会安装或运行报告中研究的工具。
 
 常见问题、编辑入口和可选来源核验见[贡献与构建指南](CONTRIBUTING.md)。研究记录说明见 [research](research/研究材料说明.md)，历史恢复依据见 [HISTORY.md](HISTORY.md)。
 
