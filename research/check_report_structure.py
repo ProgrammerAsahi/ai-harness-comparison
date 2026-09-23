@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote
 import hashlib,json,re,xml.etree.ElementTree as ET,unicodedata
+from profile_architecture import DETAIL, expected_figures, SUPPLEMENTS
 
 ROOT=Path(__file__).resolve().parent.parent
 expected=['定位与设计理念','工作原理与架构图','能力、状态与边界','从安装到完成第一个任务','典型任务与验收方法','模型搭配、适用方向与取舍','资料依据与继续阅读']
@@ -21,8 +22,10 @@ for file in sorted((ROOT/'report').glob('03*.md')):
         codeblocks=len(re.findall(r'^```(?:bash|vim|text|python|json|yaml)',body,re.M))
         citations=len(set(re.findall(r'\]\((https?://[^)]+)\)',body)))
         if headings!=expected:issues.append(f'{key}: inconsistent section structure {headings}')
-        if len(figures)!=1 or tables<2 or steps!=['1','2','3','4','5'] or not codeblocks or not citations:
+        if figures!=expected_figures(key) or tables<3 or steps!=['1','2','3','4','5'] or not codeblocks or not citations:
             issues.append(f'{key}: missing diagram/table/steps/example/source')
+        if '#### 深入一层：' not in body or '**沿着一次任务看数据怎样走。**' not in body or '**与相近工具的实质差别。**' not in body:
+            issues.append(f'{key}: missing lower-level architecture explanation')
         profiles.append(dict(id=key,title=title,sections=len(headings),diagrams=len(figures),tables=tables,steps=len(steps),code_blocks=codeblocks,cited_sources=citations,chinese_characters=len(re.findall('[\u4e00-\u9fff]',body))))
 if len(profiles)!=55:issues.append(f'Expected 55 profiles, found {len(profiles)}')
 ids=[x['id'] for x in profiles]
@@ -62,7 +65,8 @@ special=[h for h in parser.h2 if 'Step' in h['text'] and not h['text'].startswit
 if special:issues.append('Vendor-specific comparison headings remain')
 if any(s in page for s in ['Step 新增专题','Step 专项','增补条目','9 月 23 日','09-23']):issues.append('Editorial addition banner/date remains')
 if duplicates or missing or parser.assets:issues.append('Duplicate IDs, broken anchors, or remote asset dependency')
-if parser.chapters!=12 or parser.diagrams!=60:issues.append('Unexpected chapter/diagram count')
+expected_diagrams=5+sum(len(expected_figures(k)) for k in DETAIL)
+if parser.chapters!=12 or parser.diagrams!=expected_diagrams:issues.append('Unexpected chapter/diagram count')
 if re.search(r'\{\{(?:doc|src|repo):',page):issues.append('Unresolved source reference')
 
 svg_checks=[]

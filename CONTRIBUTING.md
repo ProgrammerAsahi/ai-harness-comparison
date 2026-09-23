@@ -46,7 +46,10 @@ npm run check
 | 状态、恢复与排错的深入说明 | `research/profile_deepdives.py` |
 | 档案中的模型候选表 | `research/profile_models.py` |
 | 档案编排和通用执行图 | `research/build_profiles.py` |
-| 不同类型的结构图 | `research/profile_diagrams.py` |
+| 总览结构图 | `research/profile_diagrams.py` |
+| 深层架构、模块图与局部放大图 | `research/profile_architecture.py`；证据见 `research/architecture-evidence.json` |
+| 工具标识 | `report/assets/logos/`、`research/logo-sources.json`；保留官方原图和来源 |
+| 深浅模式 | `research/report-theme.js`、`research/report-theme.css`；回归测试见 `report-theme.test.mjs` |
 | 跨工具比较、场景、模型与成本、方法等章节 | `research/integrate_report.py`，并核对其旧稿输入 |
 | 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json` |
 | 来源与引用 | `research/pages-*.json`、`research/citations.json`、`research/source-manifest.json` |
@@ -54,6 +57,13 @@ npm run check
 | 目录跟随、搜索和移动端菜单 | `research/report-navigation.js`；生成时内嵌到 HTML |
 
 `research/editorial-baseline/` 是旧稿与当前生成输入。不要仅修改生成后的 Markdown，也不要直接批量改旧稿中的所有事实；先辨认相应生成器怎样组合内容，避免下一次构建覆盖修改。
+
+## 标识与架构图的维护
+
+- 标识只采用官网或官方仓库发布的资源，保存原始文件、来源页、采集时间和 SHA-256。厂商品牌与工具独立标识要在说明中区分；不要用 GitHub 通用图标或重绘近似图代替。图片不改色、不拉伸，深色模式也保留原图。
+- `profile_architecture.py` 中每个工具都有单独的模块、连线、机制解释和任务路径。布局可以复用，机制不能套模板。新增档案须同时补齐总览、细图和证据记录；检查会验证完整覆盖、来源和连线是否穿过模块。
+- 架构证据保存在 `architecture-evidence.json`，默认构建不读取网页缓存。仅在有意更新且已核对相应材料时运行 `python3 research/profile_architecture.py --freeze-evidence`；该操作需要本地来源元数据，不是日常构建步骤。
+- `npm run check` 包含目录、主题、标识、架构及颜色对比检查。它们不能替代浏览器中的桌面／窄屏视觉检查；有条件时分别检查深浅模式、长标题、横向滚动与目录定位，并记录对应 HTML 哈希。
 
 ## 来源缓存与验证
 

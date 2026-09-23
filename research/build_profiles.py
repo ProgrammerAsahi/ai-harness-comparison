@@ -9,6 +9,7 @@ import profile_expansions_d
 from profile_models import ROUTES
 from profile_deepdives import DEEP
 from profile_diagrams import draw_special
+from profile_architecture import detail_markdown, build_detail
 
 ROOT=Path(__file__).resolve().parent.parent
 BASE=ROOT/'research/editorial-baseline'
@@ -67,11 +68,12 @@ def split_baseline(key, body):
 def assemble(key,title,body):
     p=PROFILES[key];name=title.split('：')[0]
     diagram(key,name,p)
+    build_detail(key)
     intro,arch,caps,how,model=split_baseline(key,body)
     sections=[]
     sections.append(intro+'\n\n'+p['principle'])
     boundary='下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。' if p['kind']=='public' else ('下图依据所引公开文档概括职责，不代表完整源码审计或对现有服务可用性的确认。' if p['kind']=='docs' else '下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。')
-    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+arch+'\n\n'+p['mechanism'])
+    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+arch+'\n\n'+p['mechanism']+'\n\n'+detail_markdown(key))
     if p['rows']:
         table='| 观察项 | 实际机制／公开能力 | 对使用者意味着什么 |\n|---|---|---|\n'+'\n'.join('| '+' | '.join(r)+' |' for r in p['rows'])
         caps=(caps+'\n\n'+table).strip()
