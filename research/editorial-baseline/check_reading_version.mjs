@@ -3,8 +3,10 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 const require=createRequire(import.meta.url);
-const deps=process.env.HARNESS_NODE_MODULES||'/Users/asahi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules';
-const {chromium}=require(path.join(deps,'playwright'));
+// Historical script only; Playwright is not part of the default build.
+const {chromium}=process.env.HARNESS_NODE_MODULES
+ ? require(path.join(process.env.HARNESS_NODE_MODULES,'playwright'))
+ : require('playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'research/qa');fs.mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});

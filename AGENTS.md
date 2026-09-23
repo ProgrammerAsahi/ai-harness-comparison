@@ -7,7 +7,7 @@
 1. 阅读 `README.md`、`research/研究材料说明.md` 和 `HISTORY.md`，检查 Git 状态与本次需求涉及的章节。保留用户已有修改。
 2. 报告正文在 `report/`；根目录 `AI-Harness调研报告.html` 是供阅读的自包含产物。不要只修改 HTML，也不要把生成后的 Markdown 改动留在会被下一次生成覆盖的位置。
 3. 工具档案由 `research/profile_expansions*.py`、`profile_deepdives.py`、`profile_models.py`、`profile_diagrams.py` 与 `build_profiles.py` 生成。旧稿 `research/editorial-baseline/` 目前仍是生成输入，不是当前正文，不能仅因“旧”就删除。
-4. 通用章节由 `integrate_report.py` 组织；全景清单由 `build_inventory.py` 组织；引用由 `render_references.py` 和 `build_references.py` 维护；通用图由 `build_figures.py` 绘制；HTML 由 `build_report.mjs` 生成。先确认真正的编辑入口。
+4. 根目录 README 为人工维护入口，不由报告生成器覆盖。通用章节由 `integrate_report.py` 组织；全景清单由 `build_inventory.py` 组织；引用由 `render_references.py` 和 `build_references.py` 维护；通用图由 `build_figures.py` 绘制；HTML 由 `build_report.mjs` 生成。先确认真正的编辑入口。
 5. 不主动安装或运行被研究的 Harness，不发起付费模型测试。需要运行测试时，先确认它属于用户授权的范围；报告生成与本地检查按正常工作直接完成。
 
 ## 所有工具平等编排
@@ -70,6 +70,13 @@ npm run check
 - 报告文件检查、浏览器视觉检查、产品运行测试是三回事。验证记录应关联对应 HTML 的哈希；旧截图不能给新版背书。
 - 使用当前环境允许的方式进行桌面和窄屏视觉检查。若工具或 URL 策略拒绝访问，不通过换端口、localhost、其他浏览器或无头运行绕过；完成可做的检查，并准确说明未验证部分。
 - 不为绕过静态检查而伪造结果。修改正文或 HTML 后更新适用的验证摘要，不留下指向旧版本的“已通过”说明。
+
+## 面向公开读者的文档
+
+- README 先说明价值、阅读入口和研究边界；只读报告无需安装依赖。构建步骤给出工作目录、环境版本、完整命令和预期产物。
+- 内容纠错与代码贡献分别说明；将进阶缓存、内部生成关系和验证细节放进 CONTRIBUTING 或 research 文档，不堆在首页。
+- 不在当前文档与脚本中写作者机器的绝对路径、私有服务或凭据。历史不悄悄重写；已披露的历史个人路径与删除限制记录在发布核查中。
+- 维持正文／原创图表 CC BY 4.0、程序代码 MIT 的许可范围；第三方材料不擅自改授许可。HTML 单文件也应保留署名及许可说明。
 
 ## Git 与交付
 

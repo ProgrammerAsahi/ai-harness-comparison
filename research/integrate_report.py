@@ -75,6 +75,9 @@ p.write_text(t)
 p=OUT/'06-模型搭配与成本.md';t=(BASE/p.name).read_text();t=t[:t.index('## 6.8')]
 t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。以下型号依据已收集的官方资料，采集时间见来源记录；它们用于说明候选，不是永久有效的安装清单。',t)
 t=t.replace('详见 6.8','按本章规格、协议与成本核对')
+t=t.replace('| OpenAI：GPT-6 Astra；GPT-5.6 Sol、Terra、Luna | Codex；官方已支持这些型号的多模型产品 | Astra 复杂长任务；Sol 深度与成品；Terra 日常；Luna 重复且易验收任务 | 这是官方定位基础上的选型顺序；所在入口不一定全部可选 |', '| OpenAI：GPT-6 Astra、Sol、Luna；过渡期仍提供 GPT-5.6 系列 | Codex；已明确支持相应型号的多模型产品 | Astra 复杂长任务；Sol 日常开发与多步工作；Luna 清楚、重复且易验收的任务 | GPT-6 Sol／Luna 正在推出；以账户和入口实际目录为准，不能由原生支持推断第三方已适配 |')
+t=t.replace('### 型号名为什么容易误导', '官方目录已加入 GPT-6 Sol 和 Luna，并说明推出期间 GPT-5.6 系列仍可用。场景表中的 GPT-5.6 组合可作既有环境的对照；新用户先核对当前目录，再用同一任务验证新候选，不能只凭换代认定效果更好。[官方模型目录](https://learn.chatgpt.com/docs/models.md)\n\n### 型号名为什么容易误导')
+
 t=t.replace('[Grok](https://docs.x.ai/build/settings)。','[Grok](https://docs.x.ai/build/settings)、[Step](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview)。')
 open_weights='''**开放状态要按型号核对。** Qwen3-Coder、gpt-oss 等已有官方模型卡的候选，与仅提供云端服务或仍在计划开放的型号不能混为一类。Step-5-Preview 的官方发布页说明产品与 API 已提供，权重计划于 2026 年 10 月 15 日开放；所收集资料没有证明官方完整权重和最终许可已可获得。第三方同名上传不替代官方发布证据。Harness 的 MIT 许可也不能自动转移给其调用的模型。[模型发布与开放计划](https://www.stepfun.com/step-5-preview)
 
@@ -205,11 +208,7 @@ p=OUT/'07-试用迁移与验收.md';t=(BASE/p.name).read_text();t=t[:t.index('##
 公平比较有两条路线：研究模型时尽量固定 Harness、工具和材料；研究完整产品时允许各自使用原生组合，但同时记录费用、环境和人工介入。比如在同一 OpenCode 中比较 Claude 与 Step，回答的是模型适配问题；比较 Claude Code、Step Code 与 Codex 的原生组合，回答的是整套产品是否适合工作。两类结果应分开保存。
 ''';p.write_text(t)
 
-# Cover and methodology describe the report, not the history of a singled-out addition.
-p=ROOT/'README.md';t=(BASE/p.name).read_text();t=re.sub(r'\*\*中文研究报告｜.*?\*\*','**中文研究报告｜设计原理、工具档案、场景选型与试用方法**',t)
-t=re.sub(r'本次新增 \*\*Step Code[\s\S]*?\n\n## 怎么读','A、B、C、D 四组及维护观察项目共 **55 份统一结构档案**。每份包含设计理念、架构图、能力与边界表、五步上手流程、任务示例、模型选择表和原始资料链接。\n\n## 怎么读',t);p.write_text(t)
-t+='\n## 维护项目\n\n项目使用 Git 管理。继续研究或修改前，请阅读 [AGENTS.md](AGENTS.md)；构建、来源缓存与检查方法见 [维护指南](CONTRIBUTING.md)，前三轮报告及其恢复依据见 [版本沿革](HISTORY.md)。\n\n```bash\nnpm ci --ignore-scripts\nnpm run build\nnpm run check\n```\n\n需要 Python 3.10+ 与 Node.js 20+。第三方源码和网页缓存不入库；固定提交、引用 URL 与内容哈希保留在 `research/`，干净克隆可直接构建和进行记录级检查。\n'
-p.write_text(t)
+# README is maintained directly for public readers; only report chapters are generated.
 p=OUT/'01-从零理解.md';t=(BASE/p.name).read_text();t=re.sub(r'> 本报告原始观察截面.*?\n','> 建议先读本章，再看工具地图；已经有使用经验的读者，可以直接查工具档案和场景推荐。资料的采集时间与版本见参考索引。\n',t)
 t=t.replace('增补条目中还会用到以下几个词：','任务控制、部署与资料处理还会用到以下词语：')
 t=t.replace('| JSON Schema | 为数据规定字段、类型和格式的结构说明 | 格式合规不代表字段里的事实正确 |\n','')
