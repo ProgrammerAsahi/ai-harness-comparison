@@ -97,3 +97,11 @@ npm run check:cached-sources
 | HTML 在 GitHub 上显示代码 | 下载原始 HTML 后用浏览器打开；GitHub 文件页不是报告的交互页面。 |
 
 构建问题请附操作系统、Node／Python 版本、执行命令和相关错误。不要提交完整环境变量或含凭据的日志。
+
+## 在线阅读版的发布
+
+在线地址：<https://programmerasahi.github.io/ai-harness-comparison/>。
+
+GitHub Pages 从 `main` 分支的根目录发布；`index.html` 将访问者带到自包含报告，`.nojekyll` 让 GitHub 直接发布静态文件。无需另外安装网站生成器或配置服务器。
+
+更新报告时，先运行 `npm run build` 和 `npm run check`，把生成的 HTML 与源码一起提交。合并到 `main` 后，GitHub 会自动部署已提交的文件，Pages 不会替你重新生成报告。部署状态见仓库 **Actions**，发布来源见 **Settings → Pages**。页面未更新时先确认部署成功，再刷新浏览器。
