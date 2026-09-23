@@ -27,6 +27,18 @@ for p in sorted((ROOT/'report').glob('*.md')):
  t=p.read_text();t=re.sub(r'\{\{((?:src|repo|doc):[^}]+)\}\}',resolve,t);p.write_text(t)
 old=R/'citations.json'
 if old.exists():citations+=json.loads(old.read_text())
+manifests={}
+for p in (R/'repos').glob('*/manifest.json'):
+ m=json.loads(p.read_text());manifests[m['repo'].lower()]=(p.parent.name,m)
+for p in sorted((ROOT/'report').glob('*.md')):
+ if p.name=='参考资料索引.md':continue
+ for url,repo,sha,path in re.findall(r'(https://github.com/([^/]+/[^/]+)/blob/([a-f0-9]{40})/([^\s)]+))',p.read_text()):
+  item=manifests.get(repo.lower())
+  if not item:raise ValueError('No pinned repository snapshot for '+url)
+  key,m=item
+  if sha!=m['sha']:raise ValueError('Mismatched snapshot for '+url)
+  if not (R/'repos'/key/'files'/path).exists():raise ValueError('Missing cited source '+url)
+  citations.append({'kind':'pinned-source','key':key,'path':path,'url':url})
 citations=list({(x['kind'],x['url']):x for x in citations}.values())
 old.write_text(json.dumps(citations,ensure_ascii=False,indent=2))
 with (R/'citations.csv').open('w') as f:

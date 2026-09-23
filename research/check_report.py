@@ -23,7 +23,7 @@ if len(scenes)!=40 or len(set(scenes))!=40:issues.append(f'Expected 40 scenarios
 refs=json.loads((ROOT/'research/citations.json').read_text());source_count=0
 for r in refs:
  if r['kind']=='pinned-source':
-  source_count+=1
+  source_count+=r['url'] in alltext
   if not (ROOT/'research/repos'/r['key']/'files'/r['path']).exists():issues.append('Missing source '+r['url'])
 metrics={'markdown_files':len(files),'core_profiles':len(ids),'scenarios':len(scenes),'local_links_checked':checked,'cited_source_files':source_count,'chinese_characters':len(re.findall(r'[\u4e00-\u9fff]',alltext)),'issues':issues}
 (ROOT/'research/report-check.json').write_text(json.dumps(metrics,ensure_ascii=False,indent=2))
