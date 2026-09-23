@@ -9674,15 +9674,17 @@ print(reply.choices[0].message.content)</code></pre><p>例如用 Step 海外标�
     if (!nav.clientHeight || !link.getClientRects().length) return;
     const container = nav.getBoundingClientRect();
     const item = link.getBoundingClientRect();
-    const top = container.top + nav.clientTop + 8;
-    const bottom = container.top + nav.clientTop + nav.clientHeight - 8;
+    const viewportCenter = container.top + nav.clientTop + nav.clientHeight / 2;
+    const itemCenter = item.top + item.height / 2;
     // Never use scrollIntoView: it can also move the document being read.
-    if (item.top < top || item.height > bottom - top) nav.scrollTop += item.top - top;
-    else if (item.bottom > bottom) nav.scrollTop += item.bottom - bottom;
+    // Center multiline titles too, stopping naturally at either scroll boundary.
+    const target = nav.scrollTop + itemCenter - viewportCenter;
+    nav.scrollTop = Math.max(0, Math.min(target, nav.scrollHeight - nav.clientHeight));
   }
 
   function update() {
     frame = 0;
+    const shouldReveal = layoutDirty || revealRequested;
     if (layoutDirty) measure();
     const next = currentEntry();
     const changed = next !== active;
@@ -9699,7 +9701,7 @@ print(reply.choices[0].message.content)</code></pre><p>例如用 Step 海外标�
         opened = true;
       }
       // Other groups are never opened or closed by scroll tracking.
-      if (changed || opened || revealRequested) revealInNav(active.link);
+      if (changed || opened || shouldReveal) revealInNav(active.link);
     }
     revealRequested = false;
   }
@@ -9746,7 +9748,8 @@ print(reply.choices[0].message.content)</code></pre><p>例如用 Step 海外标�
   }
   // A details toggle can move the document on mobile, but does not reset siblings.
   for (const group of groups) group.addEventListener('toggle', () => schedule({ layout: true }));
-  window.addEventListener('scroll', () => schedule(), { passive: true });
+  // Manual navigation scrolling remains free; resuming article scrolling recenters it.
+  window.addEventListener('scroll', () => schedule({ reveal: true }), { passive: true });
   window.addEventListener('resize', () => schedule({ layout: true, reveal: true }));
   window.addEventListener('hashchange', () => schedule({ layout: true, reveal: true }));
   window.addEventListener('pageshow', () => schedule({ layout: true, reveal: true }));

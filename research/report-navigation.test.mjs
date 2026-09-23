@@ -72,24 +72,31 @@ function fixture({ scrollY = 0, mobile = false } = {}) {
       heading.getBoundingClientRect = () => ({ top: heading.top - window.scrollY });
       heading.closest = () => chapter;
       headings.set(id, heading);
-      const link = Object.assign(new Element(), { hash: '#' + id, textContent: id, id });
+      const link = Object.assign(new Element(), { hash: '#' + id, textContent: id, id, height: child ? 28 : 30 });
+      if (!child) group.parentLink = link;
       link.closest = selector => selector === '.nav-group' ? group : child ? group.children : null;
       link.getClientRects = () => link.hidden || group.hidden || (child && !group.open) || !nav.clientHeight ? [] : [{}];
       link.getBoundingClientRect = () => {
         let offset = 0;
         for (const other of groups) {
           if (other === group) break;
-          if (!other.hidden) offset += 30 + (other.open ? other.children.filter(item => !item.hidden).length * 28 : 0);
+          if (!other.hidden) offset += groupHeight(other);
         }
-        if (child) offset += 30 + (child - 1) * 28;
-        const top = 100 + offset - nav.scrollTop;
-        const height = child ? 28 : 30;
+        if (child) offset += group.parentLink.height + group.children.slice(0, child - 1).filter(item => !item.hidden).reduce((sum, item) => sum + item.height, 0);
+        const top = 100 + nav.clientTop + offset - nav.scrollTop;
+        const height = link.height;
         return { top, bottom: top + height, height };
       };
       links.push(link);
       if (child) group.children.push(link);
     }
   }
+  function groupHeight(group) {
+    return group.parentLink.height + (group.open ? group.children.filter(item => !item.hidden).reduce((sum, item) => sum + item.height, 0) : 0);
+  }
+  Object.defineProperty(nav, 'scrollHeight', {
+    get: () => Math.max(nav.clientHeight, groups.filter(group => !group.hidden).reduce((sum, group) => sum + groupHeight(group), 0)),
+  });
   nav.querySelectorAll = selector => selector === '.nav-group' ? groups : links;
   sidebar.querySelector = () => nav;
   document.getElementById = id => headings.get(id);
@@ -166,19 +173,57 @@ test('the last short section is selectable at the page bottom', () => {
   assert.deepEqual(f.current(), ['d2']);
 });
 
-test('following the sidebar never moves the article or continually overrides manual sidebar scrolling', () => {
+test('following the sidebar never moves the article; manual sidebar scrolling lasts until article scrolling resumes', () => {
   const f = fixture();
   f.scroll(11850);
   assert.deepEqual(f.current(), ['d1']);
   assert.equal(f.window.scrollY, 11850);
   assert.ok(f.nav.scrollTop > 0);
   f.nav.scrollTop = 0;
-  f.scroll(11900);
+  f.nav.emit('scroll'); f.flush();
   assert.equal(f.nav.scrollTop, 0);
+  f.scroll(11900);
+  assert.ok(f.nav.scrollTop > 0);
   f.scroll(12900);
   assert.deepEqual(f.current(), ['d2']);
   assert.ok(f.nav.scrollTop > 0);
   assert.equal(f.window.scrollY, 12900);
+});
+
+function assertCentered(f, id) {
+  const item = f.links.find(link => link.id === id).getBoundingClientRect();
+  const midpoint = f.nav.getBoundingClientRect().top + f.nav.clientTop + f.nav.clientHeight / 2;
+  assert.equal(item.top + item.height / 2, midpoint, `${id} should be centered in the scrollable navigation`);
+}
+
+test('active titles center in both reading directions, even when already visible', () => {
+  const f = fixture();
+  f.scroll(4450); assertCentered(f, 'b1');
+  f.scroll(5500); assertCentered(f, 'b2');
+  f.scroll(4450); assertCentered(f, 'b1');
+  assert.equal(f.window.scrollY, 4450);
+});
+
+test('multiline titles and changed navigation layout remain centered', () => {
+  const f = fixture({ scrollY: 4450 });
+  f.links.find(link => link.id === 'b1').height = 112;
+  f.nav.clientTop = 2;
+  f.window.emit('resize'); f.flush();
+  assertCentered(f, 'b1');
+  f.groups[0].open = false; f.flush();
+  assertCentered(f, 'b1');
+  assert.deepEqual(f.groups.map(group => group.open), [false, true, true, false]);
+});
+
+test('centering stops at the first and last navigation boundaries', () => {
+  const f = fixture();
+  f.scroll(1000);
+  assert.equal(f.nav.scrollTop, 0);
+  f.scroll(12900);
+  assert.equal(f.nav.scrollTop, f.nav.scrollHeight - f.nav.clientHeight);
+  assert.ok(f.nav.scrollTop > 0);
+  f.scroll(1000);
+  assert.equal(f.nav.scrollTop, 0);
 });
 
 test('search results are not overridden by scroll tracking; clearing search reveals the current child', () => {
