@@ -29,6 +29,7 @@ npm run check
 | 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json` |
 | 来源与引用 | `research/pages-*.json`、`research/citations.json`、`research/source-manifest.json` |
 | 阅读版 HTML 与通用 SVG | `research/build_report.mjs`、`research/build_figures.py` |
+| 目录跟随、搜索和移动端菜单 | `research/report-navigation.js`；生成时内嵌到 HTML |
 
 `research/editorial-baseline/` 是旧稿与当前生成输入。不要仅修改生成后的 Markdown，也不要直接批量改旧稿中的所有事实；先辨认相应生成器怎样组合内容，避免下一次构建覆盖修改。
 
@@ -55,6 +56,8 @@ npm run check:cached-sources
 ## 验证与提交
 
 内容变更后执行构建和检查，查看 Git diff，确认没有无关事实、数量或日期变化。检查结果中的源码读取、静态结构和视觉验证范围要分别解释。涉及架构图或排版的改动，再按当前环境允许的方式进行视觉检查；旧的 `editorial-baseline/check_reading_version.mjs` 仅作历史留档，不属于默认检查入口。
+
+`npm run check` 包含目录行为回归检查，也可单独运行 `npm run test:navigation`。它通过 Node 的测试运行器与模拟页面几何，检查当前项选择、长章节、上下滚动、父组状态、搜索、窄屏菜单和脚本内嵌；不启动浏览器，也不能代替实际排版与滚动手感的视觉验收。
 
 报告生成后若更新了验证摘要，要保证 `research/delivery-summary.json` 与当前报告和适用的 QA 记录一致。不能把没有重新完成的浏览器验收写成已完成。
 
