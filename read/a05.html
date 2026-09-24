@@ -33,7 +33,7 @@ Third-party materials retain their original rights.
 <h2 id="chapter-3-h40">工作原理与架构图</h2>
 <p>下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。</p>
 <figure class="diagram profile-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="A05 Kimi Code 架构示意"><title>A05 Kimi Code 架构示意</title><defs><marker id="profile-arrow-10" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">A05 · Kimi Code</text><rect x="30" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="162.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">CLI／ACP 客户端</text><text x="162.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">输入与审批交互</text><rect x="347" y="75" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="479.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">agent-core-v2</text><text x="479.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">组织会话与执行</text><rect x="664" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">模型请求适配</text><text x="796.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">Kimi／自定义 Provider</text><rect x="30" y="305" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="162.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">历史与压缩策略</text><text x="162.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">保留有效工具交换</text><rect x="347" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="479.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">文件、命令与插件</text><text x="479.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">执行并返回结果</text><rect x="664" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">工具及子任务管理</text><text x="796.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">分派与生命周期</text><path d="M295 118 H344" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><path d="M612 118 H661" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><path d="M796 161 V302" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><path d="M664 348 H615" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><path d="M347 348 H298" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><path d="M162 305 V238 H479 V164" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-10)"/><text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text><text x="30" y="437" font-size="13" fill="#60796f">公开源码与文档中的关键责任分工；图中能力不表示每种入口与安装方式都默认开放。</text></svg><figcaption>A05 Kimi Code：工作原理与责任分工。图示依据与适用边界见相邻正文。</figcaption></figure>
-<p>Kimi Code 将终端任务、编辑器连接、工具和独立子任务组合起来。ACP 让编辑器可以接入同一类代理会话，插件与 Hooks 扩展行为，不同子代理承担探索、规划和实现。它更接近一套完整开发助手，而不是模型 API 的薄转发层。</p>
+<p>Kimi Code 将终端任务、编辑器连接、工具和独立子任务组合起来。ACP 让编辑器可以接入同一类代理会话，插件与 Hooks 扩展行为，不同子代理承担探索、规划和实现。这些部分共同组成一套覆盖开发流程的助手。</p>
 <p>历史压缩根据上下文预算触发，并为下一步留出空间；压缩边界还要避开没有完成的工具交换。为什么要这样做？如果只留下“调用工具”的消息，却丢掉对应结果，下一轮模型会看到一段断裂的对话。长上下文管理首先是状态正确性问题，然后才是节省 Token。<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/fullCompaction/strategy.ts" target="_blank" rel="noopener noreferrer">压缩策略</a>、<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/llmRequester/llmRequester.ts" target="_blank" rel="noopener noreferrer">模型请求层</a></p>
 <p>可以把工具调用看成一封请求与一封回信。压缩时若只留下请求，模型可能以为动作还没完成；若只留下回信，也可能不知道结果对应哪个动作。Kimi 的压缩策略对这种边界做处理，目的是给下一轮留下可解释的历史。ACP 解决的则是界面连接问题：编辑器可以展示会话，但实际循环仍由 Kimi 负责。换编辑器不等于换了模型协议或执行权限。</p>
 <h3 id="chapter-3-h41">深入一层：请求适配与上下文压缩是两条独立职责</h3>
@@ -64,8 +64,8 @@ Third-party materials retain their original rights.
 </tr>
 </tbody></table></div>
 <p><strong>沿着一次任务看数据怎样走。</strong> 在大规模重命名中，前几轮找到调用点，后几轮修改并检查。发生压缩后，仍需知道哪些目录已完成、哪些测试失败、哪些公开接口不能变。若漏掉一个范围限制，应先检查输入和摘要，再断言模型理解能力不足。</p>
-<p><strong>与相近工具的实质差别。</strong> 与单轮聊天客户端相比，Kimi Code 的关键是持续的请求—观察过程。与其他编码代理比较，应固定任务长度，并观察压缩前后约束是否保留，而非只比较第一次回答。</p>
-<p>本节细图与机制依据：<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/llmRequester/llmRequester.ts" target="_blank" rel="noopener noreferrer">llmRequester.ts</a>、<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/fullCompaction/strategy.ts" target="_blank" rel="noopener noreferrer">strategy.ts</a>、<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/docs/en/configuration/providers.md" target="_blank" rel="noopener noreferrer">providers.md</a>。箭头表示主要信息或控制交接，不表示所有分支必然并行；省略的模块不能视为不存在。</p>
+<p><strong>与相近工具的实质差别。</strong> 与单轮聊天客户端相比，Kimi Code 的关键是持续的请求—观察过程。与其他编码代理比较时，固定任务长度，记录首次回答及压缩前后约束的保留情况。</p>
+<p>本节细图与机制依据：<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/llmRequester/llmRequester.ts" target="_blank" rel="noopener noreferrer">llmRequester.ts</a>、<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/packages/agent-core-v2/src/agent/fullCompaction/strategy.ts" target="_blank" rel="noopener noreferrer">strategy.ts</a>、<a href="https://github.com/MoonshotAI/kimi-code/blob/6451f1e056e90037bbf832f3578955cf8e55db64/docs/en/configuration/providers.md" target="_blank" rel="noopener noreferrer">providers.md</a>。图中选取主要模块与交接路径，完整结构及并行条件请结合所引材料阅读。</p>
 <h2 id="chapter-3-h42">能力、状态与边界</h2>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
@@ -83,7 +83,7 @@ Third-party materials retain their original rights.
 <tr>
 <td>长任务</td>
 <td>上下文预算与完整工具交换共同决定压缩</td>
-<td>用阶段性检查点补充摘要，不把窗口长度当记忆保证</td>
+<td>用阶段性检查点补充摘要，观察检查点与摘要能否共同保留任务约束</td>
 </tr>
 <tr>
 <td>多入口</td>
@@ -98,7 +98,7 @@ Third-party materials retain their original rights.
 <tr>
 <td>模型别名</td>
 <td>账户目录与别名映射可以变化</td>
-<td>试用记录保存实际 ID，不能只写 Kimi</td>
+<td>试用记录保存实际模型 ID 与别名当时的指向</td>
 </tr>
 <tr>
 <td>兼容服务</td>
@@ -112,7 +112,7 @@ Third-party materials retain their original rights.
 <p>ACP 连接失败时，应分别检查客户端配置、Kimi 进程启动和模型认证。客户端能显示历史，不代表当前模型账户可继续请求；命令能在终端运行，也不代表编辑器传入了同一个目录。把入口与环境分开核对，有助于避免把连接问题误认为长任务能力不足。</p>
 <h2 id="chapter-3-h43">从安装到完成第一个任务</h2>
 <ol>
-<li><p>从当前 kimi-code 的 README 安装发行版，在项目目录启动 kimi；不要混用旧项目的配置说明。</p>
+<li><p>从当前 kimi-code 的 README 安装发行版，在项目目录启动 kimi；配置说明也选用与该发行版对应的文档。</p>
 </li>
 <li><p>在交互界面用 /login 完成认证，用 /model 查看本账户实际可用模型。核对订阅别名和 API 型号是否相同。</p>
 </li>
@@ -132,7 +132,7 @@ kimi acp</code></pre><h2 id="chapter-3-h44">典型任务与验收方法</h2>
 <blockquote>
 <p>阅读这套旧接口和迁移说明，列出必须保持的行为。先迁移一个模块并补测试，把尚未处理的接口写成清单；下一次会话根据清单继续。</p>
 </blockquote>
-<p>迁移后的行为比“读完了很多文件”更值得检查。对照旧测试和调用方，确认关键边界未丢失；暂停恢复后询问它仍未解决的事项，查看回答是否来自保存的事实，而不是根据常见迁移流程重新猜。</p>
+<p>迁移后的行为比“读完了很多文件”更值得检查。对照旧测试和调用方，确认关键边界未丢失；暂停恢复后询问它仍未解决的事项，将回答与保存的进度、失败记录逐项核对。</p>
 <h2 id="chapter-3-h45">模型搭配、适用方向与取舍</h2>
 <p>原生优先 Kimi。当前文档区分 K3 的不同上下文档位；<code>kimi-for-coding</code> 别名目前指向 K2.8 Preview，不能把这个别名永久当作某个固定旧版本。复杂、资料量大的任务可先试可用的 K3，日常工作比较 K2.8 路线。适合中文项目沟通、长资料辅助开发和 Kimi 订阅用户。上手难度：中。<a href="https://www.kimi.com/code/docs/en/kimi-code/models.html" target="_blank" rel="noopener noreferrer">模型说明</a>、<a href="https://www.kimi.com/code/docs/en/kimi-code/whats-new.html" target="_blank" rel="noopener noreferrer">更新记录</a></p>
 <div class="table-scroll" tabindex="0"><table>

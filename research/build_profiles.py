@@ -2,6 +2,7 @@
 """Assemble consistently structured, individually authored tool profiles."""
 from pathlib import Path
 import re, html, json
+from editorial import read_baseline
 from profile_expansions import PROFILES
 import profile_expansions_b
 import profile_expansions_c
@@ -95,7 +96,7 @@ def assemble(key,title,body):
 
 counts=[]
 for file in sorted(BASE.glob('03*.md')):
-    text=file.read_text()
+    text=read_baseline(file)
     if file.name.startswith('03D'):
         text=re.sub(r'### Aider 为什么仍值得读[\s\S]*?(?=## 另外三种)',profile_expansions_d.HISTORY_BASE+'\n\n',text)
     def replace(m):

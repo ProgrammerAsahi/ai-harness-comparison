@@ -2,6 +2,7 @@
 """Integrate all tools into generic comparison chapters, without editorial-addition banners."""
 from pathlib import Path
 import re
+from editorial import read_baseline
 ROOT=Path(__file__).resolve().parent.parent
 BASE=ROOT/'research/editorial-baseline'; OUT=ROOT/'report'
 
@@ -12,15 +13,15 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 | 演化关系 | 可以合理预期的共同点 | 必须重新核对的部分 | 选型时的含义 |
 |---|---|---|---|
 | Pi → Step Code | 会话、代理循环与扩展的部分结构来源相同 | 原生 Provider、工具名称、权限默认值、子代理和高级编排 | 简洁可定制与现成产品流程是两种选择；不能由血缘推断权限相同 |
-| OpenCode → MiMo Code | 可以辨认的会话与执行结构 | 模型特定工具、任务模式、记忆与检查点 | 重点比较模型与工具协同，而非只看支持多少模型 |
+| OpenCode → MiMo Code | 可以辨认的会话与执行结构 | 模型特定工具、任务模式、记忆与检查点 | 重点比较模型与工具协同的实际方式 |
 | OpenCode 相关核心 → 当前 Kilo | 会话与工具核心存在共同结构 | Kilo 账户、路由、恢复、云服务和费用 | 开放底座与商业整合可以并存，共同代码不等于同一产品 |
-| Gemini CLI 历史结构 → Qwen Code | 部分设计源于相近的终端代理路线 | 当前协议、预算、子任务、沙箱与目录限制 | 分支会持续演化，不能用早期介绍覆盖当前行为 |
+| Gemini CLI 历史结构 → Qwen Code | 部分设计源于相近的终端代理路线 | 当前协议、预算、子任务、沙箱与目录限制 | 分支持续演化，比较时核对当前版本的实际行为 |
 
-上述关系分别依据各工具档案中的固定源码与官方说明；更细的实现和边界见 [A 类档案](03A-终端与开放编程代理.md)。其中 Step 的派生关系有明确[许可声明](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/LICENSE-STATUS.md)，MiMo 的模型适配有独立[架构文档](https://github.com/XiaomiMiMo/MiMo-Code/blob/1579e7d9ee5fca87b707c3892dc725316674a9d6/docs/architecture/codex-microkernel-runtime.en.md)。这张表描述结构与产品取舍，不是性能排名。
+上述关系分别依据各工具档案中的固定源码与官方说明；更细的实现和边界见 [A 类档案](03A-终端与开放编程代理.md)。其中 Step 的派生关系有明确[许可声明](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/LICENSE-STATUS.md)，MiMo 的模型适配有独立[架构文档](https://github.com/XiaomiMiMo/MiMo-Code/blob/1579e7d9ee5fca87b707c3892dc725316674a9d6/docs/architecture/codex-microkernel-runtime.en.md)。这张表用于比较结构与产品取舍；性能需要另设任务验证。
 
 用 Pi 与 Step Code 举例：Pi 将不少工作方式留给扩展，默认没有内置的系统权限限制；Step 在派生底座上提供自己的模型入口、权限档位和任务控制，但当前默认 Bypass 仍不等于操作系统沙箱。前者需要用户自己决定更多，后者减少部分组装，又引入产品默认值与发行包差异。两者都值得研究，选择取决于你愿意自己维护哪些决定。[Pi 权限说明](https://github.com/earendil-works/pi/blob/b4588f26af2f74f7b1387b548e04a3c8d81da75b/README.md)、[Step 权限实现](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/step/permissions.ts)
 
-**能力存在于源码、能力被注册、能力在你的安装里可用，是三件事。** 例如某个脚本编排需要原生模块，独立二进制未必能装载；某个团队模式可能只在 CLI 开放，编辑器扩展尚不支持。Step 的 workflow 注册门控与 Cline 的团队入口差异分别展示了这两种情况。迁移时应检查实际构建和入口，不能只搜索到函数名就宣布支持。[运行环境门控](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/features/workflow/registration-gate.ts)、[团队入口范围](https://github.com/cline/cline/blob/078f82b1e2617a6be421e34c08d35af1c3a78d87/docs/cli/agent-teams.mdx)
+**能力存在于源码、能力被注册、能力在你的安装里可用，是三件事。** 例如某个脚本编排需要原生模块，独立二进制未必能装载；某个团队模式可能只在 CLI 开放，编辑器扩展尚不支持。Step 的 workflow 注册门控与 Cline 的团队入口差异分别展示了这两种情况。迁移时应检查实际构建、注册条件和可用入口，确认功能是否已启用。[运行环境门控](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/features/workflow/registration-gate.ts)、[团队入口范围](https://github.com/cline/cline/blob/078f82b1e2617a6be421e34c08d35af1c3a78d87/docs/cli/agent-teams.mdx)
 
 ## 4.13 任务能保存、能继续、能交付，分别由什么保证
 
@@ -38,9 +39,9 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 
 更大的模型窗口与更完善的状态管理也不是互相替代。窗口解决本轮能装多少内容，检索决定装哪些，摘要帮助交接，检查点保存进度。它们配合得好，才能减少重读与遗漏；只扩大窗口可能增加重复输入，只积极压缩又可能丢掉重要条件。最终应比较同一成果需要的总调用、返工和人工检查。
 '''
-p=OUT/'04-架构分类与取舍.md';t=(BASE/p.name).read_text();t=t[:t.index('## 4.12')]+architecture;p.write_text(t)
+p=OUT/'04-架构分类与取舍.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 4.12')]+architecture;p.write_text(t)
 
-p=OUT/'05-按场景选择组合.md';t=(BASE/p.name).read_text();t=t[:t.index('## 5.7')]
+p=OUT/'05-按场景选择组合.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 5.7')]
 changes={
 '| 03 中型功能，涉及 API、界面和测试 | Claude Code＋Sonnet 5 | Codex＋GPT-5.6 Terra／Sol |':'| 03 中型功能，涉及 API、界面和测试 | Claude Code＋Sonnet 5 | Codex＋GPT-5.6 Terra／Sol；Step Code＋Step-5-Preview |',
 '| 09 只有截图，要还原网页 | Codex＋支持图像的当前 GPT | Antigravity＋Gemini 3.1 Pro |':'| 09 截图还原网页、静态原型或交互报告 | Codex＋支持图像的当前 GPT | Antigravity＋Gemini Pro；Step Code＋Step-5-Preview＋所需浏览器／静态发布工具 |',
@@ -53,7 +54,7 @@ t=t.replace('原生工具循环省配置；先定接口','原生组合是试用�
 t=t.replace('模型看图只是起点，还要浏览器检查、字体和响应式调整','看图、页面验证和发布是三步；静态托管不包含应用后端与数据库')
 t+='''## 5.7 同一任务怎样在两个候选之间决定
 
-先把候选缩到两三组，再选择一个真正影响工作的区别来验证。不要同时更换模型、工具、资料与工作环境，否则即使结果变好，也无法解释原因。
+先把候选缩到两三组，再选择一个真正影响工作的区别来验证。每轮保持其余条件稳定，逐项调整模型、工具、资料或环境，便于解释结果变化。
 
 | 实际约束 | 更值得比较的路线 | 具体看什么 |
 |---|---|---|
@@ -72,11 +73,11 @@ p.write_text(t)
 
 # Models are compared by a shared set of questions; specifications and billing
 # examples are embedded in the relevant topic rather than a vendor supplement.
-p=OUT/'06-模型搭配与成本.md';t=(BASE/p.name).read_text();t=t[:t.index('## 6.8')]
-t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。以下型号依据已收集的官方资料，采集时间见来源记录；它们用于说明候选，不是永久有效的安装清单。',t)
+p=OUT/'06-模型搭配与成本.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 6.8')]
+t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。以下型号依据已收集的官方资料，采集时间见来源记录；这些型号用于说明候选路线，实际配置时应结合来源日期核对可用性。',t)
 t=t.replace('详见 6.8','按本章规格、协议与成本核对')
 t=t.replace('| OpenAI：GPT-6 Astra；GPT-5.6 Sol、Terra、Luna | Codex；官方已支持这些型号的多模型产品 | Astra 复杂长任务；Sol 深度与成品；Terra 日常；Luna 重复且易验收任务 | 这是官方定位基础上的选型顺序；所在入口不一定全部可选 |', '| OpenAI：GPT-6 Astra、Sol、Luna；过渡期仍提供 GPT-5.6 系列 | Codex；已明确支持相应型号的多模型产品 | Astra 复杂长任务；Sol 日常开发与多步工作；Luna 清楚、重复且易验收的任务 | GPT-6 Sol／Luna 正在推出；以账户和入口实际目录为准，不能由原生支持推断第三方已适配 |')
-t=t.replace('### 型号名为什么容易误导', '官方目录已加入 GPT-6 Sol 和 Luna，并说明推出期间 GPT-5.6 系列仍可用。场景表中的 GPT-5.6 组合可作既有环境的对照；新用户先核对当前目录，再用同一任务验证新候选，不能只凭换代认定效果更好。[官方模型目录](https://learn.chatgpt.com/docs/models.md)\n\n### 型号名为什么容易误导')
+t=t.replace('### 型号名为什么容易误导', '官方目录已加入 GPT-6 Sol 和 Luna，并说明推出期间 GPT-5.6 系列仍可用。场景表中的 GPT-5.6 组合可作既有环境的对照；新用户先核对当前目录，再用同一任务比较新旧候选的效果与成本。[官方模型目录](https://learn.chatgpt.com/docs/models.md)\n\n### 型号名为什么容易误导')
 
 t=t.replace('[Grok](https://docs.x.ai/build/settings)。','[Grok](https://docs.x.ai/build/settings)、[Step](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview)。')
 open_weights='''**开放状态要按型号核对。** Qwen3-Coder、gpt-oss 等已有官方模型卡的候选，与仅提供云端服务或仍在计划开放的型号不能混为一类。Step-5-Preview 的官方发布页说明产品与 API 已提供，权重计划于 2026 年 10 月 15 日开放；所收集资料没有证明官方完整权重和最终许可已可获得。第三方同名上传不替代官方发布证据。Harness 的 MIT 许可也不能自动转移给其调用的模型。[模型发布与开放计划](https://www.stepfun.com/step-5-preview)
@@ -87,7 +88,7 @@ open_weights='''**开放状态要按型号核对。** Qwen3-Coder、gpt-oss 等�
 t=t.replace('## 6.5 成本要按',open_weights+'## 6.5 成本要按')
 billing='''### 把标价换算成任务费用
 
-按量服务至少分未缓存输入、缓存命中输入和输出三项；订阅的 Credits 则可能另有换算规则。地区价格应分别读取，不能拿一个地区的人民币价格按汇率猜另一个地区。下面用公开价目提供一个可复算示例，**用量是演算假设，不是实测任务**，也不是跨厂商价格排名。
+按量服务至少分未缓存输入、缓存命中输入和输出三项；订阅的 Credits 则可能另有换算规则。不同地区分别采用当地公布的价格、币种与计费规则。下面用公开价目提供一个可复算示例，**用量是演算假设，不是实测任务**，也不是跨厂商价格排名。
 
 | 计价例子 | 未缓存输入／百万 Token | 缓存命中输入／百万 Token | 输出／百万 Token | 10 万未缓存输入＋2 万输出的模型费 |
 |---|---:|---:|---:|---:|
@@ -106,7 +107,7 @@ billing='''### 把标价换算成任务费用
 | Credits 套餐 | Step Plan 等额度池 | 扣除倍率、期限、加油包、可用模型与渠道 | 直接把 Credits 数量当 Token 数量 |
 | 自部署 | 本地推理与自托管环境 | 硬件、并发、速度、维护与停机 | 没有 API 账单就认为没有成本 |
 
-一个具体额度池示例：Step Plan 的 Flash Mini／Plus／Pro／Max 月额度依次为 400M／1,600M／8,000M／40,000M Credits，中国区月标价为 ¥49／99／199／699，海外为 US$6.99／9.99／29／99。Credits 是记账单位，按模型与输入输出规则换算，并非同量 Token；文档说明按月发放、未用不结转，另有加油包。买之前应把自己的任务样本换算成实际扣除量，再比较套餐，不能单凭“几亿额度”判断划算。[中国区套餐](https://platform.stepfun.com/docs/zh/step-plan/overview.md)、[海外套餐](https://platform.stepfun.ai/docs/en/step-plan/overview.md)、[计费说明](https://platform.stepfun.ai/docs/en/step-plan/upgrade-notice.md)
+一个具体额度池示例：Step Plan 的 Flash Mini／Plus／Pro／Max 月额度依次为 400M／1,600M／8,000M／40,000M Credits，中国区月标价为 ¥49／99／199／699，海外为 US$6.99／9.99／29／99。Credits 是记账单位，按模型与输入输出规则换算，并非同量 Token；文档说明按月发放、未用不结转，另有加油包。购买前，用自己的任务样本估算实际扣除量，再比较套餐能覆盖多少日常工作。[中国区套餐](https://platform.stepfun.com/docs/zh/step-plan/overview.md)、[海外套餐](https://platform.stepfun.ai/docs/en/step-plan/overview.md)、[计费说明](https://platform.stepfun.ai/docs/en/step-plan/upgrade-notice.md)
 
 上述不同形态的来源与入口边界见 [Cursor 模型](https://cursor.com/docs/models)、[Amp 档位](https://ampcode.com/docs/markdown/models-and-subagents)、[Replit 预算](https://docs.replit.com/billing/managing-spend.md)、[Qoder 自定义模型](https://docs.qoder.com/qoder/custom-models.md)、[Factory BYOK](https://docs.factory.ai/model-independence/byok.md)。模型服务与网页托管、远程工作机、发布服务又可能分开收费，最终应画出整套方案的账单路径。
 
@@ -167,7 +168,7 @@ reply = client.chat.completions.create(
 print(reply.choices[0].message.content)
 ```
 
-例如用 Step 海外标准 API 时，地址与 ID 分别为上述标准地址和 `step-5-preview`；其推理设置可按文档另外传入 `reasoning_effort="medium"`。换服务时必须重新核对字段；有的模型或协议并不接受同一套参数。连接成功以后，还要继续测试工具失败、纠错、附件和压缩恢复，不能停在能说一句话。[接口示例与字段](https://platform.stepfun.ai/docs/en/api-reference/chat/chat-completion-create)、[推理字段](https://platform.stepfun.ai/docs/en/guides/developer/reasoning.md)
+例如用 Step 海外标准 API 时，地址与 ID 分别为上述标准地址和 `step-5-preview`；其推理设置可按文档另外传入 `reasoning_effort="medium"`。换服务时必须重新核对字段；有的模型或协议并不接受同一套参数。文本连接成功后，再依次测试工具失败、纠错、附件和压缩恢复，确认完整流程可用。[接口示例与字段](https://platform.stepfun.ai/docs/en/api-reference/chat/chat-completion-create)、[推理字段](https://platform.stepfun.ai/docs/en/guides/developer/reasoning.md)
 
 ## 6.10 模型分数怎样还原成一套完整系统
 
@@ -176,7 +177,7 @@ print(reply.choices[0].message.content)
 | 用了哪个 Harness、提示与工具？ | 同模型换工具接口，可能改变任务完成率 |
 | 任务是什么版本，环境怎样准备？ | 数据集、依赖与评测器会影响成功定义 |
 | 单次尝试还是多次尝试统计？ | 成功率与成本需要按相同尝试次数比较 |
-| 推理、步数、时间和重试预算是多少？ | 额外计算可能带来提升，不能忽略代价 |
+| 推理、步数、时间和重试预算是多少？ | 同时记录额外计算带来的效果、费用与等待时间 |
 | 成绩由谁发布，能否独立复现？ | 厂商自报、内部基准与独立评测证据强度不同 |
 | 与自己的任务相似吗？ | 修复软件的分数不能直接代表中文小说或管理报告质量 |
 
@@ -186,20 +187,20 @@ print(reply.choices[0].message.content)
 '''
 p.write_text(t)
 
-p=OUT/'07-试用迁移与验收.md';t=(BASE/p.name).read_text();t=t[:t.index('## 7.8')]+'''## 7.8 按能力选验收项：同一张卡适用于不同产品
+p=OUT/'07-试用迁移与验收.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 7.8')]+'''## 7.8 按能力选验收项：同一张卡适用于不同产品
 
-下表是建议执行的试用方案，不是本报告已经跑过的结果。只选择候选实际提供、自己又确实需要的能力；没有某项能力不自动代表产品较差。
+下表提供待执行的试用方案，本报告未运行这些测试。按自己的需求和候选实际提供的能力选取检查项即可。
 
 | 检查点 | 怎样验证 | 通过标准 | 适用例子 |
 |---|---|---|---|
 | 版本与有效权限 | 记录版本、入口、安装方式和实际生效策略，尝试受限操作 | 行为与配置一致，不靠旧默认值印象 | Claude Code、Codex、Step、Grok、IDE Agent |
 | 模型和账单 | 核对实际模型 ID、地区、服务地址及服务侧用量 | 额度和计费渠道一致，界面估算与真实账单分开 | 原生订阅、BYOK、平台路由、Step Plan |
 | 工具完整往返 | 读取、修改、执行检查，再故意提供一次无效输入 | 错误可解释，能够纠正，工具结果没有断链 | 所有执行型代理 |
-| 多模态输入 | 使用已知内容的图片或其他支持附件 | 实际上传成功，不把模型能力当客户端能力 | Gemini、GPT、Step 等模型与相应入口 |
+| 多模态输入 | 使用已知内容的图片或其他支持附件 | 附件能经当前客户端完整传入，并得到符合内容的处理 | Gemini、GPT、Step 等模型与相应入口 |
 | 窗口与压缩 | 核对上下文、输出限制和实际压缩行为 | 保留关键约束，不悄悄沿用旧型号窗口 | Kimi、OpenCode、Step、自定义 Provider |
 | 中断与恢复 | 留下进度、失败原因和不能重复的动作，退出后继续 | 不重做有副作用的动作，能核对真实文件与外部状态 | Codex、Pi、MiMo、Hermes、目标型产品 |
 | 子代理与团队 | 两个独立调查，再测试取消、目录及用量 | 状态可跟踪，权限正确，集成与总费用可解释 | Cline Teams、Factory、Qwen、Step、OmO |
-| 安装包与实验能力 | 核对构建、依赖、注册和功能开关 | 不支持时明确识别，不能将源码存在视为启用 | 原生模块、脚本编排、后台代理、ACP 后端 |
+| 安装包与实验能力 | 核对构建、依赖、注册和功能开关 | 能明确识别是否支持，并核对当前安装中的实际启用状态 | 原生模块、脚本编排、后台代理、ACP 后端 |
 | 长期目标 | 暂停、继续、修改目标和结束 | 停止条件有效，最终成果另有检查 | ZCode、Step、任务型平台 |
 | 触发与长期在线 | 停止进程、恢复服务、重复触发同一任务 | 明确是否继续、是否重试、是否重复写入 | n8n、Hermes、OpenClaw、本机定时能力 |
 | 知识与记忆 | 更新一项事实，重新提问并检查来源 | 旧信息能纠正，资料不足能说明，权限范围正确 | AnythingLLM、Open WebUI、Hermes、Chatbox |
@@ -209,12 +210,12 @@ p=OUT/'07-试用迁移与验收.md';t=(BASE/p.name).read_text();t=t[:t.index('##
 ''';p.write_text(t)
 
 # README is maintained directly for public readers; only report chapters are generated.
-p=OUT/'01-从零理解.md';t=(BASE/p.name).read_text();t=re.sub(r'> 本报告原始观察截面.*?\n','> 建议先读本章，再看工具地图；已经有使用经验的读者，可以直接查工具档案和场景推荐。资料的采集时间与版本见参考索引。\n',t)
+p=OUT/'01-从零理解.md';t=read_baseline(BASE/p.name);t=re.sub(r'> 本报告原始观察截面.*?\n','> 建议先读本章，再看工具地图；已经有使用经验的读者，可以直接查工具档案和场景推荐。资料的采集时间与版本见参考索引。\n',t)
 t=t.replace('增补条目中还会用到以下几个词：','任务控制、部署与资料处理还会用到以下词语：')
 t=t.replace('| JSON Schema | 为数据规定字段、类型和格式的结构说明 | 格式合规不代表字段里的事实正确 |\n','')
 extra_terms='''| Turn / Step / Run | 一次交互轮次／一次模型与工具步骤／一段被宿主管理的运行 | 一轮可有多个步骤；文字停止、工具结束与整段运行结束不是一回事 |
 | Host / Core / Coordinator | 宿主／核心执行逻辑／协调器 | 分别可负责承载会话、推进任务、安排交接，实际边界要看具体工具 |
-| State Machine / 状态机 | 用有限状态和转换规则管理过程 | 排队、等待批准、执行、取消与完成应分清，不能都用“加载中”表示 |
+| State Machine / 状态机 | 用有限状态和转换规则管理过程 | 清楚区分排队、等待批准、执行、取消与完成，便于判断当前进度 |
 | Event Bus / 事件总线 | 模块之间发布和接收事件的通信机制 | 实时通知不一定已经写入可恢复的日志 |
 | Projection / 状态投影 | 从事件或历史记录重新计算某种可用视图 | 屏幕显示、运行状态和模型输入可能来自同一记录的不同视图 |
 | Tool Registry / 工具契约 | 可用工具的登记表／参数与结果格式约定 | 模型看见哪些工具、怎样调用，由宿主和配置共同决定 |
@@ -230,10 +231,10 @@ extra_terms='''| Turn / Step / Run | 一次交互轮次／一次模型与工具�
 | Spec / Steering | 可检查的需求设计材料／持续指导项目的规则 | 前者帮助对齐当前功能，后者保存更稳定的工作约定 |
 | Plan / Build / Act | 常见的规划／构建／执行模式名称 | 名字相近不保证工具权限、审批或操作范围相同 |
 | RepoMap / Repo Wiki | 仓库结构摘要／项目知识说明 | 都帮助理解项目，但来源、生成方式与更新时效不同 |
-| Dry-run，预演 | 只展示将做的操作，尽量不真正修改对象 | 是否真的没有副作用必须测试，不能只看开关名称 |
+| Dry-run，预演 | 只展示将做的操作，尽量不真正修改对象 | 通过实际检查确认预演是否保持文件与外部状态不变 |
 | 幂等 | 同一请求执行多次，不产生额外的重复效果 | 自动重试、重复触发和恢复任务时特别重要 |
 | Schema / 序列化 | 数据结构约定／把对象转换成可传输或保存的形式 | 字段、类型和格式错了，下游模型再强也可能拿错材料 |
-| 依赖图，DAG | 用连线说明哪些任务要等前面的任务完成 | 并行前先辨认依赖，不能所有工作同时开始 |
+| 依赖图，DAG | 用连线说明哪些任务要等前面的任务完成 | 根据依赖安排先后顺序，再并行推进相互独立的任务 |
 | SDK／解释器／构建依赖 | 程序开发接口／执行程序的环境／生成软件需要的部件 | 在这里主要提醒：项目环境没准备好，模型也无法正确验证 |
 | Oracle / Librarian | 部分产品给推理咨询／资料调查等职责起的角色名 | 名称是产品约定，要看实际工具、上下文与权限 |
 | Work / Mission / Quest | 不同产品给工作模式、成组任务或目标执行起的名称 | 不能凭同类营销词推断它们使用同一种调度和恢复机制 |
@@ -244,7 +245,7 @@ glossary_end='\n\n## 一次任务究竟经过哪些地方'
 assert t.count(glossary_end)==1, 'Expected a single glossary insertion boundary'
 t=t.replace(glossary_end,'\n'+extra_terms+'\n## 一次任务究竟经过哪些地方')
 p.write_text(t)
-p=OUT/'08-方法与参考资料.md';t=(BASE/p.name).read_text();t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
+p=OUT/'08-方法与参考资料.md';t=read_baseline(BASE/p.name);t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
 t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','所有工具按相同的七个维度编排，配有责任分工图、能力表、操作步骤与任务卡。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
 t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能需要读取实际呈现内容；网页、公开源码与发行二进制也可能不同步。报告按证据分别判断，不将抓到网页、找到源码或绘出概念图当作实际运行验证。各来源保留自己的采集时间，本报告没有将所有项目伪装成同一天全面重验。\n\n',t)
 t=t.replace('Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH 等公开核心','Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH、Step 等公开核心')

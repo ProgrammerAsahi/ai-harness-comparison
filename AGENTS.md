@@ -6,7 +6,7 @@
 
 1. 阅读 `README.md`、`research/研究材料说明.md` 和 `HISTORY.md`，检查 Git 状态与本次需求涉及的章节。保留用户已有修改。
 2. 报告正文在 `report/`；根目录 `AI-Harness调研报告.html` 是供阅读的自包含产物。不要只修改 HTML，也不要把生成后的 Markdown 改动留在会被下一次生成覆盖的位置。
-3. 工具档案由 `research/profile_expansions*.py`、`profile_deepdives.py`、`profile_models.py`、`profile_diagrams.py` 与 `build_profiles.py` 生成。旧稿 `research/editorial-baseline/` 目前仍是生成输入，不是当前正文，不能仅因“旧”就删除。
+3. 工具档案由 `research/profile_expansions*.py`、`profile_deepdives.py`、`profile_models.py`、`profile_diagrams.py` 与 `build_profiles.py` 生成。旧稿 `research/editorial-baseline/` 目前仍是生成输入；其现行措辞修订保存在 `research/editorial-revisions.json`，由 `editorial.py` 读取时应用。旧稿用于历史追溯，修改这些段落时维护明确的原文／修订对；其余档案直接修改相应生成器。
 4. 根目录 README 为人工维护入口，不由报告生成器覆盖。通用章节由 `integrate_report.py` 组织；全景清单由 `build_inventory.py` 组织；引用由 `render_references.py` 和 `build_references.py` 维护；通用图由 `build_figures.py` 绘制；HTML 由 `build_report.mjs` 生成，分页版由 `build_site.mjs` 使用同一次渲染结果生成。先确认真正的编辑入口。
 5. 不主动安装或运行被研究的 Harness，不发起付费模型测试。需要运行测试时，先确认它属于用户授权的范围；报告生成与本地检查按正常工作直接完成。
 

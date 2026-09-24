@@ -51,6 +51,7 @@ npm run check
 | 工具标识 | `report/assets/logos/`、`research/logo-sources.json`；保留官方原图和来源 |
 | 深浅模式 | `research/report-theme.js`、`research/report-theme.css`；回归测试见 `report-theme.test.mjs` |
 | 跨工具比较、场景、模型与成本、方法等章节 | `research/integrate_report.py`，并核对其旧稿输入 |
+| 沿用旧稿的段落措辞 | `research/editorial-revisions.json` 中的原文／修订对，由 `research/editorial.py` 读取时应用 |
 | 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json` |
 | 来源与引用 | `research/pages-*.json`、`research/citations.json`、`research/source-manifest.json` |
 | 阅读版 HTML 与通用 SVG | `research/build_report.mjs`、`research/build_figures.py` |
@@ -58,7 +59,7 @@ npm run check
 | 全站搜索、旧首页锚点与页内状态 | `research/site.js`、`research/site-search.js` |
 | 目录跟随、标题筛选和移动端菜单 | `research/report-navigation.js`；生成时内嵌到 HTML |
 
-`research/editorial-baseline/` 是旧稿与当前生成输入。不要仅修改生成后的 Markdown，也不要直接批量改旧稿中的所有事实；先辨认相应生成器怎样组合内容，避免下一次构建覆盖修改。
+`research/editorial-baseline/` 同时用于历史追溯和当前生成输入，保持底稿原样。修订其中仍在使用的段落时，在 `research/editorial-revisions.json` 对应文件下登记准确的 `before` 与 `after`；读取时找不到原文会报错，便于发现失效修订。其他段落直接修改上表对应生成器，再重新构建。涉及事实变化时仍需核验来源并同步证据记录。
 
 独立的量化方法报告位于 `studies/harness-quantification/`，不属于主报告工具档案生成链。其 `report.md` 在参考资料生成标记之前可直接编辑；图示、HTML 和计算例子各有生成入口。只修改该报告时运行 `npm run build:study` 与 `npm run check:study`，详见[该目录说明](studies/harness-quantification/README.md)。完整 `build`／`check` 同样包含这一部分。
 
