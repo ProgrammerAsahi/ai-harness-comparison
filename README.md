@@ -40,6 +40,14 @@
 
 55 份档案包括 46 个核心工具／产品家族、5 个相邻项目和 4 个维护观察条目。每份档案按同样七个部分组织，包含总览图、下一层模块图、机制表和具体任务路径；复杂子系统另配放大图。收录不代表推荐，篇幅不代表成熟度或实测质量。
 
+## 方法研究：怎样量化 Harness 的差异
+
+**[阅读《把 AI Harness 变成可比较的数据》→](https://programmerasahi.github.io/ai-harness-comparison/studies/harness-quantification/)** · [Markdown 版](studies/harness-quantification/report.md)
+
+这份独立报告讨论架构特征、Gower 差异度、未知信息、权重、分类与可视化，并深入分析「Harness × 模型」组合怎样评估。包含 **40 个相关项目与研究条目、九组 36 个候选字段、六幅方法图和可复算示例**。
+
+它是一份方法方案，尚未给全部工具打分，也没有运行真实产品或模型测试。[计算示例与维护说明](studies/harness-quantification/README.md)列明了复算方法和研究边界。
+
 ## 纠错与参与
 
 发现事实过时、命令不准确或链接失效，请[提交 Issue](https://github.com/ProgrammerAsahi/ai-harness-comparison/issues/new/choose)，提供**章节位置、原文、建议改法和官方来源**。界面问题请附浏览器、窗口宽度和复现步骤；不要上传密钥或含私人信息的截图。

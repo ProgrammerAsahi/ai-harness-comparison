@@ -60,6 +60,8 @@ npm run check
 
 `research/editorial-baseline/` 是旧稿与当前生成输入。不要仅修改生成后的 Markdown，也不要直接批量改旧稿中的所有事实；先辨认相应生成器怎样组合内容，避免下一次构建覆盖修改。
 
+独立的量化方法报告位于 `studies/harness-quantification/`，不属于主报告工具档案生成链。其 `report.md` 在参考资料生成标记之前可直接编辑；图示、HTML 和计算例子各有生成入口。只修改该报告时运行 `npm run build:study` 与 `npm run check:study`，详见[该目录说明](studies/harness-quantification/README.md)。完整 `build`／`check` 同样包含这一部分。
+
 ## 标识与架构图的维护
 
 - 标识只采用官网或官方仓库发布的资源，保存原始文件、来源页、采集时间和 SHA-256。厂商品牌与工具独立标识要在说明中区分；不要用 GitHub 通用图标或重绘近似图代替。图片不改色、不拉伸，深色模式也保留原图。
