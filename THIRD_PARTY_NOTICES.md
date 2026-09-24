@@ -21,8 +21,11 @@
 | 依赖 | 用途 | 许可与上游 |
 |---|---|---|
 | marked 17.0.5 | 构建时将 Markdown 转为 HTML | MIT；[上游许可](https://github.com/markedjs/marked/blob/v17.0.5/LICENSE.md) |
+| KaTeX 0.16.22 | 构建时排版量化报告的公式，内嵌 CSS 与 WOFF2 数学字体 | MIT；[上游项目](https://github.com/KaTeX/KaTeX)、[官方构建与字体说明](https://katex.org/docs/node)；完整许可随生成 HTML 保留 |
 
 依赖由 `package-lock.json` 固定，安装时其许可文件随包取得。生成的报告不内嵌 marked 运行库；报告自身的交互脚本来自本仓库。
+
+量化报告内嵌 KaTeX 生成的 HTML／MathML、样式及原始 WOFF2 字体，保留其 MIT 版权与许可全文；阅读时无需加载 KaTeX JavaScript 或外部字体。内嵌字体属于第三方材料，沿用上游许可。
 
 ## 贡献
 

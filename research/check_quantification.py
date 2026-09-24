@@ -72,7 +72,7 @@ for link in parser.links:
     local_links += 1
 
 body = markdown.split("<!-- REFERENCES:GENERATED -->")[0]
-check(len(re.findall(r"^\*\*\d{2}｜", body, re.M)) == 40, "Related-work catalogue changed: review stated count")
+check(len(re.findall(r"^\*\*\d{2} · ", body, re.M)) == 40, "Related-work catalogue changed: review stated count")
 fields = re.findall(r"^\| (F\d{2}) \|", body, re.M)
 check(fields == [f"F{i:02}" for i in range(1, 37)], "Candidate field order or coverage mismatch")
 check(parser.sections == manifest["chapter_count"] == 18, "Chapter count mismatch")
@@ -129,6 +129,8 @@ result = {
     "local_links_checked": local_links, "cached_source_hashes_verified": cached,
     "manifest_only_source_checks": manifest_only, "indexed_excerpt_only_sources": excerpt_only,
     "synthetic_calculation_check": "Committed JSON equals direct recomputation; unit tests run separately by npm run check:study",
+    "mathematics": {key: manifest["mathematics"][key] for key in ("renderer", "version", "display", "inline")},
+    "rendering_regression_checks": "Markdown emphasis, field tables, formulas, code literals and embedded fonts; executed by npm run check:study",
     "diagram_visual_qa": visual_status,
     "browser_visual_qa": "Not performed; prior local HTML preview denied by URL policy. No alternative local route used.",
     "product_or_model_tests": "Not performed; numerical tests use synthetic objects only",

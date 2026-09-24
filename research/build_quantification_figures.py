@@ -55,7 +55,7 @@ for x, title, inputs, outputs in [
     d.box(x, 120, 280, 128, title, inputs)
     d.line(x + 140, 250, x + 140, 292)
     d.box(x, 305, 280, 127, "得到的结果", outputs, accent=True)
-d.text(500, 489, "三者可以关联研究，但不能互相冒充。", 22, anchor="middle", bold=True)
+d.text(500, 489, "关联三张地图，分别保留证据与解释。", 22, anchor="middle", bold=True)
 d.save()
 
 d = Diagram("02-feature-hierarchy", "大维度分预算，小字段给证据", "示意：九组等权时每组占 1/9；拆字段不会增加整组权重。", 570)
@@ -129,7 +129,7 @@ for x, y, label in points:
     d.text(x, y - 16, label, 20, anchor="middle")
 d.text(308, 405, "实线：Harness A　虚线：Harness B", 18, anchor="middle")
 d.box(580, 145, 385, 145, "先有可比的组合矩阵", ["同任务、环境与预算规则", "足够交叉与重复运行", "缺测格子保持缺测"])
-d.box(580, 324, 385, 134, "再估计交互与不确定性", ["不能只把两个单独分数相加", "不能从静态架构推测成功率"], accent=True)
+d.box(580, 324, 385, 134, "再估计交互与不确定性", ["用交叉实验识别搭配效应", "用运行结果估计成功率"], accent=True)
 d.text(500, 514, "这是方法示意，不是产品排名或实测趋势。", 21, anchor="middle", bold=True)
 d.save()
 print(f"Built {len(list(OUT.glob('*.svg')))} original method diagrams")

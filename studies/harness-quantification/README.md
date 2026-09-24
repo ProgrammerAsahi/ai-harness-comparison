@@ -8,7 +8,7 @@
 
 ## 阅读与复算
 
-只读报告无需安装依赖。下载本目录的 `index.html` 后可直接在浏览器打开；正文、图示、样式、主题和目录脚本均已内嵌。外部参考资料仍需联网，数据及源码链接需要下载整个仓库后使用。
+只读报告无需安装依赖。下载本目录的 `index.html` 后可直接在浏览器打开；正文、图示、数学公式及字体、样式、主题和目录脚本均已内嵌。外部参考资料仍需联网，数据及源码链接需要下载整个仓库后使用。
 
 计算示例全部为虚构数据，**没有对真实 Harness 或模型打分**。在仓库根目录运行，只需 Python 3.10+：
 
@@ -31,7 +31,7 @@ npm run build:study
 npm run check:study
 ```
 
-安装依赖后，构建与常规检查均可离线执行，不调用模型、不安装被研究的软件。
+安装依赖后，构建与常规检查均可离线执行。检查包括 Markdown 标记、字段表、公式及内嵌字体、计算示例和页面链接。整个过程只生成和核查报告文件。
 
 | 要改什么 | 编辑入口 |
 |---|---|
@@ -39,6 +39,7 @@ npm run check:study
 | 来源与阅读范围 | 本目录 `sources.json`；新增来源前核验一手材料 |
 | 图示 | `research/build_quantification_figures.py` |
 | HTML 与样式 | `research/build_quantification.mjs`、`research/quantification.css` |
+| Markdown 与公式解析 | `research/quantification-markdown.mjs`；行内用 `$…$`，独立公式用前后各占一行的 `$$` |
 | 计算示例 | 本目录 `calculate_examples.py`、`test_examples.py` |
 
 参考资料列表由来源表与正文引用共同生成，不单独修改。修改后提交正文、生成器和对应 SVG／HTML／JSON 产物。`npm run build` 与 `npm run check` 也已包含本研究报告。
