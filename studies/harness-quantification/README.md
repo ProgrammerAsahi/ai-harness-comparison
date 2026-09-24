@@ -48,7 +48,7 @@ npm run check:study
 
 来源表区分原文取得、浏览工具摘录和仅索引摘要；下载并不等于全文阅读。第三方全文缓存位于已忽略的 `research/pages/quantification/`，不随 Git 分发。普通检查核对记录；本地有缓存时同时核对哈希，但不会悄悄重新抓取最新版。
 
-[validation.json](validation.json) 关联本次 HTML 哈希，记录文件结构、计算示例复算与图示检查范围；单元测试由上面的检查命令另行执行。[六幅 SVG 的视觉记录](diagram-visual-check.json)只覆盖独立图示。静态检查不能证明浏览器排版或所有外部链接始终可用。
+[validation.json](validation.json) 关联本次 HTML 哈希，记录文件结构、计算示例复算与图示检查范围；单元测试由上面的检查命令另行执行。[六幅 SVG 的视觉记录](diagram-visual-check.json)覆盖独立图示；[在线页面抽查记录](browser-visual-check.json)列出已检查的章节、主题和屏幕范围。每份记录关联对应文件哈希，具体范围以记录为准。
 
 没有进行产品运行、模型兼容性或任务表现测试。36 个字段仍是候选码本，尚未完成对主报告所有工具的试编码和覆盖验证。
 

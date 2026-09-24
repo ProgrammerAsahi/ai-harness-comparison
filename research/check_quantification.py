@@ -120,6 +120,15 @@ if visual_path.exists():
         check(sha((DIR / item["file"]).read_bytes()) == item["sha256"], "Stale diagram visual check")
     visual_status = "Six light-mode SVG thumbnails reviewed; hashes matched. See diagram-visual-check.json; no HTML browser rendering."
 
+browser_status = "Not performed for this HTML revision"
+browser_path = DIR / "browser-visual-check.json"
+if browser_path.exists():
+    browser_record = json.loads(browser_path.read_text())
+    if browser_record["html_sha256"] == manifest["html_sha256"]:
+        browser_status = "Published page spot-checked in Chrome, desktop light/dark and narrow formula layout; see browser-visual-check.json for exact scope"
+    else:
+        browser_status += "; an older inspection is retained in browser-visual-check.json"
+
 result = {
     "method": "Static HTML/Markdown/SVG and source-manifest checks; no browser or product execution",
     "html_sha256": manifest["html_sha256"], "markdown_sha256": manifest["markdown_sha256"],
@@ -132,7 +141,7 @@ result = {
     "mathematics": {key: manifest["mathematics"][key] for key in ("renderer", "version", "display", "inline")},
     "rendering_regression_checks": "Markdown emphasis, field tables, formulas, code literals and embedded fonts; executed by npm run check:study",
     "diagram_visual_qa": visual_status,
-    "browser_visual_qa": "Not performed; prior local HTML preview denied by URL policy. No alternative local route used.",
+    "browser_visual_qa": browser_status,
     "product_or_model_tests": "Not performed; numerical tests use synthetic objects only",
     "issues": issues,
 }
