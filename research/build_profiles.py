@@ -83,6 +83,8 @@ def assemble(key,title,body):
     sections.append(usage+'\n\n下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。\n\n```'+p['command']+'\n```')
     sections.append('下面是一份**可直接改写使用的试用任务**，属于本报告设计的验收示例，并非已完成的运行测试。\n\n> '+p['task']+'\n\n'+p['acceptance'])
     model_table='| 选择路线 | 候选组合 | 怎样决定 |\n|---|---|---|\n'+'\n'.join('| '+' | '.join(r)+' |' for r in ROUTES[key])
+    if '{{m:' in model_table:
+        model_table+='\n\n*表中具体型号核实于 {{date:facts}}；各家族的完整型号与限制见[第 06 章的集中表](06-模型搭配与成本.md)。*'
     sections.append((model+'\n\n'+model_table+'\n\n'+p['tradeoff']).strip())
     urls=[]
     for label,url in re.findall(r'\[([^\]]+)\]\((https?://[^)]+)\)',body+'\n'+p['sources']):

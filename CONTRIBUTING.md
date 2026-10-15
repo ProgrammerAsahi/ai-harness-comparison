@@ -52,7 +52,8 @@ npm run check
 | 深浅模式 | `research/report-theme.js`、`research/report-theme.css`；回归测试见 `report-theme.test.mjs` |
 | 跨工具比较、场景、模型与成本、方法等章节 | `research/integrate_report.py`，并核对其旧稿输入 |
 | 沿用旧稿的段落措辞 | `research/editorial-revisions.json` 中的原文／修订对，由 `research/editorial.py` 读取时应用 |
-| 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json` |
+| 产品目录、编号与维护快照 | `research/build_inventory.py`、`research/repository-snapshot.json`、`research/repository-status.json` |
+| 型号、价格、套餐、维护状态与近期变动 | `research/volatile-facts.json`；正文与档案中的 `{{m:…}}`、`{{table:…}}` 占位符由 `research/resolve_volatile.py` 替换 |
 | 来源与引用 | `research/pages-*.json`、`research/citations.json`、`research/source-manifest.json` |
 | 阅读版 HTML 与通用 SVG | `research/build_report.mjs`、`research/build_figures.py` |
 | 分页结构、跨页链接与首页 | `research/build_site.mjs`、`research/site.css`；与单页共用已渲染正文 |
@@ -89,6 +90,19 @@ npm run check:cached-sources
 下载结果必须与已记录的大小和哈希一致才会保存。若上游不可用或内容不符，应排查和说明，不悄悄换成最新 HEAD。只恢复部分仓库时，全量严格检查会报告其他缓存缺失，这是正常结果。
 
 新增来源时先读取与核验材料，再登记仓库版本和引用文件哈希；不能为消除检查错误编造来源记录。`collect_repos.py` 与 `collect_pages.py` 是进行新一轮资料采集的工具，不是默认构建步骤。`build_inventory.py --refresh-local-snapshot` 会把本地完整采集元数据合并到仓库快照，只在确实更新研究范围时使用。
+
+## 刷新易变事实
+
+型号、价格和维护状态变化最快。它们集中保存在 `research/volatile-facts.json`，正文和档案只引用角色名或表名，刷新时不逐处修改正文：
+
+```bash
+# 需要网络；读取官方页面并登记 URL、读取时间与哈希，正文缓存写入被忽略的 research/pages/
+python3 research/archive_sources.py <本轮来源清单.json>
+# 需要已登录的 gh；更新星数、最近推送、归档与最新 Release
+python3 research/refresh_repo_status.py
+```
+
+来源清单格式见 `archive_sources.py` 开头的说明。核对完成后修改 `volatile-facts.json` 的数值和 `checked_at`，再运行 `npm run build` 与 `npm run check`。新增角色或表时，在生成器中写入相应占位符；未使用的条目和未替换的占位符都会让构建失败。改变了结论的事实写进一份新的刷新记录，例如 `research/事实刷新-2026-10-15.md`；旧记录保留原日期，不改写。
 
 ## 验证与提交
 

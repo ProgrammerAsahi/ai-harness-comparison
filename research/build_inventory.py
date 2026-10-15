@@ -23,6 +23,12 @@ catalog=[
 ('C01','Hermes Agent','hermes','会话检索、记忆、Skills 与自动化'),('C02','OpenClaw','openclaw','Gateway、渠道、设备与持续服务'),('C03','Agent Zero','agent-zero','通用计算环境与上下级代理'),('C04','Chatbox AI','chatbox','聊天＋工作模式；商业与社区版区分'),('C05','Cherry Studio','cherry-studio','桌面工作台＋多种代理驱动'),('C06','Open WebUI','open-webui','自托管门户、知识与可选执行能力'),('C07','LibreChat','librechat','共享对话产品＋Agent Builder'),('C08','LobeHub','lobehub','有状态的 Agent 与协作工作台'),('C09','AnythingLLM','anythingllm','资料工作空间、检索与 Flow'),
 ('D01','Dify','dify','相邻：AI 应用与工作流'),('D02','n8n','n8n','相邻：业务自动化与 Agent 节点'),('D03','mini-SWE-agent','mini-swe-agent','相邻：研究与评测'),('D04','SWE-agent','swe-agent','转移重点：官方建议新用 mini'),('D05','Oh My OpenAgent／OmO','oh-my-openagent','相邻：叠加编排与扩展体系')]
 byid={x['id']:x for x in rows}
+status_file=R/'repository-status.json'
+status=json.loads(status_file.read_text()) if status_file.exists() else None
+if status:
+ for s in status['repositories']:
+  byid[s['id']]={**byid[s['id']],'url':s['url'],'stars':s['stars'],'pushed_at':s['pushed_at'],'archived':s['archived'],'retrieved_at':status['retrieved_at']}
+STATUS_DATE=(status or {'retrieved_at':rows[0]['retrieved_at']})['retrieved_at'][:10]
 paths={'A':'03A-终端与开放编程代理.md','B':'03B-编辑器与托管工作台.md','C':'03C-个人助理与知识工作台.md','D':'03D-相邻路线与维护观察.md'}
 head='''# 02｜全景清单：哪些值得纳入，哪些需要保留判断
 
@@ -40,9 +46,9 @@ head='''# 02｜全景清单：哪些值得纳入，哪些需要保留判断
 
 ## 2.2 核心清单
 
-以下星数与活动是抓取时的快照，“近期”指该次采集前九十天；精确时间见仓库记录。它们没有经过热度加权，也没有拿来计算产品质量总分。商业产品的“未核验”表示没有统一公开使用量证据，不等于用户少。每组详情链接内有对应编号。
+以下星数与活动按 GitHub 元数据核实于 STATUS_DATE，“近期”指核实日前九十天；源码分析仍基于各档案引用的固定提交快照。精确时间见[状态记录](../research/repository-status.json)与[快照记录](../research/repository-snapshot.json)。它们没有经过热度加权，也没有拿来计算产品质量总分。商业产品的“未核验”表示没有统一公开使用量证据，不等于用户少。每组详情链接内有对应编号。
 '''
-parts=[head]
+parts=[head.replace('STATUS_DATE',STATUS_DATE)]
 for group,title in [('A','终端与开放编程代理'),('B','编辑器与托管工作台'),('C','个人助理与知识工作台'),('D','相邻路线与转移重点')]:
  parts.append(f'\n### {group}｜{title}\n\n[阅读本组详细档案]({paths[group]})\n\n| 编号 | 工具／产品家族 | 关注度与活动证据 | 定位与当前边界 |\n|---|---|---|---|\n')
  for code,name,key,note in catalog:
@@ -56,14 +62,15 @@ for group,title in [('A','终端与开放编程代理'),('B','编辑器与托管
 parts.append('''
 ## 2.3 维护观察与历史条目
 
-| 项目 | 本次状态 | 是否作为新用户的活跃首选 |
-|---|---|---|
-| Continue | README 明确不再积极维护，最终 2.0.0；元数据仍有近期推送 | 否 |
-| Roo Code | 仓库归档，官方 README 写扩展已关闭 | 否 |
-| Aider | 未归档；快照最后推送 2026-05-22 | 维护观察，先核实当前适配 |
-| bytedance/trae-agent | 快照最后推送 2026-02-05；不等于商业 TRAE | 研究参考，不当作商业产品现状 |
+{{table:maintenance}}
 
 [维护声明与架构价值详见 03D](03D-相邻路线与维护观察.md)。所有仓库的完整提交、精确时间、许可证元数据与目录规模保存在[CSV](../research/repository-snapshot.csv)和[JSON](../research/repository-snapshot.json)。
+
+### 近期产品变动
+
+产品归属、入口和计费方式的变化会直接影响选型。下表只收录会改变使用路径的官方公告，档案正文的机制分析不因此重写。
+
+{{table:recent-changes}}
 
 ## 2.4 容易被重复计数或混淆的名字
 

@@ -50,6 +50,16 @@ changes={
 '| 30 技术文档随代码更新 | Claude Code＋Sonnet 5 | Codex＋GPT-5.6 Terra |':'| 30 技术文档随代码更新 | Claude Code＋Sonnet 5 | Codex＋GPT-5.6 Terra；Step Code＋Step-5-Preview |'}
 for a,b in changes.items():
     assert a in t,a;t=t.replace(a,b)
+for a,b in [('Codex＋Terra／Sol','Codex＋{{m:openai.daily}}'),('Cline＋Sonnet 5','Cline＋目录内的 Claude Sonnet'),
+    ('Kiro＋Sonnet 5／GPT-5.6 Sol','Kiro＋Auto 或目录内的 Sonnet／GPT 日常档'),('Chatbox Chat＋Sonnet 5','Chatbox Chat＋{{m:anthropic.daily}}'),
+    ('Claude Code＋Sonnet 5','Claude Code＋{{m:anthropic.daily}}'),('GPT-5.6 Luna／Terra','{{m:openai.light}}／{{m:openai.daily}}'),
+    ('GPT-6 Astra／Sol','{{m:openai.flagship}}／{{m:openai.daily}}'),('GPT-5.6 Terra／Sol','{{m:openai.daily}}'),
+    ('GPT-5.6 Terra','{{m:openai.daily}}'),('GPT-5.6 Sol','{{m:openai.daily}}'),('GPT-6 Astra','{{m:openai.flagship}}'),
+    ('Gemini 3.8 Flash／3.1 Pro','{{m:google.fast}}／{{m:google.pro}}'),('Gemini 3.8 Flash／Pro','{{m:google.fast}}／可用 Pro'),
+    ('Step-5-Preview','{{m:step.flagship}}')]:
+    assert a in t,a;t=t.replace(a,b)
+assert not re.search(r'Sonnet 5|GPT-5\.6|GPT-6 |Gemini 3',t)
+t=t.replace('\n## 5.1 ','\n表中的具体型号取自[第 06 章的集中表](06-模型搭配与成本.md)，核实于 {{date:facts}}；型号更新时只改那张表。\n\n## 5.1 ',1)
 t=t.replace('原生工具循环省配置；先定接口','原生组合是试用起点，非实测胜负；先定接口')
 t=t.replace('模型看图只是起点，还要浏览器检查、字体和响应式调整','看图、页面验证和发布是三步；静态托管不包含应用后端与数据库')
 t+='''## 5.7 同一任务怎样在两个候选之间决定
@@ -74,15 +84,13 @@ p.write_text(t)
 # Models are compared by a shared set of questions; specifications and billing
 # examples are embedded in the relevant topic rather than a vendor supplement.
 p=OUT/'06-模型搭配与成本.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 6.8')]
-t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。以下型号依据已收集的官方资料，采集时间见来源记录；这些型号用于说明候选路线，实际配置时应结合来源日期核对可用性。',t)
+t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。本报告把型号、价格、套餐和维护状态集中在少数几张标有核实日期的表里：型号见 6.2，价格与套餐见 6.5，维护状态见[第 02 章](02-全景清单.md)。其他章节和工具档案引用的具体型号都取自这些表；实际配置时，再按自己的账户、地区和入口核对。',t)
 t=t.replace('详见 6.8','按本章规格、协议与成本核对')
-t=t.replace('| OpenAI：GPT-6 Astra；GPT-5.6 Sol、Terra、Luna | Codex；官方已支持这些型号的多模型产品 | Astra 复杂长任务；Sol 深度与成品；Terra 日常；Luna 重复且易验收任务 | 这是官方定位基础上的选型顺序；所在入口不一定全部可选 |', '| OpenAI：GPT-6 Astra、Sol、Luna；过渡期仍提供 GPT-5.6 系列 | Codex；已明确支持相应型号的多模型产品 | Astra 复杂长任务；Sol 日常开发与多步工作；Luna 清楚、重复且易验收的任务 | GPT-6 Sol／Luna 正在推出；以账户和入口实际目录为准，不能由原生支持推断第三方已适配 |')
-t=t.replace('### 型号名为什么容易误导', '官方目录已加入 GPT-6 Sol 和 Luna，并说明推出期间 GPT-5.6 系列仍可用。场景表中的 GPT-5.6 组合可作既有环境的对照；新用户先核对当前目录，再用同一任务比较新旧候选的效果与成本。[官方模型目录](https://learn.chatgpt.com/docs/models.md)\n\n### 型号名为什么容易误导')
+t=re.sub(r'^\| 家族与已核实的当前例子.*?\n\n来源：\[OpenAI\].*?\n',lambda m:'{{table:model-families}}\n',t,count=1,flags=re.M|re.S)
+assert '{{table:model-families}}' in t
+open_weights='''**开放状态要按型号核对。** 有官方权重和模型卡的候选，与仅提供云端服务或仍在计划开放的型号不能混为一类。以 Step-5-Preview 为例：官方在 Hugging Face 公开了 FP8 与 BF16 两套权重，截至 {{date:facts}} 读取时无需申请即可访问，另有 NVFP4 版本和 ModelScope 镜像；模型许可为 StepFun Model License 1.0，对商业使用设有条件。这与 Step Code 等 Harness 的 MIT 许可是两回事，Harness 的许可不会转移给它调用的模型。第三方同名上传不能代替官方仓库。本报告只读取了仓库元数据和许可文本，没有下载或运行这些权重。[FP8 权重](https://huggingface.co/stepfun-ai/Step-5-Preview)、[BF16 权重](https://huggingface.co/stepfun-ai/Step-5-Preview-BF16)、[许可文本](https://huggingface.co/stepfun-ai/Step-5-Preview/raw/main/LICENSE.txt)
 
-t=t.replace('[Grok](https://docs.x.ai/build/settings)。','[Grok](https://docs.x.ai/build/settings)、[Step](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview)。')
-open_weights='''**开放状态要按型号核对。** Qwen3-Coder、gpt-oss 等已有官方模型卡的候选，与仅提供云端服务或仍在计划开放的型号不能混为一类。Step-5-Preview 的官方发布页说明产品与 API 已提供，权重计划于 2026 年 10 月 15 日开放；所收集资料没有证明官方完整权重和最终许可已可获得。第三方同名上传不替代官方发布证据。Harness 的 MIT 许可也不能自动转移给其调用的模型。[模型发布与开放计划](https://www.stepfun.com/step-5-preview)
-
-大型 MoE 尤其不能只按活跃参数买硬件。例如 Step-5-Preview 公布约 600B 总参数、每 Token 激活 27B；全部参数按 16 bit 保存的理论原始权重约 1.2 TB，理想化 4 bit 约 300 GB，还没有算额外数据和上下文缓存。它与几十 B 的本地候选是不同的容量级别。这只是算术下限，不是实际发行包或部署承诺。[参数来源](https://www.stepfun.com/step-5-preview)
+大型 MoE 尤其不能只按活跃参数买硬件。例如 Step-5-Preview 公布约 600B 总参数、每 Token 激活 27B；全部参数按 16 bit 保存的理论原始权重约 1.2 TB，理想化 4 bit 约 300 GB，还没有算额外数据和上下文缓存。官方 BF16 文件合计约 1.2 TB，FP8 文件约 650 GB，与算术估计一致。它与几十 B 的本地候选是不同的容量级别；这些数字只说明存储量级，不是部署承诺。[参数来源](https://www.stepfun.com/step-5-preview)、[BF16 文件清单](https://huggingface.co/stepfun-ai/Step-5-Preview-BF16/raw/main/model.safetensors.index.json)
 
 '''
 t=t.replace('## 6.5 成本要按',open_weights+'## 6.5 成本要按')
@@ -90,12 +98,9 @@ billing='''### 把标价换算成任务费用
 
 按量服务至少分未缓存输入、缓存命中输入和输出三项；订阅的 Credits 则可能另有换算规则。不同地区分别采用当地公布的价格、币种与计费规则。下面用公开价目提供一个可复算示例，**用量是演算假设，不是实测任务**，也不是跨厂商价格排名。
 
-| 计价例子 | 未缓存输入／百万 Token | 缓存命中输入／百万 Token | 输出／百万 Token | 10 万未缓存输入＋2 万输出的模型费 |
-|---|---:|---:|---:|---:|
-| Step-5-Preview 中国区标准 API | ¥7 | ¥0.35 | ¥20 | `0.1×7＋0.02×20＝¥1.10` |
-| 同型号海外标准 API | US$1.00 | US$0.05 | US$2.70 | `0.1×1＋0.02×2.7＝US$0.154` |
+{{table:api-prices}}
 
-这是所引官方页面的标价，购买时重新核对。该服务的推理过程与最终回答都计入输出，首次缓存写入按未命中输入收费。工具、托管、网关和人工成本另算。换成其他模型时，沿同一公式代入其实际价格与计费定义。[中国区价目](https://platform.stepfun.com/docs/zh/guides/pricing/details.md)、[海外价目](https://platform.stepfun.ai/docs/en/guides/pricing/details.md)
+这是核实日官方页面的标价，购买时重新核对。该服务的推理过程与最终回答都计入输出，首次缓存写入按未命中输入收费。示例只用了未缓存输入，所以缓存价调整不改变这两行合计。工具、托管、网关和人工成本另算。换成其他模型时，沿同一公式代入其实际价格与计费定义。
 
 ### 套餐和平台额度怎样比较
 
@@ -107,7 +112,7 @@ billing='''### 把标价换算成任务费用
 | Credits 套餐 | Step Plan 等额度池 | 扣除倍率、期限、加油包、可用模型与渠道 | 直接把 Credits 数量当 Token 数量 |
 | 自部署 | 本地推理与自托管环境 | 硬件、并发、速度、维护与停机 | 没有 API 账单就认为没有成本 |
 
-一个具体额度池示例：Step Plan 的 Flash Mini／Plus／Pro／Max 月额度依次为 400M／1,600M／8,000M／40,000M Credits，中国区月标价为 ¥49／99／199／699，海外为 US$6.99／9.99／29／99。Credits 是记账单位，按模型与输入输出规则换算，并非同量 Token；文档说明按月发放、未用不结转，另有加油包。购买前，用自己的任务样本估算实际扣除量，再比较套餐能覆盖多少日常工作。[中国区套餐](https://platform.stepfun.com/docs/zh/step-plan/overview.md)、[海外套餐](https://platform.stepfun.ai/docs/en/step-plan/overview.md)、[计费说明](https://platform.stepfun.ai/docs/en/step-plan/upgrade-notice.md)
+一个具体额度池示例是 Step Plan。下表的 Credits 与标价可以直接比较档位，却不能直接换算成可完成的任务数量；购买前，用自己的任务样本估算实际扣除量，再看套餐能覆盖多少日常工作。中国区的高峰双倍扣除说明，同一套餐在不同时段的实际额度也可能不同。\n\n{{table:plans}}
 
 上述不同形态的来源与入口边界见 [Cursor 模型](https://cursor.com/docs/models)、[Amp 档位](https://ampcode.com/docs/markdown/models-and-subagents)、[Replit 预算](https://docs.replit.com/billing/managing-spend.md)、[Qoder 自定义模型](https://docs.qoder.com/qoder/custom-models.md)、[Factory BYOK](https://docs.factory.ai/model-independence/byok.md)。模型服务与网页托管、远程工作机、发布服务又可能分开收费，最终应画出整套方案的账单路径。
 
@@ -126,7 +131,7 @@ t+='''## 6.8 从规格表到可用能力：用同一套问题读所有模型
 | 工具调用 | 模型能否生成工具请求并利用结果 | 至少跑一次成功、失败、纠错和多轮往返 | 原生适配、兼容网关、本地模板的效果可能不同 |
 | 结构化输出 | 能否按规定的数据形状返回 | 区分 JSON Mode 与 JSON Schema 支持范围 | 正常聊天成功不能证明严格字段与工具参数可用 |
 | 缓存 | 重复输入是否按优惠规则计费 | 查看实际命中量与服务计费说明 | 稳定规则和工具前缀有帮助；摘要和路由变化会影响复用 |
-| 开放与部署 | 能否取得权重、怎样合法运行 | 官方权重、许可、资源和推理服务 | 可下载的 Qwen／gpt-oss 与计划开放的型号要分开 |
+| 开放与部署 | 能否取得权重、怎样合法运行 | 官方权重、许可、资源和推理服务 | 可下载的权重、仅云端服务和计划开放的型号要分开 |
 
 以一个规格较齐全的型号示范：Step-5-Preview 的模型 ID 是 `step-5-preview`，官方列出 1M Token 上下文、64k 最大输出，支持文本／图像／视频输入与文本输出，以及工具调用、流、JSON Mode／Schema、缓存和 low／medium／high 推理档位。这些字段共同描述模型服务；其中任何一项都不能直接推导出 Step Code 或第三方客户端已完整支持。[模型规格](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview)、[推理参数](https://platform.stepfun.ai/docs/en/guides/developer/reasoning.md)
 

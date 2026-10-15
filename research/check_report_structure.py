@@ -68,6 +68,7 @@ if duplicates or missing or parser.assets:issues.append('Duplicate IDs, broken a
 expected_diagrams=5+sum(len(expected_figures(k)) for k in DETAIL)
 if parser.chapters!=12 or parser.diagrams!=expected_diagrams:issues.append('Unexpected chapter/diagram count')
 if re.search(r'\{\{(?:doc|src|repo):',page):issues.append('Unresolved source reference')
+if re.search(r'\{\{(?:m|date|table):',page):issues.append('Unresolved volatile-fact placeholder')
 
 svg_checks=[]
 for f in sorted((ROOT/'report/figures/profiles').glob('*.svg')):
