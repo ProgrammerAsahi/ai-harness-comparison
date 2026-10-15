@@ -5,13 +5,16 @@ Generators write placeholders instead of hard-coded versions:
   {{m:<role>}}       current model name for a role, e.g. {{m:anthropic.daily}}
   {{date:facts}}     date the volatile facts were last checked
   {{table:<name>}}   a dated central table with its sources (model-families, api-prices, plans, maintenance, recent-changes)
-All values live in volatile-facts.json, so a refresh edits one file.
+  {{bench:<campaign>.<table>}}  author private-bench aggregates (scope, totals, by-category, resources), see private_bench.py
+All values live in volatile-facts.json, so a refresh edits one file; bench data lives in research/private-bench/.
 """
 import json, pathlib, re
 
+import private_bench
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FACTS = json.loads((ROOT / 'research/volatile-facts.json').read_text())
-TOKEN = re.compile(r'\{\{(m|date|table):([\w.\-]+)\}\}')
+TOKEN = re.compile(r'\{\{(m|date|table|bench):([\w.\-]+)\}\}')
 
 
 def cell(text):
@@ -35,6 +38,9 @@ def resolve(text, where):
             if key not in FACTS['models']:
                 raise SystemExit(f'{where}: unknown model role {key}')
             return FACTS['models'][key]
+        if kind == 'bench':
+            campaign, _, name = key.rpartition('.')
+            return private_bench.render(campaign, name)
         if kind == 'date':
             if key != 'facts':
                 raise SystemExit(f'{where}: unknown date {key}')
@@ -43,7 +49,7 @@ def resolve(text, where):
             raise SystemExit(f'{where}: unknown table {key}')
         return table(key)
     out = TOKEN.sub(sub, text)
-    if '{{' in out and re.search(r'\{\{(m|date|table):', out):
+    if '{{' in out and re.search(r'\{\{(m|date|table|bench):', out):
         raise SystemExit(f'{where}: unresolved volatile placeholder')
     return out
 

@@ -103,6 +103,26 @@ npm run check:cached-sources
 
 旧版按顺序编号的锚点（`chapter-3-h29`、`quick-start-h2` 等）冻结在 `research/legacy-anchors.json`，由 `build_legacy_anchors.py` 从 Git 中已发布的版本提取，同一编号在不同版本含义冲突时以发布最久的 2026-09-24 版为准。构建时按章节、工具和标题文字把它们解析到现在的 ID，完整单页版和分页版打开旧锚点都会跳到原来那一节；简档已不显示的小节跳到该工具档案开头。`check_site.py` 逐条核对跳转目标的标题与原标题一致。对外引用工具时，工具编号锚点（例如 `#a03`）和工具页地址（例如 `read/a03.html`）仍是最稳的入口。
 
+## 作者私有题库运行记录
+
+作者在私有题库上用编排器跑过的结果，以“作者私有题库运行记录”这一级证据进入报告。题目、日志、产出和评分细则不公开，仓库里只有导出后的汇总。
+
+- `research/private-bench/configs.json`：公开的组合说明（外壳、模型、思考强度、资源上限）、任务类型的中文名、项目类型名称和最小公开格（默认 5 题且 15 次判过）。账本里出现这里没有的组合时，导出会停下。
+- `research/private_bench.py export`：只读打开账本，按殿试报表相同的判定规则汇总。判过运行不足最小公开格的组合只列名称；任务类型先按全轮题数合并过小的类别（例如只有 1 题的文档类并入相邻类别），某组合合并后仍有过小的格子时整行不拆分；项目类型只给题数，不给结果。导出前自动校验，不合格不写文件。
+- `research/private_bench.py check` 与 `research/test_private_bench.py`：检查已入库的汇总，并在合成账本上测试导出、合并、校验和渲染；`npm run check:private-bench` 运行两者，也包含在 `npm run check` 中。
+- 正文用 `{{bench:<轮次>.scope}}`（口径说明）、`totals`（各组合总数）、`by-category`（按任务类型）、`resources`（上限、API 等价与用时）引用。表格按 `configs.json` 的固定顺序排列，不按结果排序。
+
+一轮评测结束后，在作者机器上运行（账本路径与私有的任务分组文件不写进仓库）：
+
+```bash
+python3 research/private_bench.py export --ledger <账本路径> --campaign pilot-2 --task-groups <私有任务分组文件> --out research/private-bench/pilot-2.json
+python3 research/private_bench.py preview research/private-bench/pilot-2.json
+npm run build
+npm run check
+```
+
+先用 `preview` 看渲染结果，再在正文中加入占位符。`research/private-bench/synthetic-example.json` 是合成账本导出的示例，只用于说明格式；引用它的占位符会让构建失败。
+
 ## 刷新易变事实
 
 型号、价格和维护状态变化最快。它们集中保存在 `research/volatile-facts.json`，正文和档案只引用角色名或表名，刷新时不逐处修改正文：
