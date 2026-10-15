@@ -5,7 +5,7 @@ const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>',
 export const plain=s=>s.replace(/<svg[\s\S]*?<\/svg>/g,'').replace(/<[^>]*>/g,' ').replace(/&(?:amp|lt|gt|quot|#39);/g,x=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'"})[x]).replace(/\s+/g,' ').trim();
 const slugs=['quick-start','basics','landscape','terminal-agents','coding-workspaces','personal-assistants','workflows-and-history','architecture','scenarios','models-and-costs','evaluation','methodology','references'];
 const labels=['五分钟选型','从零理解','工具全景','终端与开放代理','编辑器与托管工作台','个人助理与知识工作台','相邻路线与维护观察','架构与取舍','按场景选择','模型与成本','试用与验收','研究方法','参考资料'];
-export function buildSite({root,nav,sections,book}) {
+export function buildSite({root,nav,sections,book,aliases={}}) {
  const out=path.join(root,'read');fs.mkdirSync(out,{recursive:true});
  const assets=path.join(root,'site-assets');fs.mkdirSync(assets,{recursive:true});
  const pages=[];const chapters=[];
@@ -36,6 +36,11 @@ export function buildSite({root,nav,sections,book}) {
  for(const p of pages)for(const m of p.content.matchAll(/\bid="([^"]+)"/g)) {
   if(routes[m[1]])throw Error('Duplicate site anchor '+m[1]);
   routes[m[1]]=p.file+'#'+m[1];
+ }
+ // Old positional heading IDs follow the heading they used to point to.
+ for(const [old,target] of Object.entries(aliases)) {
+  if(routes[old]||!routes[target])throw Error('Bad legacy anchor '+old+' → '+target);
+  routes[old]=routes[target];
  }
  const home={file:'index.html',id:'home',title:'AI Harness 调研与选型报告',kind:'home'};
  const rel=(file,target)=>path.posix.relative(path.posix.dirname(file),target)||path.posix.basename(file);
@@ -81,7 +86,7 @@ export function buildSite({root,nav,sections,book}) {
   const dialog=`<dialog id="site-search" aria-labelledby="search-title"><div class="search-head"><h2 id="search-title">搜索全站</h2><button type="button" id="close-search" aria-label="关闭搜索">关闭 ×</button></div><label for="global-search">工具、原理或任务关键词</label><input id="global-search" type="search" placeholder="例如：Pi、小说、上下文压缩" autocomplete="off"><p id="search-status" role="status" aria-live="polite">输入关键词，搜索所有章节与工具正文。</p><ol id="search-results"></ol><noscript>搜索需要 JavaScript；也可使用首页章节入口或完整单页版的浏览器查找。</noscript></dialog>`;
   const pageContent=isHome?links(p.content,p):`<section class="chapter" data-chapter="${p.id}">${links(p.content,p)}</section>`;
   const desc=escape(isHome?'55 份 AI Harness 工具档案、40 个任务场景，理解架构、模型与取舍。':p.title+'。阅读原理、证据与实际使用方法。');
-  const html=`<!doctype html>${license}<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="${desc}"><script src="${base}site-assets/theme.js"></script><title>${escape(p.title)}${!isHome?' · AI Harness 报告':''}</title><link rel="stylesheet" href="${base}site-assets/reading.css">${isHome?'<script src="site-assets/legacy-routes.js"></script>':''}</head><body id="top" class="paged-site" data-site-base="${base}">${side}<main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div>${breadcrumb}${pageContent}${pagination}${footer}</main>${dialog}<a class="to-top" href="#top">回到顶部 ↑</a><script src="${base}site-assets/search.js"></script><script src="${base}site-assets/site.js"></script><script src="${base}site-assets/navigation.js"></script></body></html>`;
+  const html=`<!doctype html>${license}<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="${desc}"><script src="${base}site-assets/theme.js"></script><title>${escape(p.title)}${!isHome?' · AI Harness 报告':''}</title><link rel="stylesheet" href="${base}site-assets/reading.css"></head><body id="top" class="paged-site" data-site-base="${base}">${side}<main><div class="reading-toolbar"><button class="compact-search" type="button" data-open-search>搜索全站</button><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div>${breadcrumb}${pageContent}${pagination}${footer}</main>${dialog}<a class="to-top" href="#top">回到顶部 ↑</a><script src="${base}site-assets/search.js"></script><script src="${base}site-assets/site.js"></script><script src="${base}site-assets/navigation.js"></script></body></html>`;
   fs.writeFileSync(path.join(root,p.file),html);
  }
  const manifest={pages:[home,...pages].map(({content,tools,...p})=>p),routes,search_records:search.length};

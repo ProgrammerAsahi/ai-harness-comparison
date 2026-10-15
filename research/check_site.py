@@ -61,6 +61,20 @@ for anchor,url in manifest['routes'].items():
 original_ids=re.findall(r'<h[1-6] id="([^"]+)"',book_text)+re.findall(r'<a id="([abcdh]\d{2})"',book_text)
 for anchor in original_ids:
  if anchor not in manifest['routes']:issues.append('Lost original heading '+anchor)
+# Each old positional ID must open the same heading it used to point to (a renumbered section may be renamed),
+# or, for a section a short profile no longer shows, that tool's profile.
+legacy=json.loads((ROOT/'research/legacy-anchors.json').read_text())['anchors']
+book_headings={i:re.sub(r'\s+',' ',re.sub(r'<[^>]+>','',t)).strip() for i,t in re.findall(r'<h[2-4] id="([^"]+)"[^>]*>(.*?)</h[2-4]>',book_text,re.S)}
+legacy_fallbacks=0
+for old,entry in legacy.items():
+ route=manifest['routes'].get(old)
+ if not route:issues.append('Old anchor without route '+old);continue
+ target=route.split('#')[1];text=book_headings.get(target)
+ number=re.match(r'\d+\.\d+ ',entry['text'])
+ if text==entry['text'] or (entry['tool'] and entry['depth']==2 and target=='tool-'+entry['tool'].lower()):continue
+ if text and number and text.startswith(number[0]):continue
+ if entry['tool'] and target==entry['tool'].lower() and not any(h==entry['text'] for i,h in book_headings.items() if i.startswith(target+'-')):legacy_fallbacks+=1;continue
+ issues.append(f'Old anchor {old} now opens {target}: {text!r}, was {entry["text"]!r}')
 # Compare the complete text of each tool, including diagrams, code, tables and citations.
 tools=[p for p in manifest['pages'] if p['kind']=='tool']
 for tool in tools:
@@ -87,7 +101,7 @@ for file,page in pages.items():
  if any('search-index.js' in src for src in page.assets):issues.append('Search index not lazy: '+file)
 css=(ROOT/'site-assets/reading.css').read_text()
 if '@media(max-width:740px)' not in css or ':root[data-theme="dark"]' not in css:issues.append('Missing responsive/theme CSS')
-result={'method':'Static HTML parsing, exact profile text comparison and local route/asset checks; no browser rendering','pages':len(pages),'tool_pages':len(tools),'legacy_anchors':len(original_ids),'search_records':len(records),'local_links_checked':checked,'tables':sum(p.tables for p in pages.values()),'diagrams':sum(p.diagrams for p in pages.values()),'page_sha256':{f:hashlib.sha256((ROOT/f).read_bytes()).hexdigest() for f in pages},'book_sha256':hashlib.sha256(book_text.encode()).hexdigest(),'issues':issues}
+result={'method':'Static HTML parsing, exact profile text comparison and local route/asset checks; no browser rendering','pages':len(pages),'tool_pages':len(tools),'legacy_anchors':len(original_ids),'old_positional_anchors':len(legacy),'old_anchors_to_profile':legacy_fallbacks,'search_records':len(records),'local_links_checked':checked,'tables':sum(p.tables for p in pages.values()),'diagrams':sum(p.diagrams for p in pages.values()),'page_sha256':{f:hashlib.sha256((ROOT/f).read_bytes()).hexdigest() for f in pages},'book_sha256':hashlib.sha256(book_text.encode()).hexdigest(),'issues':issues}
 (ROOT/'research/qa/site-check.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps({k:v for k,v in result.items() if k!='page_sha256'},ensure_ascii=False,indent=2))
 raise SystemExit(bool(issues))

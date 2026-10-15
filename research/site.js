@@ -1,10 +1,14 @@
 /* Local-only search, old-home anchors, and per-page navigation preferences. */
 (() => {
  const base=document.body.dataset.siteBase;
- if(globalThis.HARNESS_ROUTES&&location.hash) {
+ // An anchor missing from this page may be an old single-page or positional ID: look it up in the route table.
+ if(location.hash) {
   let anchor;try{anchor=decodeURIComponent(location.hash.slice(1));}catch{}
-  const target=globalThis.HARNESS_ROUTES[anchor];
-  if(target)location.replace(base+target);
+  const go=()=>{const target=globalThis.HARNESS_ROUTES?.[anchor];if(target)location.replace(base+target);};
+  if(anchor&&!document.getElementById(anchor)) {
+   if(globalThis.HARNESS_ROUTES)go();
+   else {const script=document.createElement('script');script.src=base+'site-assets/legacy-routes.js';script.addEventListener('load',go);document.head.append(script);}
+  }
  }
  const groups=[...document.querySelectorAll('.nav-group')];
  const storageKey='harness-nav:'+location.pathname;

@@ -99,7 +99,9 @@ npm run check:cached-sources
 
 把工具升为重点档案时，先核对它在 `profile_expansions*.py` 中的命令与任务、`profile_models.py` 中的模型路线和 `profile_architecture.py` 中的深层架构，再加入 `FOCUS`。如果模型路线引用了已删除的型号角色，构建会报未知角色，需要先在 `volatile-facts.json` 中补上。降为简档时，从 `FOCUS` 移除，并删除不再引用的 `report/figures/profiles/<编号>-detail.svg` 等图。
 
-分类章节里的小节锚点按出现顺序编号（例如 `chapter-3-h29`），档案增删小节后会整体顺移，分层这次也重新编号了。稳定的入口是工具编号锚点（例如 `#a03`）和工具页地址（例如 `read/a03.html`）；对外引用工具时用这两种。
+标题 ID 不再按出现顺序编号，增删小节不会让后面的锚点顺移。带编号的小节用 `s<章>-<节>`（例如 `#s6-2`），其下的三级标题依次加序号；工具档案用 `tool-a03`（标题）和 `a03-architecture` 等（七个小节的固定英文名）；没有编号的标题在 `research/anchor-ids.json` 里登记，漏登时构建会报错。
+
+旧版按顺序编号的锚点（`chapter-3-h29`、`quick-start-h2` 等）冻结在 `research/legacy-anchors.json`，由 `build_legacy_anchors.py` 从 Git 中已发布的版本提取，同一编号在不同版本含义冲突时以发布最久的 2026-09-24 版为准。构建时按章节、工具和标题文字把它们解析到现在的 ID，完整单页版和分页版打开旧锚点都会跳到原来那一节；简档已不显示的小节跳到该工具档案开头。`check_site.py` 逐条核对跳转目标的标题与原标题一致。对外引用工具时，工具编号锚点（例如 `#a03`）和工具页地址（例如 `read/a03.html`）仍是最稳的入口。
 
 ## 刷新易变事实
 

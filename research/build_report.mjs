@@ -16,9 +16,14 @@ const chapterIds=new Map(files.map(f=>[f,f===ENTRY?'quick-start':`chapter-${++ch
 const figures=['01-task-loop.svg','02-layers.svg','03-context.svg','04-agents.svg','05-data-flow.svg'];
 const logos=new Map(JSON.parse(fs.readFileSync(path.join(root,'research/logo-sources.json'),'utf8')).logos.map(x=>[x.id,x]));
 let figIndex=0;let profileFigIndex=0;
+// Heading IDs come from section numbers, tool keys or a fixed table, so removing one section never shifts the rest.
+const anchorIds=JSON.parse(fs.readFileSync(path.join(root,'research/anchor-ids.json'),'utf8'));
+const legacy=JSON.parse(fs.readFileSync(path.join(root,'research/legacy-anchors.json'),'utf8')).anchors;
+const plainHeading=html=>html.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+const allHeadings=[];const usedIds=new Set();
 const nav=[];const sections=[];
 for(const f of files){
- const cid=chapterIds.get(f);let headingIndex=0;const headings=[];
+ const cid=chapterIds.get(f);const headings=[];let h2=null,h3=null,tool=null,childNo=0,grandNo=0;
  const tokens=marked.lexer(fs.readFileSync(path.join(root,'report',f),'utf8'));
  marked.walkTokens(tokens,t=>{
   // Pipe-delimited rows parsed as prose usually mean a broken table boundary.
@@ -45,8 +50,20 @@ for(const f of files){
   return t.tokens.length===1&&t.tokens[0].type==='image'?inner+'\n':`<p>${inner}</p>\n`;
  };
  renderer.heading=function(t){
-  const id=t.depth===1?cid:`${cid}-h${++headingIndex}`;
-  const txt=this.parser.parseInline(t.tokens);
+  const txt=this.parser.parseInline(t.tokens);const text=plainHeading(txt);
+  let id;
+  if(t.depth===1)id=cid;
+  else if(t.depth===2){
+   tool=text.match(/^([ABCDH]\d{2}) /)?.[1]||null;const num=text.match(/^(\d+)\.(\d+) /);
+   id=tool?`tool-${tool.toLowerCase()}`:num?`s${num[1]}-${num[2]}`:anchorIds.headings[`${cid}|${text}`];
+   h2={id,text};h3=null;childNo=0;
+  }else if(t.depth===3){
+   id=tool?anchorIds.profile_sections[text]&&`${tool.toLowerCase()}-${anchorIds.profile_sections[text]}`:/^[\x20-\x7e]+$/.test(text)?'repo-'+text.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''):h2&&`${h2.id}-${++childNo}`;
+   h3={id,text};grandNo=0;
+  }else id=h3&&`${h3.id}-${++grandNo}`;
+  if(!id)throw Error(`No fixed ID for heading in ${f}: ${text} (add it to research/anchor-ids.json)`);
+  if(usedIds.has(id))throw Error('Duplicate heading ID '+id);usedIds.add(id);
+  if(t.depth>1)allHeadings.push({id,chapter:cid,depth:t.depth,tool,text,parent:t.depth===2||(tool&&t.depth===3)?null:t.depth===3?h2.text:h3.text});
   if(t.depth===2)headings.push({id,text:t.text.replace(/\*|`/g,'')});
   const key=t.depth===2?t.text.match(/^([ABCDH]\d{2}) /)?.[1]:null;
   if(key){
@@ -72,6 +89,16 @@ for(const f of files){
  nav.push({id:cid,title,headings});sections.push(`<section class="chapter" data-chapter="${cid}">${html}</section>`);
 }
 if(figIndex!==figures.length)throw Error(`Expected ${figures.length} diagrams, got ${figIndex}`);
+// Resolve each old positional ID to the heading it meant; a section a short profile no longer shows falls back to the profile.
+const aliases={};
+for(const [old,e] of Object.entries(legacy)){
+ let pool=allHeadings.filter(h=>h.chapter===e.chapter&&h.depth===e.depth&&(e.tool?h.tool===e.tool&&(e.depth===2||h.text===e.text):h.text===e.text));
+ if(pool.length>1)pool=pool.filter(h=>h.parent===e.parent);
+ const num=e.text.match(/^(\d+)\.(\d+) /);
+ const target=pool.length===1?pool[0].id:!pool.length&&num&&usedIds.has(`s${num[1]}-${num[2]}`)?`s${num[1]}-${num[2]}`:!pool.length&&e.tool?e.tool.toLowerCase():null;
+ if(!target)throw Error(`Cannot resolve old anchor ${old}: ${e.text}`);
+ aliases[old]=target;
+}
 const toc=nav.map((n,i)=>`<details class="nav-group" ${i<2?'open':''}><summary><a href="#${n.id}">${escape(n.title.replace(/^\d\d[A-D]?｜/,''))}</a></summary><div class="nav-children">${n.headings.map(h=>`<a href="#${h.id}">${escape(h.text)}</a>`).join('')}</div></details>`).join('');
 const themeScript=fs.readFileSync(path.join(root,'research/report-theme.js'),'utf8');
 const themeCss=fs.readFileSync(path.join(root,'research/report-theme.css'),'utf8');
@@ -88,10 +115,10 @@ const html=`<!doctype html><!--\nPage structure and interaction code: MIT.\n${mi
 @media(max-width:740px){.sidebar{position:relative;inset:auto;width:100%;max-height:none;padding:18px 22px;border-right:0;border-bottom:1px solid var(--line)}.sidebar nav{display:none;max-height:55vh;margin-top:9px}.sidebar.expanded nav{display:block}.sidebar .search-label,.sidebar #toc-search{display:none}.sidebar.expanded .search-label,.sidebar.expanded #toc-search{display:block}.stamp{margin-bottom:3px}.nav-foot{display:none}.toolbar{display:block;position:absolute;top:22px;right:22px}.toolbar button{font:inherit;font-size:12px;background:#fff;border:1px solid #c9ddd0;border-radius:6px;padding:5px 10px;color:#315947}main{margin:0;padding:18px 12px 70px}.chapter,.cover{padding:29px 23px;border-radius:10px;margin-bottom:18px}.cover h1{font-size:31px}.cover p{font-size:14px}.metrics{grid-template-columns:repeat(2,1fr);gap:23px}.chapter h1{font-size:24px}.chapter h2{font-size:20px}.chapter{font-size:15px;line-height:1.94}.table-scroll{margin-left:0}.to-top{right:12px;bottom:13px}.notice{font-size:11px!important}}
 @media print{.sidebar,.to-top,.toolbar,.cover-links{display:none!important}main{margin:0;padding:0;max-width:none}.cover,.chapter{box-shadow:none;border:0;padding:20px 0;max-width:none;border-radius:0;break-before:page}.cover{background:white;color:#193039;break-before:auto}.cover *{color:#193039!important}.metrics{border-color:#bbb}.chapter h1{font-size:23px}.chapter h2{font-size:17px;break-after:avoid}body{font-size:11px;line-height:1.7;background:white}table{font-size:9px;min-width:0;line-height:1.5}td,th{padding:7px;min-width:0}tr{break-inside:avoid}.diagram svg{min-width:0}.diagram{break-inside:avoid}.table-scroll{overflow:visible}pre{background:#f3f3f3;color:#222}pre code{color:#222}a{color:#275945}}
 ${themeCss}
-</style></head><body id="top"><aside class="sidebar"><a class="brand" href="#top">HARNESS / 研究与选型</a><div class="stamp">55 份工具档案 · 40 个任务场景</div><div class="toolbar"><button id="toggle-nav" aria-expanded="false">目录</button></div><label class="search-label" for="toc-search">查找工具或章节</label><input type="search" id="toc-search" placeholder="例如：Pi、小说、模型、成本" autocomplete="off"><nav aria-label="报告目录">${toc}<p class="empty">没有匹配的目录项。全文查找请用 ⌘F / Ctrl+F。</p></nav><div class="nav-foot">全文查找：⌘F / Ctrl+F<br>所有章节、图示均在此文件中。<br><button class="print" onclick="window.print()">打印或另存为 PDF</button> · <a href="README.md">Markdown 目录</a></div></aside><main><div class="reading-toolbar"><a class="paged-entry" href="index.html" style="pointer-events:auto;margin-right:12px;align-self:center;font-size:13px">分页阅读 →</a><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><header class="cover"><div class="eyebrow">A field guide to AI harnesses</div><h1>理解 AI 的工作外壳，<br>再选适合你的那一个。</h1><p>从模型、工具和上下文开始，比较设计理念与实际架构，再回到写代码、写报告、写小说和管理日常工作的具体选择。</p><div class="metrics"><div class="metric"><b>46</b><span>核心工具与产品家族</span></div><div class="metric"><b>40</b><span>细分任务场景</span></div><div class="metric"><b>42</b><span>公开仓库固定快照</span></div><div class="metric"><b>5 + 4</b><span>相邻路线与维护观察</span></div></div><div class="cover-links"><a href="#${chapterIds.get(ENTRY)}">五分钟选型</a><a href="#${chapterIds.get('01-从零理解.md')}">从术语开始</a><a href="#${chapterIds.get('02-全景清单.md')}">查看工具地图</a><a href="#${chapterIds.get('05-按场景选择组合.md')}">按场景选组合</a><a href="#${chapterIds.get('08-方法与参考资料.md')}">核对研究边界</a></div><p class="notice">使用 AI 辅助研究与编写，依据公开文档和核心源码路径分析；未逐行审计全部项目，未对全部模型组合进行统一运行测试。推荐是有证据约束的试用建议。</p></header>${sections.join('\n')}<footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><a class="to-top" href="#top">回到目录 ↑</a><script>
+</style></head><body id="top"><aside class="sidebar"><a class="brand" href="#top">HARNESS / 研究与选型</a><div class="stamp">55 份工具档案 · 40 个任务场景</div><div class="toolbar"><button id="toggle-nav" aria-expanded="false">目录</button></div><label class="search-label" for="toc-search">查找工具或章节</label><input type="search" id="toc-search" placeholder="例如：Pi、小说、模型、成本" autocomplete="off"><nav aria-label="报告目录">${toc}<p class="empty">没有匹配的目录项。全文查找请用 ⌘F / Ctrl+F。</p></nav><div class="nav-foot">全文查找：⌘F / Ctrl+F<br>所有章节、图示均在此文件中。<br><button class="print" onclick="window.print()">打印或另存为 PDF</button> · <a href="README.md">Markdown 目录</a></div></aside><main><div class="reading-toolbar"><a class="paged-entry" href="index.html" style="pointer-events:auto;margin-right:12px;align-self:center;font-size:13px">分页阅读 →</a><button id="theme-toggle" type="button" aria-pressed="false">☾ 深色模式</button></div><header class="cover"><div class="eyebrow">A field guide to AI harnesses</div><h1>理解 AI 的工作外壳，<br>再选适合你的那一个。</h1><p>从模型、工具和上下文开始，比较设计理念与实际架构，再回到写代码、写报告、写小说和管理日常工作的具体选择。</p><div class="metrics"><div class="metric"><b>46</b><span>核心工具与产品家族</span></div><div class="metric"><b>40</b><span>细分任务场景</span></div><div class="metric"><b>42</b><span>公开仓库固定快照</span></div><div class="metric"><b>5 + 4</b><span>相邻路线与维护观察</span></div></div><div class="cover-links"><a href="#${chapterIds.get(ENTRY)}">五分钟选型</a><a href="#${chapterIds.get('01-从零理解.md')}">从术语开始</a><a href="#${chapterIds.get('02-全景清单.md')}">查看工具地图</a><a href="#${chapterIds.get('05-按场景选择组合.md')}">按场景选组合</a><a href="#${chapterIds.get('08-方法与参考资料.md')}">核对研究边界</a></div><p class="notice">使用 AI 辅助研究与编写，依据公开文档和核心源码路径分析；未逐行审计全部项目，未对全部模型组合进行统一运行测试。推荐是有证据约束的试用建议。</p></header>${sections.join('\n')}<footer>© 2026 ProgrammerAsahi 与贡献者 · 正文与原创图表：<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> · 页面与交互代码：MIT（全文见本文件源代码）<br>来源：<a href="https://github.com/ProgrammerAsahi/ai-harness-comparison" target="_blank" rel="noopener noreferrer">AI Harness 调研与选型报告</a> · 第三方材料保留其原有权利。</footer></main><a class="to-top" href="#top">回到目录 ↑</a><script>/* Old positional heading IDs open the section they used to point to. */(()=>{const a=${JSON.stringify(aliases)};let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{}if(id&&!document.getElementById(id)&&a[id])location.replace('#'+a[id]);})();</script><script>
 ${navigationScript}
 </script></body></html>`;
 fs.writeFileSync(path.join(root,'AI-Harness调研报告.html'),html);
-console.log(JSON.stringify({chapters:files.length,figures:figIndex+profileFigIndex,profileDiagrams:profileFigIndex,bytes:Buffer.byteLength(html),headings:nav.reduce((n,x)=>n+x.headings.length,0)}));
+console.log(JSON.stringify({chapters:files.length,legacyAnchors:Object.keys(aliases).length,figures:figIndex+profileFigIndex,profileDiagrams:profileFigIndex,bytes:Buffer.byteLength(html),headings:nav.reduce((n,x)=>n+x.headings.length,0)}));
 
-buildSite({root,nav,sections,book:html});
+buildSite({root,nav,sections,book:html,aliases});

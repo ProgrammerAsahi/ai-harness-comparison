@@ -32,6 +32,13 @@ test('known old home anchors redirect, unknown and malformed anchors stay readab
  assert.deepEqual(setup({hash:'#a01',routes:{a01:'read/a01.html#a01'}}).redirects,['../read/a01.html#a01']);
  assert.equal(setup({hash:'#%zz',routes:{}}).redirects.length,0);assert.equal(setup({hash:'#unknown',routes:{}}).redirects.length,0);
 });
+test('anchors missing from the page load the route table first, present anchors stay put',()=>{
+ const s=setup({hash:'#chapter-3-h29'});const script=s.document.head.children[0];
+ assert.equal(script.src,'../site-assets/legacy-routes.js');assert.equal(s.redirects.length,0);
+ s.context.HARNESS_ROUTES={'chapter-3-h29':'read/a04.html#tool-a04'};script.emit('load');
+ assert.deepEqual(s.redirects,['../read/a04.html#tool-a04']);
+ assert.equal(setup({hash:'#site-search'}).document.head.children.length,0);
+});
 test('restores group state per page, saves toggles, and tolerates unavailable storage',()=>{
  const s=setup({stored:'{"#section":true}'});assert.equal(s.group.open,true);s.group.open=false;s.group.emit('toggle');assert.match(s.writes[0][1],/false/);
  const b=setup({blocked:true});b.group.emit('toggle');b.button.click();assert.equal(b.elements['site-search'].open,true);
