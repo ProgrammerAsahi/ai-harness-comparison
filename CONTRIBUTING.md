@@ -95,7 +95,7 @@ npm run check:cached-sources
 
 ## 重点档案与简档
 
-`research/profile_tiers.py` 的 `FOCUS` 列出重点档案：作者日常工作流实际接入的工具。重点档案生成全部七节和下一层架构图；其余工具生成简档，只渲染定位、总体结构、能力表和资料依据。简档不渲染的命令、试用任务、模型路线和深层架构仍留在生成器里，没有删除。
+`research/profile_tiers.py` 的 `FOCUS` 列出重点档案：作者自己日常使用的工具；只供编排器调用、作者本人不用的工具不算。重点档案生成全部七节和下一层架构图；其余工具生成简档，只渲染定位、总体结构、能力表和资料依据。简档不渲染的命令、试用任务、模型路线和深层架构仍留在生成器里，没有删除。
 
 把工具升为重点档案时，先核对它在 `profile_expansions*.py` 中的命令与任务、`profile_models.py` 中的模型路线和 `profile_architecture.py` 中的深层架构，再加入 `FOCUS`。如果模型路线引用了已删除的型号角色，构建会报未知角色，需要先在 `volatile-facts.json` 中补上。降为简档时，从 `FOCUS` 移除，并删除不再引用的 `report/figures/profiles/<编号>-detail.svg` 等图。
 

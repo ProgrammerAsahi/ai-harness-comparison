@@ -257,7 +257,7 @@ assert t.count(glossary_end)==1, 'Expected a single glossary insertion boundary'
 t=t.replace(glossary_end,'\n'+extra_terms+'\n## 一次任务究竟经过哪些地方')
 p.write_text(t)
 p=OUT/'08-方法与参考资料.md';t=read_baseline(BASE/p.name);t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
-t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','工具档案分两层。作者日常工作流实际接入的 7 个工具是重点档案，按七个维度完整展开，配有责任分工图、下一层架构图、能力表、操作步骤、任务卡和模型路线；其余是简档，保留定位、总体结构图、能力表和资料依据。分层只反映维护范围，不代表产品优劣。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
+t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','工具档案分两层。作者自己日常使用的 6 个工具是重点档案，按七个维度完整展开，配有责任分工图、下一层架构图、能力表、操作步骤、任务卡和模型路线；其余是简档，保留定位、总体结构图、能力表和资料依据。分层只反映维护范围，不代表产品优劣。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
 t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能需要读取实际呈现内容；网页、公开源码与发行二进制也可能不同步。报告按证据分别判断，不将抓到网页、找到源码或绘出概念图当作实际运行验证。各来源保留自己的采集时间，本报告没有将所有项目伪装成同一天全面重验。\n\n',t)
 t=t.replace('Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH 等公开核心','Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH、Step 等公开核心')
 t=re.sub(r'^\| Step Code／Step-5-Preview.*?\n','',t,flags=re.M)

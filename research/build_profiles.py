@@ -122,7 +122,7 @@ for file in sorted(BASE.glob('03*.md')):
         return result
     text=re.sub(r'^## ([ABCDH]\d{2}) (.+)\n([\s\S]*?)(?=^## |\Z)',replace,text,flags=re.M)
     group=('本组的重点档案是 '+'、'.join(focus_here)+'，其余为简档。') if focus_here else '本组均为简档。'
-    note='\n\n**档案读法：** 工具档案分两层。重点档案是作者日常工作流实际接入、会持续使用和复查的工具，按七个维度完整展开，包括下一层架构图、上手步骤、试用任务和模型路线；简档保留定位、总体结构和能力边界。分层只反映本报告的维护范围，不代表产品优劣或推荐强度。'+group+'代码块是命令或操作示例，不表示本报告已经运行全部工具。\n'
+    note='\n\n**档案读法：** 工具档案分两层。重点档案是作者自己日常使用、会持续复查的工具，按七个维度完整展开，包括下一层架构图、上手步骤、试用任务和模型路线；简档保留定位、总体结构和能力边界。分层只反映本报告的维护范围，不代表产品优劣或推荐强度。'+group+'代码块是命令或操作示例，不表示本报告已经运行全部工具。\n'
     first=text.index('\n<a id="')
     text=text[:first]+note+text[first:]
     (OUT/file.name).write_text(text)
