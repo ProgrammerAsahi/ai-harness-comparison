@@ -42,7 +42,9 @@ npm run check
 
 | 内容 | 主要编辑入口 |
 |---|---|
+| 哪些工具是重点档案 | `research/profile_tiers.py` |
 | 工具的原理、能力、五步上手和任务示例 | `research/profile_expansions*.py` |
+| 五分钟选型页 | `research/quick-start.md`（人工维护，型号用占位符；构建时复制为 `report/00-五分钟选型.md`） |
 | 状态、恢复与排错的深入说明 | `research/profile_deepdives.py` |
 | 档案中的模型候选表 | `research/profile_models.py` |
 | 档案编排和通用执行图 | `research/build_profiles.py` |
@@ -90,6 +92,14 @@ npm run check:cached-sources
 下载结果必须与已记录的大小和哈希一致才会保存。若上游不可用或内容不符，应排查和说明，不悄悄换成最新 HEAD。只恢复部分仓库时，全量严格检查会报告其他缓存缺失，这是正常结果。
 
 新增来源时先读取与核验材料，再登记仓库版本和引用文件哈希；不能为消除检查错误编造来源记录。`collect_repos.py` 与 `collect_pages.py` 是进行新一轮资料采集的工具，不是默认构建步骤。`build_inventory.py --refresh-local-snapshot` 会把本地完整采集元数据合并到仓库快照，只在确实更新研究范围时使用。
+
+## 重点档案与简档
+
+`research/profile_tiers.py` 的 `FOCUS` 列出重点档案：作者日常工作流实际接入的工具。重点档案生成全部七节和下一层架构图；其余工具生成简档，只渲染定位、总体结构、能力表和资料依据。简档不渲染的命令、试用任务、模型路线和深层架构仍留在生成器里，没有删除。
+
+把工具升为重点档案时，先核对它在 `profile_expansions*.py` 中的命令与任务、`profile_models.py` 中的模型路线和 `profile_architecture.py` 中的深层架构，再加入 `FOCUS`。如果模型路线引用了已删除的型号角色，构建会报未知角色，需要先在 `volatile-facts.json` 中补上。降为简档时，从 `FOCUS` 移除，并删除不再引用的 `report/figures/profiles/<编号>-detail.svg` 等图。
+
+分类章节里的小节锚点按出现顺序编号（例如 `chapter-3-h29`），档案增删小节后会整体顺移，分层这次也重新编号了。稳定的入口是工具编号锚点（例如 `#a03`）和工具页地址（例如 `read/a03.html`）；对外引用工具时用这两种。
 
 ## 刷新易变事实
 

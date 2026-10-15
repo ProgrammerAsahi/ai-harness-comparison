@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 export const plain=s=>s.replace(/<svg[\s\S]*?<\/svg>/g,'').replace(/<[^>]*>/g,' ').replace(/&(?:amp|lt|gt|quot|#39);/g,x=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'"})[x]).replace(/\s+/g,' ').trim();
-const slugs=['basics','landscape','terminal-agents','coding-workspaces','personal-assistants','workflows-and-history','architecture','scenarios','models-and-costs','evaluation','methodology','references'];
-const labels=['从零理解','工具全景','终端与开放代理','编辑器与托管工作台','个人助理与知识工作台','相邻路线与维护观察','架构与取舍','按场景选择','模型与成本','试用与验收','研究方法','参考资料'];
+const slugs=['quick-start','basics','landscape','terminal-agents','coding-workspaces','personal-assistants','workflows-and-history','architecture','scenarios','models-and-costs','evaluation','methodology','references'];
+const labels=['五分钟选型','从零理解','工具全景','终端与开放代理','编辑器与托管工作台','个人助理与知识工作台','相邻路线与维护观察','架构与取舍','按场景选择','模型与成本','试用与验收','研究方法','参考资料'];
 export function buildSite({root,nav,sections,book}) {
  const out=path.join(root,'read');fs.mkdirSync(out,{recursive:true});
  const assets=path.join(root,'site-assets');fs.mkdirSync(assets,{recursive:true});
@@ -26,7 +26,7 @@ export function buildSite({root,nav,sections,book}) {
    const title=plain(block.heading);
    const tool={file:`read/${block.key.toLowerCase()}.html`,id:block.key.toLowerCase(),title,label:title,kind:'tool',parent:chapter.file,content:body.replace(/<(\/?)h([234])\b/g,(_,slash,n)=>`<${slash}h${Number(n)-1}`)};
    pages.push(tool);chapter.tools.push(tool);
-   const summary=plain(body.match(/<p>([\s\S]*?)<\/p>/)?.[1]||'').slice(0,115);
+   const summary=plain(body.match(/<p>(?!<em>简档)([\s\S]*?)<\/p>/)?.[1]||'').slice(0,115);
    overview+=`<article class="tool-card"><h2 id="browse-${tool.id}"><a href="${tool.file}">${escape(title)}</a></h2><p>${escape(summary)}${summary.length===115?'…':''}</p><a class="card-read" href="${tool.file}">阅读完整档案 →</a></article>\n`;
   }
   chapter.content=overview;
@@ -59,8 +59,8 @@ export function buildSite({root,nav,sections,book}) {
    search.push({url:p.file+'#'+h.id,page:p.title,title:h.title,kind:p.kind,text});
   });
  }
- const hero=`<header class="cover"><div class="eyebrow">A field guide to AI harnesses</div><h1>理解 AI 的工作外壳，<br>再选适合你的那一个。</h1><p>从基本概念开始，看清工具的架构与取舍，再按自己的任务选择。你可以逐章阅读，也可以直接查找某个工具。</p><div class="metrics"><div class="metric"><b>55</b><span>工具档案</span></div><div class="metric"><b>40</b><span>细分场景</span></div><div class="metric"><b>120</b><span>架构与原理图</span></div><div class="metric"><b>42</b><span>公开仓库固定快照</span></div></div><p class="notice">使用 AI 辅助研究，依据公开资料和关键源码路径分析；未对所有产品与模型组合进行统一实测。</p></header>`;
- home.content=`${hero}<section class="chapter"><h2 id="start">从哪里开始？</h2><div class="entry-grid">${[['入门阅读','先读术语和工具地图，建立整体认识。','read/basics.html'],['查找工具','从分类进入，查看每种工具的完整档案。','read/landscape.html'],['按任务选型','从写代码、写作和日常工作等 40 个场景出发。','read/scenarios.html']].map(([a,b,c])=>`<a class="entry-card" href="${c}"><strong>${a} →</strong><span>${b}</span></a>`).join('')}</div><h2 id="contents">全部章节</h2><div class="chapter-list">${chapters.map((c,i)=>`<a href="${c.file}"><span>${String(i+1).padStart(2,'0')}</span><strong>${escape(c.label)}</strong>${c.tools.length?`<small>${c.tools.length} 份独立档案</small>`:''}</a>`).join('')}</div><h2 id="reading">怎样使用这份报告</h2><p>点击“搜索全站”查正文与工具；左侧目录跟随当前页的阅读位置。顶部可切换深浅模式，页尾可继续读下一页。</p><p>需要一次查找全文、离线保存或打印整份报告？打开<a href="AI-Harness调研报告.html">完整单页版</a>。下载整个仓库后，也可以离线打开本首页，使用分页与搜索。</p><p>结论请连同来源日期与研究边界阅读。<a href="read/methodology.html">查看研究方法</a> · <a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错入口</a></p></section>`;
+ const hero=`<header class="cover"><div class="eyebrow">A field guide to AI harnesses</div><h1>理解 AI 的工作外壳，<br>再选适合你的那一个。</h1><p>从基本概念开始，看清工具的架构与取舍，再按自己的任务选择。你可以逐章阅读，也可以直接查找某个工具。</p><div class="metrics"><div class="metric"><b>55</b><span>工具档案</span></div><div class="metric"><b>40</b><span>细分场景</span></div><div class="metric"><b>${(book.match(/<figure class="diagram\b/g)||[]).length}</b><span>架构与原理图</span></div><div class="metric"><b>42</b><span>公开仓库固定快照</span></div></div><p class="notice">使用 AI 辅助研究，依据公开资料和关键源码路径分析；未对所有产品与模型组合进行统一实测。</p></header>`;
+ home.content=`${hero}<section class="chapter"><h2 id="start">从哪里开始？</h2><div class="entry-grid">${[['五分钟选型','按自己的处境找两三个候选，再进档案确认。','read/quick-start.html'],['入门阅读','先读术语和工具地图，建立整体认识。','read/basics.html'],['查找工具','从分类进入，查看每种工具的完整档案。','read/landscape.html'],['按任务选型','从写代码、写作和日常工作等 40 个场景出发。','read/scenarios.html']].map(([a,b,c])=>`<a class="entry-card" href="${c}"><strong>${a} →</strong><span>${b}</span></a>`).join('')}</div><h2 id="contents">全部章节</h2><div class="chapter-list">${chapters.map((c,i)=>`<a href="${c.file}"><span>${String(i).padStart(2,'0')}</span><strong>${escape(c.label)}</strong>${c.tools.length?`<small>${c.tools.length} 份独立档案</small>`:''}</a>`).join('')}</div><h2 id="reading">怎样使用这份报告</h2><p>点击“搜索全站”查正文与工具；左侧目录跟随当前页的阅读位置。顶部可切换深浅模式，页尾可继续读下一页。</p><p>需要一次查找全文、离线保存或打印整份报告？打开<a href="AI-Harness调研报告.html">完整单页版</a>。下载整个仓库后，也可以离线打开本首页，使用分页与搜索。</p><p>结论请连同来源日期与研究边界阅读。<a href="read/methodology.html">查看研究方法</a> · <a href="https://github.com/ProgrammerAsahi/ai-harness-comparison">项目与纠错入口</a></p></section>`;
  const css=book.match(/<style>([\s\S]*?)<\/style>/)[1]+fs.readFileSync(path.join(root,'research/site.css'),'utf8');
  fs.writeFileSync(path.join(assets,'reading.css'),css);
  for(const [src,dest] of [['report-theme.js','theme.js'],['report-navigation.js','navigation.js'],['site.js','site.js'],['site-search.js','search.js']])fs.copyFileSync(path.join(root,'research',src),path.join(assets,dest));

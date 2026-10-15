@@ -50,7 +50,7 @@ for key,records in refs.items():
 # No edge segment may run through a module's interior (endpoints on borders are OK).
 geometry=[]
 for key in DETAIL:
- for file in expected_figures(key)[1:]:
+ for file in expected_figures(key)[1:]:  # short profiles have none
   svg=ET.parse(R/'report'/file).getroot();ns='{http://www.w3.org/2000/svg}'
   boxes=[tuple(float(n.attrib[k]) for k in ['x','y','width','height']) for n in svg.findall(ns+'rect') if n.get('data-node')]
   paths=[n for n in svg.findall(ns+'path') if n.get('data-edge')]
@@ -64,7 +64,7 @@ for key in DETAIL:
      through=(x<x1<x+w and max(min(y1,y2),y)<min(max(y1,y2),y+ht)) if x1==x2 else (y<y1<y+ht and max(min(x1,x2),x)<min(max(x1,x2),x+w))
      if through:issues.append(file+': edge '+n.get('data-edge')+' crosses a module')
   geometry.append(dict(file=file,nodes=len(boxes),edges=len(paths),sha256=sha((R/'report'/file).read_bytes())))
-if len(geometry)!=55+len(SUPPLEMENTS):issues.append('Detailed diagram coverage mismatch')
+if len(geometry)!=sum(len(expected_figures(k))-1 for k in DETAIL):issues.append('Detailed diagram coverage mismatch')
 
 def luminance(hex):
  rgb=[int(hex[i:i+2],16)/255 for i in [1,3,5]]
@@ -78,6 +78,6 @@ for name,fg,bg in pairs:
  ratio=contrast(fg,bg);ratios.append(dict(element=name,foreground=fg,background=bg,ratio=round(ratio,2)))
  if fg not in css or bg not in css:issues.append(name+': contrast test color differs from theme')
  if ratio<4.5:issues.append(name+': insufficient dark text contrast')
-result=dict(method='Static asset/hash, frozen-evidence, orthogonal SVG geometry and calculated dark-theme contrast; no browser rendering',html_sha256=sha(page.encode()),logos=len(logos),profile_detail_diagrams=55,subsystem_diagrams=len(SUPPLEMENTS),architecture_layouts=sorted({p['layout'] for p in DETAIL.values()}),dark_text_contrast=ratios,geometry=geometry,issues=issues)
+result=dict(method='Static asset/hash, frozen-evidence, orthogonal SVG geometry and calculated dark-theme contrast; no browser rendering',html_sha256=sha(page.encode()),logos=len(logos),profile_detail_diagrams=sum(f.endswith('-detail.svg') for x in geometry for f in [x['file']]),subsystem_diagrams=sum(not x['file'].endswith('-detail.svg') for x in geometry),architecture_layouts=sorted({p['layout'] for p in DETAIL.values()}),dark_text_contrast=ratios,geometry=geometry,issues=issues)
 (R/'research/qa/enhancements-check.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps({k:v for k,v in result.items() if k not in ['geometry','dark_text_contrast']},ensure_ascii=False,indent=2));raise SystemExit(bool(issues))

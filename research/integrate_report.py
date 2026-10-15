@@ -5,6 +5,8 @@ import re
 from editorial import read_baseline
 ROOT=Path(__file__).resolve().parent.parent
 BASE=ROOT/'research/editorial-baseline'; OUT=ROOT/'report'
+# The quick-selection page is hand-written; copy it so resolve_volatile never edits the source.
+(OUT/'00-五分钟选型.md').write_text((ROOT/'research/quick-start.md').read_text())
 
 architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什么，又改变了什么
 
@@ -86,6 +88,10 @@ p.write_text(t)
 p=OUT/'06-模型搭配与成本.md';t=read_baseline(BASE/p.name);t=t[:t.index('## 6.8')]
 t=re.sub(r'模型目录变化很快。原有型号依据 .*?这些型号用于说明当前候选，不是永久有效的安装清单。','模型目录变化很快。本报告把型号、价格、套餐和维护状态集中在少数几张标有核实日期的表里：型号见 6.2，价格与套餐见 6.5，维护状态见[第 02 章](02-全景清单.md)。其他章节和工具档案引用的具体型号都取自这些表；实际配置时，再按自己的账户、地区和入口核对。',t)
 t=t.replace('详见 6.8','按本章规格、协议与成本核对')
+row='| 选型推断 | 根据任务、工具与上下文特征提出 | 必须以自己的任务验证，不能冒充实测结论 |\n'
+assert t.count(row)==1 and t.count('## 6.1 三种搭配证据，强度不同')==1
+t=t.replace(row,row+'| 私有题库运行记录 | 作者在自建私有题库上用固定配置运行的汇总结果 | 只说明那批题、那组配置下的表现；题目与日志不公开，外部无法复核，不作跨产品排名 |\n')
+t=t.replace('## 6.1 三种搭配证据，强度不同','## 6.1 四种搭配证据，强度不同')
 t=re.sub(r'^\| 家族与已核实的当前例子.*?\n\n来源：\[OpenAI\].*?\n',lambda m:'{{table:model-families}}\n',t,count=1,flags=re.M|re.S)
 assert '{{table:model-families}}' in t
 open_weights='''**开放状态要按型号核对。** 有官方权重和模型卡的候选，与仅提供云端服务或仍在计划开放的型号不能混为一类。以 Step-5-Preview 为例：官方在 Hugging Face 公开了 FP8 与 BF16 两套权重，截至 {{date:facts}} 读取时无需申请即可访问，另有 NVFP4 版本和 ModelScope 镜像；模型许可为 StepFun Model License 1.0，对商业使用设有条件。这与 Step Code 等 Harness 的 MIT 许可是两回事，Harness 的许可不会转移给它调用的模型。第三方同名上传不能代替官方仓库。本报告只读取了仓库元数据和许可文本，没有下载或运行这些权重。[FP8 权重](https://huggingface.co/stepfun-ai/Step-5-Preview)、[BF16 权重](https://huggingface.co/stepfun-ai/Step-5-Preview-BF16)、[许可文本](https://huggingface.co/stepfun-ai/Step-5-Preview/raw/main/LICENSE.txt)
@@ -251,11 +257,15 @@ assert t.count(glossary_end)==1, 'Expected a single glossary insertion boundary'
 t=t.replace(glossary_end,'\n'+extra_terms+'\n## 一次任务究竟经过哪些地方')
 p.write_text(t)
 p=OUT/'08-方法与参考资料.md';t=read_baseline(BASE/p.name);t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
-t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','所有工具按相同的七个维度编排，配有责任分工图、能力表、操作步骤与任务卡。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
+t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','工具档案分两层。作者日常工作流实际接入的 7 个工具是重点档案，按七个维度完整展开，配有责任分工图、下一层架构图、能力表、操作步骤、任务卡和模型路线；其余是简档，保留定位、总体结构图、能力表和资料依据。分层只反映维护范围，不代表产品优劣。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
 t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能需要读取实际呈现内容；网页、公开源码与发行二进制也可能不同步。报告按证据分别判断，不将抓到网页、找到源码或绘出概念图当作实际运行验证。各来源保留自己的采集时间，本报告没有将所有项目伪装成同一天全面重验。\n\n',t)
 t=t.replace('Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH 等公开核心','Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH、Step 等公开核心')
 t=re.sub(r'^\| Step Code／Step-5-Preview.*?\n','',t,flags=re.M)
-t+='\n\n网页标题旁的标识用于识别工具，点击可查看官方来源。部分产品沿用厂商品牌或关联品牌，具体说明见[标识来源记录](../research/logo-sources.json)。标识保留原有权利，不代表厂商背书。每份档案的下一层架构图及局部放大图均有相邻证据；它们是针对关键路径的解释，不代表完整内部审计。\n'
+t+='\n\n网页标题旁的标识用于识别工具，点击可查看官方来源。部分产品沿用厂商品牌或关联品牌，具体说明见[标识来源记录](../research/logo-sources.json)。标识保留原有权利，不代表厂商背书。重点档案的下一层架构图及局部放大图均有相邻证据；它们是针对关键路径的解释，不代表完整内部审计。\n'
 t=t.replace('51 个编号档案的产品分类与章节映射','51 个主要编号档案的产品分类与章节映射；另有 H01—H04 四份维护观察档案')
 t=t.replace('| `research/review-core*.txt`','| [profile-coverage.json](../research/profile-coverage.json) | 55 份档案的结构覆盖与篇幅记录 |\n| `research/review-core*.txt`')
+row='| 本报告分析 | 架构取舍、潜在适用性、试用方案 | 没有做过的实测结果 |\n'
+assert t.count(row)==1 and t.count('## 8.2 来源分成四种，不混为一种结论')==1
+t=t.replace(row,row+'| 作者私有题库运行记录 | 那批题、那组配置下的汇总表现 | 跨产品排名、其他任务上的表现；题目与日志不公开，外部无法复核 |\n')
+t=t.replace('## 8.2 来源分成四种，不混为一种结论','## 8.2 来源分成五种，不混为一种结论')
 p.write_text(t)

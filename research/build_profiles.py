@@ -11,13 +11,14 @@ from profile_models import ROUTES
 from profile_deepdives import DEEP
 from profile_diagrams import draw_special
 from profile_architecture import detail_markdown, build_detail
+from profile_tiers import is_focus, headings
 
 ROOT=Path(__file__).resolve().parent.parent
 BASE=ROOT/'research/editorial-baseline'
 OUT=ROOT/'report'
 FIG=OUT/'figures/profiles'
 FIG.mkdir(parents=True, exist_ok=True)
-HEADINGS=['定位与设计理念','工作原理与架构图','能力、状态与边界','从安装到完成第一个任务','典型任务与验收方法','模型搭配、适用方向与取舍','资料依据与继续阅读']
+SHORT_NOTE='*简档：保留定位、总体结构和能力边界；上手命令、试用任务和模型路线不再随事实刷新维护，选型请参考[第 05 章的场景表](05-按场景选择组合.md)与[第 06 章的集中表](06-模型搭配与成本.md)。*'
 
 def diagram(key, name, p):
     special=draw_special(key,name)
@@ -67,18 +68,27 @@ def split_baseline(key, body):
     return intro,'\n\n'.join(arch),'','\n\n'.join(how),'\n\n'.join(model)
 
 def assemble(key,title,body):
-    p=PROFILES[key];name=title.split('：')[0]
+    p=PROFILES[key];name=title.split('：')[0];focus=is_focus(key)
     diagram(key,name,p)
-    build_detail(key)
+    if focus:build_detail(key)
     intro,arch,caps,how,model=split_baseline(key,body)
     sections=[]
     sections.append(intro+'\n\n'+p['principle'])
     boundary='下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。' if p['kind']=='public' else ('下图依据所引公开文档概括职责，不代表完整源码审计或对现有服务可用性的确认。' if p['kind']=='docs' else '下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。')
-    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+arch+'\n\n'+p['mechanism']+'\n\n'+detail_markdown(key))
+    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+arch+'\n\n'+p['mechanism']+('\n\n'+detail_markdown(key) if focus else ''))
     if p['rows']:
         table='| 观察项 | 实际机制／公开能力 | 对使用者意味着什么 |\n|---|---|---|\n'+'\n'.join('| '+' | '.join(r)+' |' for r in p['rows'])
         caps=(caps+'\n\n'+table).strip()
-    sections.append(caps+('\n\n**把机制放进实际工作。**\n\n'+DEEP[key] if key in DEEP else ''))
+    sections.append(caps+('\n\n**把机制放进实际工作。**\n\n'+DEEP[key] if focus and key in DEEP else ''))
+    if focus:
+        sections+=operational_sections(key,p,model)
+    sections.append(references(key,p,body,focus))
+    assert all(s.strip() for s in sections),(key,[bool(s.strip()) for s in sections])
+    lead='' if focus else SHORT_NOTE+'\n\n'
+    return '<a id="'+key.lower()+'"></a>\n\n## '+key+' '+title+'\n\n'+lead+'\n\n'.join('### '+h+'\n\n'+s.strip() for h,s in zip(headings(key),sections))+'\n\n'
+
+def operational_sections(key,p,model):
+    sections=[]
     usage='\n\n'.join(f'{i}. {s}' for i,s in enumerate(p['steps'],1))
     sections.append(usage+'\n\n下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。\n\n```'+p['command']+'\n```')
     sections.append('下面是一份**可直接改写使用的试用任务**，属于本报告设计的验收示例，并非已完成的运行测试。\n\n> '+p['task']+'\n\n'+p['acceptance'])
@@ -86,29 +96,33 @@ def assemble(key,title,body):
     if '{{m:' in model_table:
         model_table+='\n\n*表中具体型号核实于 {{date:facts}}；各家族的完整型号与限制见[第 06 章的集中表](06-模型搭配与成本.md)。*'
     sections.append((model+'\n\n'+model_table+'\n\n'+p['tradeoff']).strip())
+    return sections
+
+def references(key,p,body,focus):
     urls=[]
     for label,url in re.findall(r'\[([^\]]+)\]\((https?://[^)]+)\)',body+'\n'+p['sources']):
         if url not in [u for _,u in urls]:urls.append((label,url))
     selected=urls[:1]+urls[1:3]+urls[-1:] if len(urls)>3 else urls
     refs='、'.join(f'[{a}]({b})' for a,b in selected)
     scope='完整商业运行时未公开，结构判断以官方可见行为和接口为限。' if p['kind']=='public' else ('此处主要依据公开说明与维护声明，未重新安装验证旧版本的全部功能。' if p['kind']=='docs' else '源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。')
-    sections.append(refs+'。\n\n'+scope+'上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。')
-    assert all(s.strip() for s in sections),(key,[bool(s.strip()) for s in sections])
-    return '<a id="'+key.lower()+'"></a>\n\n## '+key+' '+title+'\n\n'+'\n\n'.join('### '+h+'\n\n'+s.strip() for h,s in zip(HEADINGS,sections))+'\n\n'
+    tail='上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。' if focus else '上面的结构与边界依据这些材料整理；当前安装方式、型号和菜单以官方最新文档为准。'
+    return refs+'。\n\n'+scope+tail
 
 counts=[]
 for file in sorted(BASE.glob('03*.md')):
-    text=read_baseline(file)
+    text=read_baseline(file);focus_here=[]
     if file.name.startswith('03D'):
         text=re.sub(r'### Aider 为什么仍值得读[\s\S]*?(?=## 另外三种)',profile_expansions_d.HISTORY_BASE+'\n\n',text)
     def replace(m):
         key,title,body=m[1],m[2],m[3]
         if key not in PROFILES:return m[0]
         result=assemble(key,title,body)
-        counts.append({'id':key,'chinese_characters':len(re.findall('[\u4e00-\u9fff]',result))})
+        if is_focus(key):focus_here.append(key+' '+title.split('：')[0])
+        counts.append({'id':key,'tier':'focus' if is_focus(key) else 'short','chinese_characters':len(re.findall('[\u4e00-\u9fff]',result))})
         return result
     text=re.sub(r'^## ([ABCDH]\d{2}) (.+)\n([\s\S]*?)(?=^## |\Z)',replace,text,flags=re.M)
-    note='\n\n**档案读法：** 每个工具均按七个相同维度展开。架构图用于理解责任分工；上手步骤与任务卡用于实际试用。代码块是命令或操作示例，不表示本报告已经运行全部工具。\n'
+    group=('本组的重点档案是 '+'、'.join(focus_here)+'，其余为简档。') if focus_here else '本组均为简档。'
+    note='\n\n**档案读法：** 工具档案分两层。重点档案是作者日常工作流实际接入、会持续使用和复查的工具，按七个维度完整展开，包括下一层架构图、上手步骤、试用任务和模型路线；简档保留定位、总体结构和能力边界。分层只反映本报告的维护范围，不代表产品优劣或推荐强度。'+group+'代码块是命令或操作示例，不表示本报告已经运行全部工具。\n'
     first=text.index('\n<a id="')
     text=text[:first]+note+text[first:]
     (OUT/file.name).write_text(text)

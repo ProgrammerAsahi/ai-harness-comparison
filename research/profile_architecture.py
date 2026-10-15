@@ -5,6 +5,7 @@ not a claim that products sharing a layout have identical implementations.
 """
 from pathlib import Path
 import html, json, re, unicodedata
+from profile_tiers import is_focus
 ROOT=Path(__file__).resolve().parent.parent
 DETAIL={}
 def add(key, focus, layout, nodes, explanation, rows, trace, distinction, sources):
@@ -584,6 +585,7 @@ SUPPLEMENTS={
 
 
 def expected_figures(key):
+    if not is_focus(key):return [f'figures/profiles/{key}.svg']
     return [f'figures/profiles/{key}.svg',f'figures/profiles/{key}-detail.svg']+([f'figures/profiles/{key}-{SUPPLEMENTS[key]["suffix"]}.svg'] if key in SUPPLEMENTS else [])
 
 

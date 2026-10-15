@@ -5,6 +5,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlsplit,unquote
 from collections import Counter
 import json,hashlib,re
+from profile_tiers import headings as expected_headings
 ROOT=Path(__file__).resolve().parent.parent
 manifest=json.loads((ROOT/'research/site-manifest.json').read_text())
 issues=[]
@@ -61,7 +62,6 @@ original_ids=re.findall(r'<h[1-6] id="([^"]+)"',book_text)+re.findall(r'<a id="(
 for anchor in original_ids:
  if anchor not in manifest['routes']:issues.append('Lost original heading '+anchor)
 # Compare the complete text of each tool, including diagrams, code, tables and citations.
-expected=['定位与设计理念','工作原理与架构图','能力、状态与边界','从安装到完成第一个任务','典型任务与验收方法','模型搭配、适用方向与取舍','资料依据与继续阅读']
 tools=[p for p in manifest['pages'] if p['kind']=='tool']
 for tool in tools:
  start=book_text.index('<a id="'+tool['id']+'">')
@@ -73,9 +73,9 @@ for tool in tools:
  actual=pages[tool['file']]
  normalize=lambda text:re.sub(r'\s+',' ',''.join(text)).strip()
  if normalize(source.chapter_text)!=normalize(actual.chapter_text):issues.append('Profile text changed/lost: '+tool['id'])
- if [text for tag,text in actual.headings if tag=='h2']!=expected:issues.append('Profile sections changed: '+tool['id'])
+ if [text for tag,text in actual.headings if tag=='h2']!=expected_headings(tool['id'].upper()):issues.append('Profile sections changed: '+tool['id'])
  if f'read/{tool["id"]}.html'!=tool['file']:issues.append('Unstable profile URL')
-if len(tools)!=55 or len(pages)!=68:issues.append('Unexpected page coverage')
+if len(tools)!=55 or len(pages)!=69:issues.append('Unexpected page coverage')
 if sum(p.tables for p in pages.values())!=book.tables or sum(p.diagrams for p in pages.values())!=book.diagrams:issues.append('Lost/duplicated tables or diagrams')
 # Search records must point to a real heading; the full text index stays local and lazy.
 index=(ROOT/'site-assets/search-index.js').read_text()

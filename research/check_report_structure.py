@@ -6,9 +6,9 @@ from pathlib import Path
 from urllib.parse import unquote
 import hashlib,json,re,xml.etree.ElementTree as ET,unicodedata
 from profile_architecture import DETAIL, expected_figures, SUPPLEMENTS
+from profile_tiers import FOCUS, is_focus, headings as expected_headings
 
 ROOT=Path(__file__).resolve().parent.parent
-expected=['定位与设计理念','工作原理与架构图','能力、状态与边界','从安装到完成第一个任务','典型任务与验收方法','模型搭配、适用方向与取舍','资料依据与继续阅读']
 issues=[];profiles=[]
 for file in sorted((ROOT/'report').glob('03*.md')):
     text=file.read_text()
@@ -17,17 +17,25 @@ for file in sorted((ROOT/'report').glob('03*.md')):
         headings=re.findall(r'^### (.+)$',body,re.M)
         figures=re.findall(r'!\[[^\]]*\]\((figures/profiles/[^)]+)\)',body)
         tables=len(re.findall(r'^\|---',body,re.M))
-        usage=body.split('### 从安装到完成第一个任务\n')[1].split('### 典型任务与验收方法\n')[0]
-        steps=re.findall(r'^([1-5])\. ',re.sub(r'```[\s\S]*?```','',usage),re.M)
-        codeblocks=len(re.findall(r'^```(?:bash|vim|text|python|json|yaml)',body,re.M))
+        focus=is_focus(key)
         citations=len(set(re.findall(r'\]\((https?://[^)]+)\)',body)))
-        if headings!=expected:issues.append(f'{key}: inconsistent section structure {headings}')
-        if figures!=expected_figures(key) or tables<3 or steps!=['1','2','3','4','5'] or not codeblocks or not citations:
-            issues.append(f'{key}: missing diagram/table/steps/example/source')
-        if '#### 深入一层：' not in body or '**沿着一次任务看数据怎样走。**' not in body or '**与相近工具的实质差别。**' not in body:
-            issues.append(f'{key}: missing lower-level architecture explanation')
-        profiles.append(dict(id=key,title=title,sections=len(headings),diagrams=len(figures),tables=tables,steps=len(steps),code_blocks=codeblocks,cited_sources=citations,chinese_characters=len(re.findall('[\u4e00-\u9fff]',body))))
+        if headings!=expected_headings(key):issues.append(f'{key}: inconsistent section structure {headings}')
+        if focus:
+            usage=body.split('### 从安装到完成第一个任务\n')[1].split('### 典型任务与验收方法\n')[0]
+            steps=re.findall(r'^([1-5])\. ',re.sub(r'```[\s\S]*?```','',usage),re.M)
+            codeblocks=len(re.findall(r'^```(?:bash|vim|text|python|json|yaml)',body,re.M))
+            if figures!=expected_figures(key) or tables<3 or steps!=['1','2','3','4','5'] or not codeblocks or not citations:
+                issues.append(f'{key}: missing diagram/table/steps/example/source')
+            if '#### 深入一层：' not in body or '**沿着一次任务看数据怎样走。**' not in body or '**与相近工具的实质差别。**' not in body:
+                issues.append(f'{key}: missing lower-level architecture explanation')
+        else:
+            steps=[];codeblocks=0
+            if figures!=expected_figures(key) or tables<1 or not citations:issues.append(f'{key}: short profile missing diagram/table/source')
+            if not body.lstrip().startswith('*简档：'):issues.append(f'{key}: short profile lacks its scope note')
+            if '```' in body or '{{m:' in body:issues.append(f'{key}: short profile still carries commands or model routes')
+        profiles.append(dict(id=key,tier='focus' if focus else 'short',title=title,sections=len(headings),diagrams=len(figures),tables=tables,steps=len(steps),code_blocks=codeblocks,cited_sources=citations,chinese_characters=len(re.findall('[\u4e00-\u9fff]',body))))
 if len(profiles)!=55:issues.append(f'Expected 55 profiles, found {len(profiles)}')
+if sorted(x['id'] for x in profiles if x['tier']=='focus')!=sorted(FOCUS):issues.append('Focus profile set mismatch')
 ids=[x['id'] for x in profiles]
 if len(ids)!=len(set(ids)):issues.append('Duplicate profile ID')
 
@@ -66,7 +74,7 @@ if special:issues.append('Vendor-specific comparison headings remain')
 if any(s in page for s in ['Step 新增专题','Step 专项','增补条目','9 月 23 日','09-23']):issues.append('Editorial addition banner/date remains')
 if duplicates or missing or parser.assets:issues.append('Duplicate IDs, broken anchors, or remote asset dependency')
 expected_diagrams=5+sum(len(expected_figures(k)) for k in DETAIL)
-if parser.chapters!=12 or parser.diagrams!=expected_diagrams:issues.append('Unexpected chapter/diagram count')
+if parser.chapters!=13 or parser.diagrams!=expected_diagrams:issues.append('Unexpected chapter/diagram count')
 if re.search(r'\{\{(?:doc|src|repo):',page):issues.append('Unresolved source reference')
 if re.search(r'\{\{(?:m|date|table):',page):issues.append('Unresolved volatile-fact placeholder')
 
