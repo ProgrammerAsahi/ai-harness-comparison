@@ -53,7 +53,9 @@ def split_baseline(key, body):
         parts=dict(re.findall(r'^### (.+)\n([\s\S]*?)(?=^### |\Z)',body,re.M))
         intro=parts['定位、理念与源码血缘'].strip()
         arch=re.sub(r'```mermaid[\s\S]*?```\s*','',parts['一条任务怎样执行']).strip()
-        capabilities='\n\n'.join('**'+k+'。**\n\n'+parts[k].strip() for k in ['上下文、记录与长期工作','子代理、workflow、goal 和 cron 各自负责什么','权限、隔离与数据路径','扩展、迁移与静态网页交付'])
+        # A17 is a short profile: the detailed capability notes (versions, commands, settings) stay in the
+        # editorial baseline for traceability but are not rendered; profile_expansions.py carries the summary table.
+        capabilities=''
         tail=parts['怎样开始，以及模型应该怎么配']
         model=tail[tail.index('**原生首选'):].strip().replace('第六章 Step 专项','第六章的模型与成本比较')
         return intro,arch,capabilities,'',model
@@ -75,7 +77,7 @@ def assemble(key,title,body):
     sections=[]
     sections.append(intro+'\n\n'+p['principle'])
     boundary='下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。' if p['kind']=='public' else ('下图依据所引公开文档概括职责，不代表完整源码审计或对现有服务可用性的确认。' if p['kind']=='docs' else '下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。')
-    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+arch+'\n\n'+p['mechanism']+('\n\n'+detail_markdown(key) if focus else ''))
+    sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+(arch.strip()+'\n\n' if arch.strip() else '')+p['mechanism']+('\n\n'+detail_markdown(key) if focus else ''))
     if p['rows']:
         table='| 观察项 | 实际机制／公开能力 | 对使用者意味着什么 |\n|---|---|---|\n'+'\n'.join('| '+' | '.join(r)+' |' for r in p['rows'])
         caps=(caps+'\n\n'+table).strip()

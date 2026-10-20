@@ -20,19 +20,20 @@ RepoMap 用有限预算表示仓库中的重要结构；编辑核心负责把模
 
 ## H04 TRAE Agent 研究仓库：研究可修改循环，与商业 TRAE 分开判断
 
-`bytedance/trae-agent` 是研究导向的开放代理代码。README 描述多 Provider、文件与 Bash 工具、步骤摘要、轨迹记录及 YAML 配置；其自述仍写积极开发，而仓库快照显示较长推送间隔，两种信息应一起保留。本报告列为维护观察，不替它推断商业 TRAE（TRAE IDE 与 TRAE Work）的能力或活跃度。[README](https://github.com/bytedance/trae-agent/blob/e839e559ac61bdd0e057c375dd1dee391fee797d/README.md)
+`bytedance/trae-agent` 是研究导向的开放代理代码。README 描述多 Provider、文件与 Bash 工具、步骤摘要、轨迹记录及 YAML 配置；其自述仍写积极开发，而仓库快照显示较长推送间隔，两种信息应一起保留。本报告列为维护观察，不替它推断商业 TRAE 的能力或活跃度；商业产品自 2026-10-09 起已把原 TRAE IDE 与 TRAE Work 合并为一个新 TRAE，分 Agent Mode 与 IDE Mode 两种模式，见 [B07](03B-编辑器与托管工作台.md#b07)。[README](https://github.com/bytedance/trae-agent/blob/e839e559ac61bdd0e057c375dd1dee391fee797d/README.md)
 """
 
 add("H01",
-    principle="它的历史价值在于让用户围绕现有编辑器配置模型与开发辅助能力。工具选择不必和某家模型完全绑定，用户可以把项目背景与自己的模型服务结合。维护状态发生变化后，最有价值的动作通常是盘点已有资产：哪些属于通用项目资料，哪些依赖插件内部机制，再决定继续维护还是迁移。",
-    flow=["历史 CLI／编辑器入口\n项目及任务", "配置与上下文组织\n模型、规则和项目材料", "所配置模型服务\n按版本支持的适配", "回复与代码变更\n人工检查", "开发环境及可用工具\n版本相关能力", "对应入口的代理逻辑\n执行与反馈"],
-    mechanism="这张图仅归纳公开产品职责，不把某个历史版本的实现套到最终版。模型、界面和项目上下文可以分开管理，但某项特定功能可能依赖入口与版本。迁移最容易出错的是保留了模型名字，却没有迁移工具格式、规则优先级和项目背景。因此，备份时还应保存可独立理解的任务说明、项目资料与验收条件。",
-    rows=[("入口", "历史上覆盖 CLI 与多种编辑器", "先记录当前仍在使用的具体版本"), ("模型配置", "可配置模型服务的产品路线", "旧适配不保证支持之后发布的新型号"), ("项目资料", "规则和上下文是重要资产", "导出可读材料，减少对插件私有状态依赖"), ("维护状态", "README 明确不再积极维护", "不能用零星推送替代维护承诺"), ("既有使用", "旧部署可能仍能完成任务", "以实际稳定性及依赖可维护性判断"), ("迁移", "选择维护中的替代入口", "用完整任务验证，不只测试聊天接通")],
+    principle="它当初要解决的问题是：用户想在熟悉的编辑器或终端里使用编码代理，同时自己决定每类工作用哪个模型、项目规则写在哪里。与把模型和界面绑在一起的商业助手不同，Continue 把这些选择写进一份由用户维护的开放配置文件。同属维护观察的 Roo Code（H02）用“模式”区分工作意图，Continue 则用“模型角色”区分模型分工。项目不再积极维护后，这套设计仍值得参考，但已有部署要先盘点：哪些是通用项目资料，哪些依赖插件内部机制，再决定继续使用还是迁移。",
+    flow=["CLI／VS Code／JetBrains\n项目及任务", "config.yaml 组织\n模型角色、规则与上下文", "按角色选用的模型\n对话、编辑、补全、检索", "回复与代码变更\n人工检查", "开发环境及可用工具\n文件、终端、MCP", "对应入口的代理逻辑\nAgent、Chat、Edit 模式"],
+    mechanism=f"以下依据固定提交中的 README、文档与配置定义概括它当初怎样工作，没有重新安装运行。核心是一份 YAML 配置，用户级文件位于用户目录的 `.continue/config.yaml`。配置里列出若干模型，每个模型用 `roles` 声明承担哪些工作：对话（chat）、行内补全（autocomplete）、按指令改代码（edit）、把修改落到文件（apply）、为代码库和文档检索生成向量（embed）以及对检索结果重新排序（rerank），定义里还有 summarize 和 subagent；界面上再为每个角色选出当前使用的模型。这样，补全可以交给便宜快速的模型，对话和改代码交给更强的模型。项目规则写成 `.continue/rules` 目录下的 Markdown 文件，可以按文件路径匹配或设为总是生效，并按顺序拼进 Agent、Chat 和 Edit 模式的系统提示；补全和 apply 不带规则。配置里还可以声明上下文来源、MCP 服务器、提示词和文档，`@Codebase`、`@Docs` 这类引用依靠 embed 角色建立的向量检索。[模型角色](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/docs/customize/model-roles/intro.mdx)、[规则](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/docs/customize/deep-dives/rules.mdx)、[配置定义](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/packages/config-yaml/src/schemas/index.ts)、[配置位置](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/docs/customize/deep-dives/configuration.mdx)\n\n迁移时，这些东西的去向不同。`.continue/rules` 里的 Markdown 规则是普通文本，可以整理成 `AGENTS.md` 或新工具的规则目录；模型角色要在新工具里逐项找对应位置，很多工具只区分主模型和辅助模型，补全往往由另一个插件负责；检索索引和界面里为各角色选定的模型无法直接带走，需要在新工具中重建。迁移最容易出错的是只保留了模型名字，却没有迁移规则的生效范围、上下文来源和验收条件。",
+    rows=[("入口", "CLI、VS Code 扩展与 JetBrains 插件；README 建议用 CLI 代替 JetBrains 插件", "先记录当前仍在使用的入口与版本"), ("模型角色", "config.yaml 中按 chat、autocomplete、edit、apply、embed、rerank 等角色分配模型", "迁移时逐项找对应位置，旧适配不保证支持新型号"), ("项目规则", ".continue/rules 下的 Markdown 规则，可按路径匹配，拼入系统提示", "可整理成 AGENTS.md 等通用规则文件"), ("上下文", "上下文来源、文档与 MCP；@Codebase、@Docs 依赖向量检索", "检索索引换工具后要重建"), ("维护状态", "README 写明不再积极维护、仓库对所有用户只读，并发布最终 2.0.0", "不能用零星推送替代维护承诺"), ("迁移", "选择维护中的替代入口", "用完整任务验证，不只测试聊天接通")],
     steps=["盘点已有入口、版本、模型和依赖，阅读最终发行与维护说明；这不是鼓励新用户从旧版本开始安装。", "导出项目规则、提示、重要会话结论和服务配置，凭据采用独立安全方式保存，不写进公开项目。", "选两个真实常用任务，记录现有配置的结果、工具和限制，作为迁移基线。", "按需求选择 Cline、OpenCode、CodeCompanion 等当前路线，逐项重建模型、规则与工具。", "从相同仓库状态重做任务，核对编辑、测试与恢复；确认迁移后再处理旧配置，保留必要的可读记录。"],
     command="text\n迁移清单：入口与版本、Provider、模型 ID\n项目规则、常用提示、工具连接、关键会话结论\n两项代表性任务及验收结果\n新工具中逐项重建，不直接复制未知配置字段。",
     task="把一个现有 Continue 工作流迁移到维护中的候选，保留相同模型和项目任务，验证解释代码、修改文件、运行检查与结果保存。",
     acceptance="比较时重点检查原有工作流程能否在新工具中继续完成。对旧模型已不可用或配置无法等价迁移的部分，明确记录差异，不把它们当作新 Harness 单独造成的优劣。",
-    tradeoff="模型优先沿用仍受支持且已验证的既有配置，之后再单独升级。新用户更宜选择维护活跃的入口；已有用户则按迁移成本、服务可用性和维护能力判断。这条历史路线仍说明了模型选择权与编辑器集成可以同时存在。",kind="docs")
+    tradeoff="模型优先沿用仍受支持且已验证的既有配置，之后再单独升级。新用户更宜选择维护活跃的入口；已有用户则按迁移成本、服务可用性和维护能力判断。这条历史路线仍说明了模型选择权与编辑器集成可以同时存在。",kind="docs",
+    sources="[模型角色](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/docs/customize/model-roles/intro.mdx)、[规则](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/docs/customize/deep-dives/rules.mdx)、[配置定义](https://github.com/continuedev/continue/blob/5522c6f44ca0ac3528b37244818fbfa39b5af470/packages/config-yaml/src/schemas/index.ts)")
 
 add("H02",
     principle="多模式将工作意图显式区分：规划、提问、调试和实施各有关注点，用户可按任务切换。它能帮助组织工作，但模式名称本身并不构成权限保障，真正的执行边界还取决于配置与工具。项目关闭后，这些方法仍可带到其他工具，旧服务和旧插件则需要单独评估。",

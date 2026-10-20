@@ -36,78 +36,48 @@ Third-party materials retain their original rights.
 <p>下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。</p>
 <figure class="diagram profile-diagram" tabindex="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="A17 Step Code 架构示意"><title>A17 Step Code 架构示意</title><defs><marker id="profile-arrow-24" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">A17 · Step Code</text><rect x="30" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="162.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">终端／脚本入口</text><text x="162.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">用户输入与目标</text><rect x="347" y="75" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="479.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">Pi 派生 AgentSession</text><text x="479.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">会话与执行循环</text><rect x="664" y="75" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="110" text-anchor="middle" font-size="15" fill="#24453c">Step Provider</text><text x="796.5" y="135" text-anchor="middle" font-size="15" fill="#24453c">动态模型目录与协议</text><rect x="30" y="305" width="265" height="86" rx="10" fill="#dceee9" stroke="#adc9bf"/><text x="162.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">历史、摘要与目标状态</text><text x="162.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">恢复和继续</text><rect x="347" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="479.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">文件／Shell／MCP／插件</text><text x="479.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">子代理与可选工作树</text><rect x="664" y="305" width="265" height="86" rx="10" fill="#ffffff" stroke="#adc9bf"/><text x="796.5" y="340" text-anchor="middle" font-size="15" fill="#24453c">Step 工具层与权限</text><text x="796.5" y="365" text-anchor="middle" font-size="15" fill="#24453c">可选 workflow 编排</text><path d="M295 118 H344" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><path d="M612 118 H661" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><path d="M796 161 V302" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><path d="M664 348 H615" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><path d="M347 348 H298" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><path d="M162 305 V238 H479 V164" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#profile-arrow-24)"/><text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text><text x="30" y="437" font-size="13" fill="#60796f">公开源码与文档中的关键责任分工；图中能力不表示每种入口与安装方式都默认开放。</text></svg><figcaption>A17 Step Code：工作原理与责任分工。图示依据与适用边界见相邻正文。</figcaption></figure>
 <p>图中 Step 产品接口把输入、插话、中断和模型选择交给会话运行时；它没有再建立一套平行的状态机。底层循环根据模型结果分派工具，保存反馈，再决定是否继续。模型看到的 <code>read_file</code>、<code>edit_file</code>、<code>run_command</code> 等名称，由 Step 工具层映射到具体执行能力。这样既能保留 Pi 的扩展基础，也能调整模型熟悉的工具格式。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/stepcode-runtime.ts" target="_blank" rel="noopener noreferrer">产品接口</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/agent-core/src/agent-loop.ts" target="_blank" rel="noopener noreferrer">执行循环</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/step/tool-profile.ts" target="_blank" rel="noopener noreferrer">工具接口</a></p>
-<p>一条正常任务仍是“组装上下文→请求模型→检查并执行工具→保存结果→继续或结束”。子代理、goal、cron 和 workflow 是叠加在这条主线上、解决不同问题的能力。使用时应先把基本循环跑通，再按需要增加一种控制方式，才能判断问题出在模型、会话还是高级编排。</p>
+<p>一条正常任务仍是“组装上下文→请求模型→检查并执行工具→保存结果→继续或结束”。子代理、goal、cron 和 workflow 是叠加在这条主线上的能力，名字相近，职责不同：**子代理负责分工，workflow 负责组织分工，goal 负责持续推进目标，cron 负责到了时间再触发。**子代理里明确禁止再次派生，也不能启动 workflow、goal 和 cron，避免代理数量一层层放大，或留下脱离父任务的定时工作。使用时应先把基本循环跑通，再按需要增加一种控制方式，才能判断问题出在模型、会话还是高级编排。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/orchestration-lifecycle.md" target="_blank" rel="noopener noreferrer">编排生命周期</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/goal-lifecycle.md" target="_blank" rel="noopener noreferrer">目标控制</a></p>
+<p>权限档位、脚本沙箱和子代理的独立上下文，都不能等同于系统隔离。安全文档把启动账户的本地权限作为执行边界：工具命令拥有这个账户的系统权限，扩展与受信任项目也在这一边界之内。会话与配置保存在本机，选中的代码和资料会发往所配置的模型服务，联网工具和静态网站发布又各自增加数据出口。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/step/permissions.ts" target="_blank" rel="noopener noreferrer">权限实现</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/SECURITY.md" target="_blank" rel="noopener noreferrer">安全说明</a></p>
 <h2 id="a17-capabilities">能力、状态与边界</h2>
-<p><strong>上下文、记录与长期工作。</strong></p>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
-<th>机制</th>
-<th>实际作用</th>
-<th>使用时怎样理解</th>
+<th>观察项</th>
+<th>实际机制／公开能力</th>
+<th>对使用者意味着什么</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>本地会话记录、恢复与导出</td>
-<td>保存对话和工具过程，可继续或复制会话</td>
-<td>能恢复聊天，不代表命令进程或外部动作也被恢复</td>
+<td>会话与上下文</td>
+<td>本地保存会话，可恢复、分支和导出；接近容量时先由模型修剪较早的工作上下文，不够再做摘要压缩</td>
+<td>能恢复对话，不代表命令进程或外部动作也被恢复；修剪本身也计入用量</td>
 </tr>
 <tr>
-<td><code>/tree</code>、<code>/fork</code>、<code>/clone</code></td>
-<td>从历史节点尝试另一条思路，或复制当前分支</td>
-<td>对话分支不会撤销磁盘改动；代码实验仍需 Git 分支／工作树</td>
-</tr>
-<tr>
-<td>自动压缩与 <code>/compact</code></td>
-<td>总结早期过程，保留近期消息</td>
-<td>摘要包含目标、文件、验证、失败方案和下一步；要检查约束是否保留</td>
-</tr>
-<tr>
-<td><code>AGENTS.md</code>、<code>CLAUDE.md</code>、Skills</td>
-<td>保存可反复使用的项目规则和方法</td>
-<td>不等于自动筛选、纠错并检索的长期个人记忆</td>
-</tr>
-</tbody></table></div>
-<p>会话层会在工具批次结束等合适时点检查上下文，接近容量时生成交接摘要；文件操作也参与摘要组织。自 v0.1.4 起，只要开启了自动压缩、又没有另行指定上下文模式，默认先用 CLM（Context Language Models）：由模型有选择地修剪较早的工作上下文，不改写原始会话记录；修剪失败或不够时，再退回摘要压缩。<code>/clm</code> 命令可以查看状态、开关当前会话的修剪、查看改动或清除修剪结果。修剪本身也会调用模型，这部分用量计入会话统计。<a href="https://platform.stepfun.ai/docs/en/step-code/guides/sessions.md" target="_blank" rel="noopener noreferrer">会话文档</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/core/compaction/compaction.ts" target="_blank" rel="noopener noreferrer">压缩实现</a></p>
-<p><strong>子代理、workflow、goal 和 cron 各自负责什么。</strong></p>
-<p>这四个名字很相近，职责却不同：<strong>子代理负责分工，workflow 负责组织分工，goal 负责持续推进目标，cron 负责到了时间再触发。</strong></p>
-<div class="table-scroll" tabindex="0"><table>
-<thead>
-<tr>
-<th>能力</th>
-<th>当前实现与特色</th>
-<th>主要边界</th>
-</tr>
-</thead>
-<tbody><tr>
 <td>子代理</td>
-<td>内置 general、explore、review、planner；支持单个、并行、顺序串联及后台任务</td>
-<td>独立上下文与用量；默认可共享目录；review／planner 有命令工具，不能理解成系统级只读</td>
+<td>内置通用、探索、审阅、规划等角色，可单个、并行、串联或在后台运行</td>
+<td>上下文与用量独立，但默认共享目录；审阅类角色也能运行命令，不是系统级只读</td>
 </tr>
 <tr>
-<td>workflow／ultraloop</td>
-<td>用受限 JavaScript 脚本编排并行、阶段和迭代，保存运行记录</td>
-<td>脚本在编译成 WebAssembly 的 QuickJS 引擎中隔离运行，引擎随安装包发布，默认注册；设置 <code>STEP_DISABLE_WORKFLOW=1</code> 或嵌入方关闭时才停用</td>
+<td>workflow</td>
+<td>用受限 JavaScript 脚本编排并行、阶段和迭代；脚本在 WebAssembly 版 QuickJS 中运行，默认注册，按会话或单轮显式开启</td>
+<td>脚本受限不等于宿主隔离；与普通子代理分开验收</td>
 </tr>
 <tr>
-<td><code>/goal</code></td>
-<td>保存目标与预算，当前轮结束后继续；支持暂停、恢复、清除</td>
-<td>完成状态由工作代理提交，没有独立的完成评判代理；仍需外部验收</td>
+<td>goal 与 cron</td>
+<td>goal 保存目标与预算，本轮结束后继续；cron 按时间表触发，可保存到项目</td>
+<td>完成状态由工作代理自己提交，仍需外部验收；定时任务要求 CLI 一直运行</td>
 </tr>
 <tr>
-<td><code>/cron</code></td>
-<td>以时间表触发任务；可将任务持久保存到项目</td>
-<td>CLI 必须持续运行；保存到磁盘不等于关机后云端继续执行</td>
+<td>权限</td>
+<td>Ask、Approve for Me、Full Access 三档；交互界面默认 Approve for Me，无界面运行须明确指定</td>
+<td>规则检查分析不了所有程序内容，也不是操作系统沙箱</td>
+</tr>
+<tr>
+<td>扩展与交付</td>
+<td>MCP、Skills 与插件；可导入部分 Claude Code／Codex 配置；StepPage 把本地静态目录发布为网站</td>
+<td>迁移后重新核对授权，没有文件式 Hooks；网站托管额度不等于模型订阅额度</td>
 </tr>
 </tbody></table></div>
-<p>子进程明确禁用再次派生、workflow、goal 和 cron，避免一层层放大代理数量或留下脱离父任务的定时工作。需要并行改代码时，可选择工作树，但独立目录与系统沙箱是两件事。目标预算和 workflow 预算的计数口径也有差别；正在生成的请求可能超过剩余额度，不能把 Token 限额当作绝对费用封顶。<a href="https://platform.stepfun.ai/docs/en/step-code/customization/agents.md" target="_blank" rel="noopener noreferrer">子代理文档</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/orchestration-lifecycle.md" target="_blank" rel="noopener noreferrer">生命周期约束</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/goal-lifecycle.md" target="_blank" rel="noopener noreferrer">目标控制</a></p>
-<p><strong>高级编排仍要单独验收。</strong> 普通子代理和 workflow 是不同能力，前者用得顺不代表后者也合适。现行源码把 workflow 的脚本沙箱换成了编译成 WebAssembly 的 QuickJS，不再依赖只在部分运行环境里能加载的原生模块，所以各种安装方式默认都会注册这个工具。注册只表示环境具备这项能力；是否在某一轮真正使用，仍由显式开启把关：<code>/ultraloop on</code>（<code>/ultracode</code> 是同一个命令）为当前会话开启，或在一条提示前写 <code>ultraloop:</code> 只对这一轮生效。会话开关不写入全局或项目设置。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/features/workflow/registration-gate.ts" target="_blank" rel="noopener noreferrer">注册门控</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/features/workflow/vm.ts" target="_blank" rel="noopener noreferrer">脚本运行环境</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/orchestration-lifecycle.md" target="_blank" rel="noopener noreferrer">编排说明</a></p>
-<p><strong>权限、隔离与数据路径。</strong></p>
-<p>Step Code 现在提供 Ask、Approve for Me、Full Access 三档。<strong>交互界面在没有任何指定时默认使用 Approve for Me</strong>：日常操作自动执行，只有被判定为可能不安全的操作和关键决定才询问。Ask 在修改文件或运行命令前询问。Full Access 对危险命令和无法充分分析的命令也不再确认，选择时必须先确认风险提示，不会成为默认值。旧版的 Read Only、Bypass、Autopilot 已经取消，旧设置会落到 Ask：Read Only 映射到最严格的 Ask，Bypass 与 Autopilot 则要求用户重新选择档位。没有交互界面的运行不会继承宽松的默认值，需要明确指定档位。这种规则检查不能分析所有程序内容，也不是操作系统沙箱。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/step/permissions.ts" target="_blank" rel="noopener noreferrer">权限源码</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/docs/command-permissions.md" target="_blank" rel="noopener noreferrer">命令分析边界</a></p>
-<p>安全文档明确把本地用户权限作为执行边界。工具命令可获得启动账户的系统权限，扩展与受信任项目也进入这一边界。工作流脚本受限、子代理上下文独立，都不能据此推出宿主文件和网络已被隔离。会话与配置在本地保存，选中的代码和资料仍会发往所配置的模型服务；联网工具和 StepPage 发布则增加各自的数据出口。<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/SECURITY.md" target="_blank" rel="noopener noreferrer">安全说明</a>、<a href="https://platform.stepfun.ai/docs/en/step-code/configuration/data-paths.md" target="_blank" rel="noopener noreferrer">本地数据目录</a></p>
-<p><strong>扩展、迁移与静态网页交付。</strong></p>
-<p>MCP、Skills 和插件可增加工具与工作方法。迁移界面能导入部分 Claude Code／Codex MCP 配置，并复用已有 <code>CLAUDE.md</code>。但服务授权要重新核对；不是所有传输方式、项目配置和插件机制都自动迁移。文档明确说明没有文件式 Hooks，需要用扩展事件实现相应逻辑。“大多数插件兼容”不能写成行为完全等价。<a href="https://platform.stepfun.ai/docs/en/step-code/guides/migration.md" target="_blank" rel="noopener noreferrer">迁移说明</a>、<a href="https://platform.stepfun.ai/docs/en/step-code/customization/plugins.md" target="_blank" rel="noopener noreferrer">插件边界</a></p>
-<p>StepPage 是很实用的产品差异：它可以把本地静态输出目录发布成可访问网站，再管理版本、上线和回滚。自 v0.1.1 起，<code>steppage</code> 插件在首次启动时预装，只有缺失或被主动移除后才需要运行 <code>/plugin install steppage</code>；自动准备需要另装 Node.js 20 或更新版本，原生 Windows 不会自动安装，要用 WSL 或手动配置。它适合原型、产品介绍页、研究报告和数据展示页；后端程序与数据库需要另行部署。发布需要凭据和可用 MCP 服务，网站托管额度也不等于模型订阅额度。<a href="https://platform.stepfun.ai/docs/en/step-code/reference/steppage.md" target="_blank" rel="noopener noreferrer">StepPage 指南</a></p>
 <h2 id="a17-references">资料依据与继续阅读</h2>
 <p><a href="https://github.com/stepfun-ai/Step-Code" target="_blank" rel="noopener noreferrer">仓库</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/README.zh-CN.md" target="_blank" rel="noopener noreferrer">产品说明</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/LICENSE-STATUS.md" target="_blank" rel="noopener noreferrer">许可与来源</a>、<a href="https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/providers/src/compat.ts" target="_blank" rel="noopener noreferrer">协议兼容层</a>。</p>
 <p>源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。上面的结构与边界依据这些材料整理；当前安装方式、型号和菜单以官方最新文档为准。</p>

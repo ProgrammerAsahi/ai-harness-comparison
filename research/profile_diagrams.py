@@ -43,10 +43,10 @@ def draw_special(key,name):
         node(347,455,'执行结果与错误状态','返回外层流程',True)
         for d in ['M295 118 H344','M612 118 H661','M479 161 V267','M347 313 H298','M612 313 H661','M796 356 V498 H615','M479 455 V359','M612 520 H945 V210 H545 V164']:edge(d)
         notes=['外层流程管理固定步骤；局部 Agent 处理需要探索的部分，二者不应混为一层。']
-    elif key in ['A15','B03','B13','B20']:
+    elif key in ['A15','B03','B13']:
         height=665
-        front={'A15':'Canvas／CLI／调用方','B03':'Desktop／云端任务入口','B13':'Replit 需求与项目入口','B20':'GitHub／Jules／API'}[key]
-        environment={'A15':'工作空间：本机／容器／集群','B03':'本地／托管／Outposts 环境','B13':'平台托管的应用环境','B20':'云端虚拟机环境'}[key]
+        front={'A15':'Canvas／CLI／调用方','B03':'Desktop／云端任务入口','B13':'Replit 需求与项目入口'}[key]
+        environment={'A15':'工作空间：本机／容器／集群','B03':'本地／托管／Outposts 环境','B13':'平台托管的应用环境'}[key]
         extra=f'<rect x="325" y="205" width="615" height="253" rx="14" fill="#edf4f0" stroke="#8ab2a1" stroke-dasharray="6 5"/><text x="640" y="430" font-size="13" fill="#4e7465">{escape(environment)}</text>'
         node(30,75,front,'任务与用户反馈')
         node(347,75,'会话与环境管理','准备、启动与跟踪',True)
@@ -70,6 +70,17 @@ def draw_special(key,name):
         node(347,505,'回答、引用或代码产物','核对来源与实际结果',True)
         for d in ['M295 118 H344','M664 118 H615','M479 161 V272','M612 318 H661','M664 340 H635 V460 H15 V318 H27','M162 361 V548 H344','M796 361 V548 H615']:edge(d)
         notes=['检索质量与执行能力分别评价；资料已入库，不表示关键片段一定进入本轮上下文。']
+    elif key=='B20':
+        node(30,75,'网页／GitHub issue／API','选仓库、分支与任务')
+        node(347,75,'Jules 服务端会话','计划、活动与对话记录',True)
+        node(664,75,'原生模型路由','由产品选择')
+        node(30,270,'计划审阅','批准、修改或计时自动批准')
+        node(347,270,'短时云端虚拟机','克隆、安装、修改、测试',True)
+        node(664,270,'环境快照','设置脚本成功后保存')
+        node(347,455,'差异与任务摘要','在活动记录中审阅、插话',True)
+        node(664,455,'GitHub 分支或 PR','用户发布后进入代码审查')
+        for d in ['M295 118 H344','M612 118 H661','M400 161 V215 H162 V267','M796 161 V215 H560 V267','M295 313 H344','M664 313 H615','M479 356 V452','M612 498 H661']:edge(d)
+        notes=['依据官方文档画出公开流程；代理循环在服务端还是虚拟机内运行未公开，图中不作区分。']
     elif key=='A18':
         node(30,75,'Muse Code 桌面／CLI','任务、审批与技能调用')
         node(347,75,'父代理','拆分任务与汇总结果',True)
