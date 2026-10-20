@@ -41,6 +41,7 @@ npm run check:study
 | HTML 与样式 | `research/build_quantification.mjs`、`research/quantification.css` |
 | Markdown 与公式解析 | `research/quantification-markdown.mjs`；行内用 `$…$`，独立公式用前后各占一行的 `$$` |
 | 计算示例 | 本目录 `calculate_examples.py`、`test_examples.py` |
+| 试编码数据格式、校验与分歧比较 | 本目录 `data/`（说明见 [data/README.md](data/README.md)）、`validate_data.py`、`compare_codings.py`、`test_data_validation.py`；尚无真实工具的编码结果 |
 
 参考资料列表由来源表与正文引用共同生成，不单独修改。修改后提交正文、生成器和对应 SVG／HTML／JSON 产物。`npm run build` 与 `npm run check` 也已包含本研究报告。
 
