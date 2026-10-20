@@ -8,7 +8,7 @@ Page bodies go to the ignored research/pages/ cache; URL, retrieval time and
 hashes are appended to research/fact-refresh-sources.json, which is versioned.
 A page that cannot be fetched is recorded with its error instead of a hash.
 """
-import datetime, hashlib, html, json, pathlib, re, sys, urllib.request
+import datetime, gzip, hashlib, html, json, pathlib, re, sys, urllib.request
 
 R = pathlib.Path(__file__).resolve().parent
 PAGES = R / 'pages'
@@ -30,6 +30,8 @@ def fetch(src):
             raw = r.read()
             ctype = r.headers.get('Content-Type', '')
             rec['final_url'] = r.geturl()
+        if r.headers.get('Content-Encoding') == 'gzip' or raw[:2] == b'\x1f\x8b':
+            raw = gzip.decompress(raw)  # some servers compress even without Accept-Encoding
     except Exception as e:  # recorded, not hidden
         rec.update(retrieved_at=now(), error=str(e)[:200])
         return rec

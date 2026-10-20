@@ -21,7 +21,7 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 
 上述关系分别依据各工具档案中的固定源码与官方说明；更细的实现和边界见 [A 类档案](03A-终端与开放编程代理.md)。其中 Step 的派生关系有明确[许可声明](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/LICENSE-STATUS.md)，MiMo 的模型适配有独立[架构文档](https://github.com/XiaomiMiMo/MiMo-Code/blob/1579e7d9ee5fca87b707c3892dc725316674a9d6/docs/architecture/codex-microkernel-runtime.en.md)。这张表用于比较结构与产品取舍；性能需要另设任务验证。
 
-用 Pi 与 Step Code 举例：Pi 将不少工作方式留给扩展，默认没有内置的系统权限限制；Step 在派生底座上提供自己的模型入口、权限档位和任务控制，但当前默认 Bypass 仍不等于操作系统沙箱。前者需要用户自己决定更多，后者减少部分组装，又引入产品默认值与发行包差异。两者都值得研究，选择取决于你愿意自己维护哪些决定。[Pi 权限说明](https://github.com/earendil-works/pi/blob/b4588f26af2f74f7b1387b548e04a3c8d81da75b/README.md)、[Step 权限实现](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/step/permissions.ts)
+用 Pi 与 Step Code 举例：Pi 将不少工作方式留给扩展，默认没有内置的系统权限限制；Step 在派生底座上提供自己的模型入口、权限档位和任务控制，但交互界面默认的 Approve for Me 仍不等于操作系统沙箱。前者需要用户自己决定更多，后者减少部分组装，又引入产品默认值与发行包差异。两者都值得研究，选择取决于你愿意自己维护哪些决定。[Pi 权限说明](https://github.com/earendil-works/pi/blob/b4588f26af2f74f7b1387b548e04a3c8d81da75b/README.md)、[Step 权限实现](https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/step/permissions.ts)
 
 **能力存在于源码、能力被注册、能力在你的安装里可用，是三件事。** 例如某个脚本编排需要原生模块，独立二进制未必能装载；某个团队模式可能只在 CLI 开放，编辑器扩展尚不支持。Step 的 workflow 注册门控与 Cline 的团队入口差异分别展示了这两种情况。迁移时应检查实际构建、注册条件和可用入口，确认功能是否已启用。[运行环境门控](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/features/workflow/registration-gate.ts)、[团队入口范围](https://github.com/cline/cline/blob/078f82b1e2617a6be421e34c08d35af1c3a78d87/docs/cli/agent-teams.mdx)
 
@@ -37,7 +37,7 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 
 目标控制适合让当前任务继续，但完成判断仍要看实际成果。定时触发只决定何时发起；它是否能长期可靠执行，取决于电脑是否在线、服务是否恢复、失败是否重试以及重复动作怎样避免。配置一个时间表达式不能替代这些机制。各项实现依据见 [A 类](03A-终端与开放编程代理.md)、[B 类](03B-编辑器与托管工作台.md)、[C 类](03C-个人助理与知识工作台.md)和 [D 类档案](03D-相邻路线与维护观察.md)。
 
-交付也需要分层。StepPage 可把静态目录接入托管服务；Replit 将应用环境与部署一并整合；Copilot 云端与 Jules 更接近通过代码产物进入审查。静态研究报告、带数据库的应用、准备合并的补丁，完成标准完全不同。应先选交付路径，再决定是否需要一体化平台。[静态发布范围](https://platform.stepfun.ai/docs/en/step-code/reference/steppage.md)、[Replit Agent](https://docs.replit.com/features/agent/overview.md)、[Copilot 云端](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent)
+交付也需要分层。StepPage 可把静态目录接入托管服务；Replit 将应用环境与部署一并整合；Copilot 云端与 Jules 更接近通过代码产物进入审查。静态研究报告、带数据库的应用、准备合并的补丁，完成标准完全不同。应先选交付路径，再决定是否需要一体化平台。[静态发布范围](https://platform.stepfun.ai/docs/en/step-code/reference/steppage.md)、[Replit Agent](https://docs.replit.com/features/agent/overview.md)、[Copilot 云端](https://docs.github.com/en/copilot/concepts/agents/cloud-agent)
 
 更大的模型窗口与更完善的状态管理也不是互相替代。窗口解决本轮能装多少内容，检索决定装哪些，摘要帮助交接，检查点保存进度。它们配合得好，才能减少重读与遗漏；只扩大窗口可能增加重复输入，只积极压缩又可能丢掉重要条件。最终应比较同一成果需要的总调用、返工和人工检查。
 '''
@@ -120,7 +120,7 @@ billing='''### 把标价换算成任务费用
 
 一个具体额度池示例是 Step Plan。下表的 Credits 与标价可以直接比较档位，却不能直接换算成可完成的任务数量；购买前，用自己的任务样本估算实际扣除量，再看套餐能覆盖多少日常工作。中国区的高峰双倍扣除说明，同一套餐在不同时段的实际额度也可能不同。\n\n{{table:plans}}
 
-上述不同形态的来源与入口边界见 [Cursor 模型](https://cursor.com/docs/models)、[Amp 档位](https://ampcode.com/docs/markdown/models-and-subagents)、[Replit 预算](https://docs.replit.com/billing/managing-spend.md)、[Qoder 自定义模型](https://docs.qoder.com/qoder/custom-models.md)、[Factory BYOK](https://docs.factory.ai/model-independence/byok.md)。模型服务与网页托管、远程工作机、发布服务又可能分开收费，最终应画出整套方案的账单路径。
+上述不同形态的来源与入口边界见 [Cursor 模型](https://cursor.com/docs/models)、[Amp 档位](https://ampcode.com/docs/markdown/models-and-subagents)、[Replit 预算](https://docs.replit.com/billing/managing-spend.md)、[Qoder 自定义模型](https://docs.qoder.com/qoder/custom-models.md)、[Factory BYOK](https://docs.factory.com/model-independence/byok.md)。模型服务与网页托管、远程工作机、发布服务又可能分开收费，最终应画出整套方案的账单路径。
 
 '''
 t=t.replace('## 6.6 订阅',billing+'## 6.6 订阅')
