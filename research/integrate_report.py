@@ -19,11 +19,13 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 | OpenCode 相关核心 → 当前 Kilo | 会话与工具核心存在共同结构 | Kilo 账户、路由、恢复、云服务和费用 | 开放底座与商业整合可以并存，共同代码不等于同一产品 |
 | Gemini CLI 历史结构 → Qwen Code | 部分设计源于相近的终端代理路线 | 当前协议、预算、子任务、沙箱与目录限制 | 分支持续演化，比较时核对当前版本的实际行为 |
 
-上述关系分别依据各工具档案中的固定源码与官方说明；更细的实现和边界见 [A 类档案](03A-终端与开放编程代理.md)。其中 Step 的派生关系有明确[许可声明](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/LICENSE-STATUS.md)，MiMo 的模型适配有独立[架构文档](https://github.com/XiaomiMiMo/MiMo-Code/blob/1579e7d9ee5fca87b707c3892dc725316674a9d6/docs/architecture/codex-microkernel-runtime.en.md)。这张表用于比较结构与产品取舍；性能需要另设任务验证。
+上述关系分别依据各工具档案中的固定源码与官方说明；更细的实现和边界见 [A 类档案](03A-终端与开放编程代理.md)。其中 Step 的派生关系有明确[许可声明](https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/LICENSE-STATUS.md)，MiMo 的模型适配有独立[架构文档](https://github.com/XiaomiMiMo/MiMo-Code/blob/1579e7d9ee5fca87b707c3892dc725316674a9d6/docs/architecture/codex-microkernel-runtime.en.md)。这张表用于比较结构与产品取舍；性能需要另设任务验证。
+
+产品接替也不等于源码继承。Antigravity CLI 接替了个人用户使用的 Gemini CLI，却是用 Go 另写的，源码没有公开，和 Antigravity 桌面应用共用同一套服务端代理框架；Gemini CLI 的扩展要按迁移指南改成插件，官方也说明两者一开始做不到功能一一对应。判断继承关系，应看源码与官方迁移说明，名称和接替公告只能作线索。[迁移公告](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)、[迁移指南](https://antigravity.google/docs/cli/gcli-migration)
 
 用 Pi 与 Step Code 举例：Pi 将不少工作方式留给扩展，默认没有内置的系统权限限制；Step 在派生底座上提供自己的模型入口、权限档位和任务控制，但交互界面默认的 Approve for Me 仍不等于操作系统沙箱。前者需要用户自己决定更多，后者减少部分组装，又引入产品默认值与发行包差异。两者都值得研究，选择取决于你愿意自己维护哪些决定。[Pi 权限说明](https://github.com/earendil-works/pi/blob/b4588f26af2f74f7b1387b548e04a3c8d81da75b/README.md)、[Step 权限实现](https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/step/permissions.ts)
 
-**能力存在于源码、能力被注册、能力在你的安装里可用，是三件事。** 例如某个脚本编排需要原生模块，独立二进制未必能装载；某个团队模式可能只在 CLI 开放，编辑器扩展尚不支持。Step 的 workflow 注册门控与 Cline 的团队入口差异分别展示了这两种情况。迁移时应检查实际构建、注册条件和可用入口，确认功能是否已启用。[运行环境门控](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/coding-agent/src/features/workflow/registration-gate.ts)、[团队入口范围](https://github.com/cline/cline/blob/078f82b1e2617a6be421e34c08d35af1c3a78d87/docs/cli/agent-teams.mdx)
+**能力存在于源码、能力被注册、能力在你的安装里可用，是三件事。** 例如 Step Code 的 workflow 工具早期依赖一个原生模块，正式发布的独立程序装载不了，工具因此不会注册；现行源码改用编译成 WebAssembly 的 QuickJS 之后默认注册，但某一轮是否真正使用，仍要用户显式开启 ultraloop。又如某个团队模式可能只在 CLI 开放，编辑器扩展尚不支持，Cline 的团队入口差异就是这种情况。迁移时应检查实际构建、注册条件和可用入口，确认功能是否已启用。[运行环境门控](https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/coding-agent/src/features/workflow/registration-gate.ts)、[团队入口范围](https://github.com/cline/cline/blob/078f82b1e2617a6be421e34c08d35af1c3a78d87/docs/cli/agent-teams.mdx)
 
 ## 4.13 任务能保存、能继续、能交付，分别由什么保证
 
@@ -77,7 +79,7 @@ t+='''## 5.7 同一任务怎样在两个候选之间决定
 | 要在离开电脑后继续 | Devin、Jules、云端代理或持续服务 | 执行环境、依赖、进程与结果取回是否独立于本机 |
 | 重点是交出网页／报告／补丁 | 带对应验证和交付工具的组合 | 产物可用性、引用／测试、发布范围与长期运行费用 |
 
-原生组合包括 Claude Code＋Claude、Codex＋GPT、Kimi Code＋Kimi、Step Code＋Step 等；它们适合先建立可工作的基线。已有工具的用户可先保留外壳，仅按官方支持路线增加模型。StepFun 对 OpenCode、Cline、Kilo、Hermes、Cherry 等有接入说明，但这指模型提供方给出了配置路径，不是双方对全部版本和功能的联合认证。[接入总览](https://platform.stepfun.ai/docs/en/step-plan/overview.md)
+原生组合包括 Claude Code＋Claude、Codex＋GPT、Kimi Code＋Kimi、Step Code＋Step 等，Meta 的 Muse Code＋Muse 也属此类（闭源订阅）；它们适合先建立可工作的基线。已有工具的用户可先保留外壳，仅按官方支持路线增加模型。StepFun 对 OpenCode、Cline、Kilo、Hermes、Cherry 等有接入说明，但这指模型提供方给出了配置路径，不是双方对全部版本和功能的联合认证。[接入总览](https://platform.stepfun.ai/docs/en/step-plan/overview.md)
 
 小说依然需要文风小样，严格离线依然需要正式权重与全链路本地部署，组织场景依然需要身份与权限。任何新旗舰都只是模型层的一个候选，不会自动补齐这些条件。
 '''
@@ -143,7 +145,7 @@ t+='''## 6.8 从规格表到可用能力：用同一套问题读所有模型
 
 同样的核对方式也适用于其他家族：Gemini 要看具体 Flash／Pro 以及服务渠道；Claude 要看直连与云供应商的模型映射；GPT 要看实际产品目录而非另一入口的选项；本地 Qwen 要看推理服务实际启动的窗口和工具模板。这些都不能只靠模型名字判断。[Gemini 目录](https://ai.google.dev/gemini-api/docs/models)、[Claude 配置](https://code.claude.com/docs/en/model-config.md)、[OpenAI 产品模型](https://learn.chatgpt.com/docs/models.md)、[Qwen 模型卡](https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/README.md)
 
-**客户端元数据可能成为实际瓶颈。** 例如 Step 的服务模型页写百万窗口，但 Step Code 获取元数据失败时有 256,000 的后备值；成本也有零值后备。于是“模型有大窗口”“当前会话按大窗口管理”“界面费用估算准确”是三种不同结论。自定义 Provider 和本地模型同样应核对上下文、最大输出和价格元数据。[模型发现与后备值](https://github.com/stepfun-ai/Step-Code/blob/adcf37b0572ff568b3fbff759f52267690c98c32/packages/providers/src/step-provider/index.ts)
+**客户端元数据可能成为实际瓶颈。** 例如 Step 的服务模型页写百万窗口，但 Step Code 获取元数据失败时有 256,000 的后备值；成本也有零值后备。于是“模型有大窗口”“当前会话按大窗口管理”“界面费用估算准确”是三种不同结论。自定义 Provider 和本地模型同样应核对上下文、最大输出和价格元数据。[模型发现与后备值](https://raw.githubusercontent.com/stepfun-ai/Step-Code/be88ee77071188975475bcb5ef4e1edd0913d8ad/packages/providers/src/step-provider/index.ts)
 
 视觉能力尤其需要端到端检查。Step 模型页列出的图片数量与视频上传方式属于服务接口限制；当前 Step Code 可确认文本与图像路径，不能因此声称所有视频都能直接送入。其他模型也有同样问题：先确认客户端确实发出了附件，再讨论模型有没有读懂。[输入限制](https://platform.stepfun.ai/docs/en/guides/models/step-5-preview)、[客户端工具](https://platform.stepfun.ai/docs/en/step-code/reference/tools.md)
 
@@ -210,7 +212,7 @@ p=OUT/'07-试用迁移与验收.md';t=read_baseline(BASE/p.name);t=t[:t.index('#
 | 多模态输入 | 使用已知内容的图片或其他支持附件 | 附件能经当前客户端完整传入，并得到符合内容的处理 | Gemini、GPT、Step 等模型与相应入口 |
 | 窗口与压缩 | 核对上下文、输出限制和实际压缩行为 | 保留关键约束，不悄悄沿用旧型号窗口 | Kimi、OpenCode、Step、自定义 Provider |
 | 中断与恢复 | 留下进度、失败原因和不能重复的动作，退出后继续 | 不重做有副作用的动作，能核对真实文件与外部状态 | Codex、Pi、MiMo、Hermes、目标型产品 |
-| 子代理与团队 | 两个独立调查，再测试取消、目录及用量 | 状态可跟踪，权限正确，集成与总费用可解释 | Cline Teams、Factory、Qwen、Step、OmO |
+| 子代理与团队 | 两个独立调查，再测试取消、目录及用量 | 状态可跟踪，权限正确，集成与总费用可解释 | Cline Agent Teams、Factory、Qwen、Step、OmO、Superset |
 | 安装包与实验能力 | 核对构建、依赖、注册和功能开关 | 能明确识别是否支持，并核对当前安装中的实际启用状态 | 原生模块、脚本编排、后台代理、ACP 后端 |
 | 长期目标 | 暂停、继续、修改目标和结束 | 停止条件有效，最终成果另有检查 | ZCode、Step、任务型平台 |
 | 触发与长期在线 | 停止进程、恢复服务、重复触发同一任务 | 明确是否继续、是否重试、是否重复写入 | n8n、Hermes、OpenClaw、本机定时能力 |
