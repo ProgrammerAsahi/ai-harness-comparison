@@ -250,7 +250,7 @@ extra_terms='''| Turn / Step / Run | 一次交互轮次／一次模型与工具�
 | 依赖图，DAG | 用连线说明哪些任务要等前面的任务完成 | 根据依赖安排先后顺序，再并行推进相互独立的任务 |
 | SDK／解释器／构建依赖 | 程序开发接口／执行程序的环境／生成软件需要的部件 | 在这里主要提醒：项目环境没准备好，模型也无法正确验证 |
 | Oracle / Librarian | 部分产品给推理咨询／资料调查等职责起的角色名 | 名称是产品约定，要看实际工具、上下文与权限 |
-| Work / Mission / Quest | 不同产品给工作模式、成组任务或目标执行起的名称 | 不能凭同类营销词推断它们使用同一种调度和恢复机制 |
+| Work / Mission / Quest | 不同产品给工作模式、成组任务或目标执行起的名称 | 不能凭同类营销词推断它们使用同一种调度和恢复机制；其中有的名字已经改动，如 Qoder 的 Quest 窗口已退役，TRAE Work 已并入新 TRAE 的 Agent Mode |
 | k / M / B，bit / GB / TB | 千／百万／十亿；数字位数与存储容量单位 | 600B 参数约六千亿；Token 数、参数量与文件大小不能混用 |
 '''
 # Append rows without a blank line: a blank line ends the Markdown table.
@@ -260,14 +260,26 @@ t=t.replace(glossary_end,'\n'+extra_terms+'\n## 一次任务究竟经过哪些�
 p.write_text(t)
 p=OUT/'08-方法与参考资料.md';t=read_baseline(BASE/p.name);t=t.replace('原始研究以 **2026 年 9 月 22 日** 的公开材料为时间截面，先做','本报告先做')
 t=re.sub(r'\*\*9 月 23 日增补：\*\*[\s\S]*?\n\n','工具档案分两层。作者自己日常使用的 6 个工具是重点档案，按七个维度完整展开，配有责任分工图、下一层架构图、能力表、操作步骤、任务卡和模型路线；其余是简档，保留定位、总体结构图、能力表和资料依据。分层只反映维护范围，不代表产品优劣。可见源码和商业公开资料的证据深度不同，图示明确区分依据；文字长度不作为审计深度或产品质量的评分。\n\n',t)
-t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能需要读取实际呈现内容；网页、公开源码与发行二进制也可能不同步。报告按证据分别判断，不将抓到网页、找到源码或绘出概念图当作实际运行验证。各来源保留自己的采集时间，本报告没有将所有项目伪装成同一天全面重验。\n\n',t)
+t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能需要读取实际呈现内容；网页、公开源码与发行二进制也可能不同步。报告按证据分别判断，不将抓到网页、找到源码或绘出概念图当作实际运行验证。各来源保留自己的采集时间，本报告没有将所有项目伪装成同一天全面重验。源码快照多数在 2026 年 9 月下旬采集，个别仓库后来补采；型号、价格、套餐和维护状态这类变化快的事实，在固定快照之外另做过几轮集中复查，最近一次核实于 {{date:facts}}。每轮的范围、读取的官方页面和内容哈希都记在 [fact-refresh-sources.json](../research/fact-refresh-sources.json)。\n\n',t)
 t=t.replace('Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH 等公开核心','Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH、Step 等公开核心')
 t=re.sub(r'^\| Step Code／Step-5-Preview.*?\n','',t,flags=re.M)
 t+='\n\n网页标题旁的标识用于识别工具，点击可查看官方来源。部分产品沿用厂商品牌或关联品牌，具体说明见[标识来源记录](../research/logo-sources.json)。标识保留原有权利，不代表厂商背书。重点档案的下一层架构图及局部放大图均有相邻证据；它们是针对关键路径的解释，不代表完整内部审计。\n'
 t=t.replace('51 个编号档案的产品分类与章节映射','54 个主要编号档案的产品分类与章节映射；另有 H01—H04 四份维护观察档案')
 t=t.replace('| `research/review-core*.txt`','| [profile-coverage.json](../research/profile-coverage.json) | 58 份档案的结构覆盖与篇幅记录 |\n| `research/review-core*.txt`')
+ext_row='| [external-references.csv](../research/external-references.csv) | 正文中全部外部链接的去重清单，包括手动添加的官方链接 |\n'
+assert t.count(ext_row)==1
+t=t.replace(ext_row,ext_row+'| [volatile-facts.json](../research/volatile-facts.json) | 型号、价格、套餐、维护状态与近期变化的集中表，正文通过占位符引用，并附核实日期 |\n'
+ '| [fact-refresh-sources.json](../research/fact-refresh-sources.json) | 各轮易变事实复查读取的官方页面、读取时间与内容哈希，按轮次分组 |\n'
+ '| [repository-status.json](../research/repository-status.json) | GitHub 当前星数、最近推送、归档与最新发行版；不改变上面的固定提交快照 |\n')
+for old,new in [('| Cline、Kilo、Goose、Crush、Vibe、Grok、OpenHands |','| Cline、Kilo、Goose、Crush、Vibe、Grok、OpenHands、Superset |'),('| Hermes、OpenClaw、Agent Zero |','| Hermes、OpenClaw、NanoClaw、Agent Zero |')]:
+ assert t.count(old)==1,old
+ t=t.replace(old,new)
+track='以及数据与日志实际流向。'
+assert t.count(track)==1
+t=t.replace(track,track+'近期的例子：Gemini CLI 的个人登录迁往 Antigravity CLI（迁移声明与订阅范围，见 [A03](03A-终端与开放编程代理.md#a03)）；Claude Code 默认改用由分类器审核的 auto 权限模式（默认权限变化，见 [A01](03A-终端与开放编程代理.md#a01)）；MiMo 先把 V2.5 旧型号 ID 路由到 V2.6、随后停用旧 ID，MiniMax 的旧型号停止接受新用户并排定退役日期（模型别名映射与型号退役，见[第 06 章](06-模型搭配与成本.md)与[第 02 章的近期产品变动表](02-全景清单.md)）。')
+
 row='| 本报告分析 | 架构取舍、潜在适用性、试用方案 | 没有做过的实测结果 |\n'
 assert t.count(row)==1 and t.count('## 8.2 来源分成四种，不混为一种结论')==1
-t=t.replace(row,row+'| 作者私有题库运行记录 | 那批题、那组配置下的汇总表现 | 跨产品排名、其他任务上的表现；题目与日志不公开，外部无法复核 |\n')
+t=t.replace(row,row+'| 作者私有题库运行记录 | 那批题、那组配置下的汇总表现 | 跨产品排名、其他任务上的表现；题目与日志不公开，外部无法复核；本版正文尚未引用这类记录 |\n')
 t=t.replace('## 8.2 来源分成四种，不混为一种结论','## 8.2 来源分成五种，不混为一种结论')
 p.write_text(t)

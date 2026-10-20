@@ -39,7 +39,7 @@ head='''# 02｜全景清单：哪些值得纳入，哪些需要保留判断
 
 ## 2.1 怎样判断“主流且在维护”
 
-对有公开仓库的项目，优先看社区关注度、近期开发、当前文档与维护者声明。约五千以上 GitHub 星数、近九十天有活动是有用的初筛线索，但不是机械门槛：Mistral Vibe 属于明确的模型厂商官方路线；新 SDK 的低星数也不代表其所服务的整个产品缺少用户。
+对有公开仓库的项目，优先看社区关注度、近期开发、当前文档与维护者声明。约五千以上 GitHub 星数、近九十天有活动是有用的初筛线索，但不是机械门槛：例如 Step Code 是模型厂商阶跃星辰的官方路线，核实时还不到五千星，本报告仍然收录；新 SDK 的低星数也不代表其所服务的整个产品缺少用户。
 
 **星数是关注度，不是活跃用户数。** 本报告没有各产品月活、付费用户或留存的统一可比数据。对于商业产品，以持续开放的官方产品、文档、更新与开发生态作为候选依据；用户规模缺少独立证据时，保留为待核验信息。ZCode 等厂商生态产品用于补充路线覆盖，用户规模仍待独立核验。
 
@@ -51,9 +51,12 @@ head='''# 02｜全景清单：哪些值得纳入，哪些需要保留判断
 
 ## 2.2 核心清单
 
-以下星数与活动按 GitHub 元数据核实于 STATUS_DATE，“近期”指核实日前九十天；源码分析仍基于各档案引用的固定提交快照。精确时间见[状态记录](../research/repository-status.json)与[快照记录](../research/repository-snapshot.json)。它们没有经过热度加权，也没有拿来计算产品质量总分。商业产品的“未核验”表示没有统一公开使用量证据，不等于用户少。每组详情链接内有对应编号。
+以下星数与活动按 GitHub 元数据核实于 STATUS_DATESTATUS_EXTRA，“近期”指核实日前九十天；源码分析仍基于各档案引用的固定提交快照。精确时间见[状态记录](../research/repository-status.json)与[快照记录](../research/repository-snapshot.json)。它们没有经过热度加权，也没有拿来计算产品质量总分。商业产品的“未核验”表示没有统一公开使用量证据，不等于用户少。每组详情链接内有对应编号。
 '''
-parts=[head.replace('STATUS_DATE',STATUS_DATE)]
+status_ids={s['id'] for s in (status or {'repositories':[]})['repositories']}
+late=[(code,name,byid[key]['retrieved_at'][:10]) for code,name,key,note in catalog if key in byid and status and key not in status_ids]
+STATUS_EXTRA=('（'+'、'.join(f'{code} {name}' for code,name,_ in late)+' 不在该次状态记录里，'+('是 '+late[0][2]+' 收录时' if len({d for *_,d in late})==1 else '是各自收录时')+'读取的数据）') if late else ''
+parts=[head.replace('STATUS_DATESTATUS_EXTRA',STATUS_DATE+STATUS_EXTRA)]
 for group,title in [('A','终端与开放编程代理'),('B','编辑器与托管工作台'),('C','个人助理与知识工作台'),('D','相邻路线与转移重点')]:
  parts.append(f'\n### {group}｜{title}\n\n[阅读本组详细档案]({paths[group]})\n\n| 编号 | 工具／产品家族 | 关注度与活动证据 | 定位与当前边界 |\n|---|---|---|---|\n')
  for code,name,key,note in catalog:
@@ -84,7 +87,7 @@ parts.append('''
 | Codex CLI、应用、编辑器入口 | 作为产品家族，逐项提醒能力和权限差异 |
 | Copilot 补全、IDE Agent、CLI、云端代理 | 不能当同一运行环境；合并介绍，分场景比较 |
 | Windsurf／Devin Desktop／Cascade／Devin Local | 按当前迁移后的文档辨认；Devin Local 已是新对话的默认本地代理，不重复当独立市场份额 |
-| Gemini CLI 与 Antigravity CLI | 前者是开源的 A03，现服务付费 API Key 与组织许可；后者是 B12 中源码未公开的命令行入口，接替个人用户版 |
+| Gemini CLI 与 Antigravity CLI | 前者是开源的 A03，现服务付费 API Key 与已有的组织许可（Code Assist 自 2026-10-09 停止新购）；后者是 B12 中源码未公开的命令行入口，接替个人用户版 |
 | TRAE IDE、TRAE SOLO 与 TRAE Work | SOLO 于 2026-06 更名为 TRAE Work；2026-10-09 起 TRAE IDE 与 TRAE Work 合并为一个 TRAE，分 Agent Mode 与 IDE Mode，对应 B07 |
 | Qoder IDE 的 Quest 与新 Qoder 桌面端 | Quest 窗口已退役，新 Qoder 由它发展而来、与 Qoder IDE 并行；合并在 B14 说明 |
 | Kimi CLI 旧仓库与 Kimi Code | 以新仓库为当前架构依据 |

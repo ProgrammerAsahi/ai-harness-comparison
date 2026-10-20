@@ -466,6 +466,13 @@ EDGES={
  'H03':[(0,1),(1,2),(3,4),(2,4),(4,5),(5,6),(6,7)],
  'H04':[(0,1),(1,2),(2,3),(3,4),(4,5),(5,1),(5,7),(5,6)],
 }
+# Hand-drawn routes for edges the router would lay too close to a neighbour.
+# Points are exact pixel coordinates in render_diagram's 960-wide grid.
+ROUTES={
+ # App Server → codex-core leaves from App Server's bottom and enters core's top,
+ # so it no longer runs 20 px beside "终端与 exec 入口 → App Server".
+ 'A02':{(3,4):[(770,540),(770,570),(170,570),(170,610)]},
+}
 
 def sources_for(p):
     manifest=json.loads((ROOT/'research/source-manifest.json').read_text())['files']
@@ -560,8 +567,16 @@ def render_diagram(key,p):
             if (x==px==nx) or (y==py==ny):continue
             simple.append((x,y))
         simple.append(pts[-1]);return simple
+    manual=ROUTES.get(key,{})
     for a,b in edges:
-        pts=route(boxes[a],boxes[b]);d='M'+' L'.join(f'{x} {y}' for x,y in pts)
+        if (a,b) in manual:
+            pts=manual[(a,b)]
+            for endpoint in [pts[0],pts[-1]]:used_ports[endpoint]=used_ports.get(endpoint,0)+1
+            for (x0,y0),(x1,y1) in zip(pts,pts[1:]):
+                for gx in range(min(x0,x1)//10,max(x0,x1)//10+1):
+                    for gy in range(min(y0,y1)//10,max(y0,y1)//10+1):used[(gx,gy)]=used.get((gx,gy),0)+1
+        else:pts=route(boxes[a],boxes[b])
+        d='M'+' L'.join(f'{x} {y}' for x,y in pts)
         paths.append(f'<path class="edge-halo" d="{d}" fill="none" stroke="#f3f7f6" stroke-width="6"/>')
         paths.append(f'<path data-edge="{a+1}-{b+1}" d="{d}" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#arrow)"/>')
     nodes=[]
