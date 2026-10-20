@@ -32,7 +32,7 @@ architecture=r'''## 4.12 同源核心、不同产品：怎样判断继承了什�
 | 记住任务 | 会话、摘要、项目文件或数据库 | 存在磁盘上就等于下一轮全部读到 | Pi 会话树、Hermes 记忆、Chatbox 上下文快照 |
 | 持续推进 | 目标状态、停止条件、预算与取消 | 代理说完成就等于目标达到 | ZCode Goal Mode、Step goal、Factory 验证流程 |
 | 到点执行 | 调度器与持续运行的进程／服务 | 定时记录落盘后关机也会执行 | 本机 cron 路线与 Hermes／OpenClaw 服务、n8n 流程 |
-| 隔开并行工作 | 独立上下文、目录与系统边界 | 独立会话等于文件隔离，工作树等于沙箱 | 子代理、Git 工作树、容器分别解决不同问题 |
+| 隔开并行工作 | 独立上下文、目录与系统边界 | 独立会话等于文件隔离，工作树等于沙箱 | 子代理、Git 工作树（如 Superset、Muse Code 的每任务工作树）、容器（如 NanoClaw 的代理组容器）分别解决不同问题 |
 | 交付成果 | 产物保存、验证、发布或审查 | 能上传网页等于能托管完整应用 | 静态发布、PR、托管应用是不同交付范围 |
 
 目标控制适合让当前任务继续，但完成判断仍要看实际成果。定时触发只决定何时发起；它是否能长期可靠执行，取决于电脑是否在线、服务是否恢复、失败是否重试以及重复动作怎样避免。配置一个时间表达式不能替代这些机制。各项实现依据见 [A 类](03A-终端与开放编程代理.md)、[B 类](03B-编辑器与托管工作台.md)、[C 类](03C-个人助理与知识工作台.md)和 [D 类档案](03D-相邻路线与维护观察.md)。
@@ -262,8 +262,8 @@ t=re.sub(r'Step 官方发布页的初始 HTML[\s\S]*?\n\n','动态页面可能�
 t=t.replace('Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH 等公开核心','Codex、OpenCode、Pi、Gemini、Qwen、Kimi、MiMo、DSH、Step 等公开核心')
 t=re.sub(r'^\| Step Code／Step-5-Preview.*?\n','',t,flags=re.M)
 t+='\n\n网页标题旁的标识用于识别工具，点击可查看官方来源。部分产品沿用厂商品牌或关联品牌，具体说明见[标识来源记录](../research/logo-sources.json)。标识保留原有权利，不代表厂商背书。重点档案的下一层架构图及局部放大图均有相邻证据；它们是针对关键路径的解释，不代表完整内部审计。\n'
-t=t.replace('51 个编号档案的产品分类与章节映射','51 个主要编号档案的产品分类与章节映射；另有 H01—H04 四份维护观察档案')
-t=t.replace('| `research/review-core*.txt`','| [profile-coverage.json](../research/profile-coverage.json) | 55 份档案的结构覆盖与篇幅记录 |\n| `research/review-core*.txt`')
+t=t.replace('51 个编号档案的产品分类与章节映射','54 个主要编号档案的产品分类与章节映射；另有 H01—H04 四份维护观察档案')
+t=t.replace('| `research/review-core*.txt`','| [profile-coverage.json](../research/profile-coverage.json) | 58 份档案的结构覆盖与篇幅记录 |\n| `research/review-core*.txt`')
 row='| 本报告分析 | 架构取舍、潜在适用性、试用方案 | 没有做过的实测结果 |\n'
 assert t.count(row)==1 and t.count('## 8.2 来源分成四种，不混为一种结论')==1
 t=t.replace(row,row+'| 作者私有题库运行记录 | 那批题、那组配置下的汇总表现 | 跨产品排名、其他任务上的表现；题目与日志不公开，外部无法复核 |\n')

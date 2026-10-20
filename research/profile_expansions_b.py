@@ -1,5 +1,29 @@
 """Individually authored editor and hosted-workbench profile expansions."""
-from profile_expansions import add
+from profile_expansions import add, base
+
+SUPERSET='https://github.com/superset-sh/superset/blob/20c265f711907917cc4120d53dccfb1469b94bab/'
+base("B21", "Superset：在一个桌面工作区里并行调度多个第三方代理",
+f"""**定位与理念。** Superset 是一个桌面工作区，用来同时运行 Claude Code、Codex、OpenCode 等第三方命令行代理。它自己不带推理循环，而是给每个任务准备独立的 Git 工作树、终端和端口，再把各代理的状态、改动审阅、浏览器预览和 PR 流程集中到同一个界面。可以把它理解成“外壳的外壳”：代理本身已经是模型的外壳，Superset 在多个代理外面再加一层调度与审阅。[README]({SUPERSET}README.md)
+
+**结构与取舍。** 官方文档把它的用法概括为“在工作区里委派，通过分支和 PR 集成”。宿主服务负责工作区的创建与删除、终端、文件监视和 Git 操作，桌面应用负责启动宿主服务并提供本机凭据；宿主服务也可以跑在另一台机器上，由手机或其他电脑连接。为了显示“工作中、等待输入、已完成”，Superset 会包装代理的启动命令，并在代理配置里安装生命周期钩子；模型请求由各代理直接发给用户自己的订阅或 API Key，Superset 不做中转。[概念说明]({SUPERSET}apps/docs/content/docs/superset-model.mdx)、[宿主服务架构]({SUPERSET}apps/desktop/docs/HOST_SERVICE_ARCHITECTURE.md)、[代理支持表]({SUPERSET}apps/docs/content/docs/supported-agents.mdx)
+
+**许可与平台。** 仓库根目录的许可证是 Elastic License 2.0（ELv2）：源码公开，可以使用和修改，但不得把它作为托管服务提供给第三方，因此不属于 OSI 认可的开源许可，GitHub 元数据也只显示为 NOASSERTION。桌面端以 macOS 为主，Linux 版标为实验性质，暂无 Windows 版；远程访问、自动化和手机端需要付费的 Pro 档。[许可证]({SUPERSET}LICENSE.md)、[常见问题]({SUPERSET}apps/docs/content/docs/faq.mdx)""")
+
+add("B21",
+    principle="并行使用代理时，难点往往不在单个代理会不会写代码，而在几个代理同时工作时，分支会不会冲突、谁在等人回复、哪份结果已经可以审阅。Superset 把这些协调工作做成工作台。代价是它能管到多深，取决于每个代理开放了多少接口：状态提示、会话恢复和用量统计只对部分代理完整可用，自定义代理只得到工作区、工作树和终端。",
+    flow=["桌面／CLI／手机\n创建工作区与任务", "宿主服务\n工作区、终端与 Git", "各代理自己的模型连接\n用户订阅或 API Key", "改动审阅与 PR\n意见回送给代理", "每任务一个工作树\n独立分支、终端与端口", "第三方 CLI 代理\nClaude Code、Codex 等"],
+    mechanism=f"工作树只把各任务的工作文件分开。README 明确说明它不隔离进程，也不能防止合并冲突；几个代理改同一模块时，冲突仍会在合并阶段出现。状态钩子写进的是代理自己的配置文件，只在 Superset 的终端里生效，停用时可在设置中逐个关闭。[状态检测]({SUPERSET}apps/docs/content/docs/agent-status.mdx) 做法相近的开源项目有 [Orchestrator.inc](https://github.com/OrchestratorInc/agent-orchestrator)：同样给每个 worker 准备独立分支和工作树，另用本地守护进程跟踪代理会话、PR、CI 和审阅状态，汇总到看板上；它采用 Apache-2.0 许可，提供 macOS、Windows 和 Linux 桌面端。与 Oh My OpenAgent 这类在单个执行核心上叠加编排的做法相比，Superset 管理的是几个彼此独立的外部代理进程。",
+    rows=[("自身定位", "不自带推理循环，启动用户选择的命令行代理", "代理能力、模型与计费仍由各代理决定"),
+          ("任务隔离", "每个任务一个工作树、分支、终端与端口", "只隔离文件，不隔离进程，也不防止合并冲突"),
+          ("状态与恢复", "包装启动命令，并在代理配置中安装生命周期钩子", "状态、恢复与用量统计按代理逐项支持，自定义代理只有基础功能"),
+          ("模型流量", "代理直接连接用户自己的订阅或 API Key，不经 Superset 中转", "额度与账单在各模型服务处分别查看"),
+          ("审阅与集成", "改动查看、浏览器预览，把 PR 行级意见回送给代理", "审阅仍需人来做，合并前运行项目测试"),
+          ("许可与平台", "ELv2 源码可得；macOS 为主，Linux 实验，暂无 Windows", "不得作为托管服务提供；远程访问等功能属付费档")],
+    steps=["下载桌面端，添加一个测试仓库；确认本机已装 Git，需要 PR 流程时再配置 gh。", "新建一个工作区，选择已经登录好的命令行代理，交给它一项小改动，查看生成的工作树路径和分支名。", "再开第二个工作区处理另一项独立改动，观察侧栏状态提示和完成通知是否对两个代理都有效。", "在改动视图中逐个审阅两份补丁，用浏览器预览确认界面变化，再运行项目测试。", "按顺序合并分支，记录冲突情况；最后检查代理配置里安装的钩子，决定是否保留。"],
+    command="text\n桌面端为主要入口；以下为 README 列出的项目配置示例，未经本报告运行：\n.superset/config.json\n{ \"setup\": [\"./.superset/setup.sh\"], \"teardown\": [\"./.superset/teardown.sh\"] }",
+    task="同一个仓库里有两项互不依赖的需求：给命令行工具加一个参数，修正文档里的过时示例。分别在两个工作区交给两个代理完成，最后审阅补丁、运行测试并依次合并。",
+    acceptance="检查两个分支各自只包含对应改动，测试在合并后的主分支上通过；状态提示与实际进度一致。若合并出现冲突，记录冲突位置，判断任务拆分是否真的独立。",
+    tradeoff="适合已经在用多个命令行代理、需要同时推进几项独立任务的人。只用一个代理时，它增加的主要是界面与管理成本；需要开源许可或 Windows 桌面端，可比较 Orchestrator.inc。")
 
 add("B16",
     principle="ZCode 将长任务与目标管理结合，希望代理不仅处理当前一句话，还能保留继续工作的依据。对跨多次会话的改造，这比单纯增加窗口长度更有意义。但目标保存只解决“回来时知道要做什么”，完成判断仍需要测试、文件和需求证据，不能由一句自我报告决定。",

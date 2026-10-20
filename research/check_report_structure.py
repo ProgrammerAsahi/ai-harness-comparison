@@ -34,7 +34,7 @@ for file in sorted((ROOT/'report').glob('03*.md')):
             if not body.lstrip().startswith('*简档：'):issues.append(f'{key}: short profile lacks its scope note')
             if '```' in body or '{{m:' in body:issues.append(f'{key}: short profile still carries commands or model routes')
         profiles.append(dict(id=key,tier='focus' if focus else 'short',title=title,sections=len(headings),diagrams=len(figures),tables=tables,steps=len(steps),code_blocks=codeblocks,cited_sources=citations,chinese_characters=len(re.findall('[\u4e00-\u9fff]',body))))
-if len(profiles)!=55:issues.append(f'Expected 55 profiles, found {len(profiles)}')
+if len(profiles)!=58:issues.append(f'Expected 58 profiles, found {len(profiles)}')
 if sorted(x['id'] for x in profiles if x['tier']=='focus')!=sorted(FOCUS):issues.append('Focus profile set mismatch')
 ids=[x['id'] for x in profiles]
 if len(ids)!=len(set(ids)):issues.append('Duplicate profile ID')

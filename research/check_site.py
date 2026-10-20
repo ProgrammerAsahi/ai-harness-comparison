@@ -89,7 +89,7 @@ for tool in tools:
  if normalize(source.chapter_text)!=normalize(actual.chapter_text):issues.append('Profile text changed/lost: '+tool['id'])
  if [text for tag,text in actual.headings if tag=='h2']!=expected_headings(tool['id'].upper()):issues.append('Profile sections changed: '+tool['id'])
  if f'read/{tool["id"]}.html'!=tool['file']:issues.append('Unstable profile URL')
-if len(tools)!=55 or len(pages)!=69:issues.append('Unexpected page coverage')
+if len(tools)!=58 or len(pages)!=72:issues.append('Unexpected page coverage')
 if sum(p.tables for p in pages.values())!=book.tables or sum(p.diagrams for p in pages.values())!=book.diagrams:issues.append('Lost/duplicated tables or diagrams')
 # Search records must point to a real heading; the full text index stays local and lazy.
 index=(ROOT/'site-assets/search-index.js').read_text()

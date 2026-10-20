@@ -12,7 +12,7 @@ R=Path(__file__).resolve().parent.parent
 page=(R/'AI-Harness调研报告.html').read_text();issues=[]
 sha=lambda b:hashlib.sha256(b).hexdigest()
 logos=json.loads((R/'research/logo-sources.json').read_text())['logos']
-if {x['id'] for x in logos}!=set(DETAIL) or len(logos)!=55:issues.append('Logo/profile coverage mismatch')
+if {x['id'] for x in logos}!=set(DETAIL) or len(logos)!=58:issues.append('Logo/profile coverage mismatch')
 class Headings(HTMLParser):
  def __init__(self):super().__init__();self.in_heading=False;self.logo_headings=0;self.logos=0
  def handle_starttag(self,tag,attrs):
@@ -22,7 +22,7 @@ class Headings(HTMLParser):
  def handle_endtag(self,tag):
   if tag=='h2':self.in_heading=False
 h=Headings();h.feed(page)
-if (h.logo_headings,h.logos)!=(55,55):issues.append('Expected one embedded logo on each profile H2')
+if (h.logo_headings,h.logos)!=(58,58):issues.append('Expected one embedded logo on each profile H2')
 for m in logos:
  raw=(R/m['file']).read_bytes()
  if sha(raw)!=m['sha256'] or len(raw)!=m['bytes']:issues.append(m['id']+': logo integrity mismatch')

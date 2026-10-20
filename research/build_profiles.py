@@ -3,7 +3,7 @@
 from pathlib import Path
 import re, html, json
 from editorial import read_baseline
-from profile_expansions import PROFILES
+from profile_expansions import PROFILES, AUTHORED_BASE
 import profile_expansions_b
 import profile_expansions_c
 import profile_expansions_d
@@ -108,11 +108,22 @@ def references(key,p,body,focus):
     tail='上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。' if focus else '上面的结构与边界依据这些材料整理；当前安装方式、型号和菜单以官方最新文档为准。'
     return refs+'。\n\n'+scope+tail
 
+def insert_authored(text,letter):
+    # Profiles added after the baseline was frozen go after the group's last baseline profile.
+    for key in sorted(k for k in AUTHORED_BASE if k[0]==letter):
+        title,body=AUTHORED_BASE[key]
+        last=list(re.finditer(r'^## '+letter+r'\d{2} .+$',text,re.M))[-1]
+        nxt=re.compile(r'^(## |---)',re.M).search(text,last.end())
+        at=nxt.start() if nxt else len(text)
+        text=text[:at]+'## '+key+' '+title+'\n\n'+body+'\n\n'+text[at:]
+    return text
+
 counts=[]
 for file in sorted(BASE.glob('03*.md')):
     text=read_baseline(file);focus_here=[]
     if file.name.startswith('03D'):
         text=re.sub(r'### Aider 为什么仍值得读[\s\S]*?(?=## 另外三种)',profile_expansions_d.HISTORY_BASE+'\n\n',text)
+    text=insert_authored(text,file.name[2])
     def replace(m):
         key,title,body=m[1],m[2],m[3]
         if key not in PROFILES:return m[0]
