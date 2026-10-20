@@ -4,6 +4,7 @@
 Checks field IDs and types, legal values, conditional fields (report §5.5), how status and
 evidence fit together (§4.2, §8.1), evidence kinds, private-bench references, and that
 rounds, configs, codings and adapters refer to each other. Prints errors only; exit 1 on any.
+Draft definitions ("proposed" in fields.json) are shape-checked but never applied to codings.
 
   python3 studies/harness-quantification/validate_data.py              real data + templates
   python3 studies/harness-quantification/validate_data.py --fixtures   also the synthetic fixtures
@@ -354,6 +355,124 @@ def check_conditions(fields_rec, where, ctx, errors):
             errors.append(f"{where}.{fid}: {cond['field']} is unknown, so {fid} must also be unknown")
 
 
+# ---------- draft definitions (fields.json "proposed", data/schema/definitions-draft.md) ----------
+# A draft is read and checked for shape, never applied: codings still follow the field's own definition,
+# and coding entries do not accept "facets" until the draft is adopted and the codebook version rises.
+
+PROPOSED_KEYS = {"draft", "draft_source", "question_rule", "type", "vocabulary", "scope_rule", "absent_rule",
+                 "unknown_rule", "facets", "distance_rule", "alternative"}
+PROPOSED_VOCAB_KEYS = {"id", "label", "criterion", "example"}
+FACET_KEYS = {"id", "label", "type", "vocabulary_from", "vocabulary", "subset_of_value", "excludes_value",
+              "in_distance", "rule"}
+FACET_TYPES = {"set", "nominal"}
+
+
+def check_proposals(schema, repo=REPO):
+    """Shape checks for draft definitions; returns errors."""
+    errors = []
+    for f in schema["fields"]:
+        p, where = f.get("proposed"), f"fields.json {f['id']}.proposed"
+        if p is None:
+            continue
+        if not f.get("needs_definition"):
+            errors.append(f"{where}: drafts belong only to fields marked needs_definition")
+        if not _keys(p, PROPOSED_KEYS, PROPOSED_KEYS - {"scope_rule"}, where, errors):
+            continue
+        if p["draft"] is not True:
+            errors.append(f"{where}: draft must be true until the definition is adopted")
+        if not (repo / str(p["draft_source"])).exists():
+            errors.append(f"{where}: draft_source {p['draft_source']!r} does not exist")
+        if p["type"] != f["type"]:
+            errors.append(f"{where}: a draft keeps the field's answer type ({f['type']})")
+        for k in ("question_rule", "absent_rule", "unknown_rule", "distance_rule"):
+            if not _is_str(p[k]):
+                errors.append(f"{where}: {k} is required")
+        vocab = p["vocabulary"] if isinstance(p["vocabulary"], list) else []
+        ids = []
+        for i, item in enumerate(vocab):
+            if _keys(item, PROPOSED_VOCAB_KEYS, PROPOSED_VOCAB_KEYS, f"{where}.vocabulary[{i}]", errors):
+                if not all(_is_str(item[k]) for k in PROPOSED_VOCAB_KEYS):
+                    errors.append(f"{where}.vocabulary[{i}]: id, label, criterion and example must be text")
+                ids.append(item["id"])
+        if not ids or len(ids) != len(set(ids)):
+            errors.append(f"{where}: vocabulary must be a non-empty list of unique ids")
+        dropped = [v["id"] for v in f["vocabulary"] if v["id"] not in ids]
+        if dropped:
+            errors.append(f"{where}: a draft may add values but must keep the report's values {dropped}")
+        alt = p["alternative"]
+        if not (isinstance(alt, dict) and set(alt) == {"summary", "tradeoff"} and all(_is_str(x) for x in alt.values())):
+            errors.append(f"{where}: alternative must be {{summary, tradeoff}}")
+        seen = set()
+        for i, facet in enumerate(p["facets"] if isinstance(p["facets"], list) else []):
+            w = f"{where}.facets[{i}]"
+            if not _keys(facet, FACET_KEYS, {"id", "label", "type", "in_distance", "rule"}, w, errors):
+                continue
+            if facet["id"] in seen:
+                errors.append(f"{w}: duplicate facet id {facet['id']!r}")
+            seen.add(facet["id"])
+            if facet["type"] not in FACET_TYPES:
+                errors.append(f"{w}: facet type must be one of {sorted(FACET_TYPES)} (no new answer types)")
+            if not isinstance(facet["in_distance"], bool):
+                errors.append(f"{w}: in_distance must be true or false")
+            own = facet.get("vocabulary")
+            if (facet.get("vocabulary_from") == "value") == (own is not None):
+                errors.append(f"{w}: give exactly one of vocabulary_from: \"value\" or an own vocabulary")
+            if own is not None and not (isinstance(own, list) and own and all(
+                    isinstance(x, dict) and set(x) == {"id", "label"} for x in own)):
+                errors.append(f"{w}: own vocabulary must be a non-empty list of {{id, label}}")
+            for flag in ("subset_of_value", "excludes_value"):
+                if facet.get(flag) and not (facet.get("vocabulary_from") == "value"):
+                    errors.append(f"{w}: {flag} needs vocabulary_from: \"value\"")
+            if facet.get("subset_of_value") and (facet["type"] != "set" or f["type"] not in ("set", "conditional_set")):
+                errors.append(f"{w}: subset_of_value applies to a set facet of a set field")
+    return errors
+
+
+def check_proposed_entry(field, entry, where, ctx, cutoff=None):
+    """Check one entry against the field's draft definition (vocabulary and facets). For review and tests only."""
+    errors, p = [], field.get("proposed")
+    if not p:
+        return [f"{where}: {field['id']} has no draft definition"]
+    entry = dict(entry)
+    facets = entry.pop("facets", None)
+    draft_field = dict(field, vocabulary=[{"id": v["id"], "label": v["label"]} for v in p["vocabulary"]])
+    check_entry(draft_field, entry, where, ctx, errors, cutoff)
+    if facets is None:
+        return errors
+    if not isinstance(facets, dict):
+        return errors + [f"{where}.facets: expected an object keyed by facet id"]
+    if entry.get("status") != "known" and facets:
+        errors.append(f"{where}.facets: only status known carries facets")
+    declared = {fc["id"]: fc for fc in p["facets"]}
+    value = entry.get("value")
+    for fid, fv in facets.items():
+        fc, w = declared.get(fid), f"{where}.facets.{fid}"
+        if fc is None:
+            errors.append(f"{w}: not a facet of {field['id']} (declared: {sorted(declared)})")
+            continue
+        if fv is None:  # this layer is unknown
+            continue
+        vocab = ({v["id"] for v in p["vocabulary"]} if fc.get("vocabulary_from") == "value"
+                 else {v["id"] for v in fc.get("vocabulary", [])})
+        if fc["type"] == "nominal":
+            if fv not in vocab:
+                errors.append(f"{w}: {fv!r} is not in the facet vocabulary")
+            if fc.get("excludes_value") and fv == value:
+                errors.append(f"{w}: must not repeat the main value")
+            continue
+        if not isinstance(fv, list) or not all(isinstance(x, str) for x in fv) or len(set(fv)) != len(fv):
+            errors.append(f"{w}: set facet must be a list of unique ids")
+            continue
+        bad = [x for x in fv if x not in vocab]
+        if bad:
+            errors.append(f"{w}: values {bad} are not in the facet vocabulary")
+        if fc.get("subset_of_value") and isinstance(value, list) and not set(fv) <= set(value):
+            errors.append(f"{w}: must be a subset of value")
+        if fc.get("excludes_value") and value in fv:
+            errors.append(f"{w}: must not repeat the main value")
+    return errors
+
+
 def validate_config(rec, where, ctx):
     errors = []
     if not _keys(rec, CONFIG_KEYS, CONFIG_KEYS - {"note"}, where, errors):
@@ -674,7 +793,7 @@ def main(argv=None):
         (DATA / "templates").mkdir(exist_ok=True)
         for name, body in make_templates(ctx.schema).items():
             (DATA / "templates" / name).write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n")
-    errors = check_templates(ctx.schema) + validate_tree(DATA, ctx)
+    errors = check_proposals(ctx.schema) + check_templates(ctx.schema) + validate_tree(DATA, ctx)
     if args.fixtures:
         errors += [f"fixtures/synthetic/{e}" for e in validate_tree(FIXTURES, Context(ctx.schema, synthetic=True))]
     for e in errors:

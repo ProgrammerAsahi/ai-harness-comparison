@@ -71,6 +71,84 @@ class SchemaMatchesReport(Base):
                          "private_bench_aggregate"} <= set(self.real.enums["evidence_kind"]))
 
 
+DRAFT_FIELDS = ["F01", "F12", "F21", "F22", "F23"]
+
+
+class DraftDefinitions(Base):
+    """Draft definitions are read and shape-checked, never applied to codings."""
+
+    def schema_with(self, mutate):
+        schema = copy.deepcopy(self.real.schema)
+        mutate({f["id"]: f for f in schema["fields"]})
+        return vd.check_proposals(schema)
+
+    def entry(self, fid="F12", **changes):
+        e = copy.deepcopy(self.coding()["fields"][fid])
+        e.update(changes)
+        return e
+
+    def test_real_drafts_are_well_formed(self):
+        self.assertEqual(vd.check_proposals(self.real.schema), [])
+
+    def test_drafts_cover_the_five_open_fields_and_stay_drafts(self):
+        drafted = [f["id"] for f in self.real.schema["fields"] if "proposed" in f]
+        self.assertEqual(drafted, DRAFT_FIELDS)
+        self.assertEqual(drafted, [f["id"] for f in self.real.schema["fields"] if f.get("needs_definition")])
+        for fid in DRAFT_FIELDS:
+            f = self.real.fields[fid]
+            self.assertIs(f["proposed"]["draft"], True)
+            self.assertTrue(f["needs_definition"])
+            self.assertEqual(f["proposed"]["type"], f["type"])
+            self.assertTrue((vd.REPO / f["proposed"]["draft_source"]).exists())
+
+    def test_codebook_still_uses_the_report_vocabulary(self):
+        # The F23 draft adds runtime_sandbox; until adopted, codings must not use it in value.
+        self.assertNotIn("runtime_sandbox", [v["id"] for v in self.real.fields["F23"]["vocabulary"]])
+        rec = self.coding()
+        rec["fields"]["F23"].update(status="known", value=["runtime_sandbox"])
+        self.assertError(vd.validate_coding(rec, "x", self.syn), r"vocabulary_proposals")
+        rec = self.coding()
+        rec["fields"]["F12"]["facets"] = {"hard_stop": ["output_limit"]}
+        self.assertError(vd.validate_coding(rec, "x", self.syn), r"unexpected keys \['facets'\]")
+
+    def test_malformed_drafts_rejected(self):
+        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"].update(draft=False)), r"draft must be true")
+        self.assertError(self.schema_with(lambda f: f["F03"].update(proposed=f["F12"]["proposed"])),
+                         r"only to fields marked needs_definition")
+        self.assertError(self.schema_with(lambda f: f["F22"]["proposed"].update(type="ordinal")),
+                         r"keeps the field's answer type")
+        self.assertError(self.schema_with(lambda f: f["F21"]["proposed"]["vocabulary"].pop()),
+                         r"must keep the report's values \['network_target'\]")
+        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"]["facets"][0].update(type="graph")),
+                         r"no new answer types")
+        self.assertError(self.schema_with(lambda f: f["F23"]["proposed"]["facets"][0].update(vocabulary_from="value")),
+                         r"exactly one of")
+        self.assertError(self.schema_with(lambda f: f["F01"]["proposed"].pop("alternative")), r"missing keys")
+
+    def test_entries_against_drafts(self):
+        ctx, f12 = self.syn, self.real.fields["F12"]
+        ok = self.entry(value=["output_limit", "call_count"],
+                        facets={"hard_stop": ["output_limit"], "soft_notice": ["call_count"]})
+        self.assertEqual(vd.check_proposed_entry(f12, ok, "x", ctx), [])
+        self.assertEqual(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": None}), "x", ctx), [])
+        self.assertError(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": ["money"]}), "x", ctx),
+                         r"subset of value")
+        self.assertError(vd.check_proposed_entry(f12, self.entry(facets={"ui_layers": []}), "x", ctx),
+                         r"not a facet of F12")
+        f23 = self.real.fields["F23"]
+        sandbox = self.entry("F23", status="known", value=["runtime_sandbox"], confidence="medium",
+                             evidence=self.entry()["evidence"], unknown_reason=None,
+                             facets={"prompt_instruction": "present"})
+        self.assertEqual(vd.check_proposed_entry(f23, sandbox, "x", ctx), [])
+        sandbox["facets"] = {"prompt_instruction": "maybe"}
+        self.assertError(vd.check_proposed_entry(f23, sandbox, "x", ctx), r"not in the facet vocabulary")
+        f01 = self.real.fields["F01"]
+        loop = self.entry("F01", value="model_loop", facets={"secondary_modes": ["model_loop"]})
+        self.assertError(vd.check_proposed_entry(f01, loop, "x", ctx), r"must not repeat the main value")
+        absent = self.entry(status="known_absent", value=[], facets={"hard_stop": []})
+        self.assertError(vd.check_proposed_entry(f12, absent, "x", ctx), r"only status known carries facets")
+
+
 class RealDataAndTemplates(Base):
     def test_real_tree_is_valid(self):
         self.assertEqual(vd.validate_tree(vd.DATA, self.real), [])
