@@ -51,7 +51,7 @@ Third-party materials retain their original rights.
 <tbody><tr>
 <td>启动组合</td>
 <td>按 Bundle、用户与命令行补丁的顺序装配</td>
-<td>替换服务时，核对依赖它的模块及相应配置。</td>
+<td>替换服务时，核对依赖它的模块及相应配置。默认预设里的插件管理工具还能在会话中经审批改变插件集。</td>
 </tr>
 <tr>
 <td>能力接缝</td>
@@ -102,6 +102,11 @@ Third-party materials retain their original rights.
 <td>不同后端并不提供完全相同的功能</td>
 </tr>
 <tr>
+<td>权限与插件管理</td>
+<td>默认权限预设是 workspace-write 加 ask：沙箱只允许写工作区，需要审批的操作在界面里询问（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/permission-presets.md" target="_blank" rel="noopener noreferrer">权限预设表</a>）。<code>dsh web</code> 默认的 standard 代理预设已启用插件管理工具 plugin_manager，插件市场工具仍关闭（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml" target="_blank" rel="noopener noreferrer">standard 预设</a>）</td>
+<td>插件管理每次操作都要单独批准，或处在 danger-full-access 下；批准后的插件增删写进 Profile 的配置文件，不只影响当前会话（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/boot/plugin-manager/README.md" target="_blank" rel="noopener noreferrer">插件管理说明</a>）。“实际启用插件”要在会话前后各记一次</td>
+</tr>
+<tr>
 <td>成熟度</td>
 <td>开发者预览及快速变化的接口</td>
 <td>固定可用版本和插件集，升级后重做小型回归</td>
@@ -113,9 +118,9 @@ Third-party materials retain their original rights.
 <p>有界并行和独占屏障降低部分执行冲突，但任务语义仍要表达依赖。读取旧文件、改写文件、再读取新结果不能任意重排；两个独立查询才更适合一起执行。开发自己的循环时，除完成路径外还应设计错误、取消与恢复，并用相同任务检验每次替换是否改变了这些行为。</p>
 <h2 id="a07-setup">从安装到完成第一个任务</h2>
 <ol>
-<li><p>目前只有候选版（npm 的 latest 标签指向 0.2.1-rc.2，GitHub Release 均标为预发布），先记下实际版本号；按该版 README 准备环境，使用标准入口与 Profile 启动；先确认模型认证、文件读写和工具结果展示正常。</p>
+<li><p>目前只有候选版（核实时 npm 的 latest 标签指向 0.2.2-rc.1，<a href="https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.2-rc.1" target="_blank" rel="noopener noreferrer">GitHub Release</a> 均标为预发布），先记下实际版本号；按该版 README 准备环境，命令行包要求 Node.js 24.9 或更新版本，用 npx 运行也受这个限制（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/package.json" target="_blank" rel="noopener noreferrer">命令行包的引擎要求</a>）；使用标准入口与 Profile 启动；先确认模型认证、文件读写和工具结果展示正常。</p>
 </li>
-<li><p>保存版本、Profile 和实际启用插件。让它完成一次最小修复，检查日志能否清楚区分请求、执行和结果。</p>
+<li><p>保存版本、Profile 和实际启用插件；默认预设允许在会话中经审批增删插件，所以会话前后各记一次。让它完成一次最小修复，检查日志能否清楚区分请求、执行和结果。</p>
 </li>
 <li><p>在同一配置下测试中断与恢复，确认恢复不会把已完成的工具误当成仍待执行；对有外部副作用的操作尤其要核对结果。</p>
 </li>
@@ -125,7 +130,8 @@ Third-party materials retain their original rights.
 </li>
 </ol>
 <p>下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。</p>
-<pre><code># 标准 Web 入口；按官方文档配置认证与 Profile
+<pre><code># 需要 Node.js 24.9 或更新版本
+# 标准 Web 入口；按官方文档配置认证与 Profile
 npx @deepseek-ai/dsh web</code></pre><h2 id="a07-tasks">典型任务与验收方法</h2>
 <p>下面是一份<strong>可直接改写使用的试用任务</strong>，属于本报告设计的验收示例，并非已完成的运行测试。</p>
 <blockquote>
@@ -158,7 +164,7 @@ npx @deepseek-ai/dsh web</code></pre><h2 id="a07-tasks">典型任务与验收方
 <td>改变一个变量，检查工具、历史和推理字段，保留原配置。</td>
 </tr>
 </tbody></table></div>
-<p>如果目标是开发、实验或嵌入代理运行时，DSH 的可替换边界值得研究。若只是日常修代码，开放性带来的收益可能小于维护预览配置的成本。与 Pi 比较时，一个侧重可理解且可扩展的核心，另一个将更多系统职责公开为装配接缝。</p>
+<p>如果目标是开发、实验或嵌入代理运行时，DSH 的可替换边界值得研究。程序接入时，官方文档列出的入口是同一个 <code>dsh</code> 命令自带的 headless、ACP 和 SDK 三种模式（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/README.md" target="_blank" rel="noopener noreferrer">命令行入口模式</a>），Python SDK 另用 pip 安装；Web 版的 <code>/api</code> 是宿主与网页之间的内部通信，契约随每次构建生成（<a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/api-gateway.md" target="_blank" rel="noopener noreferrer">API 网关说明</a>），不宜当作稳定接口去接。若只是日常修代码，开放性带来的收益可能小于维护预览配置的成本。与 Pi 比较时，一个侧重可理解且可扩展的核心，另一个将更多系统职责公开为装配接缝。</p>
 <h2 id="a07-references">资料依据与继续阅读</h2>
 <p><a href="https://github.com/deepseek-ai/deepseek-harness/blob/00102833dfaee1da9f48a3a8eae9d34005a75218/README.md" target="_blank" rel="noopener noreferrer">仓库</a>、<a href="https://www.deepseek.com/en/harness/" target="_blank" rel="noopener noreferrer">产品说明</a>、<a href="https://github.com/deepseek-ai/deepseek-harness/blob/00102833dfaee1da9f48a3a8eae9d34005a75218/docs/architecture.md" target="_blank" rel="noopener noreferrer">架构文档</a>、<a href="https://api-docs.deepseek.com/quick_start/pricing/" target="_blank" rel="noopener noreferrer">API 模型目录</a>。</p>
 <p>源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。</p>

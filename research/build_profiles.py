@@ -108,7 +108,7 @@ def references(key,p,body,focus):
     refs='、'.join(f'[{a}]({b})' for a,b in selected)
     scope='完整商业运行时未公开，结构判断以官方可见行为和接口为限。' if p['kind']=='public' else ('此处主要依据公开说明与维护声明，未重新安装验证旧版本的全部功能。' if p['kind']=='docs' else '源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。')
     tail='上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。' if focus else '上面的结构与边界依据这些材料整理；当前安装方式、型号和菜单以官方最新文档为准。'
-    return refs+'。\n\n'+scope+tail
+    return refs+'。\n\n'+scope+p.get('source_note','')+tail
 
 def insert_authored(text,letter):
     # Profiles added after the baseline was frozen go after the group's last baseline profile.

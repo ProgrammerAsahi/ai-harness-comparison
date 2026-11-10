@@ -82,8 +82,13 @@ Third-party materials retain their original rights.
 </tr>
 <tr>
 <td>任务模式</td>
-<td>Plan／Build／Compose 等有各自约束</td>
+<td>Plan／Build 两个主代理，各有写入与工具约束（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/README.md" target="_blank" rel="noopener noreferrer">主代理说明</a>）</td>
 <td>切模式前确认是否改变可写能力和工具集</td>
+</tr>
+<tr>
+<td>默认权限与外部配置</td>
+<td>按当前版本的源码，Build 默认直接放行大多数工具，只在访问项目目录以外的路径、读取 <code>.env</code> 类文件或检测到重复循环时询问；不可逆的删除命令每次单独确认，通配的放行规则也不能预先免掉这一步（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/agent/agent.ts" target="_blank" rel="noopener noreferrer">权限默认规则</a>、<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/tool/bash.ts" target="_blank" rel="noopener noreferrer">删除命令确认</a>）。加载配置时还会默认读入本机和项目 <code>.claude.json</code> 里的 Claude Code MCP 服务器配置，可用 <code>MIMOCODE_DISABLE_CLAUDE_CODE_MCP</code> 关闭（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/config/config.ts" target="_blank" rel="noopener noreferrer">配置合并</a>）</td>
+<td>默认并非逐项确认，试用前按项目需要收紧规则；从 Claude Code 迁移时，先核对随之接入的 MCP 服务器及其授权</td>
 </tr>
 <tr>
 <td>可编程工具</td>
@@ -112,7 +117,7 @@ Third-party materials retain their original rights.
 <p>检查点的价值在恢复时最容易检验：故意在一个阶段完成后停止，再让任务说明实际文件、已通过检查及下一步。若检查点与磁盘不一致，应先核对事实再继续，不能让模型依据旧记录覆盖新改动。持久记忆、当前任务检查点与自动摘要应各有职责，避免同一条错误在多个位置被反复保存。</p>
 <h2 id="a06-setup">从安装到完成第一个任务</h2>
 <ol>
-<li><p>按当前 README 安装 CLI，在项目目录启动 mimo；先选官方原生模型路线，建立一条能完成修改与测试的基线。</p>
+<li><p>按当前 README 用官方安装脚本安装 CLI，在项目目录启动 mimo；npm 包仍可安装，但官方标为有限支持，建议优先用安装脚本（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/README_npm.md" target="_blank" rel="noopener noreferrer">npm 安装说明</a>）。先选官方原生模型路线，建立一条能完成修改与测试的基线。</p>
 </li>
 <li><p>用 Plan 讨论任务和验收，用 Build 实施一个范围明确的改动；切换前查看实际工具与权限，不把模式名当成唯一保障。</p>
 </li>
@@ -120,12 +125,12 @@ Third-party materials retain their original rights.
 </li>
 <li><p>确需使用其他模型时，核对其适配路径和工具配置；先运行相同小任务，观察调用格式、补丁应用和错误处理是否稳定。</p>
 </li>
-<li><p>再尝试可编程工具和编排。0.1.15 的 README 把独立的 Compose 主代理列为旧路线，较强模型改在 Build 中用 <code>/compose-next</code>；仍用 Compose 时须在新会话的第一条消息前选定。单独记录它节约的是往返次数、输入量还是人工干预，避免用更复杂的流程掩盖任务返工。</p>
+<li><p>再尝试可编程工具和编排。独立的 Compose 主代理和内置 compose 工作流已在 v0.1.16 移除，较强模型改在 Build 里用 <code>/compose-next</code> 技能（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/README.md" target="_blank" rel="noopener noreferrer">Compose 用法</a>）。随包还带有 deep-research 等 3 个内置工作流，但按当前源码默认不启用：要设环境变量 <code>MIMOCODE_EXPERIMENTAL_WORKFLOW_TOOL=true</code>，才会出现 workflow 工具和 <code>/deep-research</code>、<code>/workflows</code> 命令，README 的工作流介绍没有写这个开关（<a href="https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/flag/flag.ts" target="_blank" rel="noopener noreferrer">工作流开关</a>）。单独记录它节约的是往返次数、输入量还是人工干预，避免用更复杂的流程掩盖任务返工。</p>
 </li>
 </ol>
 <p>下面是启动命令或操作路线；路径、认证与功能入口请按自己的版本调整。</p>
-<pre><code># 先满足官方运行环境要求
-npm install -g @mimo-ai/cli
+<pre><code># macOS／Linux；Windows 用 README 快速开始里的 PowerShell 一行命令
+curl -fsSL https://mimo.xiaomi.com/install | bash
 cd /path/to/project
 mimo</code></pre><h2 id="a06-tasks">典型任务与验收方法</h2>
 <p>下面是一份<strong>可直接改写使用的试用任务</strong>，属于本报告设计的验收示例，并非已完成的运行测试。</p>
