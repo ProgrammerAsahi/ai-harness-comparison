@@ -11,7 +11,7 @@
   "representative_rationale": "第一轮约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：kimi",
   "install_method": "command: curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash；windows: irm https://code.kimi.com/kimi-code/install.ps1 | iex；alternative: npm install -g @moonshot-ai/kimi-code；source: https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/README.md#L12-L28 ; docs/en/guides/getting-started.md L15-L52（安装脚本标为 recommended）（只作记录，未执行）",
-  "permission_mode": "manual（界面名 Always Ask，旧称 Manual）：只读操作自动执行，编辑文件、运行命令等其他动作逐个请求确认；可切到 yolo（Ask When Needed）或 auto（Never Ask）。退出 Plan 模式在任何权限模式下都要用户确认。",
+  "permission_mode": "manual（界面名 Always Ask，旧称 Manual）：只读操作自动执行，运行命令、写工作区外文件等其他动作逐个请求确认。官方文档称编辑文件也要确认，但源码在 POSIX（macOS／Linux）且工作目录属于 Git 工作树时，写入路径都在工作区（含附加目录）内的 Write／Edit 由内置策略 git-cwd-write-approve 直接放行；敏感文件、`.git` 控制路径和用户配置的 ask 规则仍先询问；非 Git 目录或 Windows 下编辑仍询问；可切到 yolo（Ask When Needed）或 auto（Never Ask）。退出 Plan 模式在任何权限模式下都要用户确认。",
   "subagents_enabled": true,
   "enabled_extensions": [
     "内置技能（以 /命令出现，默认可用）：mcp-config, custom-theme, update-config, check-kimi-code-docs, import-from-cc-codex, sub-skill（含 sub-skill.review / sub-skill.consolidate）；其中介绍 Kimi Code 自身的技能受 builtin_product_skills（默认 true）控制",
@@ -147,6 +147,15 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "扩展",
       "note": "三个官方插件需通过 /plugins 手动安装后 /reload 或 /new 才启用，说明默认未启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/packages/agent-core-v2/src/agent/permissionPolicy/policies/git-cwd-write-approve.ts#L22-L58",
+      "locator": "packages/agent-core-v2/src/agent/permissionPolicy/policies/git-cwd-write-approve.ts",
+      "lines": "L22-L58",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "权限模式",
+      "note": "只对 Write、Edit 生效；路径类型不是 posix 或写入路径有一个在工作区外就不表态；工作目录在 Git 工作树内则返回 approve。2026-11-10 试编码后复核补入：文档 tools.md 写编辑要审批，与此不一致。"
     }
   ],
   "note": "2026-11-10 刷新：2.2.0（472192c）→ 2.5.3（5af9942）。两提交在 GitHub 上互为分叉（新提交领先 154、落后 4 个提交，发布提交不全在同一条线上），这里按标签解引用的提交记录。三档权限名称沿用：manual=Always Ask（原 Manual）、yolo=Ask When Needed（原 YOLO）、auto=Never Ask（原 Auto）；配置键 default_permission_mode 默认 manual，TUI 启动无 --yolo/--auto 时也落到 manual。相对 2.2.0 的默认行为变化：代理不再有 EnterPlanMode 工具，Plan 模式只能由用户开启；退出 Plan 模式在所有权限模式下都要用户确认（2.2.0 的 Never Ask 会自动批准）；AgentSwarm 只在用户开启的 swarm 模式下运行，模式关闭时调用直接被拒（2.2.0 在 manual 下是请求审批）；新增实验性 Tower 多代理协作，默认关闭；coder 子代理不再能进入 Plan 模式。内置子代理 coder（默认类型）、explore、plan；Agent 工具默认自动放行。未配置 [secondary_model] 时子代理继承调用者的模型；secondary_model 的 force 键已移除。；待核：内置技能是否应计入“默认启用的扩展”由汇总口径决定；这里全部列出，方便取舍。"
