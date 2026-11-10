@@ -234,20 +234,20 @@
       "proposed": {
         "draft": true,
         "draft_source": "studies/harness-quantification/data/schema/definitions-draft.md",
-        "question_rule": "在所选配置的入口里，用户提出一个任务之后、直到任务结束，由谁决定下一步做什么？任务从哪里来属于 F33，退出界面后是否继续属于 F34，不在本字段重复记录。",
+        "question_rule": "在所选配置的入口里，用户提出一个任务之后、直到任务结束，由谁决定下一步做什么？一个任务从用户发出一条任务指令算起，到框架把控制权交还用户、等下一条指令为止。",
         "type": "nominal",
         "vocabulary": [
           {
             "id": "user_stepwise",
             "label": "用户逐步驱动",
-            "criterion": "框架每完成一个模型回复或一次编辑就停下等用户的下一条指令，不自行连续发起多步工具调用。",
+            "criterion": "框架每完成一个模型回复或一次编辑就交还控制权，不会把工具结果自动交回模型、连续走多步。",
             "example": "B18 CodeCompanion.nvim 的简单转换（03B）"
           },
           {
             "id": "model_loop",
             "label": "模型循环",
             "criterion": "模型输出决定下一次工具调用，框架执行后把结果交回模型，循环到结束信号或中断。",
-            "example": "A01 Claude Code（03A）；D03 mini-SWE-agent（03D）"
+            "example": "D03 mini-SWE-agent（03D）；A14 Mistral Vibe 的执行循环（03A）"
           },
           {
             "id": "explicit_workflow",
@@ -259,10 +259,10 @@
             "id": "event_scheduling",
             "label": "事件调度",
             "criterion": "任务内部的下一步由调度器按到达的事件、计时器或队列决定，模型调用只是被调度的单元。",
-            "example": "主报告暂无本地主入口例子；常驻网关按事件发起任务，记入 F33／F34"
+            "example": "主报告暂无任务内部由事件推进的本地例子"
           }
         ],
-        "scope_rule": "混合结构依次判定主要入口：1. 不加额外命令或开关、直接描述任务时走的路径；2. 嵌套时取最外层持有下一步决定权的一层；3. 两条路径都需显式选择时，取官方快速开始介绍的那条并写明。控制图属于第 6.2 节图层，另存，不进入本字段。",
+        "scope_rule": "审批停顿不改变类别：模型提出动作、用户只批准或拒绝，仍是模型循环，审批记在 F22。任务由谁发起记在 F33，退出界面后是否继续记在 F34；常驻网关按事件发起任务、任务内部是模型循环的，填模型循环。混合结构依次判定主要入口：1. 不加额外命令或开关、直接描述任务时走的路径；2. 嵌套时取任务内最外层持有下一步决定权的一层；3. 两条路径都需显式选择时，取官方快速开始介绍的那条并写明。控制图属于第 6.2 节图层，另存，不进入本字段。",
         "absent_rule": "不适用：F01 没有“无”类，状态只能是 known 或 unknown。",
         "unknown_rule": "闭源且文档没说清默认路径写 closed_source 或 not_found；入口与材料版本对不上写 version_unclear。",
         "facets": [
@@ -273,13 +273,13 @@
             "vocabulary_from": "value",
             "excludes_value": true,
             "in_distance": false,
-            "rule": "所选配置默认可用、但不是主要入口的其他控制方式；不含主要入口本身。"
+            "rule": "所选配置原生自带、不装扩展就能用的其他控制方式：要用命令或开关启用的另一条路径（写明怎样启用），或嵌套在主要入口里面的一层；不含主要入口本身。用户自写脚本循环调用命令行不算。"
           }
         ],
         "distance_rule": "名义类别：主要入口相同为 0，不同为 1；secondary_modes 只作解释。",
         "alternative": {
-          "summary": "改为集合，记录全部控制方式，按 Jaccard 计算；或保留类别但按“最外层非人工调度者”判定，常驻网关记为事件调度。",
-          "tradeoff": "集合丢掉主要入口这条最有区分力的信息，且多数终端代理同时含两种方式会被拉近；最外层判定法与 F33／F34 重复计算网关差异。"
+          "summary": "保留类别但按“最外层非人工调度者”判定，常驻网关记为事件调度；或改为集合，记录全部控制方式，按 Jaccard 计算。",
+          "tradeoff": "最外层判定法与 F33／F34 重复计算网关差异；集合丢掉主要入口这条信息，且多数终端代理同时含几种方式会被拉近。"
         }
       }
     },
@@ -573,19 +573,19 @@
       "proposed": {
         "draft": true,
         "draft_source": "studies/harness-quantification/data/schema/definitions-draft.md",
-        "question_rule": "所选版本的 Harness 自身能按哪些维度限制或提醒一次任务的模型调用用量？每一维到达阈值时只是提醒，还是会停止？",
+        "question_rule": "所选配置的 Harness 自身，默认按哪些维度限制或提醒一次任务的模型调用用量？每一维到达阈值时只是提醒，还是会停下？",
         "type": "set",
         "vocabulary": [
           {
             "id": "output_limit",
             "label": "输出限制",
-            "criterion": "框架为单次模型调用设定或传递最大输出长度，并处理达到限额的情况。",
-            "example": "A10 Cline 运行时处理模型输出限额（03A）"
+            "criterion": "框架对单次模型调用的最大输出长度有自己的设置或默认值，或者在输出被截断时有专门处理（续写、重试、报错）；只把接口要求的参数原样填上、截断后不处理的不算。",
+            "example": "主报告在试点以外暂无直接例子"
           },
           {
             "id": "total_tokens",
             "label": "总 Token",
-            "criterion": "按一次任务或子任务累计的 Token 数设上限或提醒。",
+            "criterion": "按一次任务、会话或子任务累计的 Token 数设上限或提醒。",
             "example": "C01 Hermes Agent 子任务的运行预算（03C；单位须核对源码）"
           },
           {
@@ -597,7 +597,7 @@
           {
             "id": "time",
             "label": "时间",
-            "criterion": "按任务或单次调用的墙钟时间设上限。",
+            "criterion": "按一次任务、一轮或一个会话的总时长设上限；单条命令或单次网络请求的超时不算。",
             "example": "主报告暂无本地例子"
           },
           {
@@ -607,9 +607,9 @@
             "example": "D03 mini-SWE-agent“预算耗尽”（03D；单位须核对源码）"
           }
         ],
-        "scope_rule": "计入所选入口原生提供的设置项、参数或始终生效的内部上限，不论默认是否打开，默认阈值写 value_note；不计入只显示用量的计数器、服务商或订阅一侧的限额、上下文压缩触发点、需自写脚本或扩展才有的上限。",
-        "absent_rule": "固定提交的完整设置参考或配置模式里没有任何上述上限或阈值提醒时，写 known_absent 和 []；只看过 README 不足以写已知不存在。",
-        "unknown_rule": "设置参考不完整、闭源或版本对不上时写 unknown；value 中某一维不在 hard_stop 也不在 soft_notice，表示这一维软／硬未知，须写 value_note。",
+        "scope_rule": "计入默认带有阈值、不用用户设置就在起作用的上限，和写在代码里始终生效的内部上限；子任务或子代理自己的上限也计入并写明范围，默认阈值写 value_note。原生提供设置项但默认不设阈值的，不进取值，在 value_note 以“可选：”另记。不计入：只显示用量的计数器、服务商或订阅一侧的限额、上下文压缩触发点（D 组）、工具输出截断（F14）、命令超时与网络请求超时、接口重试次数与重复调用检测（F04）、需自写脚本或扩展才有的上限。",
+        "absent_rule": "固定提交的完整设置参考或配置模式里没有任何默认生效的上限或阈值提醒时，写 known_absent 和 []；只看过 README 不足以写已知不存在。",
+        "unknown_rule": "设置参考不完整、闭源或版本对不上时写 unknown。某一维有阈值但查不到到达后是提醒还是停下，写进 mode_unknown。",
         "facets": [
           {
             "id": "hard_stop",
@@ -618,7 +618,7 @@
             "vocabulary_from": "value",
             "subset_of_value": true,
             "in_distance": true,
-            "rule": "到达阈值时框架拒绝发出下一次调用、截断输出或结束任务。"
+            "rule": "到达阈值后，没有人或上层放行就不再继续：拒绝发出下一次调用、截断输出、结束任务，或停下来等用户确认后才能接着走。"
           },
           {
             "id": "soft_notice",
@@ -627,13 +627,26 @@
             "vocabulary_from": "value",
             "subset_of_value": true,
             "in_distance": false,
-            "rule": "到达阈值时只提醒用户或向模型注入提示，调用照常继续；同一维可同时出现在两个子维度。"
+            "rule": "到达阈值时只提醒用户或向模型注入提示，调用照常继续；先提醒再截止的一维同时写进 hard_stop。"
+          },
+          {
+            "id": "mode_unknown",
+            "label": "软硬未明",
+            "type": "set",
+            "vocabulary_from": "value",
+            "subset_of_value": true,
+            "complement_of": [
+              "hard_stop",
+              "soft_notice"
+            ],
+            "in_distance": false,
+            "rule": "有证据表明这一维有阈值，但查不到到达后是提醒还是停下；必须正好是 value 里前两个子维度都没收的那些维。"
           }
         ],
-        "distance_rule": "字段差异 = 1/2 × Jaccard(value) + 1/2 × Jaccard(hard_stop)，字段权重不变；任一方有软／硬未知的维度时，后一半记为未知并保留未知重量。",
+        "distance_rule": "留给距离阶段：建议字段差异 = 1/2 × Jaccard(value) + 1/2 × Jaccard(hard_stop)，字段权重不变；任一方 mode_unknown 非空时，后一半记为未知并保留未知重量。后一半取 0 还是 1/2 做敏感性检验。",
         "alternative": {
-          "summary": "把词表扩成十项（每一维分软、硬两个取值），仍是一个集合。",
-          "tradeoff": "不需要子维度；但同一维的软与硬被当作完全不同的取值，词表加倍，软／硬未知无处表达。"
+          "summary": "计入范围放宽为原生提供即计入、不论默认是否打开；或把词表扩成十项（每一维分软、硬两个取值）。",
+          "tradeoff": "放宽后区分度更高，但记的是“该版本提供什么”，与基线的“本次配置启用什么”和 F11、F23 的口径不一致；十项词表把同一维的软与硬当作完全不同的取值，软硬未明无处表达。"
         }
       }
     },
@@ -885,70 +898,127 @@
       "proposed": {
         "draft": true,
         "draft_source": "studies/harness-quantification/data/schema/definitions-draft.md",
-        "question_rule": "所选版本里，用户或管理员能用声明式规则（配置项、规则文件、界面开关）按哪些维度允许、询问或拒绝代理的动作？默认装好时这些维度上各是什么效果？",
+        "question_rule": "所选版本里，可配置的规则能按哪些维度区分代理的动作，分别决定放行、先过批准还是拒绝？默认装好、用户一条规则都没加时，四个固定动作各是什么效果？",
         "type": "set",
         "vocabulary": [
           {
             "id": "tool_category",
             "label": "工具类别",
-            "criterion": "规则按工具名或动作类别（读文件、改文件、运行命令、调用 MCP 等）决定放行与否。",
-            "example": "A14 Mistral Vibe 的 accept-edits 等模式（03A）；B05 JetBrains Junie 允许列表（03B）"
+            "criterion": "规则按工具名或动作类别（读文件、改文件、运行命令、调用 MCP、网页抓取等）决定效果；整体允许或禁止网页抓取工具属于这一项。",
+            "example": "A14 Mistral Vibe 按动作类别区分的几种模式（03A）；B05 JetBrains Junie 敏感动作先确认（03B）"
           },
           {
             "id": "command_rule",
             "label": "命令规则",
-            "criterion": "规则匹配具体命令文本、前缀或模式。",
-            "example": "A10 Cline Plan 模式拒绝 rm、git commit 一类命令（03A）"
+            "criterion": "规则匹配具体命令的文本、前缀或模式。",
+            "example": "B05 JetBrains Junie 的允许列表（03B；是否按命令文本匹配须核对文档）"
           },
           {
             "id": "file_path",
             "label": "文件路径",
             "criterion": "规则按路径或目录范围限制读写。",
-            "example": "A16 Grok Build workspace 档只允许写工作区（03A）"
+            "example": "A16 Grok Build workspace 档只允许写工作区（03A）；B05 Junie 读取项目外文件需确认（03B）"
           },
           {
             "id": "network_target",
             "label": "网络目标",
-            "criterion": "规则按主机、域名、地址或整体开关限制网络访问；粒度写 value_note。",
+            "criterion": "规则按主机、域名或地址限制访问；或者有一个对进程生效的联网总开关，粒度写 value_note。",
             "example": "A16 Grok Build read-only、strict 档在子进程层面断网（03A）"
           }
         ],
-        "scope_rule": "计入声明式规则、配置项和界面开关，包括只能整体开关的粗粒度规则；只能靠自写钩子或插件代码实现的检查记入 F31 与 F23，提示文本里的“不要做”记入 F23 的 prompt_instruction。",
-        "absent_rule": "所选版本没有任何声明式允许／拒绝规则（例如只有全部询问或全部放行）时，写 known_absent 和 []。",
-        "unknown_rule": "只找到功能介绍、找不到规则格式时写 unknown；默认规则的三个子维度可以单独为 null（默认值未知），不影响 value 的状态。",
+        "scope_rule": "计入用户或管理员能写的声明式规则、配置项和界面开关，以及可以选择的内置模式或档位，包括只能整体开关的粗粒度规则。写死在代码里、用户改不了的内置名单不增加取值，效果记在默认效果里；只能靠自写钩子或插件代码实现的检查记入 F31 与 F23；提示文本里的“不要做”见 F23 的 prompt_only。",
+        "absent_rule": "所选版本没有任何可配置的允许／拒绝规则（没有权限系统，或只有一个全部询问／全部放行的总开关）时，写 known_absent 和 []；四个默认效果照填。",
+        "unknown_rule": "只找到功能介绍、找不到规则格式时写 unknown；四个默认效果可以单独为 null，不影响 value 的状态。",
         "facets": [
           {
-            "id": "default_allow",
-            "label": "默认放行",
-            "type": "set",
-            "vocabulary_from": "value",
-            "subset_of_value": true,
+            "id": "default_edit",
+            "label": "默认效果：改工作区内文件",
+            "type": "nominal",
+            "vocabulary": [
+              {
+                "id": "allow",
+                "label": "直接放行"
+              },
+              {
+                "id": "review",
+                "label": "先过批准者，或被拦下后可申请放行"
+              },
+              {
+                "id": "deny",
+                "label": "拒绝且没有审批通道"
+              }
+            ],
             "in_distance": false,
-            "rule": "默认权限模式、用户未加规则时，这一维上有直接放行的动作。"
+            "rule": "默认权限模式、用户未加任何规则时，修改工作区内的一个文件会怎样；要过几道关时记最严的一道，查不到写 null。取值为空时也要填。"
           },
           {
-            "id": "default_ask",
-            "label": "默认询问",
-            "type": "set",
-            "vocabulary_from": "value",
-            "subset_of_value": true,
+            "id": "default_command",
+            "label": "默认效果：运行命令",
+            "type": "nominal",
+            "vocabulary": [
+              {
+                "id": "allow",
+                "label": "直接放行"
+              },
+              {
+                "id": "review",
+                "label": "先过批准者，或被拦下后可申请放行"
+              },
+              {
+                "id": "deny",
+                "label": "拒绝且没有审批通道"
+              }
+            ],
             "in_distance": false,
-            "rule": "默认权限模式下，这一维上有要先审批的动作；被拦下但可申请放行的也算。"
+            "rule": "默认权限模式、用户未加任何规则时，运行一条不在内置放行名单里的 shell 命令（例如项目的构建脚本）会怎样；要过几道关时记最严的一道，查不到写 null。取值为空时也要填。"
           },
           {
-            "id": "default_deny",
-            "label": "默认拒绝",
-            "type": "set",
-            "vocabulary_from": "value",
-            "subset_of_value": true,
+            "id": "default_outside_write",
+            "label": "默认效果：写工作区外",
+            "type": "nominal",
+            "vocabulary": [
+              {
+                "id": "allow",
+                "label": "直接放行"
+              },
+              {
+                "id": "review",
+                "label": "先过批准者，或被拦下后可申请放行"
+              },
+              {
+                "id": "deny",
+                "label": "拒绝且没有审批通道"
+              }
+            ],
             "in_distance": false,
-            "rule": "默认权限模式下，这一维上有直接拒绝且没有审批通道的动作。默认规则原文写 value_note 并附证据。"
+            "rule": "默认权限模式、用户未加任何规则时，写工作区以外的一个文件会怎样；要过几道关时记最严的一道，查不到写 null。取值为空时也要填。"
+          },
+          {
+            "id": "default_network",
+            "label": "默认效果：命令联网",
+            "type": "nominal",
+            "vocabulary": [
+              {
+                "id": "allow",
+                "label": "直接放行"
+              },
+              {
+                "id": "review",
+                "label": "先过批准者，或被拦下后可申请放行"
+              },
+              {
+                "id": "deny",
+                "label": "拒绝且没有审批通道"
+              }
+            ],
+            "in_distance": false,
+            "rule": "默认权限模式、用户未加任何规则时，一条 shell 命令访问外部网络（例如下载依赖）会怎样；要过几道关时记最严的一道，查不到写 null。取值为空时也要填。"
           }
         ],
-        "distance_rule": "基线只对 value 算 Jaccard；三个默认规则子维度只用于“默认安全姿态”敏感性分析。",
+        "distance_rule": "基线只对 value 算 Jaccard；四个默认效果只用于“默认安全姿态”敏感性分析。",
         "alternative": {
-          "summary": "default_rules 记成规则对象列表 {dimension, effect, pattern, source}。",
-          "tradeoff": "保留规则原文便于审计；但需要新的对象类型，不同工具写法差异大，第一轮只能记录、不能直接比较。"
+          "summary": "默认规则记成 default_allow、default_ask、default_deny 三个子集合；或记成规则对象列表 {dimension, effect, pattern, source}。",
+          "tradeoff": "三个子集合不用约定固定动作，但规则丰富的工具在每一维上都同时有放行和询问的动作，填出来几乎一样；对象列表保留原文便于审计，但需要新的对象类型，难以直接比较。"
         }
       }
     },
@@ -979,31 +1049,31 @@
       "proposed": {
         "draft": true,
         "draft_source": "studies/harness-quantification/data/schema/definitions-draft.md",
-        "question_rule": "在所选配置的默认权限模式下，框架会在哪一层停下动作、等待批准（强制执行点）？批准请求在界面上以哪一层呈现？批准者可以是用户，也可以是规则、钩子或分类器，写 value_note。",
+        "question_rule": "在所选配置的默认权限模式下，动作会在执行过程的哪个位置被停下来、等批准者放行？审批指框架在动作生效前暂停，由批准者逐次决定；批准者是最后放行的一方，可以是用户或自动审核器（分类器、审核模型、外部审核程序）。按固定规则直接放行或拒绝的属于 F21，不算审批。",
         "type": "set",
         "vocabulary": [
           {
             "id": "whole_task",
-            "label": "整个任务",
-            "criterion": "一次批准覆盖整项任务、计划或子任务，之后其中的动作不再逐个拦截。",
-            "example": "B05 JetBrains Junie 计划确认后才修改（03B）；A10 Cline 批准一次 spawn_agent 即放行子代理后续操作（03A）"
+            "label": "任务层",
+            "criterion": "在任务、计划或子任务开始前拦一次，一次批准放行其中的后续动作。",
+            "example": "B05 JetBrains Junie 计划确认后才修改（03B）"
           },
           {
             "id": "tool_call",
-            "label": "工具调用",
-            "criterion": "按工具身份或类别触发，每次调用该类工具都要批准，与参数内容无关。",
-            "example": "A01 Claude Code 手动模式逐项询问（03A）；A14 Mistral Vibe 的 ask 模式（03A）"
+            "label": "调用层",
+            "criterion": "在一次工具调用发出执行前拦下，一次批准只放行这一次调用；触发条件是工具类别还是调用内容都算这一层。",
+            "example": "A14 Mistral Vibe 的逐项询问模式（03A）；B05 Junie 敏感动作先确认（03B）"
           },
           {
             "id": "specific_operation",
-            "label": "具体操作",
-            "criterion": "按调用内容触发，只有特定命令、路径、网络目标、越出沙箱的请求或被判为有风险的动作才要批准。",
-            "example": "A01 Claude Code 默认 auto 模式由分类器拦下有风险的动作（03A）；A02 Codex 策略判断后才请求审批（03A）"
+            "label": "操作层",
+            "criterion": "工具已经开始执行，在某一个具体效果发生前拦下，一次批准只放行这一个效果：运行中的命令要连某个主机或写沙箱外某个路径时被拦下询问，或一次多文件修改里逐个文件确认。",
+            "example": "主报告在试点以外暂无直接例子"
           }
         ],
-        "scope_rule": "value 记录强制执行点所在层：框架在动作执行前确实暂停、直到批准者放行。只在界面出现、没有真正拦住的确认只记入 ui_layers。",
-        "absent_rule": "默认模式下任何动作都不需要批准（全自动或没有权限系统）时，写 known_absent 和 []。",
-        "unknown_rule": "文档只说“有审批”，没说明触发条件和执行位置时写 unknown；ui_layers 可以单独为 null。",
+        "scope_rule": "value 记录确实拦得住的位置（强制执行点）。只在界面出现、没有真正拦住的确认只记入 ui_layers。不算审批：首次进入目录的信任确认、登录与授权、模型自己决定向用户提问（F36）；“本会话一律允许”相当于新增规则，写 value_note；只在非默认模式下才有的审批以“可选：”写 value_note。",
+        "absent_rule": "默认模式下任何动作都不会停下来等批准（没有权限系统，或默认全部放行）时，写 known_absent 和 []；ui_layers 仍可填写。",
+        "unknown_rule": "文档只说“有审批”，没说明在哪里拦、由谁放行时写 unknown；两个子维度可以单独为 null。",
         "facets": [
           {
             "id": "ui_layers",
@@ -1011,13 +1081,30 @@
             "type": "set",
             "vocabulary_from": "value",
             "in_distance": false,
-            "rule": "批准请求在界面上呈现的层；可以与 value 不一致（界面有确认但未拦住，或自动放行不经界面）。"
+            "rule": "批准请求在界面上呈现给用户的层；可以与 value 不一致（界面有确认但未拦住，或由自动审核器放行、不经界面）。"
+          },
+          {
+            "id": "approver",
+            "label": "批准者",
+            "type": "set",
+            "vocabulary": [
+              {
+                "id": "user",
+                "label": "用户"
+              },
+              {
+                "id": "auto_reviewer",
+                "label": "自动审核器"
+              }
+            ],
+            "in_distance": false,
+            "rule": "默认模式下由谁放行；两者都有时都写，先后关系写 value_note。只负责挑出哪些动作要问的规则不算批准者。"
           }
         ],
-        "distance_rule": "基线只对 value（强制执行点）算 Jaccard；ui_layers 用于解释和敏感性分析。码本保持 36 个字段；若拆成两个字段则为 37 个，F 组总权重仍为 1/9。",
+        "distance_rule": "基线只对 value（强制执行点）算 Jaccard；ui_layers 与 approver 用于解释和敏感性分析。码本保持 36 个字段；若拆成两个字段则为 37 个，F 组总权重仍为 1/9。",
         "alternative": {
-          "summary": "拆成 F22a 审批界面所在层与 F22b 强制执行点所在层两个集合字段。",
-          "tradeoff": "两层都进入距离、比较直接；但字段数和组内权重变化，两层在多数工具上一起变化，会重复计算同一机制（第 5.4 节）。"
+          "summary": "“工具调用”与“具体操作”按触发条件是工具身份还是调用内容来分，规则也算批准者；或拆成审批界面所在层与强制执行点所在层两个集合字段。",
+          "tradeoff": "按触发条件分在试点里区分度更高，但区分的其实是默认规则的宽严，随版本变化快，且与 F21 的命令规则、文件路径高度相关；拆字段让两层都进入距离，但两层多数时候一起变化，会重复计算同一机制（第 5.4 节）。"
         }
       }
     },
@@ -1048,20 +1135,20 @@
       "proposed": {
         "draft": true,
         "draft_source": "studies/harness-quantification/data/schema/definitions-draft.md",
-        "question_rule": "在所选配置的默认模式下，限制代理动作的约束实际由什么机制强制执行？只记默认生效的机制，可选开启的写 value_note。",
+        "question_rule": "在所选配置的默认模式下，限制代理动作的约束实际由什么机制强制执行？",
         "type": "set",
         "vocabulary": [
           {
             "id": "application_check",
             "label": "应用检查",
-            "criterion": "Harness 自己的代码在执行前判断并放行或拒绝（权限引擎、规则匹配、钩子或插件拦截、分类器）。",
-            "example": "A02 Codex 策略判断（03A）；A17 Step Code 规则检查（03A）"
+            "criterion": "Harness 自己的代码在执行前判断并放行或拒绝（权限引擎、规则匹配、钩子或插件拦截、自动审核器）。",
+            "example": "B05 JetBrains Junie 敏感动作执行前先确认（03B）；A14 Mistral Vibe 的权限模式（03A）"
           },
           {
             "id": "os_isolation",
             "label": "操作系统隔离",
             "criterion": "用操作系统机制（Seatbelt、Landlock、bubblewrap、seccomp 等）限制进程及其子进程能接触的文件、网络或系统调用。",
-            "example": "A16 Grok Build：macOS 用 Seatbelt、Linux 用 Landlock（03A；所引快照默认关闭）"
+            "example": "A16 Grok Build：macOS 用 Seatbelt、Linux 用 Landlock（03A；所引快照默认关闭，按默认配置不进取值）"
           },
           {
             "id": "container_policy",
@@ -1072,17 +1159,17 @@
           {
             "id": "runtime_sandbox",
             "label": "运行时沙箱",
-            "criterion": "代码在受限语言运行时（如 WebAssembly 版 QuickJS）里执行，运行时本身没有直接的文件、进程或网络能力；只约束脚本本身，覆盖范围写 value_note。",
-            "example": "A06 MiMo Code 的 QuickJS 脚本（03A）；A17 Step Code workflow（03A）"
+            "criterion": "代码在受限语言运行时（如编译成 WebAssembly 的脚本引擎、受限解释器）里执行，运行时本身没有直接的文件、进程或网络能力；只约束脚本本身，管哪些动作写 value_note。",
+            "example": "主报告里的例子都在试点范围内，这里不点名"
           }
         ],
-        "scope_rule": "封闭词表；本地虚拟机等其他机制写进 vocabulary_proposals。系统提示或规则文件里要求模型避免某类操作，不算强制机制，记入 prompt_instruction。",
-        "absent_rule": "默认模式下没有任何强制机制、动作以启动用户的权限直接执行时，写 known_absent 和 []。",
-        "unknown_rule": "只知道“有沙箱”，不知道是哪种机制或默认是否生效时写 unknown；prompt_instruction 可以单独为 null。",
+        "scope_rule": "只记默认生效的机制：机制所管的动作在默认配置里会发生，而且发生时机制已在起作用。保护本身默认关闭的，或被保护的功能本身默认不启用的，不进取值，在 value_note 以“可选：”另记。封闭词表；本地虚拟机等其他机制写进 vocabulary_proposals。",
+        "absent_rule": "默认模式下没有任何强制机制、动作以启动用户的权限直接执行时，写 known_absent 和 []；prompt_only 仍可填写。",
+        "unknown_rule": "只知道“有沙箱”，不知道是哪种机制或默认是否生效时写 unknown；prompt_only 可以单独为 null。",
         "facets": [
           {
-            "id": "prompt_instruction",
-            "label": "提示型约束",
+            "id": "prompt_only",
+            "label": "只靠提示落实的限制",
             "type": "nominal",
             "vocabulary": [
               {
@@ -1095,13 +1182,13 @@
               }
             ],
             "in_distance": false,
-            "rule": "系统提示或默认规则文件里是否要求模型避免某类操作；只影响模型选择，不算隔离（报告第 4.7 节）。"
+            "rule": "产品向用户交代了某项对代理动作的限制（一种模式、一个设置），而它在所选配置里只靠提示模型来落实、背后没有代码检查，记 present；每一项都有代码检查记 absent；看不出来写 null。系统提示里一般性的行为建议不算。"
           }
         ],
-        "distance_rule": "基线对 value 算 Jaccard，不给机制排强弱；prompt_instruction 不进距离。",
+        "distance_rule": "基线对 value 算 Jaccard，不给机制排强弱；prompt_only 不进距离。",
         "alternative": {
-          "summary": "保持报告原有三项，runtime_sandbox 一类先走 vocabulary_proposals。",
-          "tradeoff": "最忠于报告原文；但默认生效的脚本沙箱会被分别塞进 application_check 或写成提议，人为制造分歧。"
+          "summary": "保持报告原有三项，runtime_sandbox 一类先走 vocabulary_proposals；prompt_only 改记“系统提示里是否要求模型避免某类操作”。",
+          "tradeoff": "三项词表最忠于报告原文，但默认生效的脚本沙箱会被分别归进 application_check 或写成提议，人为制造分歧；后者容易判断，但几乎所有工具都填“有”。"
         }
       }
     },

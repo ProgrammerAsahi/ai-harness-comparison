@@ -1,6 +1,6 @@
 # 量化试编码数据
 
-这里存放第一轮试编码用的数据格式、模板与合成测试数据。目前只有格式和工具，**还没有任何真实工具的编码结果**。在评审完成前，这些数据不进入方法报告正文，也不用于任何结论；报告正文和 `index.html` 都不读这个目录。
+这里存放第一轮试编码用的数据格式、模板、配置记录与合成测试数据。目前只有格式、工具和 10 个配置记录，**还没有任何真实工具的编码结果**。在评审完成前，这些数据不进入方法报告正文，也不用于任何结论；报告正文和 `index.html` 都不读这个目录。
 
 字段含义以 [方法报告](../report.md) 第 5 节为准：`schema/fields.json` 里的问题、答案类型和编码说明与报告表格逐字一致，由测试检查。英文取值 id 只是机器标识，含义看中文 `label` 和报告原文。
 
@@ -17,7 +17,7 @@
 | `templates/` | 给编码者的空白记录，由 `validate_data.py --write-templates` 从字段定义生成，不手改 |
 | `fixtures/synthetic/` | 合成测试数据，每个文件都带 `"synthetic": true`，工具编号用保留段 Z00—Z99；只供测试，不描述任何真实工具 |
 
-第一轮范围写在 `rounds/pilot-1.json`：A01 Claude Code、A02 Codex、A05 Kimi Code、A06 MiMo Code、A07 DeepSeek Harness、A08 OpenCode 为核心样本；A09 Pi 与 A17 Step Code 为同源一对，A10 Cline 为编辑器宿主对照，C02 OpenClaw 为常驻网关对照。代表配置尚未选定，`config_id` 暂为 `null`。
+第一轮范围写在 `rounds/pilot-1.json`：A01 Claude Code、A02 Codex、A05 Kimi Code、A06 MiMo Code、A07 DeepSeek Harness、A08 OpenCode 为核心样本；A09 Pi 与 A17 Step Code 为同源一对，A10 Cline 为编辑器宿主对照，C02 OpenClaw 为常驻网关对照。各工具的代表配置记录在 `configs/`，编号写在该文件的 `config_id` 里。
 
 ## 为什么用 JSON
 

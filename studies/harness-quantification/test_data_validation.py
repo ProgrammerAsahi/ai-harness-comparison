@@ -124,12 +124,26 @@ class DraftDefinitions(Base):
         self.assertError(self.schema_with(lambda f: f["F23"]["proposed"]["facets"][0].update(vocabulary_from="value")),
                          r"exactly one of")
         self.assertError(self.schema_with(lambda f: f["F01"]["proposed"].pop("alternative")), r"missing keys")
+        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"]["facets"][2].update(complement_of=["nope"])),
+                         r"complement_of lists earlier facets")
+
+    def test_examples_do_not_name_tools_under_coding(self):
+        # Both coders read the same codebook: an example naming a pilot tool would hand them the answer.
+        self.assertIn("A01", vd.pilot_tool_ids())
+        self.assertError(self.schema_with(
+            lambda f: f["F22"]["proposed"]["vocabulary"][1].update(example="A01 Claude Code 手动模式（03A）")),
+            r"example names tools under coding \['A01'\]")
 
     def test_entries_against_drafts(self):
         ctx, f12 = self.syn, self.real.fields["F12"]
         ok = self.entry(value=["output_limit", "call_count"],
                         facets={"hard_stop": ["output_limit"], "soft_notice": ["call_count"]})
         self.assertEqual(vd.check_proposed_entry(f12, ok, "x", ctx), [])
+        unclear = self.entry(value=["output_limit", "call_count"],
+                             facets={"hard_stop": ["output_limit"], "soft_notice": [], "mode_unknown": ["call_count"]})
+        self.assertEqual(vd.check_proposed_entry(f12, unclear, "x", ctx), [])
+        unclear["facets"]["mode_unknown"] = []
+        self.assertError(vd.check_proposed_entry(f12, unclear, "x", ctx), r"exactly the values in none of")
         self.assertEqual(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": None}), "x", ctx), [])
         self.assertError(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": ["money"]}), "x", ctx),
                          r"subset of value")
@@ -138,15 +152,23 @@ class DraftDefinitions(Base):
         f23 = self.real.fields["F23"]
         sandbox = self.entry("F23", status="known", value=["runtime_sandbox"], confidence="medium",
                              evidence=self.entry()["evidence"], unknown_reason=None,
-                             facets={"prompt_instruction": "present"})
+                             facets={"prompt_only": "present"})
         self.assertEqual(vd.check_proposed_entry(f23, sandbox, "x", ctx), [])
-        sandbox["facets"] = {"prompt_instruction": "maybe"}
+        sandbox["facets"] = {"prompt_only": "maybe"}
         self.assertError(vd.check_proposed_entry(f23, sandbox, "x", ctx), r"not in the facet vocabulary")
         f01 = self.real.fields["F01"]
         loop = self.entry("F01", value="model_loop", facets={"secondary_modes": ["model_loop"]})
         self.assertError(vd.check_proposed_entry(f01, loop, "x", ctx), r"must not repeat the main value")
         absent = self.entry(status="known_absent", value=[], facets={"hard_stop": []})
-        self.assertError(vd.check_proposed_entry(f12, absent, "x", ctx), r"only status known carries facets")
+        self.assertError(vd.check_proposed_entry(f12, absent, "x", ctx), r"left out when status is known_absent")
+        bare = self.entry("F23", status="known_absent", value=[], facets={"prompt_only": "present"})
+        self.assertEqual(vd.check_proposed_entry(f23, bare, "x", ctx), [])
+        f21 = self.real.fields["F21"]
+        open_all = self.entry("F21", status="known_absent", value=[], facets={
+            "default_edit": "allow", "default_command": "allow", "default_outside_write": "allow", "default_network": None})
+        self.assertEqual(vd.check_proposed_entry(f21, open_all, "x", ctx), [])
+        open_all["facets"]["default_edit"] = "ask"
+        self.assertError(vd.check_proposed_entry(f21, open_all, "x", ctx), r"not in the facet vocabulary")
 
 
 class RealDataAndTemplates(Base):

@@ -363,13 +363,25 @@ PROPOSED_KEYS = {"draft", "draft_source", "question_rule", "type", "vocabulary",
                  "unknown_rule", "facets", "distance_rule", "alternative"}
 PROPOSED_VOCAB_KEYS = {"id", "label", "criterion", "example"}
 FACET_KEYS = {"id", "label", "type", "vocabulary_from", "vocabulary", "subset_of_value", "excludes_value",
-              "in_distance", "rule"}
+              "complement_of", "in_distance", "rule"}
 FACET_TYPES = {"set", "nominal"}
+TOOL_ID_RE = re.compile(r"(?<![A-Za-z0-9])[A-Z]\d{2}(?![A-Za-z0-9])")
 
 
-def check_proposals(schema, repo=REPO):
+def pilot_tool_ids(root=DATA):
+    """Tool ids of the real coding rounds: codebook examples must not name them (both coders would copy the answer)."""
+    ids = set()
+    for p in sorted((root / "rounds").glob("*.json")):
+        rnd = json.loads(p.read_text(encoding="utf-8"))
+        if not rnd.get("synthetic"):
+            ids.update(t.get("tool_id") for t in rnd.get("tools", []))
+    return ids - {None}
+
+
+def check_proposals(schema, repo=REPO, sample_ids=None):
     """Shape checks for draft definitions; returns errors."""
     errors = []
+    sample_ids = pilot_tool_ids() if sample_ids is None else set(sample_ids)
     for f in schema["fields"]:
         p, where = f.get("proposed"), f"fields.json {f['id']}.proposed"
         if p is None:
@@ -393,6 +405,10 @@ def check_proposals(schema, repo=REPO):
             if _keys(item, PROPOSED_VOCAB_KEYS, PROPOSED_VOCAB_KEYS, f"{where}.vocabulary[{i}]", errors):
                 if not all(_is_str(item[k]) for k in PROPOSED_VOCAB_KEYS):
                     errors.append(f"{where}.vocabulary[{i}]: id, label, criterion and example must be text")
+                named = sorted(set(TOOL_ID_RE.findall(str(item["example"]))) & sample_ids)
+                if named:
+                    errors.append(f"{where}.vocabulary[{i}]: example names tools under coding {named}; "
+                                  "use tools outside the round or an unnamed description")
                 ids.append(item["id"])
         if not ids or len(ids) != len(set(ids)):
             errors.append(f"{where}: vocabulary must be a non-empty list of unique ids")
@@ -425,6 +441,11 @@ def check_proposals(schema, repo=REPO):
                     errors.append(f"{w}: {flag} needs vocabulary_from: \"value\"")
             if facet.get("subset_of_value") and (facet["type"] != "set" or f["type"] not in ("set", "conditional_set")):
                 errors.append(f"{w}: subset_of_value applies to a set facet of a set field")
+            if "complement_of" in facet:
+                refs = facet["complement_of"]
+                if not (isinstance(refs, list) and refs and facet.get("subset_of_value")
+                        and all(r in seen and r != facet["id"] for r in refs)):
+                    errors.append(f"{w}: complement_of lists earlier facets of this field and needs subset_of_value")
     return errors
 
 
@@ -441,10 +462,16 @@ def check_proposed_entry(field, entry, where, ctx, cutoff=None):
         return errors
     if not isinstance(facets, dict):
         return errors + [f"{where}.facets: expected an object keyed by facet id"]
-    if entry.get("status") != "known" and facets:
-        errors.append(f"{where}.facets: only status known carries facets")
     declared = {fc["id"]: fc for fc in p["facets"]}
-    value = entry.get("value")
+    value, status = entry.get("value"), entry.get("status")
+    if status not in ("known", "known_absent") and facets:
+        errors.append(f"{where}.facets: only status known or known_absent carries facets")
+    elif status == "known_absent":
+        # an empty value leaves nothing for a subset facet; facets with their own scope may still be coded
+        tied = sorted(k for k in facets if (declared.get(k) or {}).get("subset_of_value")
+                      or (declared.get(k) or {}).get("excludes_value"))
+        if tied:
+            errors.append(f"{where}.facets: {tied} depend on value and are left out when status is known_absent")
     for fid, fv in facets.items():
         fc, w = declared.get(fid), f"{where}.facets.{fid}"
         if fc is None:
@@ -470,6 +497,15 @@ def check_proposed_entry(field, entry, where, ctx, cutoff=None):
             errors.append(f"{w}: must be a subset of value")
         if fc.get("excludes_value") and value in fv:
             errors.append(f"{w}: must not repeat the main value")
+    for fc in p["facets"]:  # e.g. F12 mode_unknown: every value sits in hard_stop, soft_notice or mode_unknown
+        refs = fc.get("complement_of")
+        parts = [facets.get(r) for r in refs or []]
+        if not refs or status != "known" or not isinstance(value, list) or not all(isinstance(x, list) for x in parts):
+            continue
+        rest = set(value) - {x for part in parts for x in part}
+        got = facets.get(fc["id"])
+        if set(got if isinstance(got, list) else []) != rest:
+            errors.append(f"{where}.facets.{fc['id']}: must list exactly the values in none of {refs}: {sorted(rest)}")
     return errors
 
 
