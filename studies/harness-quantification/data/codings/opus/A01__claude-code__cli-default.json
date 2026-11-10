@@ -1,0 +1,1471 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.2",
+  "synthetic": false,
+  "round": "pilot-1",
+  "config_id": "A01__claude-code__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "Claude Opus 5.5",
+    "prompt_version": "coding-card-v2",
+    "coded_at": "2026-11-10"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-10",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "官方文档描述的默认路径是 agentic loop：模型根据上一步工具结果决定下一次工具调用，循环到任务完成，用户可随时中断；审批停顿不改变类别。显式工作流是原生自带的另一条路径：用户在提示里要求“use a workflow”、写 ultracode 关键词或运行 /deep-research 时，模型写一段 JavaScript 脚本，由运行时按脚本决定下一步（Pro 套餐需在 /config 打开）。可选：/effort ultracode 让模型对每个任务自行规划工作流；agent teams 默认关闭。子代理是嵌套的模型循环，与主取值相同，不另记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works",
+          "locator": "The agentic loop；Tools",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端默认入口",
+          "note": "Claude 根据上一步所学决定下一步，每次工具结果回到循环、影响下一步决定，用户可随时中断。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "When to use a workflow（Who decides what runs next 表）；Have Claude write a workflow；Turn workflows off",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "显式工作流（需用户在提示中要求或运行工作流命令）",
+          "note": "工作流里由脚本决定下一步；默认在付费套餐与 API 上可用，需用户显式要求才启动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L6189",
+          "locator": "CHANGELOG.md 2.1.154 条目（Introducing dynamic workflows）",
+          "lines": "L6189",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "显式工作流",
+          "note": "动态工作流引入：让 Claude 创建工作流，在后台编排多个代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "工作流由模型现写脚本、再由运行时执行，算显式工作流还是模型循环的延伸有歧义；按“步骤顺序由事先写好的脚本决定”记为 explicit_workflow。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "value_note": "默认模型 Opus 5.5 上不提供任务跟踪工具（TaskCreate/TodoWrite 只在 Opus 4.7、Sonnet 4.6、Haiku 4.5 及更早模型默认提供），文档说新模型不写清单而自行跟踪多步工作。计划模式可由用户 Shift+Tab 切入，模型也可调用不需审批的 EnterPlanMode；计划经 ExitPlanMode 交用户批准后，只作为对话文本约束后续执行。可选：CLAUDE_CODE_ENABLE_TODO_TOOLS=1 或 --allowedTools TaskCreate 打开结构化任务表；后台会话与云端会话默认带任务工具。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference",
+          "locator": "Task tool availability",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认模型下的工具集",
+          "note": "任务跟踪工具默认只在旧模型上提供；新模型上 Claude 不写清单，任务列表为空，需显式开启。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference",
+          "locator": "工具总表：EnterPlanMode（Permission required: No）、ExitPlanMode（Presents a plan for approval and exits plan mode）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具集",
+          "note": "计划模式工具默认在表内，计划以待批准的文本形式呈现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L4739",
+          "locator": "CHANGELOG.md 2.1.233 条目",
+          "lines": "L4739",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认模型下的工具集",
+          "note": "Opus 4.8、Sonnet 5、Fable 5 及更新模型不再提供 TaskCreate/TodoWrite，需环境变量找回。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "码本切片里 F02 各取值没有判定标准。默认路径通常不进计划模式，此时更像“无独立计划”；但模型可自行调用 EnterPlanMode，产出的计划只以文本约束执行。none 与 prompt_text_only 的界线（计划是否必须由框架默认触发）需要定义。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型不再请求工具、给出答复即结束本轮；用户按 Esc 立即停止并取消正在跑的工具调用。AskUserQuestion 由模型发起暂停等待用户回答，归入模型结束信号。可选：/goal 设完成条件后跨轮继续直到满足（验证条件）；--max-turns、CLAUDE_CODE_MAX_TURNS、--max-budget-usd 默认不设。自动压缩反复失败时报错停下，属 D 组。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works",
+          "locator": "The agentic loop；Interrupt and steer",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端默认入口",
+          "note": "循环重复到任务完成；按 Esc 立即停止，正在跑的工具调用被取消，Claude 等待下一条指令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/env-vars",
+          "locator": "CLAUDE_CODE_MAX_TURNS",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选上限",
+          "note": "轮数上限只在未显式传入时由该变量设定，默认不设。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L6603",
+          "locator": "CHANGELOG.md /goal 条目",
+          "lines": "L6603",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选：/goal",
+          "note": "/goal 设完成条件，Claude 跨轮工作直到满足；需用户发命令。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“模型结束信号”在闭源实现里看不到具体判据（如 stop_reason），只能依文档描述推断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "value_note": "框架规则：失败的 API 请求默认重试 10 次（上限 15，529 过载可更早停）；输出被截断时自动续写；模型被安全分类器标记时默认自动换到回退模型重跑。工具错误与 auto 模式分类器的拒绝理由作为工具结果交回模型自修。auto 模式连续 3 次或累计 20 次拦截后暂停、改为询问用户，属框架规则的升级人工。可选：fallbackModel/--fallback-model 可用性回退链默认未设；工作流脚本可按 agent() 返回 null 分支。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/env-vars",
+          "locator": "CLAUDE_CODE_MAX_RETRIES",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认 API 调用",
+          "note": "失败的 API 请求默认重试 10 次，上限 15。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permission-modes",
+          "locator": "When auto mode falls back；Repeated-block thresholds",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式 auto",
+          "note": "被拦截时模型收到理由；连续 3 次或累计 20 次拦截后暂停 auto 并恢复询问用户，阈值不可配置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works",
+          "locator": "Tools（Each tool use returns information that feeds back into the loop）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端默认入口",
+          "note": "工具结果回到循环，模型据此纠偏。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L9044",
+          "locator": "CHANGELOG.md 2.1.0 条目",
+          "lines": "L9044",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认 API 调用",
+          "note": "回复因输出 Token 上限被截断时自动续写，不再报错。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "模型自修没有专门的框架规则，只是把错误作为工具结果交回；按“区分框架规则与提示建议”的说法，它算框架机制还是模型行为不清楚。按安全标记换模型重跑可归 call_retry，也可算 F11 的 failover，两处都提了。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "直接运行 claude 启动的会话绑在所在终端，终端关闭会话就结束；文档把它与由 supervisor 托管、每个会话一个进程的后台会话对比，据此推断终端界面与执行核心在同一进程。可选：按 ← 或 /background、claude --bg 把会话交给后台 supervisor 服务，前端经控制 socket 连上（接近 local_service_api）。核心闭源，看不到进程内部结构。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-view",
+          "locator": "How background sessions are hosted；The supervisor process",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端前台会话",
+          "note": "直接运行 claude 的会话绑定终端、随终端结束；后台会话才由 supervisor 托管，每个会话是独立进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L5173",
+          "locator": "CHANGELOG.md 后台 daemon 控制 socket 条目",
+          "lines": "L5173",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选：后台会话",
+          "note": "后台 daemon 通过控制 socket 与客户端连接，只用于后台会话。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "闭源产品只能从“前台会话绑终端、后台会话另起进程”的对比推断同进程；这类字段是否允许按文档对比推断写 known，需要统一口径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "Bash 工具每条命令在单独进程里运行；读、写、编辑、搜索等文件工具由 Claude Code 自身执行（沙箱文档写明文件工具不在 Bash 沙箱内）。Bash 沙箱默认关闭，开启后也是 Seatbelt/bubblewrap 等系统原语、不是容器。可选：/sandbox 或 sandbox.enabled 开启沙箱；MCP 服务器默认未配置。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference",
+          "locator": "Bash tool behavior",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具集",
+          "note": "The Bash tool runs each command in a separate process."
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sandboxing",
+          "locator": "What the sandbox restricts；OS-level enforcement",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认安装",
+          "note": "沙箱默认关闭；只覆盖 shell 命令，文件工具、MCP 服务器与 hooks 在沙箱外运行；不使用容器。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "文件工具在主进程执行是从“沙箱只管 shell 命令、文件工具在外”推断，闭源无法直接确认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "每条消息、工具调用和结果由 Claude Code 写入 ~/.claude/projects/ 下的本地 JSONL，恢复、分叉、回退都从这份记录读取；前台会话里前端与执行核心同进程，权威副本归执行核心一侧。后台会话另有 ~/.claude/jobs/<id>/state.json 供列表显示，对话仍在本地磁盘。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works",
+          "locator": "Work with sessions；Resume or fork sessions",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话",
+          "note": "对话逐条写入 ~/.claude/projects/ 下的 JSONL，支撑回退、恢复与分叉。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-view",
+          "locator": "Where state is stored；Read session state",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选：后台会话",
+          "note": "后台会话状态与对话持久在本地磁盘，supervisor 重启后重连。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "F05 为同进程时，“客户端”与“执行核心”是同一个进程，二者如何区分没有判定标准；这里按写记录的是会话执行逻辑记为 execution_core。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id",
+        "process"
+      ],
+      "unknown_reason": null,
+      "value_note": "每次运行 claude 是一个独立进程；同一进程内 /clear 开新会话只换会话 ID 与上下文。会话按目录归类，但同一目录的前台会话共用工作目录和文件系统。可选：git worktree、claude --worktree 或模型调用 EnterWorktree（需批准）给会话独立工作目录；后台会话在 git 仓库内编辑前默认移进独立 worktree。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works",
+          "locator": "Work with sessions（Sessions are independent）；Work across branches",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话",
+          "note": "会话各自从全新上下文开始、绑定当前目录；要并行就用 git worktree 分开目录。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/costs",
+          "locator": "Track your costs › Using the /usage command",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话",
+          "note": "/clear 开始新会话，统计归零，同一进程内会话只在逻辑上分开。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-view",
+          "locator": "How file edits are isolated",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选：后台会话",
+          "note": "后台会话编辑前移进独立 worktree，前台会话不做此隔离。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "词表“仅逻辑标识”带“仅”字，与集合多选冲突：同一配置里 /clear 产生的会话只靠 ID 分开，多终端会话靠进程分开。建议改名“逻辑标识”或改为按最强隔离单选。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "value_note": "只接 Claude 模型：直连 Anthropic API，或经 Bedrock、Google Cloud Agent Platform、Microsoft Foundry 与网关使用各自支持的 API 格式；官方明确不支持经任何网关接非 Claude 模型。闭源看不到调用层代码，据文档判为固定厂商接口。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/llm-gateway",
+          "locator": "Other LLM gateways 开头；What a gateway provides",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型接入",
+          "note": "网关须暴露支持的 API 格式；Anthropic 不支持经网关路由到非 Claude 模型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/model-config",
+          "locator": "default model setting",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型接入",
+          "note": "各账户与云提供方的默认模型都是 Claude 型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "同一厂商模型经多家云的不同接口格式接入（Anthropic、Bedrock、Vertex、Foundry），内部必有按提供方切换的层；这算“固定厂商 SDK”还是“适配器层”，定义没说按厂商还是按接口格式算。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具调用用 Messages API 的 tool_use 结构化块。错误处理路径见发布说明：工具名过长的 tool_use 不再让对话卡死；模型交替给出无法解析的工具调用与截断输出时重试受 --max-turns 约束；第三方兼容端点流出缺 id 的 tool_use 块不再导致界面报错。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L4396",
+          "locator": "CHANGELOG.md 2.1.246 条目",
+          "lines": "L4396",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用",
+          "note": "Anthropic 兼容端点流式返回 tool_use 块，说明工具调用走结构化块。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L2812",
+          "locator": "CHANGELOG.md 2.1.281 条目",
+          "lines": "L2812",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用错误处理",
+          "note": "无法解析的工具调用会触发重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L2826",
+          "locator": "CHANGELOG.md 2.1.281 条目",
+          "lines": "L2826",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用错误处理",
+          "note": "tool_use.name 超长报错的处理修复，旁证结构化工具调用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "failover"
+      ],
+      "unknown_reason": null,
+      "value_note": "主循环用账户默认模型（Opus 5.5）；默认注册的辅助子代理有固定型号（claude-code-guide 用 Haiku、statusline-setup 用 Sonnet），Explore 在订阅与 API 上跑 opus 别名的模型；auto 模式另有分类器模型审核动作。安全分类器标记请求时默认自动换到回退模型重跑（switchModelsOnFlag 默认未设即自动切换）。可选：fallbackModel/--fallback-model 可用性回退链、opusplan、CLAUDE_CODE_SUBAGENT_MODEL。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Built-in subagents（Explore、Plan、General-purpose、Other helpers 表）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认注册的子代理",
+          "note": "辅助代理各有固定型号，与主对话型号不同。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/model-config",
+          "locator": "Automatic model fallback；Fallback model chains",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认模型设置",
+          "note": "被安全分类器标记的请求按型号自动换模型重跑；可用性回退链需另行配置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/settings-reference",
+          "locator": "switchModelsOnFlag；fallbackModel",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认设置",
+          "note": "switchModelsOnFlag 默认未设、自动切换；fallbackModel 默认未设、失败请求不换模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按内容标记换模型（不是可用性失败）是否算“失败回退”，定义没说；这里记入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "total_tokens",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [
+          "total_tokens"
+        ],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "主对话：框架按型号设默认最大输出（无法识别的型号默认 32000），截断后自动续写，记为输出限制、截断即强制。工作流（显式工作流路径）：每次运行最多 1000 个代理，超出即拒绝，记为调用次数的强制截止；代理数超过 25 或预计 Token 超过 150 万时显示“Large workflow”提醒、不停，记为总 Token 的软提醒。可选：--max-turns/CLAUDE_CODE_MAX_TURNS、子代理 maxTurns、--max-budget-usd 默认不设。未计入：并发子代理上限 20 与嵌套深度 3（并发与深度，不是用量）、WebSearch 每会话 200 次（工具次数）、命令超时、重试次数、订阅额度。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/env-vars",
+          "locator": "CLAUDE_CODE_MAX_OUTPUT_TOKENS；CLAUDE_CODE_MAX_TURNS",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主对话默认",
+          "note": "输出上限有框架默认值和封顶；轮数上限只在设变量或传参时生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L9044",
+          "locator": "CHANGELOG.md 2.1.0 条目",
+          "lines": "L9044",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主对话默认",
+          "note": "回复在输出上限处截断后自动续写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L7914",
+          "locator": "CHANGELOG.md 2.1.77 条目",
+          "lines": "L7914",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主对话默认",
+          "note": "框架自设各型号默认最大输出 Token 与上界。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "Behavior and limits（1,000 agents total per run）；Cost（Large workflow 警告）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "显式工作流路径",
+          "note": "每次运行代理总数上限 1000；超过 25 个代理或预计 150 万 Token 时只提醒、不暂停。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "工作流的“代理总数”算不算调用次数、“预计 Token 提醒”算不算总 Token，按子任务上限计入的规则记入；若只算主要入口，本字段只剩 output_limit。输出截断后自动续写，算强制截止还是不算，判定标准也没说。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "value_note": "官方文档说明上下文窗口装的是对话历史、文件内容、命令输出、CLAUDE.md、自动记忆、已加载技能和系统指令，会话以逐条消息、工具调用和结果写入 JSONL 并在恢复时按顺序重载；系统提醒（system reminder）随消息插入。核心闭源，构造请求的代码不可见，判断来自文档描述。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works#the-context-window",
+          "locator": "How Claude Code works › Work with sessions › The context window；Context Claude Code adds on its own",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话的上下文构造",
+          "note": "上下文窗口由对话历史、文件内容、命令输出等组成，Claude Code 另把 CLAUDE.md、文件变动提示等作为系统提醒插在消息旁边。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#what-a-resumed-session-restores",
+          "locator": "Manage sessions › What a resumed session restores",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话恢复",
+          "note": "恢复时重载消息、工具调用与结果；压缩过的会话从最后一次压缩摘要加其后的消息继续，说明上下文以顺序消息序列为单位组织。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "闭源产品只能从文档推断请求构造方式；系统提醒、压缩摘要、压缩后重读文件都插在消息序列里，仍按顺序消息编码。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "value_note": "摘要：接近上限时自动压缩成摘要（也可 /compact、/rewind 的 Summarize）。工具结果替换：Bash 成功输出超过约 3 万字符时改为会话目录里的文件路径加前 2000 字符预览，CHANGELOG 写明大工具输出改为落盘并以文件引用代替。截断：失败命令只给约 1 万字符的首尾摘录，Read 超过 2.5 万 token 只给第一页并标 PARTIAL view，WebFetch 每次最多读 10 万字符。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works#when-context-fills-up",
+          "locator": "How Claude Code works › When context fills up",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "接近上限时自动把对话压缩成摘要。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference#output-limits",
+          "locator": "Tools reference › Bash tool behavior › Timeout and output limits › Output limits；Read tool behavior › Large files",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具设置",
+          "note": "成功输出超限时给文件路径加预览，失败输出给首尾摘录；Read 超限只返回第一页。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L8950",
+          "locator": "CHANGELOG.md（大工具输出落盘）",
+          "lines": "L8950",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "大工具输出改为持久化到磁盘、以文件引用提供完整输出，而不是截断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L8383",
+          "locator": "CHANGELOG.md（落盘阈值）",
+          "lines": "L8383",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "超过 5 万字符的工具结果落盘，以减少上下文占用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Read 用 offset/limit 分页、Grep 的 head_limit 是模型自己选段读取，是否算 segment_selection 不清楚；本次未计入。压缩后自动重读最近 5 个文件、超 5000 token 的只给路径引用，也介于摘要与工具结果替换之间。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户用 @ 提及文件、目录或粘贴图片指定材料；模型用 Grep（基于 ripgrep 的正则）和 Glob（文件名模式）按关键词找文件再 Read。未见默认的语义检索或向量索引。可选：LSP 代码智能工具要装 code intelligence 插件才启用，属于结构索引类，默认不计。WebFetch/WebSearch 是网页访问，不计入知识库。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference#grep-tool-behavior",
+          "locator": "Tools reference › Grep tool behavior；Glob tool behavior；LSP tool behavior",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认内置工具",
+          "note": "Grep 基于 ripgrep 正则搜索；LSP 工具在安装代码智能插件前保持停用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permissions#what-read-and-edit-rules-cover",
+          "locator": "Configure permissions › Read and Edit › What Read and Edit rules cover",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "用户指定材料",
+          "note": "文档提到提示里的 @file 提及、粘贴的图片路径和 @ 提及的目录会进入上下文（Read 拒绝规则也作用于它们）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/how-claude-code-works#tools",
+          "locator": "How Claude Code works › Tools（Search: Find files by pattern, search content with regex）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认内置工具",
+          "note": "搜索类内置工具按模式找文件、按正则搜内容。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "“没有语义检索”只是在文档和 CHANGELOG 中没查到（关键词 semantic、embedding 无相关命中），没有直接的否定声明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "structured_records"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户维护文件：CLAUDE.md（及读取 AGENTS.md 的内置 mod、.claude/rules/）每次会话启动加载。结构化记录：自动记忆在本地会话默认开启，Claude 自己写 memory/ 目录下一条一文件的笔记，frontmatter 里有 type（user、feedback、project、reference）和 modified 时间，MEMORY.md 作为索引；启动时载入 MEMORY.md 前 200 行或 25KB，主题文件由模型按需用文件工具读取，没有检索库。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/memory#auto-memory",
+          "locator": "How Claude remembers your project › CLAUDE.md vs auto memory；Auto memory；Enable or disable auto memory；Storage location；How it works",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "本地会话默认设置",
+          "note": "CLAUDE.md 由用户写；自动记忆在本地会话默认开启，由 Claude 写入带 type 字段的主题文件并以 MEMORY.md 为索引，主题文件按需读取。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "自动记忆是模型自己挑选、改写的笔记，带类型字段和索引，按 structured_records 编码；它也有“自动摘要”的成分（模型自行提炼），两个取值的边界需要码本说明：是按写入者（模型自动）还是按存储形态（是否结构化）区分。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "消息：每条消息、工具调用与结果写入 ~/.claude/projects/<project>/<session-id>.jsonl，子代理另有 agent-<id>.jsonl。状态快照：编辑文件前给受影响文件做快照（检查点），每会话保留最近 100 个。外部引用：超限的工具结果落到会话目录的文件里，记录中只留路径和预览。默认保留约 30 天。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#where-transcripts-are-stored",
+          "locator": "Manage sessions › Export and locate session data › Where transcripts are stored",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话持久化",
+          "note": "JSONL 每行是一条消息、工具调用或结果、模型请求记录或元数据条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/checkpointing#automatic-tracking",
+          "locator": "Checkpointing › How checkpoints work › Automatic tracking",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "每次发起回合的提示都建检查点，保存文件快照，并与对话一起保存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L3843",
+          "locator": "CHANGELOG.md（落盘工具结果上限）",
+          "lines": "L3843",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "落盘工具结果设 1 GB 上限，对话里的预览注明被截断，说明对话记录引用落盘文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "JSONL 里既有消息也有模型请求记录和元数据条目，messages 与 event_log 的界线不清：按“以消息为单位重放”编码为 messages，未计 event_log。external_reference 的定义（引用会话外的状态，还是会话自带的落盘文件）需要码本说明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "--continue / --resume 从 JSONL 重载对话历史（压缩过的从最后一次摘要起）并在下一条提示时继续；中断时正在跑的工具调用不重跑，已结束的后台子代理和后台命令只以“未完成”提示出现在记录里。检查点 /rewind 用于回退（见 F20），不是从断点续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#what-a-resumed-session-restores",
+          "locator": "Manage sessions › Resume a session › What a resumed session restores",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端的会话恢复",
+          "note": "恢复会话重载消息、工具调用与结果、模型、权限模式等；中断的工具调用不重跑，后台工作只留未完成的说明。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "对话与工具结果随对话记录恢复；子代理记录按会话保存，恢复同一会话后可以继续某个子代理。还恢复模型、权限模式、未过期的会话定时任务。任务清单工具只在部分模型上默认提供，本配置不绑定模型，未计 task_plan；工作区不随恢复改变，检查点可在恢复后用 /rewind 回退文件（记入 F20）。外部副作用：中断的工具调用不重跑，也不撤销已发生的远程效果。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#what-a-resumed-session-restores",
+          "locator": "Manage sessions › What a resumed session restores",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端的会话恢复",
+          "note": "列出恢复内容：对话历史（消息、工具调用与结果）、模型、代理、权限模式、目标、会话定时任务，后台工作只留说明。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents#resume-subagents",
+          "locator": "Create custom subagents › Resume subagents（Subagent transcripts persist independently…；Session persistence）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认开启的子代理",
+          "note": "子代理记录独立保存在会话目录 subagents/ 下，重启后恢复同一会话即可继续子代理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/tools-reference#task-tool-availability",
+          "locator": "Tools reference › Task tool availability",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "任务清单工具",
+          "note": "任务清单工具默认只在 Opus 4.7、Sonnet 4.6、Haiku 4.5 及更早模型上提供，其他模型需手动开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "task_plan 取决于所用模型（字段的编码对象不含模型），按“默认未必有”处理而不计；若码本要求按最常见模型判，结果会变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话分支：/branch 或 --fork-session 复制对话到新会话 ID，原会话不变；/rewind 可只回退对话。工作区快照：每个回合前自动建检查点，/rewind 可回退代码、对话或两者；只覆盖文件编辑工具改过的文件，单靠 Bash 改的文件、多数子代理编辑和远程副作用不回退。未见补偿操作或幂等标识。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/checkpointing#rewind-and-summarize",
+          "locator": "Checkpointing › Rewind and summarize；Limitations",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "回退菜单可恢复代码与对话、仅对话或仅代码；Bash 单独改的文件和多数子代理编辑不被跟踪。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#branch-a-session",
+          "locator": "Manage sessions › Branch a session",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "/branch 复制对话并切换到新分支，原会话保持不变。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "unknown_reason": null,
+      "value_note": "规则写成 Tool 或 Tool(specifier)，分 allow/ask/deny：按工具名（Bash、WebFetch、Read、MCP 工具、Agent 等）；Bash(...) 匹配整条命令文本加通配符；Read/Edit(...) 按路径模式；WebFetch(domain:...) 按主机名。另有权限模式档位、blockWrites/ReadsOutsideWorkingDirectories 开关、托管设置。默认 auto 模式下：工作区内改文件和只读动作直接放行；其余命令交分类器审核，被拦可在 /permissions 的 Recently blocked 里批准重试，所以记 review。可选：沙箱（默认关闭）的 allowedDomains 按域名限制命令联网。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permissions#permission-rule-syntax",
+          "locator": "Configure permissions › Permission rule syntax；Tool-specific permission rules › Bash / Read and Edit / WebFetch / MCP",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可配置规则",
+          "note": "规则可按工具名、Bash 命令文本、Read/Edit 路径模式、WebFetch 域名区分，分 allow、ask、deny。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permission-modes#auto-mode",
+          "locator": "Choose a permission mode › Auto mode（decision order；Allowed by default / Blocked by default；when the classifier blocks）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式 auto",
+          "note": "规则先判；只读动作与工作目录内的文件编辑自动放行（受保护路径除外）；其余交分类器；被拦后可在 Recently blocked 批准以便重试。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sandboxing",
+          "locator": "Sandboxing › Get started（The sandbox is off by default）；Hosts outside your allowed domains",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "沙箱（默认关闭）",
+          "note": "沙箱默认关闭，命令联网在默认配置下不经代理按域名过滤，而是随命令交分类器。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "default_outside_write 是推断：文档的判定顺序只把工作目录内编辑列为自动放行，其余交分类器，未明写目录外写入的处理。分类器放行时用户不参与，但拦下后可由用户批准重试，按 review 计；若 review 要求“先过批准者”时批准者必须是人，四个默认效果会不同。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      }
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "unknown_reason": null,
+      "value_note": "auto 模式下，规则未定的工具调用在执行前交分类器逐次审核；用户在以下情况放行：显式 ask 规则、关键路径删除（终端里两分钟倒计时）、首次读工作目录外文件、连续 3 次或累计 20 次被拦后回落为询问，以及在 Recently blocked 里批准被拦动作重试。先分类器后用户。“Yes, and don't ask again” 会存成规则。可选：plan 模式的计划批准（任务层）；沙箱开启后 Manual 模式下命令连新主机时的询问（操作层）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permission-modes#auto-mode",
+          "locator": "Choose a permission mode › Auto mode（decision order；when the classifier blocks；prompts that still appear）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式 auto",
+          "note": "分类器在动作运行前审核；ask 规则、需用户交互的工具、关键路径删除、首次读工作目录外仍询问用户；多次被拦后回落为询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permission-modes#critical-path-removals-in-each-permission-mode",
+          "locator": "Choose a permission mode › Critical-path removals in each permission mode；Time limits and denials in auto and bypassPermissions modes",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式 auto",
+          "note": "auto 模式下关键路径删除在终端里询问用户，两分钟未答则拒绝。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sandboxing",
+          "locator": "Sandboxing › Hosts outside your allowed domains",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "沙箱（默认关闭）",
+          "note": "按连接询问的操作层审批只在沙箱开启后出现。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "CHANGELOG 2.1.319：关闭遥测或功能开关时，服务端无法审核的调用改为询问或拒绝，批准者组成会随环境变化；本编码按默认安装（遥测开启）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "auto_reviewer",
+          "user"
+        ]
+      }
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认由 Claude Code 自身的权限引擎（规则匹配、受保护路径、关键路径删除检查）和 auto 模式分类器在执行前放行或拒绝，内置 privacy mod 也在执行前拒绝含账户邮箱并指定 User-Agent 的 shell 命令。可选：沙箱（macOS Seatbelt、Linux/WSL2 bubblewrap，限制 Bash 的文件写入与网络）默认关闭，需 /sandbox 或 sandbox.enabled 打开；blockWritesOutsideWorkingDirectories 默认关闭。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sandboxing",
+          "locator": "Sandboxing（The sandbox is off by default；OS mechanisms：Seatbelt / bubblewrap）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "沙箱（默认关闭）",
+          "note": "沙箱默认关闭，操作系统隔离不在默认配置里生效。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing",
+          "locator": "Configure permissions › How permissions interact with sandboxing",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "权限系统作用于所有工具，沙箱是另一层操作系统强制，二者互补。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L122",
+          "locator": "CHANGELOG.md（账户邮箱检查）",
+          "lines": "L122",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置 mod",
+          "note": "账户邮箱检查改为直接拒绝含邮箱并指定 User-Agent 的 shell 命令。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 记 null：文档说 plan 模式在“有 bypass 权限可用”的交互终端里只靠指示、不强制，但没查清默认安装是否属于“bypass 可用”，且 plan 模式本身不是默认模式；其余限制未见只靠提示的。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "prompt_only": null
+      }
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认可见记录是会话 JSONL：用户提示和模型文字（意图，Bash 调用还带 description）、工具调用及参数（实际操作）、工具结果（结果）；auto 模式的拒绝原因也写入记录（审批，只确认拒绝一侧）。身份：JSONL 未见账户身份字段。可选：OpenTelemetry 需 CLAUDE_CODE_ENABLE_TELEMETRY=1，开启后 tool_decision 事件记 accept/reject 及来源（规则、分类器、钩子、用户），并带 user.email、user.account_uuid、organization.id 等身份属性。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sessions#where-transcripts-are-stored",
+          "locator": "Manage sessions › Where transcripts are stored",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话记录",
+          "note": "JSONL 每行是消息、工具调用或结果、模型请求记录或元数据。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md#L5663",
+          "locator": "CHANGELOG.md（auto 模式拒绝原因）",
+          "lines": "L5663",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式 auto",
+          "note": "auto 模式的拒绝原因写入会话记录、提示条和 /permissions 的最近拒绝列表。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/monitoring-usage",
+          "locator": "Monitoring › Quick start（CLAUDE_CODE_ENABLE_TELEMETRY required）；Events › Tool decision event；Standard attributes",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "OpenTelemetry（需手动开启）",
+          "note": "遥测导出需手动开启；tool_decision 记录决定与来源，标准属性含账户与组织身份。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "approval 只找到“分类器拒绝写入记录”的证据，用户批准、规则放行是否写进 JSONL 未见文档（文档称条目格式是内部格式、随版本变化）。identity 只在需手动开启的 OpenTelemetry 里明确，按可选处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "交互式终端会话默认注册内置子代理（Explore、Plan、general-purpose 等），主对话通过 Agent 工具把任务派给各自有独立上下文的子代理；配置记录 subagents_enabled=true，fork 子代理也默认开启。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Built-in subagents；What loads at startup（Each subagent starts with a fresh, isolated context window）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话默认",
+          "note": "内置子代理在交互会话中默认注册，每个子代理在自己的上下文窗口中运行并把结果交回主对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md",
+          "locator": "CHANGELOG.md（Subagents now run in the background by default 条目）",
+          "lines": "L5577",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认行为",
+          "note": "发布说明确认子代理是默认启用的机制，并默认在后台运行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "user",
+        "workflow"
+      ],
+      "unknown_reason": null,
+      "value_note": "主要由主代理按任务描述与子代理 description 自动委派（Agent 工具）；用户可用 @ 提及或明确要求指定子代理，并在 .claude/agents/ 写定义；动态工作流由运行时执行的 JS 脚本经 agent()/pipeline()/parallel() 批量派生子代理，付费套餐默认可用（Pro 需在 /config 打开）。可选：agent teams 由主会话作 lead 派生队友，需 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1；/loop 与 Cron 工具只定时发提示，不直接调度代理，未计入 event_scheduling。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Understand automatic delegation；Invoke subagents explicitly（@-mention；--agent）；Quickstart: create your first subagent",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话默认",
+          "note": "Claude 自动委派；用户可用 @ 提及强制使用某个子代理（提示词仍由 Claude 写）；定义是用户写的 Markdown 文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "页首说明（available on all paid plans … On Pro, turn them on）；When to use a workflow（Who decides what runs next: The script）；What the saved script looks like",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "账户套餐相关的默认",
+          "note": "工作流脚本由运行时执行并派生子代理，由脚本而非 Claude 逐轮决定下一步。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-teams",
+          "locator": "页首警告与 Enable agent teams（experimental and disabled by default）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选功能",
+          "note": "agent teams 默认关闭，只记为可选。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“用户”这一项边界不清：@ 提及时用户选定子代理，但实际调用仍经主代理写提示并发起，算不算“用户调度”需要定义说明。工作流是否默认可用取决于账户套餐（Pro 默认关），配置记录未指定套餐。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files",
+        "messages"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理以全新独立上下文启动（fork 例外，继承父对话副本）；默认在主对话的工作目录中运行，与主代理共享文件系统（isolation: worktree 为可选隔离）；主代理可用 SendMessage 按 ID 或名字给已完成或停止的子代理续发消息，带名字的子代理之间也可互发。权限：子代理继承父对话的权限规则，未设置时继承主对话权限模式。可选：agent teams 的共享任务列表与邮箱文件需实验开关。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "What loads at startup；Write subagent files（starts in the main conversation's current working directory）；Supported frontmatter fields（isolation）；Resume subagents（SendMessage）；Permission modes",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话默认",
+          "note": "独立上下文、共享工作目录、可选工作树隔离、SendMessage 续发、权限继承。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-teams",
+          "locator": "Compare with subagents（Communication 行：Subagents that Claude named … can also message each other）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理（非 agent teams）",
+          "note": "说明普通子代理在被命名时可互发消息；共享任务列表属于 agent teams。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "fork 子代理继承父对话的上下文副本，既不是 independent_context 也不是持续同步的 shared_state，词表缺少“继承上下文副本”这一类。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [
+        {
+          "value": "inherited_context_copy",
+          "definition": "子代理启动时复制父代理当时的完整对话上下文，之后各自独立演进。"
+        }
+      ]
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "前台子代理阻塞主对话直到返回结果；未配置时主对话派出的子代理默认在后台运行，结果以完成通知在之后的回合送达，Claude 等通知后再汇报；工作流里 agent() 被 await、parallel() 等待全部完成。取消：停止工作流会停止并重新发信号给其子代理进程，Ctrl+X Ctrl+K 停止本会话全部后台子代理；但后台嵌套子代理可比其父子代理活得更久，取消并非全链传播。可选：agent teams 的共享任务列表（shared_board）需实验开关。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Run subagents in foreground or background；Let subagents spawn their own subagents",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端会话默认",
+          "note": "前台阻塞返回、后台完成通知；嵌套后台子代理不被父子代理等待。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "What the saved script looks like（parallel() … waits for all of them）；Manage runs（stop … re-signals those processes）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工作流（付费套餐默认）",
+          "note": "脚本等待代理结果；停止运行会传到其子代理进程。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/interactive-mode",
+          "locator": "Keyboard shortcuts › General controls（Ctrl+X Ctrl+K）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端",
+          "note": "一键停止本会话所有后台子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md",
+          "locator": "CHANGELOG.md（Subagents now run in the background by default … notified when they finish）",
+          "lines": "L5577",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认行为",
+          "note": "后台运行加完成通知是默认等待路径。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_propagation 的判定标准不明：用户发起的“全部停止”与父代理取消自动传到子代理是否同算？本配置中后台嵌套子代理不随父结束，属于部分传播。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具随闭源核心提供；插件／mod 的 hooks 模块可调用 $.tool.register 注册新工具（以 tool.call 钩子应答），mod 默认开启；MCP 服务器提供的工具与内置工具一起供主对话和子代理使用。默认安装不带第三方工具，扩展边界本身默认可用。用户脚本：hooks 的 command 类型与技能附带脚本只在生命周期或经 Bash 执行，不形成新工具，未计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/mods/types/claude-code.d.ts",
+          "locator": "mods/types/claude-code.d.ts（$.tool.register）",
+          "lines": "L2620-L2633",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "mod API",
+          "note": "mod 可注册名为 mcp__<plugin>__<name> 的新工具，由 tool.call 钩子提供结果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/plugins/mods/reference",
+          "locator": "Mods API methods（$.tool: register, call, check, list）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "mod API",
+          "note": "官方参考列出注册工具的方法。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Available tools（Subagents inherit the built-in tools and MCP tools available in the main conversation）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具池",
+          "note": "工具池由内置工具与 MCP 工具组成。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "mod 注册的工具名以 mcp__ 前缀出现，形式上借用 MCP 命名但在进程内由插件 API 实现，算 plugin_api 而非 external_protocol_service；定义里可说明按实现边界还是按命名判断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "workflow_definition"
+      ],
+      "unknown_reason": null,
+      "value_note": "CLAUDE.md（项目、用户、组织级）与 .claude/rules/ 每次会话启动时载入，内置 mod 在无 CLAUDE.md 时读 AGENTS.md；技能在 .claude/skills/<名>/SKILL.md，描述常驻上下文、正文调用时才载入，可附带只执行不载入的脚本；.claude/agents/ 的子代理定义是可复用角色模板；保存的工作流脚本在 .claude/workflows/，以 /<名> 运行，属可执行代码而非提示内容，且依套餐默认可用（Pro 默认关）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/memory",
+          "locator": "CLAUDE.md vs auto memory；How CLAUDE.md files load；Organize rules with .claude/rules/；AGENTS.md",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "CLAUDE.md 与规则文件在每个会话开始时载入，作为上下文而非强制配置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/skills",
+          "locator": "Choose where skills load；Configure skills；Add supporting files",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "技能目录、按需载入正文、可附带脚本。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Choose the subagent scope（.claude/agents/、~/.claude/agents/）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认会话",
+          "note": "子代理定义作为可复用角色。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "Save the workflow for reuse（.claude/workflows/、~/.claude/workflows/）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工作流（付费套餐默认）",
+          "note": "保存的工作流脚本作为命令复用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workflow_definition 是可执行 JS 脚本，编码说明要求“区分内容与可执行代码”，但集合字段没有放这一区分的位置；建议加子维度或在取值定义里写明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "save",
+        "end"
+      ],
+      "unknown_reason": null,
+      "value_note": "设置钩子（hooks）提供 UserPromptSubmit、PreToolUse/PostToolUse、Stop、SessionEnd 等事件；默认开启的 mod 接口另有 prompt.submit、turn.step（每次模型请求前）、tool.call、session.append（每条会话记录写入前）、session.end。事件点默认就在；具体钩子需用户配置或安装 mod（内置 mod 本身也挂在这些事件上）。设置钩子没有直接的模型调用前后事件，model_call 只来自 mod 的 turn.step。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/hooks",
+          "locator": "Hook lifecycle（事件总表：UserPromptSubmit、PreToolUse、PostToolUse、Stop、SessionEnd、PreCompact 等）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "设置钩子",
+          "note": "列出输入、工具前后、结束等事件；无模型调用事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/mods/types/claude-code.d.ts",
+          "locator": "mods/types/claude-code.d.ts（'turn.step'）",
+          "lines": "L3671-L3678",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "mod 事件",
+          "note": "引擎即将发出主对话或子代理的模型请求时触发，可改模型或拦下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/mods/types/claude-code.d.ts",
+          "locator": "mods/types/claude-code.d.ts（'session.append'）",
+          "lines": "L3588-L3599",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "mod 事件",
+          "note": "会话每条记录存储前触发，可改写内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/mods/types/claude-code.d.ts",
+          "locator": "mods/types/claude-code.d.ts（'prompt.submit'、'tool.call'、'session.end'）",
+          "lines": "L3388-L3395",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "mod 事件",
+          "note": "提示提交事件；tool.call 见 L3268-L3276，session.end 见 L3641-L3652。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/plugins/mods/overview",
+          "locator": "Turn mods on or off（Mods are on by default … v2.1.287 or later）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认",
+          "note": "mod 机制在本版本默认开启（配置记录已引）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“保存”含义不明：本工具有“会话记录写入前”（session.append）和“压缩前后”（PreCompact/PostCompact），但没有文件保存或检查点事件；按写入记录计入 save。另外需要定义：事件点默认存在但须用户写钩子才生效，算不算“默认生效”。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "library"
+      ],
+      "unknown_reason": null,
+      "value_note": "同一二进制以 claude -p 非交互运行，支持 json/stream-json 输出与 --json-schema 结构化结果，供脚本和 CI 作子进程调用；官方 Agent SDK 以 Python/TypeScript 包提供同一工具集、代理循环与上下文管理（需另装包）。未见正式的服务 API 或供外部协议客户端接入整个代理的接口；Remote Control、mod 的 session.attach 属于连接会话的界面通道，未计入。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/headless",
+          "locator": "页首（Agent SDK gives you the same tools, agent loop, and context management … CLI … Python and TypeScript packages）；Basic usage；Get structured output",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "非交互与 SDK 入口",
+          "note": "CLI 子进程与 Python/TypeScript 库两种嵌入方式。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "嵌入方式问的是“核心能怎样嵌入”，和本配置的入口（交互终端）不是一回事；claude -p 只是加参数，按“可选”规则会被排除，但那样此字段对 CLI 工具几乎恒为空。这里按能力计入，建议定义写明本字段不受默认入口限制。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "交互终端由用户输入触发；/loop（内置技能）与 CronCreate 等工具默认可用，在会话内按 cron 定时触发提示，只在 Claude Code 运行且空闲时触发，最长 7 天。可选：claude -p 与 Agent SDK（API/脚本触发，加参数或另装包）；--channels 把 CI、聊天等外部事件推入会话（研究预览，需逐会话开启）；云端定时任务、桌面定时任务、GitHub Actions 不属于本配置。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/scheduled-tasks",
+          "locator": "Run a prompt repeatedly with /loop；How session-scoped scheduled tasks run；Disable session-scoped scheduled tasks；Limitations",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互会话默认",
+          "note": "会话内定时默认可用，可用 CLAUDE_CODE_DISABLE_CRON 关闭；会话退出即停止触发。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/channels",
+          "locator": "页首说明（research preview）；Enterprise controls（no channel runs until a user opts it in for the session with --channels）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选功能",
+          "note": "外部事件触发需逐会话开启，记为可选。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "会话内定时依赖前台进程存活，与持久的原生调度器差别很大；schedule 取值可能需要分“会话内”和“独立持久”两档。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "默认交互会话是终端里的前台进程，关闭终端或退出后会话内定时任务停止触发。可选：把会话移到后台（← 或 claude --bg）时，Claude Code 启动一个监管进程（supervisor）托管后台会话，关闭终端后仍继续（agent view 为研究预览）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/scheduled-tasks",
+          "locator": "Limitations（Tasks only fire while Claude Code is running and idle. Closing the terminal … stops them firing）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互会话默认",
+          "note": "会话工作随前台进程结束而停止。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/agent-view",
+          "locator": "The supervisor process（Claude Code starts it the first time you background a session or open agent view）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选后台会话",
+          "note": "后台守护只在用户把会话移到后台或打开 agent view 时启动。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F35": {
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "not_found",
+      "value_note": "会话内有消息队列：Claude 工作时输入的消息排队，回合结束或工具调用间隙按序送出；发布说明提到排队提示会写入会话记录（queued-prompt records），Remote Control 与 agent view 的未送达消息会在下次恢复或启动时送达。但没找到默认终端会话崩溃后排队消息是否恢复的说明。会话内 Cron 任务在 --resume 时恢复，错过的不补跑。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/interactive-mode",
+          "locator": "Queue messages while Claude works；When Claude Code sends what you queued；Take back what you queued",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端",
+          "note": "说明排队与发送顺序，未说明进程崩溃后的语义。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anthropics/claude-code/blob/6e1e44f6433bfa17d198e932bff53373aa229eea/CHANGELOG.md",
+          "locator": "CHANGELOG.md（transcript's queued-prompt records；Remote Control queued message arrives on the next resume）",
+          "lines": "L1632",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "排队消息",
+          "note": "排队提示有会话记录；L2397 记 Remote Control 排队消息在下次恢复时送达，均不直接说明默认终端的崩溃语义。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "查过 interactive-mode、scheduled-tasks、agent-view 文档与 CHANGELOG 的 queue 条目。本工具同时有输入消息队列、会话内 Cron、后台会话的待送回复几种“排队”，字段没说按哪一种判，且崩溃语义只在可选通道（Remote Control、agent view）有说明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "auto 模式下分类器审核大部分动作，但仍有需要人答复的阻塞提示（例如前台子代理与后台子代理的权限提示转给用户、工作流首次启动的审批、AskUserQuestion），用户离开时会话暂停等待；Claude 完成任务或停在权限提示且用户不在终端时会发出通知事件，Ghostty、Kitty、iTerm2 默认发桌面通知，其他终端可能什么都不发。可选：任务清单（~/.claude/tasks）在本版本只对旧型号默认提供，其他型号需 CLAUDE_CODE_ENABLE_TODO_TOOLS=1，未计入 resumable_todo。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/sub-agents",
+          "locator": "Run subagents in foreground or background（Permission prompts are passed through to you；Claude Code surfaces the prompt in your main session）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端",
+          "note": "权限提示阻塞等待用户。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/workflows",
+          "locator": "Approve the plan before it runs（Auto: First launch only）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "auto 权限模式",
+          "note": "auto 模式下首次启动工作流需要用户批准。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/terminal-config",
+          "locator": "Get a terminal bell or notification",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互式终端默认",
+          "note": "完成任务或等待权限时发通知事件，部分终端默认弹桌面通知。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.claude.com/docs/en/interactive-mode",
+          "locator": "Task list（provides by default on Opus 4.7, Sonnet 4.6, Haiku 4.5, and earlier models）",
+          "lines": "",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "按型号",
+          "note": "任务清单是否默认出现取决于型号，记为可选。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 是否默认生效依终端而定（Apple Terminal 和其他终端可能不发）；resumable_todo 依型号而定，而码本说架构层不绑定模型，这类依型号的默认需要统一口径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    }
+  }
+}
