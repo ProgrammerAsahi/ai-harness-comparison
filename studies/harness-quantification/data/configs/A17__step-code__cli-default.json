@@ -21,6 +21,15 @@
   ],
   "operating_system": "macOS、Linux、WSL；Windows PowerShell 为 beta（官方建议在 Windows 上用 WSL）；发布产物覆盖 darwin/linux/windows 的 arm64 与 x64。",
   "model_policy": "架构层不绑定模型；适配记录另存",
+  "environment_premises": {
+    "account_tier": "Step Plan 最低一档 Mini，订阅有效，/login 走浏览器 OAuth（中国区和海外区档位相同，不区分）",
+    "default_model": "step-5-preview（近似提交里的默认常量；它在 Mini 档是否可用没有查到资料）",
+    "host_os": "macOS 或 Linux（不含 Windows）",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动",
+    "trust": "没有信任提示：仓库和上级目录里都没有 .stepcode/ 项目资源、.agents/skills 或 .claude/skills（有这些资源时才按默认值 ask 提示）",
+    "credentials": "只有 Step Plan OAuth 登录，没有 STEP_API_KEY，也没有其他提供方的密钥",
+    "other": "没有设 STEP_MODEL"
+  },
   "evidence_cutoff": "2026-11-10",
   "evidence": [
     {
@@ -195,6 +204,51 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "扩展",
       "note": "首次启动自动导入 Claude Code / Codex MCP 配置；大部分 Claude Code 插件可经 /plugin 使用。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/README.md#L64-L77",
+      "locator": "README.md：Sign in to the Step provider",
+      "lines": "L64-L77",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "默认入口只有一个内置提供方 Step；Step Plan（中国区或海外，浏览器 OAuth，Mini/Plus/Pro/Max 档含用量）和 Step Platform（API 密钥按次计费）是计费方式选项；/login 打开 Step 登录流程。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/step-configuration.md#L22-L42",
+      "locator": "docs/step-configuration.md：Step Plan login and API-key fallback",
+      "lines": "L22-L42",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "登录后检查 /step_plan/v1/usage；没有有效订阅或可用余额时，提示改用 API 密钥或去购买；模型列表不能证明订阅有效。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/defaults.ts#L3-L4",
+      "locator": "packages/coding-agent/src/step/defaults.ts：STEP_DEFAULT_PROVIDER / STEP_DEFAULT_MODEL",
+      "lines": "L3-L4",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "Step 入口的默认提供方是 step，默认型号是 step-5-preview；本提交只是 0.1.7 的近似提交。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/environment.ts#L134-L139",
+      "locator": "packages/coding-agent/src/step/environment.ts：STEPCODE_DEFAULT_PROVIDER / STEPCODE_DEFAULT_MODEL 环境默认",
+      "lines": "L134-L139",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "没有设置 STEP_PROVIDER、STEP_MODEL 时，运行时默认提供方和型号取上面两个常量。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/security.md#L8-L27",
+      "locator": "packages/coding-agent/docs/security.md：Project Trust",
+      "lines": "L8-L27",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "列出需要信任的项目资源；默认 defaultProjectTrust 为 \"ask\"，在有界面时提示；写明接受后加载哪些资源、拒绝则跳过，上下文文件不论是否信任都加载。"
     }
   ],
   "note": "2026-11-10 刷新：官方 install.sh 默认从 https://static-openapi.stepfun.com/stepcode/latest.json 取版本，当前为 0.1.7（generatedAt 2026-11-05T11:58:24.878Z）；10-20 记录的 0.1.5 之后还发过 0.1.6（10-23）。GitHub 仍无 Release、无 tag；npm 上没有对应包（同名 stepcode 包属无关项目，@step-harness/cli 不存在）；仓库 CHANGELOG 只有 [Unreleased]，不记版本。发布 CI 在仓库之外的发布环境运行（docs/open-source-status.md），版本取自受保护标签 CI_COMMIT_TAG，提交只以 12 位短 SHA 注入二进制，manifest/latest.json 不含提交，因此 0.1.7 无法从公开材料落到提交。可确定的一点：官方发布通道上与 0.1.7 同时生成的 install.sh，去掉 BASE_URL 后与公开 main 上 infra/release/install.sh 的任何版本都不一致，却与公开仓库分支 feat/extension-market 暴露的内部开发线（与 main 的合并基为 29eb460，领先约 1189 个提交）上的模板逐字节一致，所以 0.1.7 的构建提交很可能在内部开发线上，不在公开 main 上（前提是发布环境像 release-bundle.mjs 那样用构建提交里的模板渲染安装器；这一前提未直接验证）。源码证据因此分两层：主证据取公开 main 上 0.1.7 生成前最后一个提交 29eb460（2026-11-03T10:53:41Z），它已于 2026-11-03T10:55Z 被合入内部开发线（6774150），但构建提交是否包含它未知；交叉核对取内部开发线上 0.1.7 生成前可见的最后一个提交 14671f3（2026-11-04T10:05:28Z，是一个桌面版 CI 分支的合并提交），它只是可见的近似点，不是构建提交。两处的默认权限（approve-for-me，defaulted=true）、三档权限、subagent 与 workflow 无条件注册、workflow 注册闸门、预装 steppage、内置扩展 llama.cpp、README 安装/安全/Ultracode/MCP 导入说明都一致，本记录各键与 0.1.5 时相同。入口：内部开发线另有 apps/desktop、apps/web（StepCode Desktop 及其标签驱动的发布流水线），公开 main 和 README 都未提供桌面版，官方安装通道只发 CLI，故入口仍取 CLI；若桌面版日后正式上线，需重新判断主产品形态。原待核项“0.1.5 构建于 2026-10-10 之前则默认为 bypass”随版本更新不再适用：两处候选提交都是新三档，默认 approve-for-me。；待核：0.1.7 对应的完整提交无法从公开材料确定；唯一直接办法是读二进制中注入的 12 位 build commit，需要下载发布包（数十 MB），按用户要求未做，且短 SHA 若指向内部仓库也未必能在公开仓库解析。"

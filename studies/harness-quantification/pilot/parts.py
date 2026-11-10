@@ -36,6 +36,9 @@ def brief(groups):
         if key in s["enums"]:
             print(f"{key}：", json.dumps(s["enums"][key], ensure_ascii=False))
     print("子维度总则：", s["facet_rule"])
+    print("\n总则（先读；字段定义里写“总则 Rn”的指这里）：")
+    for r in s.get("general_rules", []):
+        print(f"  {r['id']} {r['title']}：{r['rule']}")
     for g in s["groups"]:
         if g["id"] not in groups:
             continue
@@ -62,6 +65,7 @@ def brief(groups):
                     f"{x['id']}（{x['label']}）" for x in fc["vocabulary"])
                 ties = "；必须是 value 的子集" if fc.get("subset_of_value") else ""
                 ties += "；不含主取值" if fc.get("excludes_value") else ""
+                ties += "；可选，没有时可以不写这个键" if fc.get("optional") else ""
                 print(f"  子维度 {fc['id']}　{fc['label']}（{fc['type']}；取值：{vocab}{ties}）：{fc['rule']}")
     tpl = json.loads((vd.DATA / "templates/coding.template.json").read_text(encoding="utf-8"))
     ids = [f["id"] for f in group_fields(ctx, groups)]

@@ -4,7 +4,8 @@
 Checks field IDs and types, legal values, conditional fields (report §5.5), how status and
 evidence fit together (§4.2, §8.1), evidence kinds, private-bench references, and that
 rounds, configs, codings and adapters refer to each other. Prints errors only; exit 1 on any.
-Five fields carry a "definition" and "facets" (sub-dimensions) in fields.json; both are shape-checked and facets are checked in codings.
+Every field carries a "definition"; many carry "facets" (sub-dimensions). fields.json also holds the general rules
+(R1..R9) coders read first. All are shape-checked and facets are checked in codings.
 
   python3 studies/harness-quantification/validate_data.py              real data + templates
   python3 studies/harness-quantification/validate_data.py --fixtures   also the synthetic fixtures
@@ -50,7 +51,9 @@ CODER_KEYS = {"id", "model", "prompt_version", "coded_at"}
 CONFIG_KEYS = {"schema_version", "synthetic", "config_id", "round", "tool_id", "product", "view", "version_or_commit",
                "mode", "representative_rationale", "entrypoint", "install_method", "permission_mode",
                "subagents_enabled", "enabled_extensions", "operating_system", "model_policy", "evidence_cutoff",
-               "evidence", "note"}
+               "environment_premises", "evidence", "note"}
+# General rule R1: the branch of environment-dependent defaults that every coder follows for this configuration.
+PREMISE_KEYS = ("account_tier", "default_model", "host_os", "workspace", "trust", "credentials", "other")
 CODING_KEYS = {"schema_version", "codebook_version", "synthetic", "round", "config_id", "coder", "independent",
                "evidence_cutoff", "fields"}
 ENTRY_KEYS = {"status", "value", "unknown_reason", "value_note", "evidence", "confidence", "coder_note",
@@ -307,6 +310,12 @@ def check_entry(field, entry, where, ctx, errors, cutoff):
         is_absent = has_absent and _same(field, value, field["absent_value"])
         if status == "known" and is_absent:
             errors.append(f"{where}: value means the mechanism is absent; use status known_absent")
+        note = entry.get("value_note")
+        if isinstance(note, str) and note.startswith("推断：") and entry.get("confidence") != "low":
+            errors.append(f"{where}: an inference from documentation (value_note 推断：) has confidence low (general rule R6)")
+        facets = entry.get("facets")
+        if isinstance(facets, dict) and facets.get("unresolved") and entry.get("confidence") == "high":
+            errors.append(f"{where}: with unresolved members, confidence is medium at most (general rule R7)")
         if status == "known_absent" and not has_absent:
             errors.append(f"{where}: {field['id']} has no absent value; record the category with status known")
         elif status == "known_absent" and not is_absent:
@@ -318,6 +327,8 @@ def check_entry(field, entry, where, ctx, errors, cutoff):
             errors.append(f"{where}: unknown needs unknown_reason {sorted(ctx.enums['unknown_reason'])}")
         if reason == "conflicting_sources" and len(kinds) < 2:
             errors.append(f"{where}: conflicting_sources needs the conflicting evidence cards (at least two)")
+        if reason == "vocabulary_gap" and not entry.get("vocabulary_proposals"):
+            errors.append(f"{where}: vocabulary_gap needs a vocabulary proposal (general rule R7)")
     elif status == "not_applicable":
         if value is not None:
             errors.append(f"{where}: not_applicable must not carry a value")
@@ -361,7 +372,8 @@ def check_conditions(fields_rec, where, ctx, errors):
 DEFINITION_KEYS = {"question_rule", "scope_rule", "absent_rule", "unknown_rule", "distance_rule"}
 DEFINED_VOCAB_KEYS = {"id", "label", "criterion", "example"}
 FACET_KEYS = {"id", "label", "type", "vocabulary_from", "vocabulary", "subset_of_value", "excludes_value",
-              "complement_of", "in_distance", "rule"}
+              "complement_of", "in_distance", "rule", "optional"}
+GENERAL_RULE_KEYS = {"id", "title", "rule"}
 FACET_TYPES = {"set", "nominal"}
 TOOL_ID_RE = re.compile(r"(?<![A-Za-z0-9])[A-Z]\d{2}(?![A-Za-z0-9])")
 
@@ -385,8 +397,16 @@ def check_definitions(schema, sample_ids=None):
     """Shape checks for the fields that carry a definition, criteria with examples, or facets; returns errors."""
     errors = []
     sample_ids = pilot_tool_ids() if sample_ids is None else set(sample_ids)
+    rules = schema.get("general_rules")
+    if not (isinstance(rules, list) and rules and all(
+            isinstance(r, dict) and set(r) == GENERAL_RULE_KEYS and all(_is_str(v) for v in r.values()) for r in rules)):
+        errors.append(f"fields.json: general_rules must list rules as {sorted(GENERAL_RULE_KEYS)} text")
+    elif [r["id"] for r in rules] != [f"R{i}" for i in range(1, len(rules) + 1)]:
+        errors.append("fields.json: general_rules ids must run R1, R2, ... in order")
     for f in schema["fields"]:
         where = f"fields.json {f['id']}"
+        if "definition" not in f:
+            errors.append(f"{where}: every field carries a definition")
         if "proposed" in f or "needs_definition" in f:
             errors.append(f"{where}: drafts are not kept in the codebook; adopt the definition or remove it")
         definition = f.get("definition")
@@ -419,6 +439,8 @@ def check_definitions(schema, sample_ids=None):
                 errors.append(f"{w}: facet type must be one of {sorted(FACET_TYPES)} (no new answer types)")
             if not isinstance(facet["in_distance"], bool):
                 errors.append(f"{w}: in_distance must be true or false")
+            if "optional" in facet and facet["optional"] is not True:
+                errors.append(f"{w}: optional is either true or left out")
             own = facet.get("vocabulary")
             if (facet.get("vocabulary_from") == "value") == (own is not None):
                 errors.append(f"{w}: give exactly one of vocabulary_from: \"value\" or an own vocabulary")
@@ -464,7 +486,8 @@ def check_facets(field, entry, where, errors):
                 errors.append(f"{w}: stays null when status is {status}")
             continue
         if fid not in facets:
-            errors.append(f"{w}: missing; write null when this layer is unknown")
+            if not fc.get("optional"):
+                errors.append(f"{w}: missing; write null when this layer is unknown")
             continue
         if fv is None:  # this layer is unknown
             continue
@@ -485,6 +508,8 @@ def check_facets(field, entry, where, errors):
             errors.append(f"{w}: must be a subset of value")
         if fc.get("excludes_value") and isinstance(value, str) and value in fv:
             errors.append(f"{w}: must not repeat the main value")
+        if fc.get("excludes_value") and isinstance(value, list) and set(fv) & set(value):
+            errors.append(f"{w}: must not repeat members of value")
     for fid, fc in declared.items():  # e.g. F12 mode_unknown: every value sits in hard_stop, soft_notice or mode_unknown
         refs = fc.get("complement_of")
         parts = [facets.get(r) for r in refs or []]
@@ -523,6 +548,10 @@ def validate_config(rec, where, ctx):
         errors.append(f"{where}: subagents_enabled must be true, false or null (unknown)")
     if not isinstance(rec["enabled_extensions"], list) or not all(_is_str(x) for x in rec["enabled_extensions"]):
         errors.append(f"{where}: enabled_extensions must be a list of names ([] when none)")
+    premises = rec["environment_premises"]
+    if not (isinstance(premises, dict) and tuple(premises) == PREMISE_KEYS
+            and all(_is_str(premises[k], allow_empty=(k == "other")) for k in PREMISE_KEYS)):
+        errors.append(f"{where}: environment_premises must give {list(PREMISE_KEYS)} as text (other may be empty)")
     cutoff = _date(rec["evidence_cutoff"])
     if not cutoff:
         errors.append(f"{where}: evidence_cutoff must be an ISO date")
@@ -783,15 +812,17 @@ def make_templates(schema):
                               "install_method", "permission_mode", "operating_system", "model_policy",
                               "evidence_cutoff", "note")}
     config.update({"schema_version": CONFIG_SCHEMA, "synthetic": False, "view": "configured", "mode": "local",
-                   "subagents_enabled": None, "enabled_extensions": [], "evidence": [_blank_card()]})
+                   "subagents_enabled": None, "enabled_extensions": [], "evidence": [_blank_card()],
+                   "environment_premises": dict.fromkeys(PREMISE_KEYS, "")})
     entry = {"status": None, "value": None, "unknown_reason": None, "value_note": "", "evidence": [],
              "confidence": None, "coder_note": "", "review_status": "single_review", "vocabulary_proposals": []}
 
     def blank(field):
         e = copy.deepcopy(entry)
-        if field.get("facets"):  # placed right after value, where a coder reads them together
+        if any(not fc.get("optional") for fc in field.get("facets", [])):  # right after value, read together
             e = {k: v for key, val in e.items()
-                 for k, v in ([(key, val), ("facets", {fc["id"]: None for fc in field["facets"]})]
+                 for k, v in ([(key, val), ("facets", {fc["id"]: None for fc in field["facets"]
+                                                       if not fc.get("optional")})]
                               if key == "value" else [(key, val)])}
         return e
     coding = {"schema_version": CODING_SCHEMA, "codebook_version": schema["schema_version"], "synthetic": False,

@@ -40,6 +40,10 @@ def compare_entry(field, a, b):
         facets = {}
         for fc in field.get("facets", []):
             fa, fb = (a.get("facets") or {}).get(fc["id"]), (b.get("facets") or {}).get(fc["id"])
+            if fc.get("optional"):  # left out means "nothing to list"; compared only when someone listed something
+                fa, fb = fa or [], fb or []
+                if not fa and not fb:
+                    continue
             if fa is None or fb is None:
                 facets[fc["id"]] = "both_unknown" if fa is None and fb is None else "one_unknown"
             else:

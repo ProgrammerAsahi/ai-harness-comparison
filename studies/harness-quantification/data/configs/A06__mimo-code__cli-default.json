@@ -21,6 +21,15 @@
   ],
   "operating_system": "macOS、Linux、Windows（PowerShell 安装脚本；WSL 有专门说明；不支持 macOS 自带 Terminal.app 渲染）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
+  "environment_premises": {
+    "account_tier": "小米 MiMo 开放平台按量计费（账户有余额），/login 走 Xiaomi MiMo Platform OAuth，授权时选按量计费",
+    "default_model": "xiaomi/mimo-v2.6-pro（OAuth 登录成功后设为当前型号）",
+    "host_os": "macOS 或 Linux（不含 Windows）",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动",
+    "trust": "已接受 Accessing workspace 信任提示（按目录路径保存）；不接受时 TUI 不启动",
+    "credentials": "只有 MiMo 平台 OAuth 生成的密钥；没有 Token Plan，也没有其他提供方的密钥",
+    "other": "已确认一次性的服务条款与隐私协议对话框；启动时不带 --trust"
+  },
   "evidence_cutoff": "2026-11-10",
   "evidence": [
     {
@@ -166,6 +175,87 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "扩展",
       "note": "注释写明内置工作流和动态工作流默认关闭（opt-in），由 MIMOCODE_EXPERIMENTAL_WORKFLOW_TOOL 或 MIMOCODE_EXPERIMENTAL 开启。2026-11-10 试编码后复核补入：原记录把内置工作流列为默认扩展。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://mimo.mi.com/static/docs/tokenplan/integration/mimo-code.md",
+      "locator": "MiMo Code 接入说明（Both pay-as-you-go MiMo API and Token Plan are supported；ensure your account … has sufficient balance or a valid Token Plan. Otherwise, the authorization will fail）；sha256 fe675bd4…",
+      "lines": "页面正文（静态 Markdown，按段落定位）",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "OAuth 登录同时支持按量计费与 Token Plan，前者只要求账户有余额。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://mimo.mi.com/static/docs/price/token-plan.md",
+      "locator": "Token Plan 价格表 › Lite（6 美元／月，39 元／月）；sha256 ac029c1a…",
+      "lines": "页面正文（静态 Markdown，价格表 Lite 行）",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "按月订阅路径的最低档是 Token Plan Lite。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/README.md#L41-L58",
+      "locator": "README.md › Quick start（Xiaomi MiMo Platform — OAuth login）；packages/cli/src/cli/cmd/tui/i18n/en.ts L82（/login to sign in and use a Token Plan or configure your own API key）",
+      "lines": "L41-L58",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "快速开始的凭据入口是 MiMo 平台 OAuth 登录。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/cli/cmd/tui/component/dialog-mimo-login.tsx#L192-L201",
+      "locator": "packages/cli/src/cli/cmd/tui/component/dialog-mimo-login.tsx › onLoginSuccess（有 mimo-v2.6-pro 即设为当前型号，否则取 xiaomi 第一个型号）",
+      "lines": "L192-L201",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "OAuth 登录成功后默认型号被设为 xiaomi/mimo-v2.6-pro。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/cli/cmd/tui/util/model.ts#L55-L72",
+      "locator": "packages/cli/src/cli/cmd/tui/util/model.ts › PREFERRED_DEFAULT（xiaomi／mimo-v2.6-pro）及回落逻辑",
+      "lines": "L55-L72",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "TUI 首选默认型号同为 xiaomi/mimo-v2.6-pro。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/provider/provider.ts#L1949-L1993",
+      "locator": "packages/cli/src/provider/provider.ts › defaultModel（cfg.model → 最近使用 → 首个提供方按字母序第一个支持工具调用的型号）",
+      "lines": "L1949-L1993",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "服务端在没有配置和记录时的回落规则。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/cli/cmd/tui/thread.ts#L236-L249",
+      "locator": "packages/cli/src/cli/cmd/tui/thread.ts › 启动时 checkTrust → promptWorkspaceTrust（L70-L124），拒绝则 return，untrusted 接受后 markTrusted(cwd)；--trust 跳过（L199-L203）；选项文字见 i18n/en.ts L538-L545",
+      "lines": "L236-L249",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "未信任目录启动先弹信任提示，拒绝则不启动 TUI，接受则记录信任。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/project/workspace-trust.ts#L9-L55",
+      "locator": "packages/cli/src/project/workspace-trust.ts › STORE_FILE trusted-workspaces.json、checkTrust（主目录／根目录为 dangerous，子路径继承信任）、markTrusted",
+      "lines": "L9-L55",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "信任按目录路径持久记录并覆盖子目录，主目录与根目录不持久记录。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/cli/cmd/tui/component/dialog-agreement.tsx#L8-L21",
+      "locator": "packages/cli/src/cli/cmd/tui/component/dialog-agreement.tsx › 服务条款与隐私协议对话框；app.tsx L390-L402 未同意时弹出",
+      "lines": "L8-L21",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "与信任提示分开的一次性协议确认（other 一项的依据）。"
     }
   ],
   "note": "基于 OpenCode 分叉。v0.1.16 相对 v0.1.15 的默认行为变化：主代理只剩 build（默认）与 plan，compose 主代理、内置 compose 工作流与 compose:* 技能移除（改用 compose-next 技能）；内置工作流 4→3；agent-CLI 技能（claude-code、codex、grok-build）由“本机有对应可执行文件即出现”改为需环境变量显式开启；MCP 工具改为懒加载；npm 包改为启动器；README 将 MiMo Desktop 改为正式版。默认子代理仍为 general（全能力）与 explore（只读）；另有 title、summary、compaction、checkpoint-writer、dream 等隐藏内部子代理；experimental.maxMode 配置后才出现 max 主代理。上一轮待核项“破坏性命令强制询问”已在源码定位（bash_delete 强制询问）。Claude Code MCP 兼容读取在旧记录中未登记，未核对它在 v0.1.15 是否已默认开启。"

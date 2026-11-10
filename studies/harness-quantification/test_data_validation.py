@@ -69,11 +69,12 @@ class SchemaMatchesReport(Base):
                          "private_bench_aggregate"} <= set(self.real.enums["evidence_kind"]))
 
 
-DEFINED_FIELDS = ["F01", "F12", "F21", "F22", "F23"]
+FACETED_FIELDS = ["F01", "F11", "F12", "F13", "F21", "F22", "F23", "F27", "F28", "F29", "F30", "F31", "F32", "F33",
+                  "F34", "F35", "F36"]  # fields with facets a coder always fills (besides the optional unresolved)
 
 
 class DefinitionsAndFacets(Base):
-    """fields-0.2: five fields carry an adopted definition and facets; codings fill the facets."""
+    """fields-0.3: every field carries an adopted definition; general rules and facets are shape-checked."""
 
     def schema_with(self, mutate):
         schema = copy.deepcopy(self.real.schema)
@@ -89,17 +90,43 @@ class DefinitionsAndFacets(Base):
         return {**self.coding()["fields"][fid]["facets"], **changes}
 
     def test_real_definitions_are_well_formed(self):
-        self.assertEqual(self.real.schema["schema_version"], "fields-0.2")
+        self.assertEqual(self.real.schema["schema_version"], "fields-0.3")
         self.assertEqual(vd.check_definitions(self.real.schema), [])
 
-    def test_the_five_fields_are_defined_and_no_draft_remains(self):
+    def test_every_field_is_defined_and_no_draft_remains(self):
         fields = self.real.schema["fields"]
-        self.assertEqual([f["id"] for f in fields if "definition" in f], DEFINED_FIELDS)
-        self.assertEqual([f["id"] for f in fields if f.get("facets")], DEFINED_FIELDS)
+        self.assertTrue(all("definition" in f for f in fields))
+        required = lambda f: [fc["id"] for fc in f.get("facets", []) if not fc.get("optional")]
+        self.assertEqual([f["id"] for f in fields if required(f)], FACETED_FIELDS)
+        # every set field, and only those, offers the optional "unresolved" facet (general rule R7)
+        self.assertEqual([f["id"] for f in fields if [fc["id"] for fc in f.get("facets", []) if fc.get("optional")]
+                          == ["unresolved"]], [f["id"] for f in fields if f["type"] in ("set", "conditional_set")])
+        self.assertEqual([r["id"] for r in self.real.schema["general_rules"]], [f"R{i}" for i in range(1, 10)])
+        self.assertIn("vocabulary_gap", self.real.enums["unknown_reason"])
         self.assertFalse([f["id"] for f in fields if "proposed" in f or "needs_definition" in f])
         self.assertIn("runtime_sandbox", [v["id"] for v in self.real.fields["F23"]["vocabulary"]])
         self.assertEqual({fc["id"]: fc["in_distance"] for fc in self.real.fields["F12"]["facets"]},
-                         {"hard_stop": True, "soft_notice": False, "mode_unknown": False})
+                         {"hard_stop": True, "soft_notice": False, "mode_unknown": False, "unresolved": False})
+
+    def test_general_rules_and_missing_definitions_rejected(self):
+        schema = copy.deepcopy(self.real.schema)
+        schema["general_rules"][1]["id"] = "R9"
+        self.assertError(vd.check_definitions(schema), r"general_rules ids must run")
+        del schema["general_rules"]
+        self.assertError(vd.check_definitions(schema), r"general_rules must list rules")
+        self.assertError(self.schema_with(lambda f: f["F02"].pop("definition")), r"every field carries a definition")
+        self.assertError(self.schema_with(lambda f: f["F03"]["facets"][-1].update(optional=False)), r"optional is either true")
+
+    def test_rules_r6_r7_in_codings(self):
+        self.assertEqual(self.errors("F03", value=["budget"], confidence="medium", facets={"unresolved": ["user_interrupt"]}), [])
+        self.assertEqual(self.errors("F03", value=["budget"], facets={}), [])  # the optional facet may be left out
+        self.assertError(self.errors("F03", value=["budget"], facets={"unresolved": ["budget"]}), r"must not repeat members")
+        self.assertError(self.errors("F03", value=["budget"], confidence="high", facets={"unresolved": ["user_interrupt"]}),
+                         r"confidence is medium at most")
+        self.assertError(self.errors("F03", value_note="推断：官方文档只写了预算上限。", confidence="medium"),
+                         r"has confidence low")
+        gap = dict(status="unknown", value=None, unknown_reason="vocabulary_gap", evidence=[], confidence=None, facets={})
+        self.assertError(self.errors("F03", **gap), r"vocabulary_gap needs a vocabulary proposal")
 
     def test_malformed_definitions_rejected(self):
         self.assertError(self.schema_with(lambda f: f["F12"].update(proposed={})), r"drafts are not kept")
@@ -124,7 +151,7 @@ class DefinitionsAndFacets(Base):
             r"example names tools under coding \['A01'\]")
 
     def test_facets_only_on_fields_that_declare_them(self):
-        self.assertError(self.errors("F03", facets={"hard_stop": []}), r"F03 has no facets")
+        self.assertError(self.errors("F02", facets={"hard_stop": []}), r"F02 has no facets")
         self.assertError(self.errors(facets=self.facets("F12", ui_layers=[])), r"are not facets of F12")
         self.assertError(self.errors(facets={"hard_stop": ["output_limit"]}), r"soft_notice: missing; write null")
 
@@ -178,7 +205,8 @@ class RealDataAndTemplates(Base):
         self.assertEqual(list(tpl["fields"]), [f["id"] for f in self.real.schema["fields"]])
         self.assertTrue(all(e["status"] is None and e["value"] is None for e in tpl["fields"].values()))
         self.assertEqual({fid: list(e["facets"]) for fid, e in tpl["fields"].items() if "facets" in e},
-                         {fid: [fc["id"] for fc in self.real.fields[fid]["facets"]] for fid in DEFINED_FIELDS})
+                         {fid: [fc["id"] for fc in self.real.fields[fid]["facets"] if not fc.get("optional")]
+                          for fid in FACETED_FIELDS})
         self.assertEqual(list(tpl["fields"]["F12"])[:3], ["status", "value", "facets"])
 
     def test_no_synthetic_records_in_real_dirs(self):

@@ -21,6 +21,15 @@
   ],
   "operating_system": "macOS、Linux、Windows（安装脚本覆盖三者，缺少时可代装 Node.js；需 Node.js 22.19+；另有 Termux 文档与 Nix 安装方式）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
+  "environment_premises": {
+    "account_tier": "Anthropic 按量计费的接口密钥（ANTHROPIC_API_KEY）。Pi 没有自己的账户，快速开始让用户任选一家提供方；这一家是本研究选定的（文档里的环境变量示例），不是官方默认",
+    "default_model": "anthropic/claude-opus-5-5（内置各提供方默认型号表里 Anthropic 的那一项）",
+    "host_os": "macOS 或 Linux（不含 Windows）",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动",
+    "trust": "没有信任提示：仓库和上级目录里都没有 .pi/ 项目资源或 .agents/skills（有这些资源时才按默认值 ask 提示）",
+    "credentials": "环境里只有 ANTHROPIC_API_KEY 这一家凭据，没有 AWS 等环境凭据",
+    "other": ""
+  },
   "evidence_cutoff": "2026-11-10",
   "evidence": [
     {
@@ -113,6 +122,60 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "扩展",
       "note": "内置扩展的 codemode、tool_search 工具默认关闭，MCP 扩展按需开启。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/quickstart.md#L55-L66",
+      "locator": "packages/coding-agent/docs/quickstart.md：3. Choose a model",
+      "lines": "L55-L66",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "快速开始只要求运行 /login 选一家提供方，用订阅或保存 API 密钥，之后可以用 /model 换模型；没有指定提供方。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/providers.md#L20-L27",
+      "locator": "packages/coding-agent/docs/providers.md：Use an API key from the environment",
+      "lines": "L20-L27",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "文档以 ANTHROPIC_API_KEY 作为环境变量密钥的示例。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/model-resolver.ts#L18-L22",
+      "locator": "packages/coding-agent/src/core/model-resolver.ts：defaultModelPerProvider",
+      "lines": "L18-L22",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "各提供方的内置默认型号：anthropic 为 claude-opus-5-5，openai、openai-codex、github-copilot 为 gpt-6.1-sol；表中 amazon-bedrock 排第一。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/model-resolver.ts#L597-L612",
+      "locator": "packages/coding-agent/src/core/model-resolver.ts：初始模型解析第 3 步",
+      "lines": "L597-L612",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "没有已保存默认值时，按 defaultModelPerProvider 的顺序，找第一个凭据可用、且默认型号在目录里的提供方。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/security.md#L35-L57",
+      "locator": "packages/coding-agent/docs/security.md：Resources protected by project trust",
+      "lines": "L35-L57",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "只有发现 .pi 下列出的资源或 .agents/skills 时才需要信任决定；写明接受后加载哪些资源、拒绝则跳过，以及上下文文件始终加载。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/security.md#L59-L65",
+      "locator": "packages/coding-agent/docs/security.md：How Pi chooses a trust decision",
+      "lines": "L59-L65",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "没有命令行覆盖、扩展决定或已保存决定时，按 defaultProjectTrust 处理，默认值是 \"ask\"。"
     }
   ],
   "note": "monorepo 多包，取 packages/coding-agent（@earendil-works/pi-coding-agent）；2026-11-10 刷新：v1.3.0（71023aec）→ v1.5.2（2026-11-10 发布，tag → b4afdddf，比 71023aec 前进 784 个提交），官方安装器接口、npm latest 与 GitHub releases/latest 均为 1.5.2（npm 另有 legacy-node20 标签 0.74.2）；同日稍早的 v1.5.1 已被取代。README 仍明说不内置子代理和 plan mode，可通过包自行添加；CHANGELOG 1.4.0 提到的“in-process subagents”指扩展自建的子代理在 codemode 中排队，当前源码与文档未见内置子代理。权限模式、默认工具、四个内置扩展及 codemode/tool_search 默认关闭与 v1.3.0 相同。安装侧变化：macOS/Linux 安装脚本默认改为托管安装（按发布锁文件固定全部依赖，PI_LEGACY_INSTALL=1 回到 npm 全局安装）。"
