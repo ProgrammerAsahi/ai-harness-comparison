@@ -57,8 +57,6 @@ class SchemaMatchesReport(Base):
             self.assertEqual("condition" in f, f["type"] == "conditional_set")
             if "absent_value" in f and f["type"] == "nominal":
                 self.assertIn(f["absent_value"], ids)
-            if f.get("needs_definition"):
-                self.assertTrue(f.get("definition_gap"))
         self.assertEqual([f["id"] for f in self.real.schema["fields"] if "condition" in f], ["F26", "F27", "F28"])
 
     def test_private_bench_tables_match_renderer(self):
@@ -71,104 +69,103 @@ class SchemaMatchesReport(Base):
                          "private_bench_aggregate"} <= set(self.real.enums["evidence_kind"]))
 
 
-DRAFT_FIELDS = ["F01", "F12", "F21", "F22", "F23"]
+DEFINED_FIELDS = ["F01", "F12", "F21", "F22", "F23"]
 
 
-class DraftDefinitions(Base):
-    """Draft definitions are read and shape-checked, never applied to codings."""
+class DefinitionsAndFacets(Base):
+    """fields-0.2: five fields carry an adopted definition and facets; codings fill the facets."""
 
     def schema_with(self, mutate):
         schema = copy.deepcopy(self.real.schema)
         mutate({f["id"]: f for f in schema["fields"]})
-        return vd.check_proposals(schema)
+        return vd.check_definitions(schema)
 
-    def entry(self, fid="F12", **changes):
-        e = copy.deepcopy(self.coding()["fields"][fid])
-        e.update(changes)
-        return e
-
-    def test_real_drafts_are_well_formed(self):
-        self.assertEqual(vd.check_proposals(self.real.schema), [])
-
-    def test_drafts_cover_the_five_open_fields_and_stay_drafts(self):
-        drafted = [f["id"] for f in self.real.schema["fields"] if "proposed" in f]
-        self.assertEqual(drafted, DRAFT_FIELDS)
-        self.assertEqual(drafted, [f["id"] for f in self.real.schema["fields"] if f.get("needs_definition")])
-        for fid in DRAFT_FIELDS:
-            f = self.real.fields[fid]
-            self.assertIs(f["proposed"]["draft"], True)
-            self.assertTrue(f["needs_definition"])
-            self.assertEqual(f["proposed"]["type"], f["type"])
-            self.assertTrue((vd.REPO / f["proposed"]["draft_source"]).exists())
-
-    def test_codebook_still_uses_the_report_vocabulary(self):
-        # The F23 draft adds runtime_sandbox; until adopted, codings must not use it in value.
-        self.assertNotIn("runtime_sandbox", [v["id"] for v in self.real.fields["F23"]["vocabulary"]])
+    def errors(self, fid="F12", **changes):
         rec = self.coding()
-        rec["fields"]["F23"].update(status="known", value=["runtime_sandbox"])
-        self.assertError(vd.validate_coding(rec, "x", self.syn), r"vocabulary_proposals")
-        rec = self.coding()
-        rec["fields"]["F12"]["facets"] = {"hard_stop": ["output_limit"]}
-        self.assertError(vd.validate_coding(rec, "x", self.syn), r"unexpected keys \['facets'\]")
+        rec["fields"][fid].update(changes)
+        return [e for e in vd.validate_coding(rec, "x", self.syn) if f".{fid}" in e or f"{fid}:" in e]
 
-    def test_malformed_drafts_rejected(self):
-        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"].update(draft=False)), r"draft must be true")
-        self.assertError(self.schema_with(lambda f: f["F03"].update(proposed=f["F12"]["proposed"])),
-                         r"only to fields marked needs_definition")
-        self.assertError(self.schema_with(lambda f: f["F22"]["proposed"].update(type="ordinal")),
-                         r"keeps the field's answer type")
-        self.assertError(self.schema_with(lambda f: f["F21"]["proposed"]["vocabulary"].pop()),
-                         r"must keep the report's values \['network_target'\]")
-        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"]["facets"][0].update(type="graph")),
-                         r"no new answer types")
-        self.assertError(self.schema_with(lambda f: f["F23"]["proposed"]["facets"][0].update(vocabulary_from="value")),
+    def facets(self, fid, **changes):
+        return {**self.coding()["fields"][fid]["facets"], **changes}
+
+    def test_real_definitions_are_well_formed(self):
+        self.assertEqual(self.real.schema["schema_version"], "fields-0.2")
+        self.assertEqual(vd.check_definitions(self.real.schema), [])
+
+    def test_the_five_fields_are_defined_and_no_draft_remains(self):
+        fields = self.real.schema["fields"]
+        self.assertEqual([f["id"] for f in fields if "definition" in f], DEFINED_FIELDS)
+        self.assertEqual([f["id"] for f in fields if f.get("facets")], DEFINED_FIELDS)
+        self.assertFalse([f["id"] for f in fields if "proposed" in f or "needs_definition" in f])
+        self.assertIn("runtime_sandbox", [v["id"] for v in self.real.fields["F23"]["vocabulary"]])
+        self.assertEqual({fc["id"]: fc["in_distance"] for fc in self.real.fields["F12"]["facets"]},
+                         {"hard_stop": True, "soft_notice": False, "mode_unknown": False})
+
+    def test_malformed_definitions_rejected(self):
+        self.assertError(self.schema_with(lambda f: f["F12"].update(proposed={})), r"drafts are not kept")
+        self.assertError(self.schema_with(lambda f: f["F01"]["definition"].pop("absent_rule")), r"definition must give")
+        self.assertError(self.schema_with(lambda f: f["F21"]["vocabulary"][0].pop("example")),
+                         r"criterion and example must be text")
+        self.assertError(self.schema_with(lambda f: f["F12"]["facets"][0].update(type="graph")), r"no new answer types")
+        self.assertError(self.schema_with(lambda f: f["F23"]["facets"][0].update(vocabulary_from="value")),
                          r"exactly one of")
-        self.assertError(self.schema_with(lambda f: f["F01"]["proposed"].pop("alternative")), r"missing keys")
-        self.assertError(self.schema_with(lambda f: f["F12"]["proposed"]["facets"][2].update(complement_of=["nope"])),
+        self.assertError(self.schema_with(lambda f: f["F12"]["facets"][2].update(complement_of=["nope"])),
                          r"complement_of lists earlier facets")
+        self.assertError(self.schema_with(lambda f: f["F21"]["facets"][0].update(subset_of_value=True)),
+                         r"subset_of_value needs vocabulary_from")
+        self.assertError(self.schema_with(lambda f: f["F22"]["facets"].append(dict(f["F22"]["facets"][0]))),
+                         r"duplicate facet id")
 
     def test_examples_do_not_name_tools_under_coding(self):
         # Both coders read the same codebook: an example naming a pilot tool would hand them the answer.
         self.assertIn("A01", vd.pilot_tool_ids())
         self.assertError(self.schema_with(
-            lambda f: f["F22"]["proposed"]["vocabulary"][1].update(example="A01 Claude Code 手动模式（03A）")),
+            lambda f: f["F22"]["vocabulary"][1].update(example="A01 Claude Code 手动模式（03A）")),
             r"example names tools under coding \['A01'\]")
 
-    def test_entries_against_drafts(self):
-        ctx, f12 = self.syn, self.real.fields["F12"]
-        ok = self.entry(value=["output_limit", "call_count"],
-                        facets={"hard_stop": ["output_limit"], "soft_notice": ["call_count"]})
-        self.assertEqual(vd.check_proposed_entry(f12, ok, "x", ctx), [])
-        unclear = self.entry(value=["output_limit", "call_count"],
-                             facets={"hard_stop": ["output_limit"], "soft_notice": [], "mode_unknown": ["call_count"]})
-        self.assertEqual(vd.check_proposed_entry(f12, unclear, "x", ctx), [])
-        unclear["facets"]["mode_unknown"] = []
-        self.assertError(vd.check_proposed_entry(f12, unclear, "x", ctx), r"exactly the values in none of")
-        self.assertEqual(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": None}), "x", ctx), [])
-        self.assertError(vd.check_proposed_entry(f12, self.entry(facets={"hard_stop": ["money"]}), "x", ctx),
-                         r"subset of value")
-        self.assertError(vd.check_proposed_entry(f12, self.entry(facets={"ui_layers": []}), "x", ctx),
-                         r"not a facet of F12")
-        f23 = self.real.fields["F23"]
-        sandbox = self.entry("F23", status="known", value=["runtime_sandbox"], confidence="medium",
-                             evidence=self.entry()["evidence"], unknown_reason=None,
-                             facets={"prompt_only": "present"})
-        self.assertEqual(vd.check_proposed_entry(f23, sandbox, "x", ctx), [])
-        sandbox["facets"] = {"prompt_only": "maybe"}
-        self.assertError(vd.check_proposed_entry(f23, sandbox, "x", ctx), r"not in the facet vocabulary")
-        f01 = self.real.fields["F01"]
-        loop = self.entry("F01", value="model_loop", facets={"secondary_modes": ["model_loop"]})
-        self.assertError(vd.check_proposed_entry(f01, loop, "x", ctx), r"must not repeat the main value")
-        absent = self.entry(status="known_absent", value=[], facets={"hard_stop": []})
-        self.assertError(vd.check_proposed_entry(f12, absent, "x", ctx), r"left out when status is known_absent")
-        bare = self.entry("F23", status="known_absent", value=[], facets={"prompt_only": "present"})
-        self.assertEqual(vd.check_proposed_entry(f23, bare, "x", ctx), [])
-        f21 = self.real.fields["F21"]
-        open_all = self.entry("F21", status="known_absent", value=[], facets={
-            "default_edit": "allow", "default_command": "allow", "default_outside_write": "allow", "default_network": None})
-        self.assertEqual(vd.check_proposed_entry(f21, open_all, "x", ctx), [])
-        open_all["facets"]["default_edit"] = "ask"
-        self.assertError(vd.check_proposed_entry(f21, open_all, "x", ctx), r"not in the facet vocabulary")
+    def test_facets_only_on_fields_that_declare_them(self):
+        self.assertError(self.errors("F03", facets={"hard_stop": []}), r"F03 has no facets")
+        self.assertError(self.errors(facets=self.facets("F12", ui_layers=[])), r"are not facets of F12")
+        self.assertError(self.errors(facets={"hard_stop": ["output_limit"]}), r"soft_notice: missing; write null")
+
+    def test_budget_facets(self):
+        value = ["output_limit", "call_count"]
+        split = {"hard_stop": ["output_limit"], "soft_notice": ["call_count"], "mode_unknown": []}
+        self.assertEqual(self.errors(value=value, facets=split), [])
+        self.assertEqual(self.errors(value=value, facets={**split, "soft_notice": [], "mode_unknown": ["call_count"]}), [])
+        self.assertError(self.errors(value=value, facets={**split, "soft_notice": []}), r"exactly the values in none of")
+        self.assertError(self.errors(value=value, facets={**split, "soft_notice": [], "mode_unknown": None}),
+                         r"must list the values in none of")
+        self.assertEqual(self.errors(value=value, facets={"hard_stop": None, "soft_notice": None, "mode_unknown": None}), [])
+        self.assertError(self.errors(facets=self.facets("F12", hard_stop=["money"])), r"subset of value")
+        self.assertError(self.errors(facets=self.facets("F12", hard_stop="output_limit")), r"list of unique ids")
+
+    def test_other_facets(self):
+        self.assertEqual(self.errors("F23", value=["runtime_sandbox"], facets={"prompt_only": "present"}), [])
+        self.assertError(self.errors("F23", facets={"prompt_only": "maybe"}), r"not in the facet vocabulary")
+        self.assertError(self.errors("F01", value="model_loop", facets={"secondary_modes": ["model_loop"]}),
+                         r"must not repeat the main value")
+        self.assertEqual(self.errors("F01", value="model_loop", facets={"secondary_modes": ["explicit_workflow"]}), [])
+        self.assertError(self.errors("F21", facets=self.facets("F21", default_edit="ask")), r"not in the facet vocabulary")
+        self.assertError(self.errors("F22", facets=self.facets("F22", approver=["model"])), r"not in the facet vocabulary")
+        # the approval UI may sit on a layer the gate does not: ui_layers is not a subset of value
+        self.assertEqual(self.errors("F22", value=["tool_call"], facets={"ui_layers": ["whole_task"], "approver": ["user"]}), [])
+
+    def test_facets_by_status(self):
+        # tied to value (subsets, exclusions): only when the value is known and non-empty
+        absent = dict(status="known_absent", value=[])
+        self.assertError(self.errors(**absent, facets=self.facets("F12", hard_stop=[])), r"stays null when status is known_absent")
+        self.assertEqual(self.errors(**absent, facets={"hard_stop": None, "soft_notice": None, "mode_unknown": None}), [])
+        self.assertEqual(self.errors(**absent, facets={}), [])
+        # own-vocabulary facets still say something when the main value is empty
+        self.assertEqual(self.errors("F23", **absent, facets={"prompt_only": "present"}), [])
+        open_all = {"default_edit": "allow", "default_command": "allow", "default_outside_write": "allow",
+                    "default_network": None}
+        self.assertEqual(self.errors("F21", **absent, facets=open_all), [])
+        self.assertError(self.errors("F21", **absent, facets={"default_edit": "allow"}), r"default_command: missing")
+        unknown = dict(status="unknown", value=None, unknown_reason="closed_source", evidence=[], confidence=None)
+        self.assertError(self.errors("F21", **unknown, facets=open_all), r"stays null when status is unknown")
+        self.assertEqual(self.errors("F21", **unknown, facets=dict.fromkeys(open_all)), [])
 
 
 class RealDataAndTemplates(Base):
@@ -180,6 +177,9 @@ class RealDataAndTemplates(Base):
         tpl = json.loads((vd.DATA / "templates/coding.template.json").read_text())
         self.assertEqual(list(tpl["fields"]), [f["id"] for f in self.real.schema["fields"]])
         self.assertTrue(all(e["status"] is None and e["value"] is None for e in tpl["fields"].values()))
+        self.assertEqual({fid: list(e["facets"]) for fid, e in tpl["fields"].items() if "facets" in e},
+                         {fid: [fc["id"] for fc in self.real.fields[fid]["facets"]] for fid in DEFINED_FIELDS})
+        self.assertEqual(list(tpl["fields"]["F12"])[:3], ["status", "value", "facets"])
 
     def test_no_synthetic_records_in_real_dirs(self):
         for sub in ("rounds", "configs", "codings", "adapters"):
@@ -399,14 +399,33 @@ class Comparison(Base):
         self.assertEqual(fields["F18"]["status_differs"], 1)
         self.assertEqual(fields["F20"]["reason_differs"], 1)
         self.assertEqual(fields["F23"]["proposals"][0]["coder"], "coder-b")
-        self.assertTrue(fields["F01"]["needs_definition"])
-        self.assertIn("F06", compare_codings.render_text(result))
+        self.assertNotIn("needs_definition", fields["F01"])
+        # facets are compared where both coders know the value, and never change the field agreement
+        self.assertEqual((fields["F22"]["agreement_rate"], fields["F22"]["facet_compared"], fields["F22"]["facet_differs"]),
+                         (1.0, 4, 1))
+        self.assertEqual(fields["F22"]["cases"][0]["outcome"], "facet_differs")
+        self.assertEqual(fields["F21"]["cases"][0]["outcome"], "facet_one_unknown")
+        self.assertEqual((fields["F01"]["facet_compared"], fields["F01"]["facet_differs"]), (2, 0))
+        self.assertEqual(fields["F03"]["facet_compared"], 0)
+        text = compare_codings.render_text(result)
+        self.assertIn("F06", text)
+        self.assertIn("facets differ 1 of 4", text)
 
     def test_set_order_does_not_matter(self):
         f = self.syn.fields["F03"]
         out = compare_codings.compare_entry(f, {"status": "known", "value": ["budget", "user_interrupt"]},
                                             {"status": "known", "value": ["user_interrupt", "budget"]})
         self.assertEqual(out["outcome"], "agree_value")
+
+    def test_facets_compared_only_when_both_know_the_value(self):
+        f = self.syn.fields["F22"]
+        known = {"status": "known", "value": ["tool_call"], "facets": {"ui_layers": ["tool_call"], "approver": ["user"]}}
+        other = {"status": "known", "value": ["tool_call", "whole_task"], "facets": {"ui_layers": None, "approver": ["user"]}}
+        out = compare_codings.compare_entry(f, known, other)
+        self.assertEqual((out["outcome"], out["facets"]), ("value_differs", {"ui_layers": "one_unknown", "approver": "agree"}))
+        unknown = {"status": "unknown", "value": None, "unknown_reason": "closed_source"}
+        self.assertNotIn("facets", compare_codings.compare_entry(f, known, unknown))
+        self.assertNotIn("facets", compare_codings.compare_entry(f, unknown, unknown))
 
     def test_invalid_data_stops_comparison(self):
         tmp = Path(tempfile.mkdtemp())

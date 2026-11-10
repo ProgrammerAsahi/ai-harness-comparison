@@ -37,6 +37,16 @@ def compare_entry(field, a, b):
             if isinstance(va, list):
                 union = set(va) | set(vb)
                 out["jaccard_distance"] = round(1 - len(set(va) & set(vb)) / len(union), 4) if union else 0.0
+        facets = {}
+        for fc in field.get("facets", []):
+            fa, fb = (a.get("facets") or {}).get(fc["id"]), (b.get("facets") or {}).get(fc["id"])
+            if fa is None or fb is None:
+                facets[fc["id"]] = "both_unknown" if fa is None and fb is None else "one_unknown"
+            else:
+                same = sorted(fa) == sorted(fb) if isinstance(fa, list) and isinstance(fb, list) else fa == fb
+                facets[fc["id"]] = "agree" if same else "differs"
+        if facets:
+            out["facets"] = facets
     elif sa == sb == "unknown":
         out["outcome"] = "agree_unknown"
         if a.get("unknown_reason") != b.get("unknown_reason"):
@@ -88,7 +98,8 @@ def compare_tree(root, ctx, configs=None, coders=None):
             continue
         by_config[rec["config_id"]][rec["coder"]["id"]] = rec
     pairs, per_field = [], defaultdict(lambda: {"compared": 0, "agree": 0, "status_differs": 0, "value_differs": 0,
-                                                 "reason_differs": 0, "cases": [], "proposals": []})
+                                                 "reason_differs": 0, "facet_compared": 0, "facet_differs": 0,
+                                                 "cases": [], "proposals": []})
     for cid, recs in sorted(by_config.items()):
         for ca, cb in itertools.combinations(sorted(recs), 2):
             result = compare_pair(ctx.schema, recs[ca], recs[cb])
@@ -106,6 +117,14 @@ def compare_tree(root, ctx, configs=None, coders=None):
                     if "jaccard_distance" in row:
                         case["jaccard_distance"] = row["jaccard_distance"]
                     s["cases"].append(case)
+                for facet_id, outcome in row.get("facets", {}).items():
+                    s["facet_compared"] += 1
+                    if outcome in ("differs", "one_unknown"):
+                        s["facet_differs"] += 1
+                        show = lambda c: json.dumps((recs[c]["fields"][fid].get("facets") or {}).get(facet_id),
+                                                    ensure_ascii=False)
+                        s["cases"].append({"config_id": cid, "facet": facet_id, ca: show(ca), cb: show(cb),
+                                           "outcome": f"facet_{outcome}"})
                 if row.get("reason_differs"):
                     s["reason_differs"] += 1
                     s["cases"].append({"config_id": cid, ca: _show(recs[ca]["fields"][fid]),
@@ -120,11 +139,11 @@ def compare_tree(root, ctx, configs=None, coders=None):
         if not s:
             continue
         fields_out.append({"field": f["id"], "question": f["question"],
-                           "needs_definition": bool(f.get("needs_definition")),
                            "agreement_rate": round(s["agree"] / s["compared"], 4) if s["compared"] else None, **s})
     return {"pairs": pairs, "fields": fields_out,
             "note": "Agreement counts equal statuses and equal values; both-unknown is counted as agreement on status "
-                    "but reported separately, because it carries no shared evidence (report §8.1)."}, []
+                    "but reported separately, because it carries no shared evidence (report §8.1). Facets are "
+                    "compared only where both coders know the value, and are counted apart from field agreement."}, []
 
 
 def render_text(result):
@@ -142,10 +161,10 @@ def render_text(result):
         if not f["cases"] and not f["proposals"] and not f["reason_differs"]:
             continue
         shown += 1
-        flag = " [needs_definition]" if f["needs_definition"] else ""
-        out.append(f"{f['field']} {f['question']}{flag}: agreement {f['agreement_rate']:.0%} over {f['compared']}; "
+        facets = f"; facets differ {f['facet_differs']} of {f['facet_compared']}" if f["facet_compared"] else ""
+        out.append(f"{f['field']} {f['question']}: agreement {f['agreement_rate']:.0%} over {f['compared']}; "
                    f"status differs {f['status_differs']}, value differs {f['value_differs']}, "
-                   f"unknown reasons differ {f['reason_differs']}")
+                   f"unknown reasons differ {f['reason_differs']}{facets}")
         for c in f["cases"]:
             detail = ", ".join(f"{k}={v}" for k, v in c.items() if k not in ("config_id", "outcome"))
             out.append(f"  - {c['config_id']} {c['outcome']}: {detail}")
