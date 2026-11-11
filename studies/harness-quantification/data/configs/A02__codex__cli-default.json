@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "A02__codex__cli-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "A02",
   "product": "Codex",
   "view": "configured",
@@ -15,7 +15,9 @@
   "subagents_enabled": true,
   "enabled_extensions": [
     "system skills（编入二进制、启动时安装到 CODEX_HOME/skills/.system；skills.bundled.enabled 默认 true）：imagegen、openai-docs、review-agent、skill-creator、skill-installer",
-    "内置 agent 角色：default、worker、explorer。多代理默认开启：钉住的默认型号 gpt-6.1-sol 在内置目录里声明 multi_agent_version = v2，不受 multi_agent_v2 开关（默认关）影响，实际启用 V2 工具（collaboration 命名空间：spawn_agent、send_message、followup_task、interrupt_agent、list_agents、wait_agent）；multi_agent 开关（默认开）只在型号没声明版本时决定是否回退到 V1。ChatGPT 登录后服务端下发的型号目录会整份替换内置目录，实际值由服务端决定，快照里定不了"
+    "内置 agent 角色：default、worker、explorer。多代理默认开启：钉住的默认型号 gpt-6.1-sol 在内置目录里声明 multi_agent_version = v2，不受 multi_agent_v2 开关（默认关）影响，实际启用 V2 工具（collaboration 命名空间：spawn_agent、send_message、followup_task、interrupt_agent、list_agents、wait_agent）；multi_agent 开关（默认开）只在型号没声明版本时决定是否回退到 V1。ChatGPT 登录后服务端下发的型号目录会整份替换内置目录，实际值由服务端决定，快照里定不了",
+    "默认注册的内置工具：命令执行（exec_command、write_stdin）、apply_patch、view_image；另有联网搜索 web.run（未配置 web_search 时为 cached 模式；默认型号 use_responses_lite，走独立搜索扩展）和图像生成（image_generation 特性默认开，ChatGPT 登录、非 Free 档且型号接受图像输入时注册）",
+    "ChatGPT 应用（连接器）：apps 特性默认开，ChatGPT 登录时以名为 codex_apps 的 MCP 服务接入；账户里具体有哪些应用和工具由服务端决定，快照里核不了"
   ],
   "operating_system": "macOS（arm64/x86_64）、Linux（arm64/x86_64）、Windows（arm64/x86_64），Windows 通过官方 PowerShell 安装脚本安装；另有 IDE 扩展与桌面形态。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -28,7 +30,7 @@
     "credentials": "只有 ChatGPT 登录；没有 OPENAI_API_KEY，也没有其他提供方的密钥",
     "other": ""
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -350,7 +352,70 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "版本控制目录推荐 Auto（workspace-write + on-request），可能在显式信任前以 read-only 启动；项目 .codex 配置只在信任项目加载。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1209-L1217",
+      "locator": "codex-rs/core/src/tools/spec_plan.rs（另见 codex-rs/core/src/config/mod.rs L3997-L3999 默认 Cached，codex-rs/ext/web-search/src/extension.rs L122-L160 注册 web.run，codex-rs/models-manager/models.json L196 use_responses_lite）",
+      "lines": "L1209-L1217",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "工具",
+      "note": "standalone_web_search_enabled：提供方支持搜索且型号 use_responses_lite（或默认关的 StandaloneWebSearch 特性打开）时走独立搜索扩展 web.run；未配置 web_search 时模式取 Cached。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L789-L824",
+      "locator": "codex-rs/core/src/tools/spec_plan.rs › image_generation_available（另见 codex-rs/features/src/lib.rs L1916-L1921）",
+      "lines": "L789-L824",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "工具",
+      "note": "image_generation_available：特性开、非 Free 档、提供方支持、型号接受图像输入、走 OpenAI/Codex 后端认证时注册图像生成工具；image_generation 特性 Stable、默认开。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1244-L1275",
+      "locator": "codex-rs/core/src/tools/spec_plan.rs › add_shell_tools（另见同文件 L1428-L1452 apply_patch、view_image）",
+      "lines": "L1244-L1275",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "工具",
+      "note": "默认注册命令执行工具（unified_exec 默认开时为 exec_command、write_stdin），型号声明 apply_patch_tool_type 时注册 apply_patch，view_image 默认开时注册 view_image。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/ext/mcp/src/lib.rs#L30-L62",
+      "locator": "codex-rs/ext/mcp/src/lib.rs › HostedPluginRuntimeExtension（另见 codex-rs/features/src/lib.rs L1658-L1663、L641-L643，codex-rs/core/src/session/turn_context.rs L771-L780）",
+      "lines": "L30-L62",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "hosted_plugin_runtime 扩展：apps 特性开时把 ChatGPT 应用作为 codex_apps MCP 服务加入；apps 特性 Stable、默认开，apps_enabled_for_auth 还要求 ChatGPT 登录。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server-daemon/src/lib.rs#L992-L1029",
+      "locator": "codex-rs/app-server-daemon/src/lib.rs › ensure_managed_updater（另见同文件 L479-L486 启动后调用，codex-rs/app-server-daemon/src/settings.rs L14、L27-L36、L87-L89 默认值）",
+      "lines": "L992-L1029",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "守护进程启动后 ensure_managed_updater：独立安装的稳定版且 auto_update_enabled（默认 true，间隔 60 分钟）时拉起自动更新循环。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/updates.rs#L27-L53",
+      "locator": "codex-rs/tui/src/updates.rs › get_upgrade_version（另见 codex-rs/core/src/config/mod.rs L4316，codex-rs/core/src/session/session.rs L1692）",
+      "lines": "L27-L53",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "TUI 启动时检查新版本，check_for_update_on_startup 未配置时为 true；分析事件只有 analytics.enabled 显式为 false 时关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core-plugins/src/manager.rs#L2892-L2935",
+      "locator": "codex-rs/core-plugins/src/manager.rs › maybe_start_plugin_startup_tasks_for_config（另见 codex-rs/core-plugins/src/startup_sync.rs L77-L150）",
+      "lines": "L2892-L2935",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "plugins 特性默认开时，启动后后台同步 openai-curated 插件目录（git 或 HTTP），并自动升级已配置的插件市场。"
     }
   ],
-  "note": "协议层枚举默认：AskForApproval::OnRequest、SandboxMode::ReadOnly；实际启动时 config 按项目信任状态推导：trusted→OnRequest，untrusted→UnlessTrusted（内部策略），未标记→OnRequest；沙箱 profile trusted/untrusted→workspace（Windows 沙箱被禁用时除外），否则 read-only；审批人默认 user。；官方文档称已退役 `approval_policy = \"untrusted\"` 作为用户可配置值（配置里写 untrusted 会报错，源码 L3956 处同样拒绝），但源码仍对标记为 untrusted 的项目内部推导 UnlessTrusted。；multi_agent 特性在固定提交中为 Stage::Stable、default_enabled: true；multi_agent_v2 默认关闭；但型号声明优先：默认型号 gpt-6.1-sol 在内置目录里声明 multi_agent_version = v2，实际启用 V2 工具，multi_agent 开关只在型号没声明版本时回退到 V1。ChatGPT 登录后服务端下发的型号目录会整份替换内置目录，实际值由服务端决定，快照里定不了。官方 Subagents 文档也写『Current Codex releases enable subagent workflows by default』。；首次在目录里运行时 TUI 会询问是否信任该目录，所以『默认沙箱』取决于用户在该提示里的选择。；版本核对（2026-11-10）：GitHub releases/latest、官方安装脚本所读的 releases.openai.com/codex/channels/latest、npm latest、Homebrew cask 四处一致为 0.167.0；0.163.0→0.167.0 之间的发布说明未见默认权限、子代理、默认技能或入口的变化（0.165/0.166 修复了 TUI 启动时遵从服务端下发的审批策略/审批人默认值，只在有 requirements 或云端配置时起作用）。；原待核项已核：bundled skills 默认开启（skills_config.rs BundledSkillsConfig 默认 enabled: true，无 [skills] 表时也为 true），与官方文档『Enabled by default』一致。；update_plan 核对：固定提交下 `tools.update_plan.enabled` 默认 false，未配置时计划工具不注册（mod.rs L2826-L2832、config_toml.rs L727-L730、spec_plan.rs L1301）；官方 changelog 0.152.0 写明计划工具默认关闭、需 `tools.update_plan.enabled = true` 开启。云端下发配置只对 Business/Edu/Enterprise 类 ChatGPT 账户取用，内容在服务端；在官方仓库、config-reference、managed-configuration 文档和发布说明里都查不到『云端下发配置会默认打开 update_plan』的说法，config-reference 也没有列出 tools.update_plan 这一键。所以只能确认本地默认关闭，云端是否下发打开查不到。；钉住的默认型号 gpt-6.1-sol 在内置目录里为 tool_mode = code_mode_only（优先于默认关的 code_mode 开关），工具调用经受限 V8 代码单元（exec）发出，多代理工具除外（DirectModelOnly）；服务端目录可改。；命令行 TUI 新会话（非 --ephemeral）用 Paginated 线程历史：命令与文件修改条目记录 Declined 状态，文件修改另记 auto_approved；审批请求事件本身不落盘。；goals 特性默认开：模型可直接调用 create_goal、update_goal、get_goal（说明要求仅在明确要求时建目标），目标存本地状态库；会话恢复后若目标仍为 Active，框架自动续办；回合中退出或中断时 TUI 先把目标设为 Paused，恢复后要用户确认。"
+  "note": "协议层枚举默认：AskForApproval::OnRequest、SandboxMode::ReadOnly；实际启动时 config 按项目信任状态推导：trusted→OnRequest，untrusted→UnlessTrusted（内部策略），未标记→OnRequest；沙箱 profile trusted/untrusted→workspace（Windows 沙箱被禁用时除外），否则 read-only；审批人默认 user。；官方文档称已退役 `approval_policy = \"untrusted\"` 作为用户可配置值（配置里写 untrusted 会报错，源码 L3956 处同样拒绝），但源码仍对标记为 untrusted 的项目内部推导 UnlessTrusted。；multi_agent 特性在固定提交中为 Stage::Stable、default_enabled: true；multi_agent_v2 默认关闭；但型号声明优先：默认型号 gpt-6.1-sol 在内置目录里声明 multi_agent_version = v2，实际启用 V2 工具，multi_agent 开关只在型号没声明版本时回退到 V1。ChatGPT 登录后服务端下发的型号目录会整份替换内置目录，实际值由服务端决定，快照里定不了。官方 Subagents 文档也写『Current Codex releases enable subagent workflows by default』。；首次在目录里运行时 TUI 会询问是否信任该目录，所以『默认沙箱』取决于用户在该提示里的选择。；版本核对（2026-11-10）：GitHub releases/latest、官方安装脚本所读的 releases.openai.com/codex/channels/latest、npm latest、Homebrew cask 四处一致为 0.167.0；0.163.0→0.167.0 之间的发布说明未见默认权限、子代理、默认技能或入口的变化（0.165/0.166 修复了 TUI 启动时遵从服务端下发的审批策略/审批人默认值，只在有 requirements 或云端配置时起作用）。；原待核项已核：bundled skills 默认开启（skills_config.rs BundledSkillsConfig 默认 enabled: true，无 [skills] 表时也为 true），与官方文档『Enabled by default』一致。；update_plan 核对：固定提交下 `tools.update_plan.enabled` 默认 false，未配置时计划工具不注册（mod.rs L2826-L2832、config_toml.rs L727-L730、spec_plan.rs L1301）；官方 changelog 0.152.0 写明计划工具默认关闭、需 `tools.update_plan.enabled = true` 开启。云端下发配置只对 Business/Edu/Enterprise 类 ChatGPT 账户取用，内容在服务端；在官方仓库、config-reference、managed-configuration 文档和发布说明里都查不到『云端下发配置会默认打开 update_plan』的说法，config-reference 也没有列出 tools.update_plan 这一键。所以只能确认本地默认关闭，云端是否下发打开查不到。；钉住的默认型号 gpt-6.1-sol 在内置目录里为 tool_mode = code_mode_only（优先于默认关的 code_mode 开关），工具调用经受限 V8 代码单元（exec）发出，多代理工具除外（DirectModelOnly）；服务端目录可改。；命令行 TUI 新会话（非 --ephemeral）用 Paginated 线程历史：命令与文件修改条目记录 Declined 状态，文件修改另记 auto_approved；审批请求事件本身不落盘。；goals 特性默认开：模型可直接调用 create_goal、update_goal、get_goal（说明要求仅在明确要求时建目标），目标存本地状态库；会话恢复后若目标仍为 Active，框架自动续办；回合中退出或中断时 TUI 先把目标设为 Paused，恢复后要用户确认。；默认联网行为：TUI 启动时检查新版本，分析事件上报默认开，plugins 默认开时启动后后台同步 openai-curated 插件目录并自动升级已配置的插件市场；独立安装版的后台守护进程还带每 60 分钟一次的自动更新循环。；2026-11-11 由第二位读者 Claude Opus 5.5（claude-opus-5-5）对照钉住提交的源码快照复核，并由同一模型核实落实：enabled_extensions 补入默认注册的内置工具（含联网搜索和图像生成）与 ChatGPT 应用 codex_apps MCP 服务两条，note 补入默认联网行为一句，相应新增 7 张证据小卡；版本与提交仍为原来钉的 rust-v0.167.0 / 086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，改准了一张小卡的备注。"
 }

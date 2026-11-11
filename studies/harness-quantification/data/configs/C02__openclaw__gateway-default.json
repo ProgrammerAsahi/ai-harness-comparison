@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "C02__openclaw__gateway-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "C02",
   "product": "OpenClaw",
   "view": "configured",
@@ -17,7 +17,11 @@
     "默认启用的内置插件（扩展 manifest 中 enabledByDefault: true，共 86 个，以模型/语音提供方为主）：acpx、alibaba、amazon-bedrock-mantle、amazon-bedrock、anthropic-vertex、anthropic、arcee、azure-speech、baseten、browser、byteplus、canvas、cerebras、chutes、clawrouter、cloudflare-ai-gateway、cohere、comfy、copilot-proxy、cua-computer、deepgram、deepinfra、deepseek、device-pair、document-extract、elevenlabs、fal、featherless、file-transfer、fireworks、geolocation、github-copilot、github、gmi、google-meet、google、groq、huggingface、inworld、kie、kilocode、kimi、linux-node、litellm、llama-cpp、lmstudio、longcat、meta、microsoft-foundry、microsoft、minimax、mistral、moonshot、novita、nvidia、ollama、openai、opencode-go、opencode、openrouter、particle、pixverse、qianfan、qwen、radius、runway、senseaudio、sglang、stepfun、synthetic、talk-voice、teams-meetings、tencent、together、tts-local-cli、venice、vercel-ai-gateway、vllm、volcengine、voyage、vydra、web-readability、xai、xiaomi、zai、zoom-meetings",
     "仅 macOS 默认启用：apple-fm、bonjour（enabledByDefaultOnPlatforms: [\"darwin\"]）",
     "cua-computer 虽在 manifest 里默认启用，但 Linux 网关要显式 `openclaw plugins enable cua-computer` 才注册电脑控制提供方，macOS 要 OpenClaw.app 提供端点；本配置没有 app、没有配对节点，computer 工具没有可用目标。",
-    "bundled skills：仓库 skills/ 下 49 个 SKILL.md 随安装提供，加载时按环境、配置和二进制是否存在过滤（具体哪些可用取决于本机）"
+    "bundled skills：仓库 skills/ 下 49 个 SKILL.md 随安装提供，加载时按环境、配置和二进制是否存在过滤（具体哪些可用取决于本机）",
+    "记忆插件 memory-core：记忆槽位默认选它（不靠 enabledByDefault 字段），网关启动时加载，给模型注册 memory_search、memory_get、intent 三个工具；memory_search 默认用 OpenAI 嵌入。",
+    "memory-core 的 dreaming（后台记忆整理）默认开启：默认每天 03:00 由定时任务跑一轮，写 DREAMS.md 日记，用代理默认型号发起不带工具的后台模型请求。",
+    "心跳与定时任务：cron.enabled 默认开，模型可用 automations（cron）工具；未配置心跳时主代理自动入列，默认每 30 分钟由定时任务调度器排一次主会话心跳回合。文档称默认投递给 owner，没有可解析的私信对象时定时轮询以 no-route 跳过；本配置未接渠道，是否实际发起模型请求未运行验证。",
+    "内置钩子 session-memory：Quick start 引导收尾时写入 hooks.internal.entries.session-memory.enabled: true，/new、/reset 和自动重置时把近期对话摘录存到工作区 memory/（默认用时间戳命名，不调用模型）；其余内置钩子不在默认选择里。"
   ],
   "operating_system": "macOS、Linux、Windows（官方推荐原生 Windows Hub 应用；另有 PowerShell 安装器、WSL2 网关，Tauri 桌面应用为备选）；需 Node 24.x 的 24.16.0+ 或 26.1.0+（文档建议 24.22.1+/26.12.1+）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -30,7 +34,7 @@
     "credentials": "环境里只有 OPENAI_API_KEY；本机没有可检测到的 Claude Code、Codex CLI 登录，也没有可访问的 Ollama、LM Studio",
     "other": "Quick start 结束时网关留在当前终端前台；之后按官方快速开始的下一步，停掉前台网关并运行 openclaw gateway install，把网关装成系统服务（macOS 为 LaunchAgent，Linux 为 systemd 用户单元）。本配置编码的是装成服务以后的状态。Quick start 对 OPENAI_API_KEY 这条路线把 openai/gpt-6-astra 显式钉到内置的 OpenClaw 运行时（agentRuntime openclaw），代理回合由内置运行时执行；官方 codex 插件不随安装启用，引导在这条路线上也不安装它。tools.codeMode 未配置时按 auto，默认型号标为 preferred，所以内置运行时下 Code Mode 默认生效（docs/concepts/experimental-features.md 称默认关闭，与代码和 docs/tools/code-mode.md 不一致）"
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -322,13 +326,148 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/commands/onboard-guided.ts#L541",
-      "locator": "src/commands/onboard-guided.ts：quickstart 时 installDaemon: false",
-      "lines": "L541",
-      "retrieved_at": "2026-11-10",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/commands/onboard-guided.ts#L537-L541",
+      "locator": "src/commands/onboard-guided.ts：quickstart 时 finalizeConfig 启用默认钩子、installDaemon: false",
+      "lines": "L537-L541",
+      "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
-      "note": "引导选 Quick start 时不安装守护进程，结束后转入前台网关；服务要另行安装。"
+      "note": "引导选 Quick start 时不安装守护进程（L537-L541），结束后转入前台网关（同文件 L676-L682）；后台服务要另行用 openclaw gateway install 安装（docs/start/wizard-cli-reference.md L17-L26）。未跳过钩子且接入了推理时，收尾用 enableDefaultOnboardingInternalHooks 写入默认钩子。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/plugins/slots.ts#L17-L20",
+      "locator": "src/plugins/slots.ts",
+      "lines": "L17-L20",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "记忆槽位默认值 memory-core，上下文引擎槽位默认 legacy。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/plugins/gateway-startup-plugin-config.ts#L155-L169",
+      "locator": "src/plugins/gateway-startup-plugin-config.ts",
+      "lines": "L155-L169",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "未配置 plugins.slots.memory 时取默认槽位插件，作为网关启动时加载的记忆插件；设为 none 才不加载。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/memory-core/openclaw.plugin.json#L21-L27",
+      "locator": "extensions/memory-core/openclaw.plugin.json",
+      "lines": "L21-L27",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "memory-core 的 kind 为 memory，工具契约 intent、memory_get、memory_search。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/memory.md#L160-L198",
+      "locator": "docs/concepts/memory.md",
+      "lines": "L160-L198",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "三个记忆工具由当前记忆插件（默认 memory-core）提供；memory_search 默认用 OpenAI 嵌入。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/memory-host-sdk/dreaming.ts#L350-L381",
+      "locator": "src/memory-host-sdk/dreaming.ts",
+      "lines": "L350-L381",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "dreaming.frequency 未配置时取 DEFAULT_MEMORY_DREAMING_FREQUENCY（L21，\"0 3 * * *\"），dreaming.enabled 未配置时为 true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/dreaming.md#L12-L135",
+      "locator": "docs/concepts/dreaming.md",
+      "lines": "L12-L135",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "Dreaming 默认开启；日记和整理是不带工具的后台补全，用工作区代理的默认型号。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/cron-limits.ts#L1",
+      "locator": "src/config/cron-limits.ts",
+      "lines": "L1",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_CRON_ENABLED = true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/auto-reply/heartbeat.ts#L26",
+      "locator": "src/auto-reply/heartbeat.ts",
+      "lines": "L26",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_HEARTBEAT_EVERY = \"30m\"。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/infra/heartbeat-config.ts#L105-L119",
+      "locator": "src/infra/heartbeat-config.ts",
+      "lines": "L105-L119",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "没有任何显式心跳配置时，回落到环境默认代理（主代理）入列心跳。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/heartbeat.md#L15-L23",
+      "locator": "docs/gateway/heartbeat.md",
+      "lines": "L15-L23",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "心跳是由定时任务调度器承载的周期性主会话回合；cron.enabled 为 false 时不跑定时心跳。L96-L99 列默认值：30m，投递给 owner，没有可解析的私信对象时以 no-route 跳过。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-catalog.ts#L182-L184",
+      "locator": "src/agents/tool-catalog.ts",
+      "lines": "L182-L184",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "automation 组含 heartbeat_respond 与 automations（cron）工具，后者在 coding 档内；full 档的 allow 为 \"*\"，不做核心工具过滤（同文件 L265-L267）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/commands/onboard-hooks.ts#L4-L23",
+      "locator": "src/commands/onboard-hooks.ts",
+      "lines": "L4-L23",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "引导默认把 hooks.internal.entries.session-memory.enabled 设为 true（用户已显式设过或关掉内部钩子时不动）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/hooks/configured.ts#L22-L48",
+      "locator": "src/hooks/configured.ts",
+      "lines": "L22-L48",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "内部钩子按 entries 里启用的名字选择加载；只配了 session-memory 时只加载它。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/schema.help.core.ts#L79-L80",
+      "locator": "src/config/schema.help.core.ts",
+      "lines": "L79-L80",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "update.checkOnStart 默认 true：网关启动时检查更新并发匿名更新 ping。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/hooks/bundled/session-memory/HOOK.md#L10-L30",
+      "locator": "src/hooks/bundled/session-memory/HOOK.md",
+      "lines": "L10-L30",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "session-memory 钩子挂在 command:new、command:reset、session:auto-reset 三个事件上，把最近若干条对话存到工作区 memory/ 下按时间戳命名的文件；同文件 L74 写 llmSlug 默认 false，即默认不调用模型起文件名。"
     }
   ],
-  "note": "版本：GitHub releases/latest 与 npm dist-tag latest 均为 2026.11.2（上次 2026-10-20 为 2026.10.5）；另有 beta 2026.11.5-beta.1（预发布）与 extended-stable 2026.9.36。annotated tag cb19dfea… 解引用到提交 b556fdf4…。官方安装脚本默认装 npm latest。；2026.10.5→2026.11.2 复核：exec 默认（security=full、ask=off、askFallback=deny，源码 exec-approvals-config.ts 未改）、沙箱默认 off、onboarding 未配置时 tools.profile: full、Single-agent mode 默认均未变；文档改动以措辞和 Windows 安装推荐为主。；子代理：本机 onboarding 在未配置时写入 tools.profile: \"full\"（不过滤核心工具），因此 sessions_spawn / subagents 工具默认可用；但多代理路由默认为 Single-agent mode（只有 agentId main）。subagents_enabled=true 指框架管理的子代理工具可用，不代表默认配置了多个独立代理。；若用户手动选 coding profile，group:sessions 仍包含 sessions_spawn；minimal profile 不含。；exec 审批旧字段 security/ask 已由 tools.exec.mode 取代，doctor 会迁移；full 对应 security=full + ask=off。；默认启用插件：按固定提交 extensions/*/openclaw.plugin.json 的 enabledByDefault 字段机器统计为 86 个（按插件 id 列出；目录 kimi-coding 的 id 为 kimi），较上次新增 particle（模型提供方，api.particle.ai）；仅 macOS 默认启用的仍为 apple-fm、bonjour。；原待核项（默认启用插件是否在网关中全部加载）部分核实：默认启用判定只看 manifest 字段与平台（default-enablement.ts）；网关启动时实际加载另由启动规划决定（src/plugins/gateway-startup-plugin-plan.ts）：88 个默认启用插件中 18 个声明 activation.onStartup: true（其中 bonjour 仅 macOS），此外已启用的内置工具插件、默认记忆槽位插件以及已配置的模型提供方和渠道对应的插件也在启动时加载（这部分是读代码推断，没有运行验证），其余在提供方、命令等触发时加载；启动加载数随平台和配置变化，不是固定的 18；凭据缺失时能否用仍取决于运行时，启用不等于已连接可用。；待核：bundled skills 默认对 agent 可见的数量取决于本机二进制与配置，无法给出固定名单（skills/ 下 SKILL.md 仍为 49 个）。"
+  "note": "版本：GitHub releases/latest 与 npm dist-tag latest 均为 2026.11.2（上次 2026-10-20 为 2026.10.5）；另有 beta 2026.11.5-beta.1（预发布）与 extended-stable 2026.9.36。annotated tag cb19dfea… 解引用到提交 b556fdf4…。官方安装脚本默认装 npm latest。；2026.10.5→2026.11.2 复核：exec 默认（security=full、ask=off、askFallback=deny，源码 exec-approvals-config.ts 未改）、沙箱默认 off、onboarding 未配置时 tools.profile: full、Single-agent mode 默认均未变；文档改动以措辞和 Windows 安装推荐为主。；子代理：本机 onboarding 在未配置时写入 tools.profile: \"full\"（不过滤核心工具），因此 sessions_spawn / subagents 工具默认可用；但多代理路由默认为 Single-agent mode（只有 agentId main）。subagents_enabled=true 指框架管理的子代理工具可用，不代表默认配置了多个独立代理。；若用户手动选 coding profile，group:sessions 仍包含 sessions_spawn；minimal profile 不含。；exec 审批旧字段 security/ask 已由 tools.exec.mode 取代，doctor 会迁移；full 对应 security=full + ask=off。；默认启用插件：按固定提交 extensions/*/openclaw.plugin.json 的 enabledByDefault 字段机器统计为 86 个（按插件 id 列出；目录 kimi-coding 的 id 为 kimi），较上次新增 particle（模型提供方，api.particle.ai）；仅 macOS 默认启用的仍为 apple-fm、bonjour。；原待核项（默认启用插件是否在网关中全部加载）部分核实：默认启用判定只看 manifest 字段与平台（default-enablement.ts）；网关启动时实际加载另由启动规划决定（src/plugins/gateway-startup-plugin-plan.ts）：88 个默认启用插件中 18 个声明 activation.onStartup: true（其中 bonjour 仅 macOS），此外已启用的内置工具插件、默认记忆槽位插件以及已配置的模型提供方和渠道对应的插件也在启动时加载（这部分是读代码推断，没有运行验证），其余在提供方、命令等触发时加载；启动加载数随平台和配置变化，不是固定的 18；凭据缺失时能否用仍取决于运行时，启用不等于已连接可用。；待核：bundled skills 默认对 agent 可见的数量取决于本机二进制与配置，无法给出固定名单（skills/ 下 SKILL.md 仍为 49 个）。；网关启动时默认检查更新并发匿名更新 ping（update.checkOnStart 默认 true，可关）。；2026-11-11 由第二位读者 Claude Opus 5.5（claude-opus-5-5）对照钉住的源码快照复核，核实和落实也由 Claude Opus 5.5（claude-opus-5-5）完成：enabled_extensions 补入 memory-core 记忆插件、dreaming、心跳与定时任务、session-memory 钩子四条，note 补启动更新检查一句，onboard-guided.ts 小卡改到 L537-L541；记录原有说法核下来都对得上，版本和提交仍是原来钉的 v2026.11.2 / b556fdf457b026574bf0f1e7b4914b15f3f179ce。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，补全了两张小卡的位置并新增一张。"
 }

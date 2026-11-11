@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "A17__step-code__cli-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "A17",
   "product": "Step Code",
   "view": "configured",
@@ -17,7 +17,10 @@
     "预装内置插件 steppage（StepPage，经插件贡献 MCP 服务 steppage-mcp；macOS/Linux/WSL 安装时一并准备，需 Node.js 20+）",
     "内置扩展 llama.cpp（hidden）",
     "workflow 工具默认注册（QuickJS 编译为 WebAssembly 的沙箱）；官方说法要求每轮或每会话用 /ultracode 或 ultracode: 前缀显式同意，代码里是软闸：未同意的调用只记录、不拦截",
-    "首次启动自动导入 Claude Code / Codex 的 MCP 配置（取决于本机已有配置，不是固定清单）"
+    "首次空白交互启动时，若本机有 Claude Code / Codex 的 MCP 配置，弹出一次性导入界面（可导入项默认勾选，用户确认后才写入；每个来源只问一次；带初始提示或恢复会话启动时不弹；取决于本机已有配置，不是固定清单）",
+    "默认注册的子代理与工具：subagent 工具带内置子代理 general、explore、review、planner，交互界面下可用 run_in_background 开后台通道（STEP_DISABLE_SUBAGENT_BACKGROUND=1 或 [subagent] background=false 改回前台），另注册 agent_send 管理后台通道；同一能力扩展还注册 clarify_user 与 task_create / task_update / task_get / task_list",
+    "隐藏扩展 connect-lark 默认挂载：只注册 /connect 命令，用户执行后才把会话接到飞书（含远程审批）",
+    "会自行发起模型轮次的机制默认开启：定时任务扩展注册 cron_create / cron_list / cron_delete 与 /cron，到点在会话空闲时自行发起一轮，持久任务写盘、跨进程拾取（STEP_DISABLE_CRON=1 关闭）；目标扩展注册 create_goal / get_goal / update_goal 与 /goal，目标进行中时自动发送续跑提示（STEP_DISABLE_GOAL=1 关闭）"
   ],
   "operating_system": "macOS、Linux、WSL；Windows PowerShell 为 beta（官方建议在 Windows 上用 WSL）；发布产物覆盖 darwin/linux/windows 的 arm64 与 x64。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -30,7 +33,7 @@
     "credentials": "只有 Step Plan OAuth 登录，没有 STEP_API_KEY，也没有其他提供方的密钥",
     "other": "没有设 STEP_MODEL"
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "official_doc",
@@ -243,12 +246,12 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/environment.ts#L134-L139",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/environment.ts#L133-L138",
       "locator": "packages/coding-agent/src/step/environment.ts：STEPCODE_DEFAULT_PROVIDER / STEPCODE_DEFAULT_MODEL 环境默认",
-      "lines": "L134-L139",
-      "retrieved_at": "2026-11-10",
+      "lines": "L133-L138",
+      "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
-      "note": "没有设置 STEP_PROVIDER、STEP_MODEL 时，运行时默认提供方和型号取上面两个常量。"
+      "note": "没有设置 STEPCODE_DEFAULT_PROVIDER、STEPCODE_DEFAULT_MODEL 时依次取 STEP_PROVIDER、STEP_MODEL，再没有才取内置常量 STEP_DEFAULT_PROVIDER、STEP_DEFAULT_MODEL。"
     },
     {
       "evidence_kind": "official_doc",
@@ -258,7 +261,115 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "列出需要信任的项目资源；默认 defaultProjectTrust 为 \"ask\"，在有界面时提示；写明接受后加载哪些资源、拒绝则跳过，上下文文件不论是否信任都加载。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/ui/interactive-mode.ts#L1292-L1305",
+      "locator": "apps/cli/src/ui/interactive-mode.ts",
+      "lines": "L1292-L1305",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "只在不带初始提示、不是恢复会话的空白交互启动时调用 MCP 导入。内部开发线上同一位置相同。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/mcp-import-prompt.ts#L1-L8",
+      "locator": "packages/coding-agent/src/step/mcp-import-prompt.ts",
+      "lines": "L1-L8",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "导入界面每个来源只显示一次；没有可导入项时静默标记为已看过（L77-L88）。内部开发线上同一 blob。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/mcp-import-view.ts#L61-L66",
+      "locator": "packages/coding-agent/src/step/mcp-import-view.ts",
+      "lines": "L61-L66",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "可导入的服务默认勾选，用户确认后才写入。内部开发线上同一 blob。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/bootstrap/extensions.ts#L43-L72",
+      "locator": "apps/cli/src/bootstrap/extensions.ts",
+      "lines": "L43-L72",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "子代理/扩展",
+      "note": "CLI 唯一的扩展注册点：Step 扩展、能力扩展、cron、goal、connect-lark 无条件挂载。内部开发线上内容相同。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent-agents.ts#L55-L88",
+      "locator": "packages/coding-agent/src/features/step-subagent-agents.ts",
+      "lines": "L55-L88",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "子代理",
+      "note": "内置子代理 general、explore、review、planner。内部开发线上同一 blob。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts#L624-L647",
+      "locator": "packages/coding-agent/src/features/step-subagent.ts",
+      "lines": "L624-L647",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "子代理",
+      "note": "后台通道只在 print/json 模式、STEP_DISABLE_SUBAGENT_BACKGROUND 或设置关闭时改回前台；subagent 与 agent_send 工具在 L872、L959 注册（内部开发线在 L931、L1018）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/ui/runtime/lark-connection.ts#L37-L332",
+      "locator": "apps/cli/src/ui/runtime/lark-connection.ts",
+      "lines": "L37-L332",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "connect-lark 只注册 /connect 命令（L266）与事件监听，连接由用户发起。内部开发线上同一 blob。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-cron.ts#L841-L959",
+      "locator": "packages/coding-agent/src/features/step-cron.ts",
+      "lines": "L841-L959",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "STEP_DISABLE_CRON 未设时注册 cron_create / cron_list / cron_delete 与 /cron；到期任务以 triggerTurn 发起一轮（L860-L876）。内部开发线上开关与工具名相同（L863、L941-L972）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts#L1056-L1085",
+      "locator": "packages/coding-agent/src/features/step-schedule.ts",
+      "lines": "L1056-L1085",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "STEP_DISABLE_GOAL / STEP_DISABLE_SCHEDULE 未设时注册目标扩展；续跑提示以 triggerTurn 发送；create_goal / get_goal / update_goal 在 L1181-L1222 注册（内部开发线在 L1220-L1246）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/local-update.ts#L279-L335",
+      "locator": "packages/coding-agent/src/step/local-update.ts",
+      "lines": "L279-L335",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "在交互终端启动时取发布通道 latest.json 检查更新（版本来源为 fallback 的构建不检查）；STEPCODE_DISABLE_UPDATE_CHECK 等变量可关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/observability.ts#L1-L3",
+      "locator": "apps/cli/src/observability.ts",
+      "lines": "L1-L3",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "公开 main 上 CLI 观测实现为空操作，不上报。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/stepfun-ai/Step-Code/blob/14671f328f5688a0808f5d2b50ef92f06a01dda9/config/usage-telemetry.yaml#L11-L22",
+      "locator": "config/usage-telemetry.yaml（内部开发线）",
+      "lines": "L11-L22",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "内部开发线的构建配置 enabled: true 并配有收集端；观测实现（apps/cli/src/observability.ts L1-L13）上报设备日活与上游 trace id。0.1.7 二进制是否带这份配置快照里核不了。"
     }
   ],
-  "note": "2026-11-10 刷新：官方 install.sh 默认从 https://static-openapi.stepfun.com/stepcode/latest.json 取版本，当前为 0.1.7（generatedAt 2026-11-05T11:58:24.878Z）；10-20 记录的 0.1.5 之后还发过 0.1.6（10-23）。GitHub 仍无 Release、无 tag；npm 上没有对应包（同名 stepcode 包属无关项目，@step-harness/cli 不存在）；仓库 CHANGELOG 只有 [Unreleased]，不记版本。发布 CI 在仓库之外的发布环境运行（docs/open-source-status.md），版本取自受保护标签 CI_COMMIT_TAG，提交只以 12 位短 SHA 注入二进制，manifest/latest.json 不含提交，因此 0.1.7 无法从公开材料落到提交。可确定的一点：官方发布通道上与 0.1.7 同时生成的 install.sh，去掉 BASE_URL 后与公开 main 上 infra/release/install.sh 的任何版本都不一致，却与公开仓库分支 feat/extension-market 暴露的内部开发线（与 main 的合并基为 29eb460，领先约 1189 个提交）上的模板逐字节一致，所以 0.1.7 的构建提交很可能在内部开发线上，不在公开 main 上（前提是发布环境像 release-bundle.mjs 那样用构建提交里的模板渲染安装器；这一前提未直接验证）。源码证据因此分两层：主证据取公开 main 上 0.1.7 生成前最后一个提交 29eb460（2026-11-03T10:53:41Z），它已于 2026-11-03T10:55Z 被合入内部开发线（6774150），但构建提交是否包含它未知；交叉核对取内部开发线上 0.1.7 生成前可见的最后一个提交 14671f3（2026-11-04T10:05:28Z，是一个桌面版 CI 分支的合并提交），它只是可见的近似点，不是构建提交。两处的默认权限（approve-for-me，defaulted=true）、三档权限、subagent 与 workflow 无条件注册、workflow 注册闸门、预装 steppage、内置扩展 llama.cpp、README 安装/安全/Ultracode/MCP 导入说明都一致，本记录各键与 0.1.5 时相同。入口：内部开发线另有 apps/desktop、apps/web（StepCode Desktop 及其标签驱动的发布流水线），公开 main 和 README 都未提供桌面版，官方安装通道只发 CLI，故入口仍取 CLI；若桌面版日后正式上线，需重新判断主产品形态。原待核项“0.1.5 构建于 2026-10-10 之前则默认为 bypass”随版本更新不再适用：两处候选提交都是新三档，默认 approve-for-me。；待核：0.1.7 对应的完整提交无法从公开材料确定；唯一直接办法是读二进制中注入的 12 位 build commit，需要下载发布包（数十 MB），按用户要求未做，且短 SHA 若指向内部仓库也未必能在公开仓库解析。"
+  "note": "2026-11-10 刷新：官方 install.sh 默认从 https://static-openapi.stepfun.com/stepcode/latest.json 取版本，当前为 0.1.7（generatedAt 2026-11-05T11:58:24.878Z）；10-20 记录的 0.1.5 之后还发过 0.1.6（10-23）。GitHub 仍无 Release、无 tag；npm 上没有对应包（同名 stepcode 包属无关项目，@step-harness/cli 不存在）；仓库 CHANGELOG 只有 [Unreleased]，不记版本。发布 CI 在仓库之外的发布环境运行（docs/open-source-status.md），版本取自受保护标签 CI_COMMIT_TAG，提交只以 12 位短 SHA 注入二进制，manifest/latest.json 不含提交，因此 0.1.7 无法从公开材料落到提交。可确定的一点：官方发布通道上与 0.1.7 同时生成的 install.sh，去掉 BASE_URL 后与公开 main 上 infra/release/install.sh 的任何版本都不一致，却与公开仓库分支 feat/extension-market 暴露的内部开发线（与 main 的合并基为 29eb460，领先约 1189 个提交）上的模板逐字节一致，所以 0.1.7 的构建提交很可能在内部开发线上，不在公开 main 上（前提是发布环境像 release-bundle.mjs 那样用构建提交里的模板渲染安装器；这一前提未直接验证）。源码证据因此分两层：主证据取公开 main 上 0.1.7 生成前最后一个提交 29eb460（2026-11-03T10:53:41Z），它已于 2026-11-03T10:55Z 被合入内部开发线（6774150），但构建提交是否包含它未知；交叉核对取内部开发线上 0.1.7 生成前可见的最后一个提交 14671f3（2026-11-04T10:05:28Z，是一个桌面版 CI 分支的合并提交），它只是可见的近似点，不是构建提交。两处的默认权限（approve-for-me，defaulted=true）、三档权限、subagent 与 workflow 无条件注册、workflow 注册闸门、预装 steppage、内置扩展 llama.cpp、README 安装/安全/Ultracode/MCP 导入说明都一致，本记录各键与 0.1.5 时相同。入口：内部开发线另有 apps/desktop、apps/web（StepCode Desktop 及其标签驱动的发布流水线），公开 main 和 README 都未提供桌面版，官方安装通道只发 CLI，故入口仍取 CLI；若桌面版日后正式上线，需重新判断主产品形态。原待核项“0.1.5 构建于 2026-10-10 之前则默认为 bypass”随版本更新不再适用：两处候选提交都是新三档，默认 approve-for-me。；待核：0.1.7 对应的完整提交无法从公开材料确定；唯一直接办法是读二进制中注入的 12 位 build commit，需要下载发布包（数十 MB），按用户要求未做，且短 SHA 若指向内部仓库也未必能在公开仓库解析。联网行为：交互启动时默认检查更新（取发布通道 latest.json，可用 STEPCODE_DISABLE_UPDATE_CHECK 关闭）；上报方面，公开 main 的 CLI 观测实现为空操作，内部开发线则在构建时嵌入启用的使用量上报（设备日活与上游 trace id），0.1.7 是否带上报快照里核不了。2026-11-11 由第二位读者对照快照复核：复核与落实者均为 Claude Opus 5.5（claude-opus-5-5）；改了 MCP 导入的说法（实为一次性确认界面、可导入项默认勾选），补了默认注册的子代理与工具、connect-lark 扩展、cron 与 goal 两个会自行发起轮次的机制，修正了 environment.ts 证据的行号，并补记联网行为；版本与两个提交仍是原来钉的 0.1.7 与 29eb460 / 14671f3。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，改准了两张小卡的备注。"
 }

@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "A09__pi__cli-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "A09",
   "product": "Pi",
   "view": "configured",
@@ -11,13 +11,14 @@
   "representative_rationale": "第一轮约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：pi（monorepo 中的 coding agent 包 @earendil-works/pi-coding-agent，bin 名 pi）",
   "install_method": "command: curl -fsSL https://pi.dev/install.sh | sh（macOS、Linux 默认走“托管安装”：从 pi.dev/api/installer/releases/latest 取版本元数据与发布锁文件，固定全部依赖，之后用 pi update 更新；设 PI_LEGACY_INSTALL=1 改用 npm 全局安装）；windows: powershell -c \"irm https://pi.dev/install.ps1 | iex\"；alternative: npm install -g --ignore-scripts @earendil-works/pi-coding-agent（不固定传递依赖）；source: https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/README.md#L25-L45（只作记录，未执行）",
-  "permission_mode": "无审批模式（不对工具调用逐个请求批准；只有“项目信任”控制是否加载项目内资源）：以启动账户的系统权限直接读写、执行；项目信任只决定是否加载项目提供的设置和扩展，不限制工具调用；官方建议用容器、虚拟机等系统边界隔离。",
+  "permission_mode": "无审批模式（不对工具调用逐个请求批准）：以启动账户的系统权限直接读写、执行；项目信任只决定是否加载 .pi 下的设置、mcp.json、扩展、技能、提示词、主题、系统提示文件以及当前或上级目录的 .agents/skills，不限制工具调用；项目里的 AGENTS.md、CLAUDE.md 等上下文文件不受信任控制，项目 sessionDir 设置也在信任判定之前就被读取；官方建议用容器、虚拟机等系统边界隔离。",
   "subagents_enabled": false,
   "enabled_extensions": [
     "内置扩展默认加载：builtin:mcp, builtin:llama.cpp, builtin:codemode, builtin:tool-search（codemode 与 tool_search 两个工具注册为未激活，需要时由 MCP 扩展或用户开启）",
     "默认启用工具：read, bash, edit, write",
     "MCP 服务：无默认配置（需 pi mcp add）",
-    "技能/包：未发现随包默认启用的技能"
+    "技能/包：未发现随包默认启用的技能",
+    "默认开启的后台模型请求：提示缓存预热 cacheWarming 默认 \"idle\"，模型声明缓存寿命且 Pi 估算能省下至少 0.05 美元的缓存未命中成本时，在运行中和两次运行之间的空闲期（最长 30 分钟）发起预热请求，用量计入会话总量；设 \"off\" 关闭。"
   ],
   "operating_system": "macOS、Linux、Windows（安装脚本覆盖三者，缺少时可代装 Node.js；需 Node.js 22.19+；另有 Termux 文档与 Nix 安装方式）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -30,7 +31,7 @@
     "credentials": "只有 openai 提供方的 ChatGPT 登录（OAuth 凭据存在 auth.json）；环境里没有 OPENAI_API_KEY，没有其他提供方的密钥，也没有 AWS 等环境凭据",
     "other": "ChatGPT 登录下请求仍发往 api.openai.com 的 Responses 接口；分类器型号在这种登录下不可用"
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -80,12 +81,12 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/security.md#L25-L33",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/security.md#L29-L33",
       "locator": "packages/coding-agent/docs/security.md",
-      "lines": "L25-L33",
-      "retrieved_at": "2026-11-10",
+      "lines": "L29-L33",
+      "retrieved_at": "2026-11-11",
       "configuration_scope": "权限",
-      "note": "项目信任只控制项目资源加载，不限制工具调用。"
+      "note": "项目信任控制大部分项目设置和资源的加载，不限制工具调用；项目 sessionDir 在信任判定前读取，拒绝信任也撤销不了。"
     },
     {
       "evidence_kind": "source_path",
@@ -203,7 +204,97 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "各提供方的内置默认型号：openai 与 openai-codex 都是 gpt-6.1-sol，anthropic 为 claude-opus-5-5；表中 amazon-bedrock 排第一。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/resource-loader.ts#L212-L213",
+      "locator": "packages/coding-agent/src/core/resource-loader.ts",
+      "lines": "L212-L213",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "上下文文件候选 AGENTS.override.md、AGENTS.md、AGENTS.MD、CLAUDE.md、CLAUDE.MD，加载不经项目信任判定。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/CHANGELOG.md#L3-L18",
+      "locator": "packages/coding-agent/CHANGELOG.md",
+      "lines": "L3-L18",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "版本",
+      "note": "1.5.2 标注 2026-11-10，1.5.1 标注 2026-11-09。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/docs/settings.md#L21-L23",
+      "locator": "packages/coding-agent/docs/settings.md",
+      "lines": "L21-L23",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "cacheWarming 默认 \"idle\"：运行中与最长 30 分钟空闲期保持提示缓存；仅在模型声明缓存寿命且估算可省至少 0.05 美元时预热，用量计入会话总量。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/sdk.ts#L334-L339",
+      "locator": "packages/coding-agent/src/core/sdk.ts",
+      "lines": "L334-L339",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "会话装配时无条件创建 CacheWarmer，按 cacheWarming 设置决定是否预热。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L1126-L1133",
+      "locator": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+      "lines": "L1126-L1133",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "交互模式挂载界面后确保 fd、rg 可用，缺少时下载并加入 PATH。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/utils/tools-manager.ts#L41-L58",
+      "locator": "packages/coding-agent/src/utils/tools-manager.ts",
+      "lines": "L41-L58",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "fd 取自 sharkdp/fd、rg 取自 BurntSushi/ripgrep 的 GitHub releases。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L1190-L1212",
+      "locator": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+      "lines": "L1190-L1212",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "启动后后台刷新远端模型目录（PI_OFFLINE 时跳过）、检查 Pi 新版本和已装包更新。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L1472-L1489",
+      "locator": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+      "lines": "L1472-L1489",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "安装上报：PI_OFFLINE 或上报开关关闭时跳过，否则请求 pi.dev/api/report-install。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/settings-defaults.ts#L32",
+      "locator": "packages/coding-agent/src/core/settings-defaults.ts",
+      "lines": "L32",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "enableInstallTelemetry 默认 true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/earendil-works/pi/blob/b4afdddf44e059c67ccf5097e5317d913521b470/packages/coding-agent/src/core/client-identity.ts#L10-L16",
+      "locator": "packages/coding-agent/src/core/client-identity.ts",
+      "lines": "L10-L16",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "其他",
+      "note": "上报开关打开时，模型请求带 Pi 归因（PI_ATTRIBUTION）和含版本的 User-Agent。"
     }
   ],
-  "note": "monorepo 多包，取 packages/coding-agent（@earendil-works/pi-coding-agent）；2026-11-10 刷新：v1.3.0（71023aec）→ v1.5.2（2026-11-10 发布，tag → b4afdddf，比 71023aec 前进 784 个提交），官方安装器接口、npm latest 与 GitHub releases/latest 均为 1.5.2（npm 另有 legacy-node20 标签 0.74.2）；同日稍早的 v1.5.1 已被取代。README 仍明说不内置子代理和 plan mode，可通过包自行添加；CHANGELOG 1.4.0 提到的“in-process subagents”指扩展自建的子代理在 codemode 中排队，当前源码与文档未见内置子代理。权限模式、默认工具、四个内置扩展及 codemode/tool_search 默认关闭与 v1.3.0 相同。安装侧变化：macOS/Linux 安装脚本默认改为托管安装（按发布锁文件固定全部依赖，PI_LEGACY_INSTALL=1 回到 npm 全局安装）。"
+  "note": "monorepo 多包，取 packages/coding-agent（@earendil-works/pi-coding-agent）；2026-11-10 刷新：v1.3.0（71023aec）→ v1.5.2（2026-11-10 发布，tag → b4afdddf，比 71023aec 前进 784 个提交），官方安装器接口、npm latest 与 GitHub releases/latest 均为 1.5.2（npm 另有 legacy-node20 标签 0.74.2）；前一日（2026-11-09）发布的 v1.5.1 已被取代。README 仍明说不内置子代理和 plan mode，可通过包自行添加；CHANGELOG 1.4.0 提到的“in-process subagents”指扩展自建的子代理在 codemode 中排队，当前源码与文档未见内置子代理。权限模式、默认工具、四个内置扩展及 codemode/tool_search 默认关闭与 v1.3.0 相同。安装侧变化：macOS/Linux 安装脚本默认改为托管安装（按发布锁文件固定全部依赖，PI_LEGACY_INSTALL=1 回到 npm 全局安装）。默认开启的联网：交互模式启动后若 PATH 里没有 fd、rg，就从 sharkdp/fd、BurntSushi/ripgrep 的 GitHub releases 下载到 Pi 的 bin 目录（grep、find 工具运行时同样会补下载）；首次安装或升级后向 pi.dev/api/report-install 上报版本（enableInstallTelemetry 默认 true，同一开关下模型请求还带 Pi 归因头）；后台刷新 pi.dev 远端模型目录、查询 pi.dev/api/latest-version 并检查已装包更新；设 PI_OFFLINE 时这些自动联网都跳过（归因头不受影响）。2026-11-11 由第二位读者 Qwen3.8-Max（经编排器配置 qwen-3-8-max-tp 调用）对照源码快照复核，Claude Opus 5.5（claude-opus-5-5）核实并落实：改写 permission_mode 中项目信任的范围，更正 v1.5.1 的发布日期，enabled_extensions 补提示缓存预热，note 补默认联网行为；版本和提交仍是原来钉的 v1.5.2、b4afdddf44e059c67ccf5097e5317d913521b470。"
 }

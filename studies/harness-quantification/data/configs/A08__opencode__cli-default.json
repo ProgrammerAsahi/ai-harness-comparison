@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "A08__opencode__cli-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "A08",
   "product": "OpenCode",
   "view": "configured",
@@ -14,14 +14,16 @@
   "permission_mode": "宽松默认：每个代理的基础规则为 \"*\": allow，读取 *.env / *.env.* 为 ask（*.env.example 允许）；没有规则匹配时为 ask。默认主代理 build 另允许 question。工作区外目录（external_directory）随 \"*\" 直接允许、不再询问；V1 的 doom_loop 已不是 V2 Core 权限动作。命令行 --auto（自动批准未被 deny 的请求）默认关闭。内置主代理 plan 禁止编辑，~/.opencode/plan 下除外。",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "内置子代理 general、explore（mode: subagent，经 subagent 工具调用；general 禁止 question 和再派子代理，explore 先 deny 全部再放开只读类工具）",
+    "内置子代理 general、explore（mode: subagent，经 subagent 工具调用；general 禁止 question 和再派子代理，explore 先 deny 全部，再放开 read、grep、glob、shell、webfetch、websearch 与工作区外目录（含 shell，不是严格只读））",
     "内置模型提供方插件（编入 core 的 internal 列表，source type builtin，默认加载）：AmazonBedrock、Azure、Cerebras、ChatGPT、CloudflareAIGateway、CloudflareWorkersAI、Databricks、DigitalOcean、GithubCopilot、GitLab、GoogleVertex、Kilo、LLMGateway、LMStudio、Modal、Neon、Nvidia、Ollama、Opencode、SnowflakeCortex、OpenAI、OpenAIContextCaps、OpenRouter、Poe、PromptCacheKey、SapAICore、VLLM、XAI、Zenmux、ClaudeAgent（仓库配置可移除插件，Opencode 提供方与策略插件除外）",
-    "内置网页搜索提供方插件：Exa、Firecrawl、Parallel、Tavily、TinyFish（已注册；未核对无凭据时是否可用）",
-    "内置技能 opencode、report；内置命令 /init、/review",
+    "内置网页搜索提供方插件：Exa、Firecrawl、Parallel、Tavily、TinyFish（密钥可选，无凭据也注册，websearch 工具随之注册给模型；首次调用且未设默认提供方时询问用户是否允许经这些提供方搜索；无密钥时对方服务是否接受请求，快照里核不了）",
+    "内置技能 opencode、report；内置命令 /init、/review、/goal（/goal 设定目标后，会话空闲时由模型判定是否完成并自动续跑）",
     "内置浏览器插件 @opencode/plugin-browser（core 默认注册；README 写明经 Code Mode 暴露桌面端浏览器，纯 CLI 无桌面端附着时应不可用，属推断）",
     "默认不配置 MCP 服务器（McpCodeModeDefaults 只调整用户已配置的服务器）",
     "内置 Code Mode `execute` 工具（代理规则没有对 execute 整体 deny 时默认注册；正式版用 legacy 受限解释器，脚本只能经宿主工具和受 webfetch 规则约束的 fetch 访问外部，管不到普通 shell 工具；实验引擎 codemode_vm 默认关）",
-    "待办工具 todowrite：插件默认加载，但受实验开关 todo 控制，正式版（latest 通道）默认关闭、不注册给模型；experimental.todo: true 或 OPENCODE_FLAGS=todo 打开（V2 迁移文档同样写明默认关闭）。"
+    "待办工具 todowrite：插件默认加载，但受实验开关 todo 控制，正式版（latest 通道）默认关闭、不注册给模型；experimental.todo: true 或 OPENCODE_FLAGS=todo 打开（V2 迁移文档同样写明默认关闭）。",
+    "默认注册的其他工具：opencode 命名空间工具组 session_rename、session_move、worktree_create、worktree_list、worktree_remove、models，经 Code Mode 调用、无开关；图像生成工具 experimental_image_generate 默认开，只在模型目录里有可用图像模型时注册（不登录时目录里有没有，快照里核不了）。",
+    "默认加载 Claude Code / agents 兼容目录里的技能：~/.claude/skills、~/.agents/skills 和项目各级 .claude/skills、.agents/skills 自动扫描注册；OPENCODE_DISABLE_CLAUDE_CODE 或 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS 只关 .claude 一侧。"
   ],
   "operating_system": "macOS（Apple silicon、Intel）、Linux（glibc、musl；x64、ARM64）、Windows（x64、ARM64 独立二进制，或在 Git Bash/MSYS2 下运行安装脚本）；V2 文档写明不支持 Windows 包管理器，安装页未见 WSL 建议。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -34,7 +36,7 @@
     "credentials": "没有任何提供方的凭据，没有 OPENCODE_API_KEY",
     "other": "本机没有在运行 Ollama、LM Studio 或 vLLM；后台服务没有设 OPENCODE_DISABLE_FREE_MODELS"
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -147,9 +149,9 @@
       "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/agent.ts#L52-L94",
       "locator": "packages/core/src/plugin/agent.ts",
       "lines": "L52-L94",
-      "retrieved_at": "2026-11-10",
+      "retrieved_at": "2026-11-11",
       "configuration_scope": "权限/子代理",
-      "note": "build 为默认主代理并允许 question；general、explore 为 mode: subagent 及其附加规则。"
+      "note": "build 为默认主代理并允许 question；general、explore 为 mode: subagent 及其附加规则（explore 在 \"*\" deny 之后放开 read、grep、glob、shell、webfetch、websearch、external_directory）。"
     },
     {
       "evidence_kind": "source_path",
@@ -339,7 +341,106 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "默认地址上的 Ollama、LM Studio、vLLM 会被自动发现，这是默认模型随本机环境变化的分支条件。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/goal.ts#L343-L347",
+      "locator": "packages/core/src/plugin/goal.ts",
+      "lines": "L343-L347",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "GoalPlugin（core pre 列表默认加载，无开关）注册内置命令 /goal；L121-L127 会话空闲时生成判定请求，L205-L215 挂在 experimental.idle 上自动续跑。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/opencode.ts#L112-L240",
+      "locator": "packages/core/src/tool/plugin/opencode.ts",
+      "lines": "L112-L240",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "opencode 命名空间：session_rename、session_move、worktree_create、worktree_list、worktree_remove、models，无开关门控。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/image-generate.ts#L232-L262",
+      "locator": "packages/core/src/tool/plugin/image-generate.ts",
+      "lines": "L232-L262",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "experimental_image_generate 默认开（experimental.image_generate: false 仍可关），只在有可用图像模型时注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/config/plugin/compatibility.ts#L41-L58",
+      "locator": "packages/core/src/config/plugin/compatibility.ts",
+      "lines": "L41-L58",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "扫描 .claude 与 .agents 根目录下的 skills 并注册为技能。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/config/discovery.ts#L151-L166",
+      "locator": "packages/core/src/config/discovery.ts",
+      "lines": "L151-L166",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": ".claude 根（~/.claude 与项目各级 .claude）除 claude: false 外都收录；.agents 根（~/.agents 与项目各级 .agents）无开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/server-process.ts#L117-L131",
+      "locator": "packages/cli/src/server-process.ts",
+      "lines": "L117-L131",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展/联网",
+      "note": "claude 选项由 OPENCODE_DISABLE_CLAUDE_CODE / OPENCODE_DISABLE_CLAUDE_CODE_SKILLS 关闭；模型目录 fetch 默认开，OPENCODE_DISABLE_MODELS_FETCH 关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/websearch/exa.ts#L30-L37",
+      "locator": "packages/core/src/plugin/websearch/exa.ts",
+      "lines": "L30-L37",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "网页搜索提供方注册时不要求密钥，有 key 才附加；其余四家也不要求密钥（tavily、tinyfish 无 key 时另带免密钥访问模式的请求头）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/websearch.ts#L64-L96",
+      "locator": "packages/core/src/tool/plugin/websearch.ts",
+      "lines": "L64-L96",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "没有默认提供方时，首次调用弹表单询问是否允许经已注册提供方搜索；L183-L189 只在全部被禁用或没有提供方时移除工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/models-dev.ts#L494",
+      "locator": "packages/core/src/models-dev.ts",
+      "lines": "L494",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "模型目录默认来源 https://models.opencode.ai。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/services/updater.ts#L164-L172",
+      "locator": "packages/cli/src/services/updater.ts",
+      "lines": "L164-L172",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "全局配置未设更新策略时回落为 notify。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/config.mdx#L164-L168",
+      "locator": "services/site/src/docs/content/config.mdx：Updates 小节",
+      "lines": "L164-L168",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "update 省略时默认 notify：先提示可用更新，不自动安装。"
     }
   ],
-  "note": "代表版本改为 OpenCode 2：今天官网首页、/download、文档（V2 标为 latest）和仓库 README 给出的默认安装都是 https://opencode.ai/v2/install，脚本取 update API 的 latest 通道，得到 @opencode/cli 2.2.7（tag v2.2.7 → fedc6f208aa2bd54c1019227214568083f6380ad，GitHub Release 今天发布）。另一边：GitHub releases/latest 仍是 v1.19.5（2026-10-28，tag → 810c0eba1a7348036f8bdf61e6632d0c36c6876c），npm opencode-ai@latest 也是 1.19.5；旧记录用的根地址 https://opencode.ai/install 现在只装 OpenCode 1、拒绝 2.x，得到 1.19.5。按口径以官方默认安装为准，两边都记。10-20 记录的 v2.1.1（ba546ec1…）至今没有 GitHub Release；V2 从 v2.2.0（2026-10-27）起才发 GitHub Release。V2 每天到隔几天发一版，2.2.7 是今天 10:33Z 发布的。；与 10-20 的 v1.19.3 相比：安装改为 V2 脚本与 @opencode/cli；README 不再列 scoop/choco，文档写明不支持 Windows 包管理器、安装页未见 WSL 建议；CLI 默认连接本机后台服务；工作区外目录从 ask 变为随 \"*\" 允许；doom_loop 不再是权限动作；子代理改经 subagent 工具调用；内置插件由 12 个提供方认证插件变为 core 内置插件体系（30 个提供方插件、5 个网页搜索提供方、技能、命令、浏览器插件等），flags.disableDefaultPlugins 在 V2 core 中未找到对应开关，改由配置移除插件（guarded 除外）。；旧待核项 .env 默认值已核：V2 源码与 V2 文档都是 ask；V1 文档（/v1/docs/permissions）现在也写 .env 需要批准，与 V1 源码一致。；config_id 中 cli-default 仍成立；product 仍记 OpenCode，主版本见 version_or_commit。网页搜索提供方在无凭据时是否可用、浏览器插件在纯 CLI 下的实际行为未核实。"
+  "note": "代表版本改为 OpenCode 2：今天官网首页、/download、文档（V2 标为 latest）和仓库 README 给出的默认安装都是 https://opencode.ai/v2/install，脚本取 update API 的 latest 通道，得到 @opencode/cli 2.2.7（tag v2.2.7 → fedc6f208aa2bd54c1019227214568083f6380ad，GitHub Release 今天发布）。另一边：GitHub releases/latest 仍是 v1.19.5（2026-10-28，tag → 810c0eba1a7348036f8bdf61e6632d0c36c6876c），npm opencode-ai@latest 也是 1.19.5；旧记录用的根地址 https://opencode.ai/install 现在只装 OpenCode 1、拒绝 2.x，得到 1.19.5。按口径以官方默认安装为准，两边都记。10-20 记录的 v2.1.1（ba546ec1…）至今没有 GitHub Release；V2 从 v2.2.0（2026-10-27）起才发 GitHub Release。V2 每天到隔几天发一版，2.2.7 是今天 10:33Z 发布的。；与 10-20 的 v1.19.3 相比：安装改为 V2 脚本与 @opencode/cli；README 不再列 scoop/choco，文档写明不支持 Windows 包管理器、安装页未见 WSL 建议；CLI 默认连接本机后台服务；工作区外目录从 ask 变为随 \"*\" 允许；doom_loop 不再是权限动作；子代理改经 subagent 工具调用；内置插件由 12 个提供方认证插件变为 core 内置插件体系（30 个提供方插件、5 个网页搜索提供方、技能、命令、浏览器插件等），flags.disableDefaultPlugins 在 V2 core 中未找到对应开关，改由配置移除插件（guarded 除外）。；旧待核项 .env 默认值已核：V2 源码与 V2 文档都是 ask；V1 文档（/v1/docs/permissions）现在也写 .env 需要批准，与 V1 源码一致。；config_id 中 cli-default 仍成立；product 仍记 OpenCode，主版本见 version_or_commit。网页搜索提供方无密钥时对方服务是否接受请求、浏览器插件在纯 CLI 下的实际行为，快照里核不了。；联网行为：默认更新策略为 notify（有新版时提示、不自动安装）；模型目录默认从 https://models.opencode.ai 拉取，OPENCODE_DISABLE_MODELS_FETCH 可关。；2026-11-11 由第二位读者 Claude Opus 5.5（claude-opus-5-5）对照钉住提交的源码快照复核，并由同一模型核实落实：改了 explore 子代理放开的工具、内置命令补 /goal、网页搜索无凭据时的注册与首次询问三处，在 enabled_extensions 补了 opencode 命名空间与图像生成工具、.claude/.agents 兼容技能两条，在备注补了联网行为一句；版本与提交仍是原来钉的 v2.2.7 / fedc6f208aa2bd54c1019227214568083f6380ad。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，改准了一张小卡的备注。"
 }

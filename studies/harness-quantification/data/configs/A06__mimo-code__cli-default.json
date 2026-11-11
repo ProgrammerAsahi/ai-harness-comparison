@@ -2,7 +2,7 @@
   "schema_version": "config-0.1",
   "synthetic": false,
   "config_id": "A06__mimo-code__cli-default",
-  "round": "pilot-1",
+  "round": "batch-1",
   "tool_id": "A06",
   "product": "MiMo Code",
   "view": "configured",
@@ -11,13 +11,16 @@
   "representative_rationale": "第一轮约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：mimo（另有 Xiaomi MiMo Desktop，README 称以 MiMo Code 为核心引擎，本版 README 已改为正式版；不作代表入口）",
   "install_method": "command: curl -fsSL https://mimo.xiaomi.com/install | bash；windows: powershell -ep Bypass -c \"irm https://mimo.xiaomi.com/install.ps1 | iex\"；npm install -g @mimo-ai/cli 自本版起只是启动器、标为有限支持，官方建议用原生安装脚本；source: https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/README.md#L41-L51（只作记录，未执行）",
-  "permission_mode": "build 代理的默认规则集（无独立模式名；基础规则 \"*\": \"allow\"）：大多数工具直接放行；读写项目目录以外的路径（external_directory，技能目录与截断输出目录除外）、读取 .env 类文件、doom_loop 检测时询问；bash 中不可逆的删除命令单独走 bash_delete 强制询问，任何 allow 规则都不能预先放行，只有显式 deny 能拦。--dangerously-skip-permissions（或 MIMOCODE_DANGEROUSLY_SKIP_PERMISSIONS=1）在用户规则之下垫一层全放行，/skip-permissions 在 TUI 内临时自动放行，后者遇强制询问项 60 秒后自动拒绝。",
+  "permission_mode": "build 代理的默认规则集（无独立模式名；基础规则 \"*\": \"allow\"）：大多数工具直接放行；读写项目目录以外的路径（external_directory，技能目录与截断输出目录除外）、读取 .env 类文件、doom_loop 检测时询问；bash 中不可逆的删除命令（目标全在临时目录里的除外）单独走 bash_delete 强制询问，任何 allow 规则都不能预先放行，只有显式 deny 能拦。--dangerously-skip-permissions（或 MIMOCODE_DANGEROUSLY_SKIP_PERMISSIONS=1）在用户规则之下垫一层全放行，并连 bash_delete 一起自动放行（显式 deny 仍先生效）；/skip-permissions 在 TUI 内临时自动放行普通询问，强制询问项照样等人确认。询问超时默认关闭，要用 /permission-timeout 或 MIMOCODE_SKIP_ALL_FORCED_ASK_TIMEOUT_MS 另设；README 写的“强制询问项 60 秒后自动拒绝”与本版代码不符。",
   "subagents_enabled": true,
   "enabled_extensions": [
     "内置插件（INTERNAL_PLUGINS，直接编入、默认加载）：MimoAuthPlugin, AnthropicProxyPlugin, CodexAuthPlugin, XaiAuthPlugin, CopilotAuthPlugin, opencode-gitlab-auth, opencode-poe-auth, CloudflareWorkersAuthPlugin, CloudflareAIGatewayAuthPlugin, CheckpointSplitoverPlugin, SubagentProgressCheckerPlugin（多为模型服务登录插件）",
     "内置技能默认 21 个：arxiv, compose-next, data-analytics, deep-research, docx-official, html-to-video-pipeline, learn-everything, loop, mate, memory-search, mimocode-docs, modern-python-toolchain, pdf-official, playwright, pptx-official, product-design, research-paper-writing, sales, skill-creator, super-research, xlsx-official（mate、memory-search、playwright 在源码包里但 README 未列；另有 claude-code、codex、grok-build 三个需 MIMOCODE_ENABLE_AGENT_CLI_SKILLS 显式开启，默认不加载）",
     "内置工作流 3 个（deep-research, fact-check, research-experiment）随包带有但默认不启用：workflow 工具、/deep-research 和 /workflows 命令都要设 MIMOCODE_EXPERIMENTAL_WORKFLOW_TOOL=true 或总开关 MIMOCODE_EXPERIMENTAL 才开",
-    "MCP 服务：无内置默认服务器；默认读入本机 ~/.claude.json 与项目 .claude.json 里的 mcpServers（Claude Code 兼容，可用 MIMOCODE_DISABLE_CLAUDE_CODE_MCP 关闭）；本版起 MCP 工具默认懒加载、按需发现"
+    "MCP 服务：无内置默认服务器；默认读入本机 ~/.claude.json 与项目 .claude.json 里的 mcpServers（Claude Code 兼容，可用 MIMOCODE_DISABLE_CLAUDE_CODE_MCP 关闭）；本版起 MCP 工具默认懒加载、按需发现",
+    "默认注册给模型的内置工具：bash、read、glob、grep、edit、write、notebook_edit（GPT 系型号改用 apply_patch、view_image、exec）、question、webfetch、websearch（提供方为 xiaomi 时）、skill、skill_search、mcp_tool_search、plan_exit、memory（记忆检索）、history、task（任务清单，不是委派）、actor（子代理委派，默认后台启动）、cron（定时任务）；lsp 与 workflow 工具要实验开关才注册",
+    "默认读入的 Claude Code 与开放标准资源：项目 CLAUDE.md 与 ~/.claude/CLAUDE.md 提示文件（项目里有 AGENTS.md 时以它为先，只有它的内容短于代码里设的阈值才再读项目 CLAUDE.md）、~/.claude/commands 与项目 .claude/commands 下的斜杠命令、.agents/skills 下的技能（.claude、.codex、.opencode 技能目录默认不读；分别由 MIMOCODE_DISABLE_CLAUDE_CODE_PROMPT、MIMOCODE_DISABLE_CLAUDE_CODE_COMMANDS、MIMOCODE_DISABLE_AGENTS_SKILLS 关闭）",
+    "默认开启的后台机制：上下文达到阈值时由运行时派出 checkpoint-writer 子代理（会发起模型请求），写会话 checkpoint 与项目 MEMORY.md、notes.md（MIMOCODE_DISABLE_CHECKPOINT 或 memory.disable_write: true 关闭）；cron 定时与自定节奏 loop 默认开启，任务在会话空闲时触发（MIMOCODE_EXPERIMENTAL_CRON=false 关闭）；自动 dream／distill 记忆整理默认关闭"
   ],
   "operating_system": "macOS、Linux、Windows（PowerShell 安装脚本；WSL 有专门说明；不支持 macOS 自带 Terminal.app 渲染）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -30,7 +33,7 @@
     "credentials": "只有 MiMo 平台 OAuth 为 Token Plan 生成的密钥（接口地址随授权回调下发）；没有按量计费余额，也没有其他提供方的密钥",
     "other": "已确认一次性的服务条款与隐私协议对话框；启动时不带 --trust。客户端源码里没有随计费方式变化的行为分支，两种计费只在密钥和接口地址上不同"
   },
-  "evidence_cutoff": "2026-11-10",
+  "evidence_cutoff": "2026-11-11",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -93,7 +96,7 @@
       "lines": "L495-L526",
       "retrieved_at": "2026-11-10",
       "configuration_scope": "权限",
-      "note": "--dangerously-skip-permissions、MIMOCODE_DANGEROUSLY_SKIP_PERMISSIONS 与 /skip-permissions 为显式开启的放行方式；强制询问项（如破坏性 bash）在 /skip-permissions 下 60 秒后自动拒绝。"
+      "note": "--dangerously-skip-permissions、MIMOCODE_DANGEROUSLY_SKIP_PERMISSIONS 与 /skip-permissions 为显式开启的放行方式。README 称强制询问项在 /skip-permissions 下 60 秒后自动拒绝，本版代码的询问超时默认关闭（见 permission/index.ts L20-L26），以代码为准。"
     },
     {
       "evidence_kind": "source_path",
@@ -283,7 +286,70 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "按量计费走 api.xiaomimimo.com，Token Plan 走各区域的 token-plan-*.xiaomimimo.com；两者按同一类网关处理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/permission/index.ts#L20-L26",
+      "locator": "packages/cli/src/permission/index.ts › envInitialAskTimeoutMs；skipAll 判断 L294",
+      "lines": "L20-L26",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "询问超时初值取 MIMOCODE_SKIP_ALL_FORCED_ASK_TIMEOUT_MS，未设为 null（无限等待）；与 skipAll 正交（L185-L191），skipAll 不放行强制询问项（L294）；TUI 的 /permission-timeout 档位见 cli/cmd/tui/component/dialog-permission-timeout.tsx L8。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/permission/index.ts#L278-L288",
+      "locator": "packages/cli/src/permission/index.ts › autoApproveDelete；初值 L223",
+      "lines": "L278-L288",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "autoApproveDelete 为真时 bash_delete 在显式 deny 检查之后自动放行；其值默认取 MIMOCODE_AUTO_APPROVE_DELETE 或 MIMOCODE_DANGEROUSLY_SKIP_PERMISSIONS（L223）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/tool/bash.ts#L935-L943",
+      "locator": "packages/cli/src/tool/bash.ts",
+      "lines": "L935-L943",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "删除目标全在临时目录（tmpOnlyDelete）时不发 bash_delete 询问，只走普通 bash 询问。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/tool/registry.ts#L258-L285",
+      "locator": "packages/cli/src/tool/registry.ts › builtin 清单；available 过滤 L345-L371",
+      "lines": "L258-L285",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "工具/子代理",
+      "note": "默认注册的内置工具清单；cron 由 MIMOCODE_EXPERIMENTAL_CRON（flag.ts L393-L396，默认开）控制，lsp、workflow 要实验开关；按型号和提供方的过滤见 L345-L371。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/session/checkpoint.ts#L712-L736",
+      "locator": "packages/cli/src/session/checkpoint.ts › tryStartCheckpointWriter",
+      "lines": "L712-L736",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "后台机制",
+      "note": "tryStartCheckpointWriter 只在 MIMOCODE_DISABLE_CHECKPOINT 或 memory.disable_write: true 时跳过，默认会派出写记忆的子代理（memory/write-gate.ts L31-L33：缺省即开启）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/session/instruction.ts#L19-L34",
+      "locator": "packages/cli/src/session/instruction.ts；config/paths.ts › claudeCommandDirectories；skill/index.ts › externalSkillDirs",
+      "lines": "L19-L34",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "默认读入 CLAUDE.md 与 ~/.claude/CLAUDE.md；项目级文件先找 AGENTS.md，找到且内容不短于 CLAUDE_FALLBACK_MAX_CHARS 时不再读项目 CLAUDE.md（同文件 L129-L150）；.claude/commands 默认作斜杠命令（config/paths.ts L44-L52，flag.ts L236-L239）；外部技能目录只有 .agents 默认开（skill/index.ts L25-L39）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/XiaomiMiMo/MiMo-Code/blob/b8dbe084ed8e77be2f75a85a9c880031aed699c9/packages/cli/src/flag/flag.ts#L105-L107",
+      "locator": "packages/cli/src/flag/flag.ts › MIMOCODE_ENABLE_ANALYSIS；cli/upgrade.ts；cli/cmd/tui/thread.ts",
+      "lines": "L105-L107",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "联网",
+      "note": "MIMOCODE_ENABLE_ANALYSIS 默认开，model_call、tool_call、agent_request 用量事件发往 tracking.miui.com（metrics/client.ts L1，metrics/subscriber.ts L12-L13）；补丁版本默认自动升级（cli/upgrade.ts L10-L37）；TUI 默认开本机回环 HTTP 监听（cli/cmd/tui/thread.ts L338-L349）。"
     }
   ],
-  "note": "基于 OpenCode 分叉。v0.1.16 相对 v0.1.15 的默认行为变化：主代理只剩 build（默认）与 plan，compose 主代理、内置 compose 工作流与 compose:* 技能移除（改用 compose-next 技能）；内置工作流 4→3；agent-CLI 技能（claude-code、codex、grok-build）由“本机有对应可执行文件即出现”改为需环境变量显式开启；MCP 工具改为懒加载；npm 包改为启动器；README 将 MiMo Desktop 改为正式版。默认子代理仍为 general（全能力）与 explore（只读）；另有 title、summary、compaction、checkpoint-writer、dream 等隐藏内部子代理；experimental.maxMode 配置后才出现 max 主代理。上一轮待核项“破坏性命令强制询问”已在源码定位（bash_delete 强制询问）。Claude Code MCP 兼容读取在旧记录中未登记，未核对它在 v0.1.15 是否已默认开启。"
+  "note": "基于 OpenCode 分叉。v0.1.16 相对 v0.1.15 的默认行为变化：主代理只剩 build（默认）与 plan，compose 主代理、内置 compose 工作流与 compose:* 技能移除（改用 compose-next 技能）；内置工作流 4→3；agent-CLI 技能（claude-code、codex、grok-build）由“本机有对应可执行文件即出现”改为需环境变量显式开启；MCP 工具改为懒加载；npm 包改为启动器；README 将 MiMo Desktop 改为正式版。默认子代理仍为 general（全能力）与 explore（只读）；另有 title、summary、compaction、checkpoint-writer、dream、distill 等隐藏内部子代理；experimental.maxMode 配置后才出现 max 主代理。上一轮待核项“破坏性命令强制询问”已在源码定位（bash_delete 强制询问）。Claude Code MCP 兼容读取在旧记录中未登记，未核对它在 v0.1.15 是否已默认开启。默认联网行为：用量事件（model_call、tool_call、agent_request）上报到 tracking.miui.com（MIMOCODE_ENABLE_ANALYSIS=false 关闭），启动时检查更新并自动安装补丁版本，按需下载 LSP 服务器；TUI 另开一个只监听本机回环地址的 HTTP 端口，供技能或子进程借用模型。2026-11-11 由第二位读者对照快照复核（复核者与核实落实者均为 Claude Opus 5.5，claude-opus-5-5），改了 permission_mode 两处（bash_delete 的临时目录例外与 --dangerously-skip-permissions 放行删除；/skip-permissions 下没有默认 60 秒超时），enabled_extensions 补默认工具、Claude Code 兼容读取和后台机制三条，note 补隐藏子代理 distill 与联网行为；版本和提交仍是原来钉的 v0.1.16、b8dbe084ed8e77be2f75a85a9c880031aed699c9。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，补了项目 AGENTS.md 优先于 CLAUDE.md 的条件。"
 }
