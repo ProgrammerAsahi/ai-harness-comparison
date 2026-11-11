@@ -48,13 +48,15 @@ add('A05','请求适配与上下文压缩是两条独立职责','loop',
 '在大规模重命名中，前几轮找到调用点，后几轮修改并检查。发生压缩后，仍需知道哪些目录已完成、哪些测试失败、哪些公开接口不能变。若漏掉一个范围限制，应先检查输入和摘要，再断言模型理解能力不足。',
 '与单轮聊天客户端相比，Kimi Code 的关键是持续的请求—观察过程。与其他编码代理比较时，固定任务长度，记录首次回答及压缩前后约束的保留情况。',
 ['kimi-code:packages/agent-core-v2/src/agent/llmRequester/llmRequester.ts','kimi-code:packages/agent-core-v2/src/agent/fullCompaction/strategy.ts','kimi-code:docs/en/configuration/providers.md'])
+# MiMo Code links point at the commit read for this correction; the manifest still pins A06's older snapshot.
+MIMO='https://raw.githubusercontent.com/XiaomiMiMo/MiMo-Code/b8dbe084ed8e77be2f75a85a9c880031aed699c9/'
 add('A06','同一 Session 内，模型工具表与脚本执行怎样分层','host',
-['Session 运行时\n统一任务与 UI','提示与 ToolRegistry\n按模型选择工具表','直接工具调用\nbash／apply_patch','exec 脚本入口\nQuickJS 中组合调用','原始 Tool.Def\n路径与权限检查','筛选后的宿主工具\n沿用同一执行定义','真实副作用\n文件／Shell／MCP','MessageV2 与会话\n结果、取消、持久化'],
-'MiMo Code 的公开架构文档把 GPT 路线称为“Codex microkernel runtime”，这里的微内核是工具组织方式的比喻，并非操作系统内核，也不是另启一套 Codex 引擎。它仍使用统一 Session，只按模型调整提示和可见工具，并用 QuickJS 执行组合工具的脚本。真正读文件、启动进程和访问 MCP 的仍是宿主工具。',
-[('工具表','ToolRegistry 决定模型看到的能力','提示路由与工具路由是两套规则，不能只核对模型名字。'),('脚本隔离','QuickJS 限制脚本本身的执行环境','脚本沙箱不等于 bash 运行在容器里。'),('副作用控制','直接调用和脚本子调用都回到宿主权限','批量组合不应扩大原有授权；多文件写入也不等于数据库事务。')],
-'例如一轮读取三个文件并比较：模型可用 exec 组合已允许的工具，把整理后的结果回传，减少冗长往返。但调用写入工具仍须通过原来的权限和路径检查；脚本失败后应检查已执行的动作，不能假定全部自动回滚。',
+['Session 运行时\n统一任务与 UI','提示与 ToolRegistry\n同一判定选工具路线\n默认路线或 Codex 路线','默认路线直接调用\nbash、read、edit 等','exec 脚本入口\nCodex 路线唯一可见\nQuickJS 中组合调用','原始 Tool.Def\n路径与权限检查','筛选后的宿主工具\napply_patch、bash 等\n沿用同一执行定义','真实副作用\n文件／Shell／MCP','MessageV2 与会话\n结果、取消、持久化'],
+f'MiMo Code 按模型分两条工具路线。GPT 系列默认走 Codex 路线：提示换成 GPT 专用模板，模型看到的顶层工具只有一个 exec，读文件、打补丁、跑命令都写进一小段脚本，由 exec 代为调用；其他型号走默认路线，直接看到 bash、read、edit、write 等工具，提示再按 Claude、Gemini、Kimi、DeepSeek 等家族选模板。提示和工具表用的是同一个判定，环境变量 `MIMOCODE_CODEX_MODE` 可以让所有型号都改走 Codex 路线，也可以让 GPT 改回默认路线（[路线判定]({MIMO}packages/cli/src/tool/gpt.ts)、[提示选择]({MIMO}packages/cli/src/session/system.ts)、[工具筛选]({MIMO}packages/cli/src/tool/registry.ts)、[开关]({MIMO}packages/cli/src/flag/flag.ts)）。默认路线要用 exec，得另设 `MIMOCODE_ENABLE_EXEC_TOOL`。早先版本的仓库里有一篇架构文档，把 GPT 路线称为“Codex microkernel runtime”；固定提交 b8dbe08 里已经没有这篇文档，源码和其他文档里也找不到这个称呼。代码里的 codex 只是一个路线名：两条路线由同一个 Session 循环处理，没有另启一套 Codex 引擎（[会话循环]({MIMO}packages/cli/src/session/prompt.ts)）。\n\nexec 的脚本跑在 QuickJS 里，这是一个体积很小的 JavaScript 引擎，脚本里没有 Node 的文件、进程和网络接口（[脚本引擎]({MIMO}packages/cli/src/workflow/sandbox.ts)）。脚本能做的事都由宿主明确交给它：一是 `tools.*`，按名字调用本轮已经筛出的工具，跑命令用别名 `exec_command` 转给 bash，改项目文件走 apply_patch；二是 `files.readText`／`files.writeText`，可以直接读工作目录和系统临时目录里的文件，写只能写到临时目录（[脚本宿主]({MIMO}packages/cli/src/tool/tool-script.ts)、[工具集合与别名]({MIMO}packages/cli/src/tool/tool-script-ref.ts)）。Codex 路线只是把其他工具从模型能看到的工具表里藏起来，运行时仍保留它们的定义，模型照旧直接调用时也能执行。真正读写文件、启动进程和访问 MCP 的，始终是宿主一侧的工具。以上依据固定提交 b8dbe08 的源码阅读，没有运行验证。',
+[('工具表','提示模板和 ToolRegistry 用同一个判定决定走哪条路线；Codex 路线只把 exec 放进模型可见的工具表，其余工具的定义留在运行时','判定看型号 ID、接口型号和家族名，也受环境变量影响；比较时记下实际走的路线，不能只看界面上显示的模型名。'),('脚本隔离','QuickJS 里没有 Node 和网络接口，宿主另外交给脚本工具调用和受限的文件读写','脚本沙箱不等于 bash 运行在容器里：命令仍由宿主启动子进程执行。'),('副作用控制','直接调用和脚本里的 tools.* 都走原来的工具定义和权限询问；脚本的 files 通道不经过工具，只按路径限制：能读工作目录和临时目录，只能写临时目录','脚本只能调用本轮已筛出的工具，不会扩大授权；要改项目文件仍得经过 apply_patch 的权限询问。多文件写入也不等于数据库事务，失败不会自动回滚。')],
+'例如在 Codex 路线上读取三个文件并比较：模型写一段 exec 脚本，用 files.readText 或允许的读取工具取出内容，在脚本里整理后只回传比较结果，用意是少走几次模型与工具之间的往返，实际能省多少本报告没有测过。脚本里要改项目文件，仍得调用 apply_patch，经过原来的权限和路径检查。脚本失败时，exec 会返回失败状态、日志和已执行调用的记录；按这份记录核对失败前已经生效的动作，不能假定全部自动回滚。',
 '与 DeepSeek Harness 的全插件能力接缝相比，这里的重点是统一 Session 上的模型工具契约。与 Pi 相比，模型专属工具组合和脚本宿主承担了更多产品策略。',
-['mimo-code:docs/architecture/codex-microkernel-runtime.en.md','mimo-code:packages/opencode/src/tool/registry.ts'])
+['page:mimo-b8d-gpt','page:mimo-b8d-system','page:mimo-b8d-registry','page:mimo-b8d-tool-script-ref','page:mimo-b8d-tool-script','page:mimo-b8d-sandbox','page:mimo-b8d-prompt'])
 add('A07','插件树、事件日志与模型可见历史','plugin',
 ['Profile 与有序补丁\n决定启动哪些插件','模型适配插件\nctx.llm','Cordis 共享上下文\n服务、事件、生命周期','Web／SDK／ACP\n消费运行事件','提示与工具注册\nctx.systemPrompt／tools','AgentLoop 驱动\n领取输入、执行 step','执行能力提供者\n文件／沙箱／子代理','SessionEvent 日志\n投影历史与恢复'],
 'DeepSeek Harness 通过 Profile、Bundle 和有序补丁装配插件树，核心服务也参与这套组合机制。模型、工具、日志与循环都通过共享上下文协作。另一条重要边界是实时事件与持久事件：屏幕上的流式片段用于即时显示，已落入 SessionEvent 的事实才是恢复与历史投影的依据。',
@@ -440,6 +442,7 @@ LAYOUTS={
 }
 EDGES={
  'A02':[(0,1),(1,2),(1,3),(2,3),(3,4),(3,5),(5,3),(4,6),(6,7),(7,5)],
+ 'A06':[(0,1),(1,2),(1,3),(2,4),(3,5),(5,4),(4,6),(6,7)],
  'A07':[(0,2),(1,2),(2,3),(2,5),(4,5),(5,6),(5,7)],
  'A08':[(0,1),(1,0),(1,2),(2,4),(4,6),(6,7),(7,6),(6,3),(3,5),(5,4),(3,1),(7,2)],
  'A04':[(0,2),(2,1),(1,3),(2,4),(3,5),(4,5),(5,6),(6,7)],
