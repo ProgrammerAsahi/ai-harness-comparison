@@ -6,12 +6,12 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-这一轮的编码文件在 [`../data/codings/`](../data/codings/)。它们是两位编码者各自独立的初稿，没有人工裁决；用来检验码本，不是对任何工具的评分，也不进入方法报告正文。前两轮的经过见 [`round1.md`](round1.md)、[`round2.md`](round2.md)。
+这一轮的编码文件归档在 [`round3/`](round3/)。它们是两位编码者各自独立的初稿，没有人工裁决；用来检验码本，不是对任何工具的评分，也不进入方法报告正文。前两轮的经过见 [`round1.md`](round1.md)、[`round2.md`](round2.md)。
 
 ## 怎样做的
 
 - 对象：10 个没参与过码本修订的配置（`data/rounds/pilot-2.json`，角色 `holdout`）：A04 Qwen Code、A12 Goose、A13 Crush、A14 Mistral Vibe、A15 OpenHands、A16 Grok Build、B06 Zed、B10 Factory Droid、C01 Hermes Agent、D03 mini-SWE-agent。版本和提交钉在 2026-11-11；入口、登录方式和环境前提在编码前由研究负责人逐项确认，编码期间没有改过配置记录。
-- 码本：`data/schema/fields.json` 的 `fields-0.4`，36 个字段，十条跨字段总则（R1–R10）。
+- 码本：当时的 `fields-0.4`（现存 [`round3/fields-0.4.json`](round3/fields-0.4.json)），36 个字段，十条跨字段总则（R1–R10）。
 - 任务卡：两位编码者都用 `coding-card-v6`。
 - 编码者 `opus`：Claude Opus 5.5。编码者 `gpt`：GPT-6.1 Sol，型号按派活时请求的型号记录，运行环境没有回报实际型号。
 - 材料：两位编码者都不联网，只读同一份按配置记录钉的提交取下的源码快照，文档在仓库外的另附官方文档导出。三处要说明：
@@ -183,6 +183,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码文件在哪里
 
-- 这一轮：[`../data/codings/`](../data/codings/) 下的 `opus/`、`gpt/` 各 10 份，按现行码本 `fields-0.4` 填写，通过 `validate_data.py`。码本下次修订时，它们会连同当时的码本移到 `round3/`。
+- 这一轮：[`round3/`](round3/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `round3/fields-0.4.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.4` 填写并通过了 `validate_data.py`；码本按这一轮的分歧修订为 `fields-0.5` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.5.md`。
+- `data/codings/` 现在空着，留给按 `fields-0.5` 做的分批正式编码。
 - 交叉核对：[`round3/crosscheck-card.md`](round3/crosscheck-card.md) 是读者拿到的任务卡，[`round3/crosscheck.json`](round3/crosscheck.json) 是 75 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者。
 - 前两轮：[`round2/`](round2/)、[`round1/`](round1/)，各自连同当时的码本，只作历史记录，不参加现在的校验和对比。

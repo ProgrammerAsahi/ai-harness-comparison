@@ -6,8 +6,12 @@ For each config it reads the first 40-hex commit in `version_or_commit` (the pri
 repository from an evidence URL carrying that commit, downloads GitHub's source archive of that commit and writes
 
   <out>/<config_id>/src.tar.gz.00, .01, ...   pieces of at most 19 MB (cat them together to get the tar.gz)
-  <out>/<config_id>/src-<repo>.tar.gz.00, ... the same for every further commit named in `version_or_commit` that an
-                                              evidence URL places in another repository (a product split over several)
+  <out>/<config_id>/src-<repo>.tar.gz.00, ... the same for every further commit named in `version_or_commit` (a product
+                                              split over several repositories). Its repository comes from an evidence
+                                              URL carrying the commit or, failing that, from an `owner/repo` named
+                                              before "提交 <sha>" in the same clause. A further 40-hex id that neither
+                                              places (a tag object, say) is reported on stderr and in SOURCE.txt, so a
+                                              missing snapshot is seen before coding starts.
   <out>/<config_id>/SOURCE.txt                repository, commit, archive size and SHA-256, how to unpack
   <out>/<config_id>/docs-llms-full.txt        only for tools whose official docs live outside the repository: the
                                               docs site's own full-text export, with URL, date and SHA-256 in SOURCE.txt
@@ -48,25 +52,29 @@ def docs_url(config_id):
 
 
 def pinned(config_id):
-    """(repository, commit) for every commit in version_or_commit that an evidence URL locates, primary first."""
+    """((repository, commit) for every commit in version_or_commit that can be placed, primary first; ids left out)."""
     raw = (CONFIGS / f"{config_id}.json").read_text(encoding="utf-8")
-    shas = list(dict.fromkeys(re.findall(r"\b[0-9a-f]{40}\b", json.loads(raw)["version_or_commit"])))
+    version = json.loads(raw)["version_or_commit"]
+    shas = list(dict.fromkeys(re.findall(r"\b[0-9a-f]{40}\b", version)))
     if not shas:
         if docs_url(config_id):
-            return []
+            return [], []
         raise SystemExit(f"{config_id}: no 40-hex commit in version_or_commit and no docs export listed")
-    found = []
+    found, unplaced = [], []
     for sha in shas:
-        m = re.search(r"https://github\.com/([^/\s\"]+/[^/\s\"]+)/blob/" + sha, raw)
+        m = (re.search(r"https://github\.com/([^/\s\"]+/[^/\s\"]+)/blob/" + sha, raw)
+             or re.search(r"(?<![\w./@-])([A-Za-z0-9][\w.-]*/[\w.-]+)(?![\w/])[^；;。]*?提交 " + sha, version))
         if m:
             found.append((m.group(1), sha))
         elif sha == shas[0]:
             raise SystemExit(f"{config_id}: no evidence URL carries commit {sha}")
-    return found
+        else:
+            unplaced.append(sha)
+    return found, unplaced
 
 
 def fetch(config_id):
-    sources = pinned(config_id)
+    sources, unplaced = pinned(config_id)
     dest = OUT / config_id
     dest.mkdir(parents=True, exist_ok=True)
     for old in list(dest.glob("src*.tar.gz.*")) + list(dest.glob("docs-llms-full.txt")):
@@ -91,6 +99,10 @@ def fetch(config_id):
             f"unpack: d=$(mktemp -d) && cat {stem}.tar.gz.* | tar -xzf - -C \"$d\" --strip-components=1\n"
             f"cite as: https://github.com/{repo}/blob/{sha}/<path inside the archive>\n")
         print(f"{config_id}: {repo}@{sha[:10]} {len(data) / 1e6:.1f} MB in {len(pieces)} piece(s)")
+    for sha in unplaced:
+        lines.append(f"not fetched: {sha} is named in version_or_commit but no repository could be found for it\n")
+        print(f"{config_id}: NOT FETCHED {sha}: no evidence URL and no owner/repo before it in version_or_commit",
+              file=sys.stderr)
     (dest / "SOURCE.txt").write_text("".join(lines), encoding="utf-8")
     url = docs_url(config_id)
     if url:
