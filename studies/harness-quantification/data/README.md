@@ -19,6 +19,8 @@
 
 第一轮范围写在 `rounds/pilot-1.json`：A01 Claude Code、A02 Codex、A05 Kimi Code、A06 MiMo Code、A07 DeepSeek Harness、A08 OpenCode 为核心样本；A09 Pi 与 A17 Step Code 为同源一对，A10 Cline 为编辑器宿主对照，C02 OpenClaw 为常驻网关对照。各工具的代表配置记录在 `configs/`，编号写在该文件的 `config_id` 里。
 
+码本按前两次试编码修订之后，换一批没参与修订的配置来检验，范围写在 `rounds/pilot-2.json`（角色 `holdout`）：A04 Qwen Code、A12 Goose、A13 Crush、A14 Mistral Vibe、A15 OpenHands、A16 Grok Build、B06 Zed、B10 Factory Droid、C01 Hermes Agent、D03 mini-SWE-agent。挑选时避开和第一轮同源的工具，覆盖终端、编辑器、常驻助理、研究用循环四类形态和一个闭源产品。
+
 ## 为什么用 JSON
 
 选 JSON 而不是 YAML：校验、比较和测试只用 Python 标准库就能读，不增加依赖，也和本研究已有的 `sources.json`、`examples.json` 以及 `research/private-bench/*.json` 一致；JSON 没有 YAML 的隐式类型转换（例如 `no`、`on`、日期被自动改类型），对编码者手填的取值更安全。代价是不能写注释，所以每条记录都留了 `note`、`value_note`、`coder_note` 等说明字段。
@@ -69,7 +71,7 @@
 
 ## 编码流程
 
-1. **准备**：主控为每个工具选定代表配置，在 `configs/` 建记录，把 `config_id` 填进 `rounds/pilot-1.json`，并运行校验。
+1. **准备**：主控为每个工具选定代表配置，在 `configs/` 建记录，把 `config_id` 填进本轮的 `rounds/<轮次>.json`，并运行校验。
 2. **独立编码**：每位编码者只拿到 `templates/` 的空白记录、本轮的证据入口和码本，各自写进 `codings/<自己的编号>/` 与 `adapters/<自己的编号>/`。编码完成前互相看不到对方的目录。记录编码所用模型与提示版本（`coder.model`、`coder.prompt_version`）。
 3. **校验**：`python3 studies/harness-quantification/validate_data.py`，只打印错误，全部修完再交。
 4. **比较**：`python3 studies/harness-quantification/compare_codings.py`（加 `--json` 输出机器可读结果）。按配置给出一致率，按字段列出状态分歧、取值分歧、未知原因分歧和词表外的取值提议。子维度只在两位编码者都知道取值时比较，分歧另行计数，不改变字段的一致率。

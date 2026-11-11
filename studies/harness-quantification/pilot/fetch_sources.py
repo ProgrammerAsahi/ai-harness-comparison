@@ -6,9 +6,13 @@ For each config it reads the first 40-hex commit in `version_or_commit` (the pri
 repository from an evidence URL carrying that commit, downloads GitHub's source archive of that commit and writes
 
   <out>/<config_id>/src.tar.gz.00, .01, ...   pieces of at most 19 MB (cat them together to get the tar.gz)
+  <out>/<config_id>/src-<repo>.tar.gz.00, ... the same for every further commit named in `version_or_commit` that an
+                                              evidence URL places in another repository (a product split over several)
   <out>/<config_id>/SOURCE.txt                repository, commit, archive size and SHA-256, how to unpack
   <out>/<config_id>/docs-llms-full.txt        only for tools whose official docs live outside the repository: the
                                               docs site's own full-text export, with URL, date and SHA-256 in SOURCE.txt
+
+A closed-source product has no commit; its record is served by the docs export alone.
 
 <out> is the PILOT_SOURCES environment variable or, by default, tmp/quant-pilot/sources (not in Git: third-party
 source is never committed). Nothing is installed or run; the archive is only unpacked by the coder for reading.
@@ -32,41 +36,63 @@ PIECE = 19 * 1024 * 1024
 DOCS = {
     "A01__claude-code": "https://code.claude.com/docs/llms-full.txt",
     "A02__codex": "https://developers.openai.com/codex/llms-full.txt",
+    "A14__mistral-vibe": "https://docs.mistral.ai/llms-full.txt",
+    "A15__openhands": "https://docs.openhands.dev/llms-full.txt",
+    "A16__grok-build": "https://docs.x.ai/llms-full.txt",
+    "B10__factory-droid": "https://docs.factory.com/llms-full.txt",
 }
 
 
+def docs_url(config_id):
+    return next((u for key, u in DOCS.items() if config_id.startswith(key)), None)
+
+
 def pinned(config_id):
+    """(repository, commit) for every commit in version_or_commit that an evidence URL locates, primary first."""
     raw = (CONFIGS / f"{config_id}.json").read_text(encoding="utf-8")
-    shas = re.findall(r"\b[0-9a-f]{40}\b", json.loads(raw)["version_or_commit"])
+    shas = list(dict.fromkeys(re.findall(r"\b[0-9a-f]{40}\b", json.loads(raw)["version_or_commit"])))
     if not shas:
-        raise SystemExit(f"{config_id}: no 40-hex commit in version_or_commit")
-    m = re.search(r"https://github\.com/([^/\s\"]+/[^/\s\"]+)/blob/" + shas[0], raw)
-    if not m:
-        raise SystemExit(f"{config_id}: no evidence URL carries commit {shas[0]}")
-    return m.group(1), shas[0]
+        if docs_url(config_id):
+            return []
+        raise SystemExit(f"{config_id}: no 40-hex commit in version_or_commit and no docs export listed")
+    found = []
+    for sha in shas:
+        m = re.search(r"https://github\.com/([^/\s\"]+/[^/\s\"]+)/blob/" + sha, raw)
+        if m:
+            found.append((m.group(1), sha))
+        elif sha == shas[0]:
+            raise SystemExit(f"{config_id}: no evidence URL carries commit {sha}")
+    return found
 
 
 def fetch(config_id):
-    repo, sha = pinned(config_id)
+    sources = pinned(config_id)
     dest = OUT / config_id
     dest.mkdir(parents=True, exist_ok=True)
-    for old in dest.glob("src.tar.gz.*"):
+    for old in list(dest.glob("src*.tar.gz.*")) + list(dest.glob("docs-llms-full.txt")):
         old.unlink()
-    data = subprocess.run(["gh", "api", f"repos/{repo}/tarball/{sha}"], capture_output=True, check=True,
-                          timeout=900).stdout
-    if data[:2] != b"\x1f\x8b":
-        raise SystemExit(f"{config_id}: download is not a gzip archive")
-    pieces = [data[i:i + PIECE] for i in range(0, len(data), PIECE)]
-    for n, piece in enumerate(pieces):
-        (dest / f"src.tar.gz.{n:02d}").write_bytes(piece)
-    (dest / "SOURCE.txt").write_text(
-        f"config_id: {config_id}\nrepository: https://github.com/{repo}\ncommit: {sha}\n"
-        f"archive: GitHub source archive of that commit, {len(data)} bytes, sha256 {hashlib.sha256(data).hexdigest()}\n"
-        f"pieces: {len(pieces)} (src.tar.gz.00 ...)\n"
-        "unpack: d=$(mktemp -d) && cat src.tar.gz.* | tar -xzf - -C \"$d\" --strip-components=1\n"
-        f"cite as: https://github.com/{repo}/blob/{sha}/<path inside the archive>\n", encoding="utf-8")
-    print(f"{config_id}: {repo}@{sha[:10]} {len(data) / 1e6:.1f} MB in {len(pieces)} piece(s)")
-    url = next((u for key, u in DOCS.items() if config_id.startswith(key)), None)
+    lines = [f"config_id: {config_id}\n"]
+    if not sources:
+        lines.append("source: none (closed-source product; the official docs export below is the only material)\n")
+    for n, (repo, sha) in enumerate(sources):
+        stem = "src" if n == 0 else "src-" + repo.split("/")[1]
+        data = subprocess.run(["gh", "api", f"repos/{repo}/tarball/{sha}"], capture_output=True, check=True,
+                              timeout=900).stdout
+        if data[:2] != b"\x1f\x8b":
+            raise SystemExit(f"{config_id}: download of {repo} is not a gzip archive")
+        pieces = [data[i:i + PIECE] for i in range(0, len(data), PIECE)]
+        for k, piece in enumerate(pieces):
+            (dest / f"{stem}.tar.gz.{k:02d}").write_bytes(piece)
+        lines.append(
+            f"repository: https://github.com/{repo}\ncommit: {sha}\n"
+            f"archive: GitHub source archive of that commit, {len(data)} bytes, "
+            f"sha256 {hashlib.sha256(data).hexdigest()}\n"
+            f"pieces: {len(pieces)} ({stem}.tar.gz.00 ...)\n"
+            f"unpack: d=$(mktemp -d) && cat {stem}.tar.gz.* | tar -xzf - -C \"$d\" --strip-components=1\n"
+            f"cite as: https://github.com/{repo}/blob/{sha}/<path inside the archive>\n")
+        print(f"{config_id}: {repo}@{sha[:10]} {len(data) / 1e6:.1f} MB in {len(pieces)} piece(s)")
+    (dest / "SOURCE.txt").write_text("".join(lines), encoding="utf-8")
+    url = docs_url(config_id)
     if url:
         req = urllib.request.Request(url, headers={"User-Agent": "harness-study-source-fetch"})
         docs = urllib.request.urlopen(req, timeout=300).read()

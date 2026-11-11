@@ -105,7 +105,8 @@ def merge(coder, config_id, model, prompt_version, dry=None):
     ctx = vd.Context()
     rec = json.loads((vd.DATA / "templates/coding.template.json").read_text(encoding="utf-8"))
     today = datetime.date.today().isoformat()
-    rec.update(round="pilot-1", config_id=config_id, evidence_cutoff=today,
+    config = json.loads((vd.DATA / "configs" / f"{config_id}.json").read_text(encoding="utf-8"))
+    rec.update(round=config["round"], config_id=config_id, evidence_cutoff=today,
                coder={"id": coder, "model": model, "prompt_version": prompt_version, "coded_at": today})
     errors = []
     for groups in SPLIT:

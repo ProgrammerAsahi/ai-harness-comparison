@@ -33,6 +33,7 @@ ROLES = {
     "control_same_origin_pair": "同源一对（Pi 与 Step Code）",
     "control_editor_host": "编辑器宿主对照",
     "control_resident_gateway": "常驻网关对照",
+    "holdout": "没参与码本修订、用来检验码本的配置",
 }
 # Words that would point at single private-bench tasks; never allowed near a bench reference.
 BENCH_FORBIDDEN = ("题目", "题号", "单题", "题面", "评分细则", "task_id", "bench_task", "task id", "rubric")
