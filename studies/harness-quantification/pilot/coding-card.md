@@ -1,4 +1,4 @@
-# 试编码卡（pilot-1 第二轮，提示版本 coding-card-v4）
+# 试编码卡（提示版本 coding-card-v5）
 
 你是量化研究试编码的一位编码者。任务是按码本给**一个配置**的**一组字段**（12 个）填值，每个值都要有能复查的证据。这一轮的目的是检验码本定义得清不清楚，所以请严格照总则和判定标准填。事实查不到就如实写未知，不要按印象或“同类产品一般如此”补；口径上的疑问（算不算、归哪一项）按总则和字段定义判，再把疑问写进 `coder_note`。
 
@@ -8,15 +8,15 @@
 
 ## 先读这些（按顺序，只读需要的段落）
 
-1. 码本切片：运行 `python3 studies/harness-quantification/pilot/parts.py brief <groups>`。它先打印九条总则（R1–R9），再打印这 12 个字段的问题、类型、定义、词表和判定标准、子维度、状态和证据类型的枚举，以及空白记录的键。**以它为准。**
-2. 配置记录：`studies/harness-quantification/data/configs/<config_id>.json`。它规定了你要编码的对象：哪个版本和提交、哪种入口、默认权限模式、是否开子代理、默认启用的扩展，以及 `environment_premises`（账户档位、默认型号、操作系统、工作目录、信任状态、凭据）。默认行为随环境变化时，按这组前提所在的那条路径编码（总则 R1）。记录里的证据小卡可以当线索用。
+1. 码本切片：运行 `python3 studies/harness-quantification/pilot/parts.py brief <groups>`。它先打印十条总则（R1–R10）和子维度总则，再打印这 12 个字段的问题、类型、定义、词表和判定标准、子维度、状态和证据类型的枚举，以及空白记录的键。**以它为准。**
+2. 配置记录：`studies/harness-quantification/data/configs/<config_id>.json`。它规定了你要编码的对象：哪个版本和提交、哪种入口、默认权限模式、是否开子代理、默认启用的扩展，以及 `environment_premises`（账户档位、默认型号、操作系统、工作目录、信任状态、凭据）。默认行为随环境变化时，按这组前提所在的那条路径编码（总则 R1）。入口描述和环境前提推出的路径对不上时，按入口描述编码，并在 `coder_note` 写明矛盾。记录里的证据小卡可以当线索用。
 3. 记录格式：`studies/harness-quantification/data/README.md` 的“记录格式要点”和“编码者须知”两节。
 4. 找证据位置的线索（可选）：`research/architecture-evidence.json` 里本工具那一项。它来自较早的提交，只能帮你找到文件和关键词，不能直接当证据。
 
 ## 不要读
 
 - `studies/harness-quantification/data/codings/`、`data/adapters/` 里的文件，以及别的编码者或别的字段组交回的文件（`<part>` 所在目录的同级和上级目录）。
-- `studies/harness-quantification/pilot/round1.md`、`pilot/round1/`，`data/schema/` 下的 `definition-decisions-*.md`，以及 `tmp/quant-pilot/` 下除 `<sources>` 和 `<part>` 以外的文件。
+- `studies/harness-quantification/pilot/` 下的 `round1.md`、`round2.md`、`round1/`、`round2/`，`data/schema/` 下的 `definition-decisions-*.md`，以及 `tmp/quant-pilot/` 下除 `<sources>` 和 `<part>` 以外的文件。
 - Git 历史和别的分支里上面这些路径的内容。
 - 主报告 `report/` 与 `AI-Harness调研报告.html` 中本工具的档案。这一轮要看两位编码者各自从原始材料得出什么，不复述已有结论。
 
@@ -42,13 +42,13 @@ sed -n '120,180p' "$d/<path>"                                       # 只读那�
 ## 怎样填
 
 - **编码对象是所选配置**：这个版本在默认安装、默认权限模式、配置记录钉住的环境前提下，不改任何设置就开放的机制（总则 R1、R2）。用户要多做一步才有的东西按总则 R3 的三档处理；写进 `value_note` 的可选项以 `可选：` 开头。
-- **看哪一层、哪个入口**：取值只看主执行链（总则 R4）；F29、F31、F32、F33 按同一发行版官方有文档的全部入口记，其余字段只看配置记录选定的入口（总则 R5）。
+- **看哪一层、哪个入口**：取值只看主执行链（总则 R4）；F29、F31、F32、F33 按同一发行版官方有文档的全部入口记，包括要加参数、另装官方包或配第三方凭据才能用的，再用 `via_default_entry` 标出所选入口直接开放的；其余字段只看配置记录选定的入口（总则 R5）。
 - **四种状态**：`known`（有正面证据）、`known_absent`（有足够证据证明本配置没有；集合写 `[]`，类别字段只有词表里有“无”的才可用）、`unknown`（`value` 写 `null` 并选 `unknown_reason`）、`not_applicable`（只用于 F26—F28）。“集合已知为空”只能写 `known_absent` 加 `[]`。
-- **什么时候写 `unknown`**（总则 R6、R7）：材料里查不到、材料互相冲突、闭源且官方文档没有涉及、版本对不上，或者机制清楚但词表装不下（原因写 `vocabulary_gap`，并且必须在 `vocabulary_proposals` 里提出取值）。范围或口径拿不准不属于这几种，按码本判。闭源产品按官方文档推断出的结论可以写 `known` 或 `known_absent`，`confidence` 只能是 `low`，`value_note` 以 `推断：` 开头。
+- **什么时候写 `unknown`**（总则 R6、R7）：材料里查不到、材料互相冲突而总则定不了、闭源且官方文档没有涉及、版本对不上，或者机制清楚但词表装不下（原因写 `vocabulary_gap`，并且必须在 `vocabulary_proposals` 里提出取值）。范围或口径拿不准不属于这几种，按码本判；字段定义里明写和总则不同的，以字段为准，字段没写的照总则。官方文档和快照里的实现说法相反时，以实现为准，在 `value_note` 写明出入（总则 R10），不算材料冲突。闭源产品按官方文档推断出的结论可以写 `known` 或 `known_absent`，`confidence` 只能是 `low`，`value_note` 以 `推断：` 开头。
 - **证据小卡**：`known` 和 `known_absent` 至少一张。源码证据用 `source_path`：`source_url` 是带 40 位 SHA 的 GitHub 链接（`https://github.com/<owner>/<repo>/blob/<sha>/<path>`，照 `SOURCE.txt` 的 `cite as`），路径和行号取自快照里的文件；`locator` 写文件路径和函数或配置项的名字，`lines` 写 `L12-L40`，`retrieved_at` 写今天的日期，`configuration_scope` 写这条证据说明的范围（例如“默认权限模式”），`note` 用一句话说它证明了什么。官方文档用 `official_doc`（链接加小节名），发布说明用 `default_release`（链接加版本号）。不要用 `account_check`、`observed_run`、`private_bench_aggregate`。
 - 证明“没有”也要给证据：先查过该字段 `absent_rule` 列出的材料，再引用最能说明问题的那个文件（默认配置、工具注册表、权限入口）。只是没找到、谈不上证明没有时，写 `unknown` 加 `not_found`。
 - **`confidence`**：`known` 与 `known_absent` 必填，按码本切片里的三档写。
-- **子维度（`facets`）**：很多字段有，按码本切片里各自的规则填；这一层查不到写 `null`，已知一个都没有写 `[]`。集合字段都有一个可选的 `unresolved`：集合只确认了一部分时，把疑似但没能确认的成员写进去，这时 `confidence` 不高于 `medium`；没有疑似成员就不写这个键。
+- **子维度（`facets`）**：很多字段有，按码本切片里各自的规则填；这一层查不到写 `null`，已知一个都没有写 `[]`。只确认了一部分时照子维度总则：证明某项“有”，确认一项写一项，没确认的写进 `value_note`，以 `子维度未确认：` 开头；写 `[]` 或判某项“没有”，要照字段给的核对清单逐项判过，判断写进 `coder_note`。集合字段都有一个可选的 `unresolved`：集合只确认了一部分时，把疑似但没能确认的成员写进去，这时 `confidence` 不高于 `medium`；写进去的迹象要能指出快照里的具体一处（总则 R7）；没有疑似成员就不写这个键。
 - **条件字段**：F25 为“有”时 F26—F28 必须编码；F25 已知为无时三项写 `not_applicable`；F25 未知时三项也写 `unknown`。配置记录写明关闭子代理时，F25 不能写“有”。
 - **一个机制只在一处计**（总则 R8）；**类别字段只选一项**，按字段写明的优先规则，并存的其他机制记进子维度或 `value_note`（总则 R9）。
 - **词表里没有的机制**不要硬塞进 `value`：别的取值照常填，另在 `vocabulary_proposals` 里写提议（取值和一句定义）。

@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-`data/codings/` 里现在放的就是这一轮的结果。它们仍是两位编码者各自独立的初稿，没有对过分歧，也没有人工裁决；用来检验码本，不是对任何工具的评分，也不进入方法报告正文。第一轮的经过见 [`round1.md`](round1.md)。
+这一轮的编码文件归档在 [`round2/`](round2/)。它们仍是两位编码者各自独立的初稿，没有对过分歧，也没有人工裁决；用来检验码本，不是对任何工具的评分，也不进入方法报告正文。第一轮的经过见 [`round1.md`](round1.md)。
 
 ## 怎样做的
 
@@ -112,5 +112,6 @@ OpenClaw 的两位编码者在 F34（生命周期由谁维持）上相反：一�
 
 ## 两轮的编码文件在哪里
 
-- 第二轮：`data/codings/opus/`、`data/codings/gpt/`，各 10 份，按 `fields-0.3` 填写并通过 `validate_data.py`。
+- 第二轮：[`round2/`](round2/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `round2/fields-0.3.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.3` 填写并通过了 `validate_data.py`；码本按这一轮的分歧修订为 `fields-0.4` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.4.md`。
+- `data/codings/` 现在空着，留给按 `fields-0.4` 在新配置上做的下一轮。
 - 第一轮：[`round1/`](round1/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `round1/fields-0.2.json`。它们按旧码本填写，不参加现在的校验和对比，只作历史记录。

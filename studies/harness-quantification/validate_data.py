@@ -5,7 +5,7 @@ Checks field IDs and types, legal values, conditional fields (report §5.5), how
 evidence fit together (§4.2, §8.1), evidence kinds, private-bench references, and that
 rounds, configs, codings and adapters refer to each other. Prints errors only; exit 1 on any.
 Every field carries a "definition"; many carry "facets" (sub-dimensions). fields.json also holds the general rules
-(R1..R9) coders read first. All are shape-checked and facets are checked in codings.
+(R1..R10) coders read first. All are shape-checked and facets are checked in codings.
 
   python3 studies/harness-quantification/validate_data.py              real data + templates
   python3 studies/harness-quantification/validate_data.py --fixtures   also the synthetic fixtures
