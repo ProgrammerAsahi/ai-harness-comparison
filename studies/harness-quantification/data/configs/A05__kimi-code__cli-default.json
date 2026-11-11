@@ -11,12 +11,13 @@
   "representative_rationale": "第一轮约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：kimi",
   "install_method": "command: curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash；windows: irm https://code.kimi.com/kimi-code/install.ps1 | iex；alternative: npm install -g @moonshot-ai/kimi-code；source: https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/README.md#L12-L28 ; docs/en/guides/getting-started.md L15-L52（安装脚本标为 recommended）（只作记录，未执行）",
-  "permission_mode": "manual（界面名 Always Ask，旧称 Manual）：只读操作自动执行，运行命令、写工作区外文件等其他动作逐个请求确认。官方文档称编辑文件也要确认，但源码在 POSIX（macOS／Linux）且工作目录属于 Git 工作树时，写入路径都在工作区（含附加目录）内的 Write／Edit 由内置策略 git-cwd-write-approve 直接放行；敏感文件、`.git` 控制路径和用户配置的 ask 规则仍先询问；非 Git 目录或 Windows 下编辑仍询问；可切到 yolo（Ask When Needed）或 auto（Never Ask）。退出 Plan 模式在任何权限模式下都要用户确认。",
+  "permission_mode": "manual（界面名 Always Ask，旧称 Manual）：只读操作自动执行，运行命令、写工作区外文件等其他动作逐个请求确认。官方文档称编辑文件也要确认，但源码在 POSIX（macOS／Linux）且工作目录属于 Git 工作树时，写入路径都在工作区（含附加目录）内的 Write／Edit 由内置策略 git-cwd-write-approve 直接放行；敏感文件、`.git` 控制路径和用户配置的 ask 规则仍先询问；非 Git 目录或 Windows 下编辑仍询问；可切到 yolo（Ask When Needed）或 auto（Never Ask）。退出 Plan 模式在任何权限模式下都要用户确认。模型或 /goal 创建目标时，manual／yolo 下先弹出开始目标审阅框，所选项会把会话切到 auto、yolo 或保持原档，之后的动作按新档位审批；auto 下不审阅。",
   "subagents_enabled": true,
   "enabled_extensions": [
     "内置技能（以 /命令出现，默认可用）：mcp-config, custom-theme, update-config, check-kimi-code-docs, import-from-cc-codex, sub-skill（含 sub-skill.review / sub-skill.consolidate）；其中介绍 Kimi Code 自身的技能受 builtin_product_skills（默认 true）控制",
     "插件：无默认启用（官方插件 Kimi Datasource、Kimi Browser Extension、Kimi Computer Use 需在 /plugins 手动安装，再 /reload 或 /new 才生效）",
-    "MCP 服务：无默认配置"
+    "MCP 服务：无默认配置",
+    "目标工具 CreateGoal／GetGoal／SetGoalBudget／UpdateGoal 默认注册给主代理（无实验开关），模型可直接调用，工具说明要求只在用户明确要求时创建；用户也可用 /goal 创建。"
   ],
   "operating_system": "macOS、Linux、Windows（Windows 需先装 Git for Windows，使用其 Git Bash）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -165,6 +166,42 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "权限模式",
       "note": "只对 Write、Edit 生效；路径类型不是 posix 或写入路径有一个在工作区外就不表态；工作目录在 Git 工作树内则返回 approve。2026-11-10 试编码后复核补入：文档 tools.md 写编辑要审批，与此不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/packages/agent-core-v2/src/session/agentLifecycle/profile/profiles.ts#L11-L43",
+      "locator": "packages/agent-core-v2/src/session/agentLifecycle/profile/profiles.ts",
+      "lines": "L11-L43",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "扩展",
+      "note": "默认主代理 agent 的 AGENT_TOOLS 含 CreateGoal、GetGoal、SetGoalBudget、UpdateGoal。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/packages/agent-core-v2/src/features/goal/goalFeature.ts#L27-L46",
+      "locator": "packages/agent-core-v2/src/features/goal/goalFeature.ts",
+      "lines": "L27-L46",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "扩展",
+      "note": "goal 工具以 contributeTool 无条件注册，registerFeature(GoalFeature) 没有实验开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/packages/agent-core-v2/src/features/goal/goalService.ts#L1171-L1190",
+      "locator": "packages/agent-core-v2/src/features/goal/goalService.ts",
+      "lines": "L1171-L1190",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "权限模式",
+      "note": "非 auto 模式下 CreateGoal 执行前走开始目标审阅钩子，批准时按所选项 setMode 切换权限模式。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/MoonshotAI/kimi-code/blob/5af9942e9fb789b6a1530830575b3768499932e9/apps/kimi-code/src/tui/components/dialogs/goal-start-permission-prompt.ts#L20-L64",
+      "locator": "apps/kimi-code/src/tui/components/dialogs/goal-start-permission-prompt.ts",
+      "lines": "L20-L64",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "权限模式",
+      "note": "manual 与 yolo 下开始目标审阅框的选项（切到 Never Ask／Ask When Needed、保持原档或不开始）。"
     },
     {
       "evidence_kind": "official_doc",

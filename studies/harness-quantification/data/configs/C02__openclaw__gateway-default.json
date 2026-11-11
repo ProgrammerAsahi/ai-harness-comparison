@@ -16,6 +16,7 @@
   "enabled_extensions": [
     "默认启用的内置插件（扩展 manifest 中 enabledByDefault: true，共 86 个，以模型/语音提供方为主）：acpx、alibaba、amazon-bedrock-mantle、amazon-bedrock、anthropic-vertex、anthropic、arcee、azure-speech、baseten、browser、byteplus、canvas、cerebras、chutes、clawrouter、cloudflare-ai-gateway、cohere、comfy、copilot-proxy、cua-computer、deepgram、deepinfra、deepseek、device-pair、document-extract、elevenlabs、fal、featherless、file-transfer、fireworks、geolocation、github-copilot、github、gmi、google-meet、google、groq、huggingface、inworld、kie、kilocode、kimi、linux-node、litellm、llama-cpp、lmstudio、longcat、meta、microsoft-foundry、microsoft、minimax、mistral、moonshot、novita、nvidia、ollama、openai、opencode-go、opencode、openrouter、particle、pixverse、qianfan、qwen、radius、runway、senseaudio、sglang、stepfun、synthetic、talk-voice、teams-meetings、tencent、together、tts-local-cli、venice、vercel-ai-gateway、vllm、volcengine、voyage、vydra、web-readability、xai、xiaomi、zai、zoom-meetings",
     "仅 macOS 默认启用：apple-fm、bonjour（enabledByDefaultOnPlatforms: [\"darwin\"]）",
+    "cua-computer 虽在 manifest 里默认启用，但 Linux 网关要显式 `openclaw plugins enable cua-computer` 才注册电脑控制提供方，macOS 要 OpenClaw.app 提供端点；本配置没有 app、没有配对节点，computer 工具没有可用目标。",
     "bundled skills：仓库 skills/ 下 49 个 SKILL.md 随安装提供，加载时按环境、配置和二进制是否存在过滤（具体哪些可用取决于本机）"
   ],
   "operating_system": "macOS、Linux、Windows（官方推荐原生 Windows Hub 应用；另有 PowerShell 安装器、WSL2 网关，Tauri 桌面应用为备选）；需 Node 24.x 的 24.16.0+ 或 26.1.0+（文档建议 24.22.1+/26.12.1+）。",
@@ -27,7 +28,7 @@
     "workspace": "代理的默认工作区 ~/.openclaw/workspace（不随启动命令所在目录变化），不带 --workspace；需要操作 Git 仓库时在任务里给出路径",
     "trust": "没有按目录的信任提示；首次引导选 Quick start，即视为已确认安全提示",
     "credentials": "环境里只有 OPENAI_API_KEY；本机没有可检测到的 Claude Code、Codex CLI 登录，也没有可访问的 Ollama、LM Studio",
-    "other": "Quick start 结束时网关留在当前终端前台；之后按官方快速开始的下一步，停掉前台网关并运行 openclaw gateway install，把网关装成系统服务（macOS 为 LaunchAgent，Linux 为 systemd 用户单元）。本配置编码的是装成服务以后的状态"
+    "other": "Quick start 结束时网关留在当前终端前台；之后按官方快速开始的下一步，停掉前台网关并运行 openclaw gateway install，把网关装成系统服务（macOS 为 LaunchAgent，Linux 为 systemd 用户单元）。本配置编码的是装成服务以后的状态。Quick start 对 OPENAI_API_KEY 这条路线把 openai/gpt-6-astra 显式钉到内置的 OpenClaw 运行时（agentRuntime openclaw），代理回合由内置运行时执行；官方 codex 插件不随安装启用，引导在这条路线上也不安装它。tools.codeMode 未配置时按 auto，默认型号标为 preferred，所以内置运行时下 Code Mode 默认生效（docs/concepts/experimental-features.md 称默认关闭，与代码和 docs/tools/code-mode.md 不一致）"
   },
   "evidence_cutoff": "2026-11-10",
   "evidence": [
@@ -203,6 +204,33 @@
       "note": "网关启动规划逐个插件判断是否在启动时加载：已配置渠道、onStartup 声明、工具契约、记忆槽位、已配置提供方等多条路径。2026-11-10 试编码后复核补入。"
     },
     {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/cua-computer/index.ts#L31-L38",
+      "locator": "extensions/cua-computer/index.ts",
+      "lines": "L31-L38",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "扩展",
+      "note": "非 darwin 时只有 plugins.entries[\"cua-computer\"].enabled === true 才继续注册电脑控制提供方。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/cua-computer/src/commands.ts#L424-L431",
+      "locator": "extensions/cua-computer/src/commands.ts",
+      "lines": "L424-L431",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "扩展",
+      "note": "darwin 上只有拿到 OpenClaw.app 注入的端点（resolveMacOsMcpEndpoint）才算支持和可用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/nodes/computer-use.md#L19-L49",
+      "locator": "docs/nodes/computer-use.md",
+      "lines": "L19-L49",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "扩展",
+      "note": "官方文档：网关桌面控制要显式启用插件，macOS 的 CUA 还要 app 自有端点，节点要先配对。"
+    },
+    {
       "evidence_kind": "official_doc",
       "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/start/getting-started.md#L13-L38",
       "locator": "docs/start/getting-started.md：What you need / Try it in one command",
@@ -273,6 +301,24 @@
       "retrieved_at": "2026-11-10",
       "configuration_scope": "环境前提",
       "note": "官方快速开始的下一步：Quick start 让网关留在终端前台，后面的步骤需要它在后台运行，于是停掉前台网关、运行 openclaw gateway install 装成系统服务。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/system-agent/setup-inference-activate.ts#L148-L187",
+      "locator": "src/system-agent/setup-inference-activate.ts：按候选类型取默认型号并激活",
+      "lines": "L148-L187",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "接口密钥路线的默认型号被显式钉到内置运行时 openclaw；只有 codex-cli 路线才交给 Codex 运行时。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/system-agent/setup-model-selection.ts#L102-L145",
+      "locator": "src/system-agent/setup-model-selection.ts：写入型号与运行时选择",
+      "lines": "L102-L145",
+      "retrieved_at": "2026-11-10",
+      "configuration_scope": "环境前提",
+      "note": "引导把所选型号和它的 agentRuntime 一起写进配置；配置里钉住的运行时优先于按提供方隐式选择。"
     },
     {
       "evidence_kind": "source_path",
