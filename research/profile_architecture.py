@@ -57,13 +57,15 @@ f'MiMo Code 按模型分两条工具路线。GPT 系列默认走 Codex 路线：
 '例如在 Codex 路线上读取三个文件并比较：模型写一段 exec 脚本，用 files.readText 或允许的读取工具取出内容，在脚本里整理后只回传比较结果，用意是少走几次模型与工具之间的往返，实际能省多少本报告没有测过。脚本里要改项目文件，仍得调用 apply_patch，经过原来的权限和路径检查。脚本失败时，exec 会返回失败状态、日志和已执行调用的记录；按这份记录核对失败前已经生效的动作，不能假定全部自动回滚。',
 '与 DeepSeek Harness 的全插件能力接缝相比，这里的重点是统一 Session 上的模型工具契约。与 Pi 相比，模型专属工具组合和脚本宿主承担了更多产品策略。',
 ['page:mimo-b8d-gpt','page:mimo-b8d-system','page:mimo-b8d-registry','page:mimo-b8d-tool-script-ref','page:mimo-b8d-tool-script','page:mimo-b8d-sandbox','page:mimo-b8d-prompt'])
+# DeepSeek Harness links point at the commit read for this correction; the manifest still pins A07's older snapshot.
+DSH='https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/'
 add('A07','插件树、事件日志与模型可见历史','plugin',
 ['Profile 与有序补丁\n决定启动哪些插件','模型适配插件\nctx.llm','Cordis 共享上下文\n服务、事件、生命周期','Web／SDK／ACP\n消费运行事件','提示与工具注册\nctx.systemPrompt／tools','AgentLoop 驱动\n领取输入、执行 step','执行能力提供者\n文件／沙箱／子代理','SessionEvent 日志\n投影历史与恢复'],
-'DeepSeek Harness 通过 Profile、Bundle 和有序补丁装配插件树，核心服务也参与这套组合机制。模型、工具、日志与循环都通过共享上下文协作。另一条重要边界是实时事件与持久事件：屏幕上的流式片段用于即时显示，已落入 SessionEvent 的事实才是恢复与历史投影的依据。',
-[('启动组合','按 Bundle、用户与命令行补丁的顺序装配','替换服务时，核对依赖它的模块及相应配置。默认预设里的插件管理工具还能在会话中经审批改变插件集。'),('能力接缝','接口定义、提供者和消费者分别承担职责','换远程文件系统时，相关进程环境也应一致。'),('历史投影','从日志生成模型可见消息','日志同时参与决定下一轮模型输入。')],
-'比如工具产生一条结果，循环把它写入会话事件，再由投影生成后续模型历史；Web 同时可以接收实时流更新。若进程在流输出尚未落定时丢失，不能保证每个屏幕片段都能恢复。调查问题时要区分即时显示、已提交事件和重建后的上下文。',
+f'DeepSeek Harness 通过 Profile、Bundle 和有序补丁装配插件树，核心服务也参与这套组合机制。启动时补丁按固定顺序叠加：先是所选 Bundle 自带的补丁，再是 Profile 自己的补丁、DSH 主目录（`DSH_HOME`）里的全局补丁，最后是命令行传入的覆盖；设了环境变量 `DSH_TELEMETRY_DISABLED`、装配里又带着遥测插件时，末尾还会追加一条关闭遥测的补丁（[补丁顺序]({DSH}packages/boot/app-boot/src/profile-context.ts)）。模型、工具、日志与循环都通过共享上下文协作。\n\n另一条重要边界在实时显示和持久记录之间。模型的回复一边生成，一边以实时帧推给界面；这一步结束后，完整的回复流才随一条“助手消息”或“失败尝试”事件写进会话日志（[流的结算]({DSH}packages/core/agent-loop/src/agent.ts)）。事件先进入内存里的日志，再由默认的 JSONL 存储插件在后台排队写盘（[后台写盘]({DSH}packages/session/session-persistence-jsonl/src/storage.ts)），跨进程恢复只能依靠已经写进磁盘的部分。日志也不会全部变成模型历史：只有带可见标记（源码里叫 surfaceOp）的消息事件才投影成模型看到的消息，轮次边界、失败尝试这类事件只留在日志里（[历史投影]({DSH}packages/core/session/src/index.ts)）。以上依据固定提交 66491b0 的源码阅读，没有运行验证。',
+[('启动组合','依次叠加 Bundle、Profile、DSH 主目录与命令行补丁，遥测开关可再追加一条',f'替换服务时，核对依赖它的模块及相应配置。默认预设里的插件管理工具还能在会话中改变插件集；它的每次操作，包括只列出插件，都要先经审批，除非会话已处在 danger-full-access 下（[插件管理工具]({DSH}packages/boot/plugin-manager/src/tools.ts)）。'),('能力接缝','接口定义、提供者和消费者分别承担职责','换远程文件系统时，相关进程环境也应一致。'),('历史投影','从日志里带可见标记的消息事件生成模型消息','日志同时参与决定下一轮模型输入；失败的模型请求尝试只留在日志里，不进入模型历史。')],
+f'比如模型要求调用两个工具：工具服务的执行流水线先为每个调用记下调用事件，工具执行完再按模型给出的顺序写入结果事件（[工具批次]({DSH}packages/core/tools/src/batch.ts)）；循环拿到结果后进入下一步，Session 再由投影生成后续模型历史。这一步中途失败时，循环会为还没有结果的调用补写错误结果。Web 同时可以接收实时流更新。若进程在回复流结算之前、或在日志排队写盘完成之前退出，不能保证每个屏幕片段都能恢复。调查问题时要区分即时显示、已写盘的事件和重建后的上下文。',
 '与 OpenCode 由内置执行器推进会话、插件在固定钩子上介入的做法相比，DSH 把替换点推进到共享服务与事件层。自由度更高，也意味着插件组合、生命周期及日志不变量需要共同维护。',
-['deepseek-harness:docs/architecture.md','deepseek-harness:packages/core/agent-loop/src/agent.ts','deepseek-harness:packages/core/agent-loop/src/tool-calls.ts'])
+['deepseek-harness:docs/architecture.md','page:dsh-66491-profile-context','page:dsh-66491-plugin-tools','page:dsh-66491-agent','page:dsh-66491-batch','page:dsh-66491-session','page:dsh-66491-storage'])
 # OpenCode 2 links point at the commit read for this rewrite; the manifest still pins A08's older snapshot.
 OC2='https://raw.githubusercontent.com/anomalyco/opencode/fedc6f208aa2bd54c1019227214568083f6380ad/'
 add('A08','终端界面、后台服务与逐步执行的分工','host',
