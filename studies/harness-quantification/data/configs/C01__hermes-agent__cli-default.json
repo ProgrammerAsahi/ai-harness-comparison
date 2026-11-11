@@ -8,9 +8,9 @@
   "version_or_commit": "3b421578588243f920886e6fe79a6faa87ea026e（v0.23.1，2026-11-10 发布；annotated tag b65acf3f… 解引用到此提交；官方安装脚本默认 stable 通道装到的就是 releases/latest）",
   "mode": "local",
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
-  "entrypoint": "终端命令行：hermes（不带参数启动经典 CLI，即 prompt_toolkit REPL；display.interface 出厂默认 cli）。快速开始的顺序是装好后先 hermes setup 选提供方，再在终端里完成第一次对话；消息网关（hermes gateway setup / start）是 CLI 跑通之后的“下一层”，hermes --tui（Ink 前端，经 tui_gateway JSON-RPC 接同一 Python 运行时）是快速开始标为 recommended 的另一种终端界面，均不作本配置入口。",
+  "entrypoint": "终端命令行：hermes（不带参数启动经典 CLI，即 prompt_toolkit REPL；display.interface 出厂默认 cli）。执行位置：这个终端进程只是前端，不在本进程里建代理、跑工具或写 state.db；启动时先发现或拉起本机该 profile 的网关守护进程（客户端自动拉起、没有服务托管的那种，空闲 gateway.unmanaged_idle_exit_seconds=600 秒后自行退出，已有常驻网关则直接接上），经本地 WebSocket 建立或恢复会话，每个回合在网关进程里执行；经典 CLI 的代理类固定为网关代理，没有回退到进程内执行的分支，需要进程内代理的选项（如 --image、--worktree）直接被拒绝，--safe-mode 与 --ignore-user-config 同样在进程外跑。关闭终端只是断开，已接受的工作在网关里继续。这条本机网关后端不同于下一句所说的“消息网关”用法（接聊天渠道）。快速开始的顺序是装好后先 hermes setup 选提供方，再在终端里完成第一次对话；消息网关（hermes gateway setup / start）是 CLI 跑通之后的“下一层”，hermes --tui（Ink 前端，经 tui_gateway JSON-RPC 接同一 Python 运行时）是快速开始标为 recommended 的另一种终端界面，均不作本配置入口。",
   "install_method": "command: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash（Linux / macOS / WSL2，仅命令行，不含 Hermes Desktop；脚本即仓库 scripts/install.sh，在线版与提交 3b421578 处文件 sha256 相同 abf33860…）；脚本 clone 官方仓库后按默认 stable 通道取 GitHub releases/latest 的标签（此日为 v0.23.1）检出，再用固定版本的 uv 和 PM 装 Python 3.14、Node.js、ripgrep、FFmpeg，默认还装固定版本的 Chromium 与 cua-driver（computer-use 驱动），并复制随包技能到 ~/.hermes/skills；之后 hermes update 沿 stable 通道按发行版更新。windows: iex (irm https://hermes-agent.nousresearch.com/install.ps1)；快速开始在 macOS、Windows 上把 Hermes Desktop 安装包标为 recommended（macOS 安装包只支持 Apple Silicon，捆绑版不随 v0.23.1 更新）；source: https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/getting-started/quickstart.md#L53-L79（只作记录，未执行）",
-  "permission_mode": "approvals.mode = smart（默认）：读文件、写文件（write_file / patch）不经审批，只受受保护路径黑名单约束（命中即直接报错，没有审批提示）；终端命令先过不可绕过的硬黑名单，再按危险命令模式匹配，命中的交辅助模型判断：低风险自动放行（仅本条），明显危险自动拒绝，拿不准的升级为人工审批提示（超时 300 秒按拒绝处理）；未命中危险模式的命令直接在本机以启动账户权限执行。联网：终端命令不受限；web/browser/vision 等工具默认拒绝私网与回环地址（云元数据地址始终拒绝）。终端后端默认 local，无隔离；改用 docker、modal、daytona、vercel_sandbox 等容器类后端时危险命令检查整体跳过。子代理内的审批一律非交互处理，默认自动拒绝（delegation.subagent_auto_approve=false）。",
+  "permission_mode": "approvals.mode = smart（默认）：读文件、写文件（write_file / patch）一般不经审批，只受受保护路径黑名单约束（只有命中硬黑名单才直接报错、没有审批提示；下面两类例外是先审批）；例外一：默认 security.protected_instruction_files=true，写入受保护的代理指令文件要先人工审批——任意目录下文件名为 AGENTS.md、CLAUDE.md、SOUL.md、.cursorrules（不分大小写，符号链接按真实路径也算），以及项目内 .hermes/ 目录下的文件（~/.hermes 自身不在此列），另可用 protected_instruction_extra_patterns 追加文件名通配；每次只批准这一次写入，不提供本会话或永久放行，--yolo 也不放行，一个多文件 patch 只要含一个这类文件就整体等批；无人能应答时（如 -q 单次、定时任务、后台线程）、审批超时或被拒都不写入，直接报错；例外二：写 ~/.ssh/config（SSH 客户端配置，可带 ProxyCommand 等会执行命令的指令）不是硬拒绝，而是走和终端命令同一套审批，可选一次、本会话或永久，--yolo 会放行；没有人能应答时（如 ACP 文件桥、-q 单次、定时任务）按拒绝处理，~/.ssh 下的私钥、authorized_keys 等其余文件仍是硬黑名单；终端命令先过不可绕过的硬黑名单，再按危险命令模式匹配，命中的交辅助模型判断：低风险自动放行（仅本条），明显危险自动拒绝，拿不准的升级为人工审批提示（超时 300 秒按拒绝处理）；未命中危险模式的命令直接在本机以启动账户权限执行。联网：终端命令不受限；web/browser/vision 等工具默认拒绝私网与回环地址（云元数据地址始终拒绝）。终端后端默认 local，无隔离；改用 docker、modal、daytona、vercel_sandbox 等容器类后端时危险命令检查整体跳过。子代理内的审批一律非交互处理，默认自动拒绝（delegation.subagent_auto_approve=false）。",
   "operating_system": "macOS（Apple Silicon；Intel Mac 不在支持平台内）、Linux、WSL2、原生 Windows（PowerShell 安装器或 MSIX 包）、Android/Termux（单独 APT 源）；源码安装需 Git、curl、tar 与 SHA-256 工具，运行时由安装器提供 Python 3.14。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "evidence_cutoff": "2026-11-11",
@@ -94,6 +94,51 @@
     },
     {
       "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/cli.md#L176-L176",
+      "locator": "website/docs/user-guide/cli.md（经典 CLI 经网关会话）",
+      "lines": "L176-L176",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "安装",
+      "note": "hermes chat 与 display.interface 为 cli 时的裸 hermes 不再在终端进程里跑代理：先发现或拉起该 profile 的网关（hermes gateway ensure），经网关本地 WebSocket 建立或恢复会话；关终端只是断开；只对进程内代理有意义的选项被拒绝、不回退本地代理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_agent.py#L1-L9",
+      "locator": "hermes_cli/gateway_agent.py（模块说明）",
+      "lines": "L1-L9",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "安装",
+      "note": "经典 CLI 用的 AIAgent 接口由共享网关会话支撑：CLI 进程不建代理、不跑工具、不写 state.db，回合在网关里执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_agent_setup_mixin.py#L647-L667",
+      "locator": "hermes_cli/cli_agent_setup_mixin.py（_init_agent）",
+      "lines": "L647-L667",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "安装",
+      "note": "_init_agent 固定导入 GatewayAgent 作为代理类（注释“the gateway runs the turn”），随后 _ensure_gateway_session 建立网关会话，没有构造进程内 AIAgent 的分支。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/main.py#L1597-L1604",
+      "locator": "hermes_cli/main.py（cmd_chat）",
+      "lines": "L1597-L1604",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "安装",
+      "note": "注释写明经典 CLI（交互与 -q/-Q）是主线 HermesCLI 配网关代理；stream-json 与 --safe-mode/--ignore-user-config 走网关传输客户端、同样在进程外执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_runtime.py#L414-L432",
+      "locator": "hermes_cli/gateway_runtime.py（ensure_gateway_runtime）；hermes_cli/config_defaults.py L2089",
+      "lines": "L414-L432",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "安装",
+      "note": "idle_exit：客户端（chat、TUI 等）自动拉起的无服务托管守护进程空闲后自行退出；配置 gateway.unmanaged_idle_exit_seconds 默认 600，0 为禁用。"
+    },
+    {
+      "evidence_kind": "source_path",
       "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/getting-started/quickstart.md#L82-L110",
       "locator": "website/docs/getting-started/quickstart.md（2. Choose a Provider）",
       "lines": "L82-L110",
@@ -172,6 +217,51 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "权限",
       "note": "write_file / patch 只查受保护路径黑名单和可选 HERMES_WRITE_SAFE_ROOT，命中即报错，没有审批提示；terminal 工具以同一系统用户运行，不受这层限制。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools_write_guards.py#L180-L194",
+      "locator": "tools/file_tools_write_guards.py（受保护指令文件的基名清单）",
+      "lines": "L180-L194",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "受保护基名 agents.md、claude.md、soul.md、.cursorrules，任意目录、不分大小写；写入“总是要问”，连 --yolo 也不放行，无人通道时失败关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools_write_guards.py#L214-L256",
+      "locator": "tools/file_tools_write_guards.py（_protected_instruction_reason）",
+      "lines": "L214-L256",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "对输入路径和真实路径都匹配；~/.hermes（含具名 profile 的家目录）豁免；项目内 .hermes/ 的直接子文件也算；可用 protected_instruction_extra_patterns 追加基名通配。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools_write_guards.py#L263-L359",
+      "locator": "tools/file_tools_write_guards.py（_request_protected_instruction_approval、_check_protected_instruction_write）",
+      "lines": "L263-L359",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "每次一次性审批（不提供会话或永久放行，不走 --yolo 与白名单）；无人能应答、超时、被拒都返回 BLOCKED 错误；一个多文件 patch 含一个受保护文件即整体等批。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools_write_guards.py#L362-L407",
+      "locator": "tools/file_tools_write_guards.py（_check_approval_required_write）；agent/file_safety.py L232-L240（build_write_approval_paths）",
+      "lines": "L362-L407",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "write_file / patch 写 ~/.ssh/config 走常规审批闸（一次、会话、永久，遵守 --yolo）；没有交互或网关通道时失败关闭，-q 单次与定时任务按拒绝；该路径集合只含 ~/.ssh/config。仓库文档 security.md File Write Safety 的 Exception 段与此一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1763-L1767",
+      "locator": "hermes_cli/config_defaults.py（security.protected_instruction_files）",
+      "lines": "L1763-L1767",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "security.protected_instruction_files 默认 True，protected_instruction_extra_patterns 默认空；注释写明写入代理指令文件始终需要人工审批，yolo 下也一样。仓库内 website/docs/user-guide/security.md“File Write Safety”一节称 write_file / patch 命中黑名单“没有审批提示”且未提这类文件，与代码不一致，以代码为准。"
     },
     {
       "evidence_kind": "source_path",

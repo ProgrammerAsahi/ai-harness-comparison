@@ -1,0 +1,1002 @@
+{
+  "round": "pilot-2",
+  "codebook_version": "fields-0.4",
+  "reader": {
+    "model": "claude-opus-5-5",
+    "card": "crosscheck-card.md",
+    "read_at": "2026-11-11"
+  },
+  "note": "第三位读者对两位编码者判得不同的字段逐条分类；只对 missed_fact 回查 exists 和 default。读者拿到的材料里两位编码者写成“甲”“乙”，labels 给出对应关系，listed_by 是据此还原的编码者编号。这些是读者的判断，没有复核，也不是对取值的裁决。",
+  "configs": [
+    {
+      "config_id": "A04__qwen-code__cli-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F03",
+          "mechanism": "目标续跑（propose_goal 经用户批准后设立）的独立验证器 verification",
+          "diff": "乙把目标验证器记成 verification_condition；甲在 value_note 和 coder_note 里提到同一验证器，但把模型提议、用户批准的目标路径按 R3 第二档放进“可选：”",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F03 scope_rule“目标工具默认注册、模型能直接调用的，目标续跑按总则 R3 第一档算默认”没说模型只能提议、须经不可跳过的用户批准对话框才设立目标时算第一档（乙：审批停顿）还是第二档（甲：等同用户显式进入）。"
+        },
+        {
+          "field": "F12",
+          "mechanism": "目标续跑默认 30,000,000 Token 窗口（用尽给一轮交接后停）",
+          "diff": "乙记 total_tokens（hard_stop 与 soft_notice 都记）；甲在 value_note 提到同一窗口，但按用户进入的目标路径写成“可选：”",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "与 F03 同一处：F12 scope_rule“目标工具默认注册、模型能直接调用的，按总则 R3 第一档算默认”对“模型可提议、须用户批准才启动”的目标路径归哪一档没有明说，两人分别按第一档和第二档读。"
+        },
+        {
+          "field": "F12",
+          "mechanism": "只读探索阶段工具调用达到 maxToolCallsPerTurn（默认 100）时向模型注入一次提醒（ToolExplorationBudget.takeReminder）",
+          "diff": "甲据此在 soft_notice 记 call_count；乙的 call_count 只依据 fork 200 轮和 client 内部 100 allowance，各处都没提到这个提醒，soft_notice 不含 call_count（hard_stop 两人一致）",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "packages/core/src/core/client.ts#L5460-L5467; packages/core/src/services/tool-exploration-budget.ts#L27-L28; packages/core/src/services/tool-exploration-budget.ts#L83-L95; packages/cli/src/config/settingsSchema.ts#L2024-L2032（默认 100）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F20",
+          "mechanism": "从持久会话历史重建已处理的工具调用编号/参数指纹并拒绝重放",
+          "diff": "乙认为可在恢复后重建的去重表满足 idempotency_key；甲提到恢复时只对重复工具结果去重、补合成结果，判为不是持久的幂等标识",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F20 idempotency_key 的“‘持久’指标识和执行状态写进存储，进程重启或恢复会话后仍能查到”没说明：不另设键库、恢复时从已持久化的会话历史（调用编号与结果）重建去重表，算不算持久标识。"
+        },
+        {
+          "field": "F26",
+          "mechanism": "/fork <指令> 斜杠命令直接调用 agent 工具的后台 fork 路径创建子代理",
+          "diff": "甲据此记 user；乙的 F26 各处没有提到 /fork 命令（只讨论了 /agents create 定义与自然语言委派），未记 user",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "packages/cli/src/ui/commands/forkCommand.ts#L108-L137; packages/cli/src/services/BuiltinCommandLoader.ts#L128-L145（无开关、无条件注册）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F26",
+          "mechanism": "/arena start 命令由 ArenaManager 为多个型号各起一个代理",
+          "diff": "甲作为 user 的第二个依据；乙未提到 /arena",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "packages/cli/src/ui/commands/arenaCommand.ts#L214-L245; packages/cli/src/ui/commands/arenaCommand.ts#L418-L482; packages/cli/src/services/BuiltinCommandLoader.ts#L137（无条件注册，仅交互模式）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F26",
+          "mechanism": "每次用户提问回合结束后框架自动起 managed-auto-memory-extractor 分叉代理（可调 read_file/grep/glob/write_file/edit，最多 5 轮）；记忆整理 dreamer 代理同理",
+          "diff": "甲记 framework_internal；乙的 F26 各处没有提到记忆提取或整理代理",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "packages/core/src/core/client.ts#L3432-L3455; packages/core/src/memory/extract.ts#L219-L224; packages/core/src/memory/extractionAgentPlanner.ts#L434-L452; packages/core/src/memory/dreamAgentPlanner.ts#L175; packages/cli/src/config/settingsSchema.ts#L2530-L2548（enableManagedAutoMemory/AutoDream 默认 true）; packages/core/src/config/config.ts#L11821-L11826（沙箱、--bare、safe-mode 时关闭，默认三者都不开）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F29",
+          "mechanism": "tools.discoveryCommand / tools.callCommand：运行用户命令发现工具声明并注册为同名 DiscoveredTool",
+          "diff": "甲记 user_script（并记进 via_default_entry）；乙的 F29 各处没有提到 discoveryCommand",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "optional",
+          "evidence": "packages/core/src/tools/tool-registry.ts#L867-L885; packages/core/src/tools/tool-registry.ts#L1006-L1012; docs/users/configuration/settings.md#L425-L426; packages/cli/src/config/settingsSchema.ts#L3397-L3402（默认 undefined，需填设置项才生效）",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "A12__goose__desktop-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F03",
+          "mechanism": "delegate 子代理默认被注入含必填 summary 的 JSON 响应模式，模型未经最终输出工具交出合格结果就结束时，框架注入续写提示不让结束",
+          "diff": "乙据此记 verification_condition；甲的 F03 说明只讨论了 /goal、/grind、配方 retry.checks 和 Stop 钩子，未提子代理结果结构校验",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/goose/src/agents/platform_extensions/summon.rs#L958-L973; crates/goose/src/agents/state_machine/ops_recipe.rs#L373-L380",
+          "codebook_note": ""
+        },
+        {
+          "field": "F14",
+          "mechanism": "工具结果中单个文字块超过 200000 字符（GOOSE_MAX_TOOL_RESPONSE_SIZE）时整块换成说明加临时文件路径，在默认工具调用路径上执行",
+          "diff": "甲据此记 tool_result_replacement；乙只提了 shell 输出截短和摘要，未提这一处整块替换",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/goose/src/agents/large_response_handler.rs#L5-L65; crates/goose/src/agents/state_machine/ops_toolcalling.rs#L253",
+          "codebook_note": ""
+        },
+        {
+          "field": "F19",
+          "mechanism": "/goal、/grind 设的目标存在会话 extension_data（GoalState），恢复后由默认操作列表里的 RetryOperation 在回合结束时读回并催促继续",
+          "diff": "甲据此记 task_plan；乙的 F19 只提 todo 扩展默认关闭，未提目标状态的恢复（目标须用户用斜杠命令设立，属 R3 第二档，但 F19 明文不按第二档排除）",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "optional",
+          "evidence": "crates/goose/src/session/extension_data.rs#L100-L115; crates/goose/src/agents/state_machine/ops_retry.rs#L81-L130; crates/goose/src/agents/state_machine/ops_retry.rs#L176-L200; crates/goose/src/agents/state_machine_builder.rs#L191",
+          "codebook_note": ""
+        },
+        {
+          "field": "F20",
+          "mechanism": "状态机执行前按持久化的工具调用编号查已有结果，已有结果的请求不再执行",
+          "diff": "乙记入 idempotency_key；甲看到同一机制但因默认路径上没有重试或恢复重跑去触发它，放进 unresolved",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "idempotency_key 判定标准“同一标识在重试或恢复重跑时不会再执行一次”：乙读为有持久编号加执行前检查即可，甲读为默认路径上须真有重试或恢复重跑场景来触发这一检查"
+        },
+        {
+          "field": "F23",
+          "mechanism": "delegate 工具拒绝工作目录越出父会话目录、核对子代理归属",
+          "diff": "乙记 application_check；甲提到同一检查但判为工具参数校验、不计",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "application_check 判定标准既说“按限制规则（权限、路径……）在动作执行前拒绝”算，又说“只核对工具存不存在、参数格式对不对的，不算”：对委派入口的目录范围校验，两人分别归到前后两句"
+        },
+        {
+          "field": "F23",
+          "mechanism": "delegate 工具说明里把 Research 一类委派描述为只读",
+          "diff": "乙据此记 prompt_only=present；甲提到同一说明但判为使用建议、不是产品角色，记 absent",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "prompt_only 要求产品把限制作为“一种模式、一个设置或一个内置角色”交代，且“系统提示里一般性的行为建议不算”：工具说明里写成只读的委派用途算内置角色还是一般建议，两人读法不同"
+        },
+        {
+          "field": "F24",
+          "mechanism": "Auto 模式下审批结果以 goose.executable=true 写进工具请求元数据并落库，询问路径另有同编号的确认事件，可据此分出自动放行与人工决定",
+          "diff": "乙据此记 approval；甲只提到 Approve、Smart Approve 模式下的确认记录（可选），称默认 Auto 不产生审批记录，未提可执行标记",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/goose-agent/src/tool_call_state.rs#L11; crates/goose-agent/src/tool_approval.rs#L114-L121; crates/goose/src/agents/state_machine/session.rs#L92-L97",
+          "codebook_note": ""
+        },
+        {
+          "field": "F28",
+          "mechanism": "delegate 工具调用立即返回，框架在下一次推理前运行子代理并等结果交回父会话",
+          "diff": "甲按父模型实际被阻塞记 synchronous_return；乙按工具调用本身先返回记 async_wait",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "synchronous_return 要求“看发出委派或续派的那一次调用本身”是否阻塞，又说“不管内部用什么异步实现”：调用先返回、等待由框架在下一次推理前接管时，两人分别按调用本身和调用方实际能否继续来读"
+        },
+        {
+          "field": "F28",
+          "mechanism": "取消传播覆盖的取消方式（打断回合、结束会话等）",
+          "diff": "甲判 cancel_coverage=all_ways；乙称尚未逐项核对桌面结束或删除父会话等入口，留 null",
+          "kind": "other",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "乙未核完取消入口而留 null，源码在快照里，不属材料不足"
+        },
+        {
+          "field": "F29",
+          "mechanism": "GDK（goose-agent 等 crate）让调用方在自建状态机里注册自己实现的工具",
+          "diff": "乙记入 embedder_declared；甲看到同一机制但拿不准 GDK 算不算嵌入本核心，放进 unresolved",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "embedder_declared 定义为“嵌入方程序经本核心有文档的嵌入接口在会话里声明工具”：用 GDK 构件组装新代理算不算把本核心嵌进自己程序，两人读法不同"
+        },
+        {
+          "field": "F30",
+          "mechanism": "配方（recipe）及映射到配方的自定义斜杠命令",
+          "diff": "乙把普通参数化配方和斜杠命令另记 prompt_template，只把带 retry 检查的部分记 workflow_definition；甲按 R8 把整套配方机制只记一处 workflow_definition",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "总则 R8“同一字段内一个机制只归一项，按词表先后取第一项命中的”与 workflow_definition／prompt_template 的“由框架按定义推进多步”与否之分：配方算一个机制还是按是否带 retry 拆成两类，两人读法不同"
+        },
+        {
+          "field": "F31",
+          "mechanism": "GDK 的 InferenceRequestPreparer 在每次模型请求前构造系统提示、工具和附加消息",
+          "diff": "乙据此记 model_call（未进 via_default_entry）；甲的 F31 说明写“没有模型调用事件”，未提 GDK 这一接口",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "optional",
+          "evidence": "crates/goose-agent/src/inference.rs#L35; documentation/docs/gdk/hello-world.md#L216-L248",
+          "codebook_note": ""
+        },
+        {
+          "field": "F31",
+          "mechanism": "插件钩子 AfterFileEdit（写文件工具成功后触发，只通知）",
+          "diff": "乙把它记 save 并列入 observe_only；甲把它并入 tool_before_after",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "save 收“工作区文件被持久化前后、以写入为本义的事件”，tool_before_after 收“工具调用执行前后的事件点”：写文件工具完成后的文件编辑事件两边都套得上"
+        },
+        {
+          "field": "F31",
+          "mechanism": "默认安装有无已注册的钩子处理器",
+          "diff": "甲判默认安装没有插件、in_use_by_default=[]；乙称未确认干净安装有无默认钩子内容，留 null",
+          "kind": "other",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "乙未查完默认钩子内容而留 null，不是两人读法不同"
+        },
+        {
+          "field": "F36",
+          "mechanism": "助手回合数达默认上限 1000 时，框架发出“是否继续”的询问并让出，等用户再发消息",
+          "diff": "乙据此记 blocking_approval（block_kind=question）；甲在 F03 记了这一上限，但 F36 里未提",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/goose/src/agents/state_machine/ops_maxturns.rs#L14; crates/goose/src/agents/state_machine/ops_maxturns.rs#L53-L67; crates/goose/src/agents/state_machine_builder.rs#L199",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "A13__crush__cli-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F04",
+          "mechanism": "Hyper OAuth 收到 401 且刷新令牌已被撤销时，框架发出重新认证通知、阻塞等待用户在界面里重新登录（最多 5 分钟），凭据更新后重建模型并重试原请求",
+          "diff": "乙据此记入 escalate_to_human；甲只写了 401 时自动刷新令牌再重发（OnAuthRefresh），没有提到刷新令牌撤销后暂停等用户重新登录这条分支，coder_note 里讨论 escalate_to_human 时只看了权限询问和执行期阻断",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "internal/agent/coordinator.go#L1679-L1747（retryAfterUnauthorized / waitForInteractiveReauth）；交互 TUI 接线 internal/app/app.go#L935、处理 internal/ui/model/ui.go#L6172-L6173。只在刷新令牌被撤销时触发，属少见失败路径；无通知器的无头运行不走这条",
+          "codebook_note": ""
+        },
+        {
+          "field": "F21",
+          "mechanism": "权限询问里的“本会话允许”：会话授权按工具、动作、路径键保存，文件类请求的路径先归到所在目录，之后同目录的同类请求免询问",
+          "diff": "乙把这种按目录范围记下的会话授权算作用户在界面里设定的路径规则，记入 file_path；甲在 value_note 里提到“本会话允许相当于新增临时规则”，但认为没有用户可写的路径规则，不记 file_path",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F21 scope_rule 说规则“写进配置、在界面里选定或在会话中切换都算”，而 file_path 判据只说“规则按路径或目录范围限制读写”；码本没说清用户点“本会话允许”时由框架自动带上的目录范围，算不算用户设定的路径规则，还是只算 tool_category 授权的附带键"
+        }
+      ]
+    },
+    {
+      "config_id": "A14__mistral-vibe__cli-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F15",
+          "mechanism": "内置 grep 工具（按正则搜索项目内容）",
+          "diff": "乙按配置记录和 vibe/core/tools/builtins/grep.py 记 keyword；甲认为统一 Harness 不运行 grep 工具、搜索走 bash，不记",
+          "kind": "premise",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F19",
+          "mechanism": "/loop 设立的定时循环（scheduled loops）随会话保存，交互恢复时自动读回并继续驱动后续运行",
+          "diff": "乙把 /loop 记为 task_plan；甲只讨论了内存 todo（不带回），没有提到 /loop",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "vibe/app_server/_unified_harness_backend_adapter.py#L2425-L2455（_resume 在非 headless 时调用 restore_scheduled_loops）；vibe/app_server/_unified_scheduled_loops.py#L114-L138（从 scheduled-loops.json 读回）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F28",
+          "mechanism": "父会话关闭时子代理控制器 close 逐个 unload_child 关闭子会话",
+          "diff": "乙把它算取消传播并填 cancel_depth=direct_children、cancel_coverage=some_ways；甲同样看到它，但拿不准卸载算不算取消，写进 unresolved，子维度填 null",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "cancel_propagation 的“用户中断主代理或中止会话、框架随之连带取消子代理的，算”和 cancel_coverage 的“取消父运行指……中止父代理所在的整个运行或会话”没说清：子会话被卸载（进程内关闭、状态仍可在恢复时继续）算不算“取消”。"
+        },
+        {
+          "field": "F32",
+          "mechanism": "同包的 AppServerHost/LocalHarness 等 Python 门面，在调用方进程内经内存传输运行核心",
+          "diff": "乙记 library；甲看到同一份 app-server 协议文档，认为官方没给库用法、是否对外支持不清，写进 unresolved",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "library 的“官方公开发布的包”与 unknown_rule 的“文档没说清某个接口是否对外支持时写进 unresolved”之间界线不清：协议参考把门面称为 public Python facades、但无使用文档，算“公开发布”还是“没说清对外支持”，两人读法不同。"
+        }
+      ]
+    },
+    {
+      "config_id": "A15__openhands__canvas-local-default",
+      "labels": {
+        "甲": "gpt",
+        "乙": "opus"
+      },
+      "items": [
+        {
+          "field": "F12",
+          "mechanism": "LLM 未设 max_output_tokens 时按 LiteLLM 型号表取默认输出上限并随请求发出",
+          "diff": "甲因快照里没有 LiteLLM 型号表、无法确认 gpt-5.6-sol 的有效阈值，把 output_limit 记进 unresolved；乙按查表分支推断记入 value 和 hard_stop（confidence medium）",
+          "kind": "evidence_gap",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F13",
+          "mechanism": "state.view 每轮从事件日志增量折叠尾部事件（Condensation 改写视图、其余按类型追加或跳过），再由 prepare_llm_messages 转成消息",
+          "diff": "甲把每轮折叠事件这一层当请求构造主体记 typed_event_rebuild；乙认为控制条目在追加时已消化、请求构造只读维护中的 View 列表，记 sequential_messages",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "scope_rule 的“按代码每轮实际读取、并据以拼出请求的那一层判”与“每次请求都要遍历含多种条目类型的记录、按类型转换后才拼出消息的记 typed_event_rebuild”，没有说清“每轮增量折叠新增尾段、其余用缓存”的视图算哪一层"
+        },
+        {
+          "field": "F13",
+          "mechanism": "View 转成的模型消息列表这一层",
+          "diff": "乙把它记进 layers（typed_event_rebuild + sequential_messages）；甲认为转换后的临时消息列表不是独立维护的顺序消息层，layers 只写 typed_event_rebuild",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "layers 规则举例“类型化事件先折叠成消息列表再发出，写 typed_event_rebuild 和 sequential_messages”，与 sequential_messages 定义里的“运行中维护的消息列表”对每轮临时生成的列表算不算一层说法不一"
+        },
+        {
+          "field": "F20",
+          "mechanism": "恢复时按持久 action_id／tool_call_id 把已落盘的调用与结果配对，只执行未配对的调用（未完成的补错误观察、不重跑）",
+          "diff": "甲据此计 idempotency_key（范围限同一已落盘调用）；乙看到恢复时不重跑未完成调用，认为不是按持久调用标识查重，不计",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "idempotency_key 的“持久的调用标识，执行前检查；同一标识在重试或恢复重跑时不会再执行一次”没有说清：恢复时按调用编号把已有结果的调用排除出待执行列表、对未完成调用补错误而不重跑，算不算执行前查重"
+        },
+        {
+          "field": "F21",
+          "mechanism": "planning_file_editor 的 plan_path 参数把可写文件限定为一个 PLAN.md（allowed_edits_files）",
+          "diff": "甲据此记 file_path（仅限该工具）；乙的取值和说明都没提到规划编辑器或 plan_path，只写“没有路径规则”",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "optional",
+          "evidence": "software-agent-sdk openhands-tools/openhands/tools/planning_file_editor/definition.py#L63-L95（user_selectable=False，plan_path 缺省为 {working_dir}/.agents_tmp/PLAN.md）、planning_file_editor/impl.py#L21-L31；OpenHands src/api/agent-server-adapter.ts#L1332-L1364（只在“Create a Plan”规划模式里由 Canvas 写死 plan_path 构造）、src/routes/agent-settings.tsx#L453（档案工具选择器只列 user_selectable 的工具）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F21",
+          "mechanism": "browser_tool_set 执行器的 allowed_domains 参数（默认空列表）",
+          "diff": "甲按“只约束某一个网页抓取工具的域名规则”记 network_target；乙看到了该参数，但因设置与界面不暴露而不计",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "scope_rule 的“用户在配置、定义文件或预存的工作流文件里写、只约束某一个工具的…规则按 R2 计入”没有说清：只能经工具 params（档案 JSON 或 API）传、界面和设置项不暴露的参数，算不算用户能写的规则"
+        },
+        {
+          "field": "F24",
+          "mechanism": "SecurityAnalysisEvent 按动作编号持久记录风险等级与当时的确认策略 NeverConfirm",
+          "diff": "甲认为能据此分出自动放行，记 approval；乙认为没有人工批准记录，不计",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "approval 的“或者至少能从记录里分出人工批准和自动放行”没有说清：默认根本没有人工审批、只记下自动放行策略名时，算不算“分得出”"
+        },
+        {
+          "field": "F31",
+          "mechanism": "SDK 会话回调／事件订阅收到 Condensation、CondensationRequest 事件，回调链不吞异常、可靠抛错阻断",
+          "diff": "甲把它记为 context_compaction 事件点（不列 observe_only）；乙只把事件流订阅（webhook）看作不分阶段的观察通道，写“没有上下文压缩事件”",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "scope_rule 的“证据要指向实际的事件名或订阅接口”没有说清：订阅整条类型化事件流、按事件类型认出压缩事件，算不算一个压缩阶段的事件点；observe_only 的“靠抛错算阻断”又让同一订阅可读成可干预"
+        },
+        {
+          "field": "F31",
+          "mechanism": "默认加载的公共技能／插件是否已注册钩子处理器",
+          "diff": "甲因快照不含 OpenHands/extensions 公共扩展内容，in_use_by_default 写 null；乙按默认无钩子文件写 []",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F32",
+          "mechanism": "Agent Server 的 /v1 OpenAI Chat Completions 与 Responses 兼容接口，每个请求跑完整代理",
+          "diff": "乙记 public_protocol（via_default_entry）；甲看到了该网关，归入 service_api，不另记 public_protocol",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "public_protocol 的“跨产品公共协议（编辑器代理协议、工具协议等）”只举了代理协议和工具协议，没说模型接口兼容协议（OpenAI Chat Completions／Responses）算不算"
+        },
+        {
+          "field": "F35",
+          "mechanism": "automation 服务把定时与事件自动化及 PENDING 运行存进本机 SQLite",
+          "diff": "甲因快照没有 automation 1.31.0 源码、查不到重启后是否续跑，整项记 unknown（not_found）；乙按数据库落盘和文档推断记 persistent（confidence low）",
+          "kind": "evidence_gap",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F35",
+          "mechanism": "运行中发来的消息写入会话事件记录，崩溃后 RUNNING 会话被标 ERROR、不自动续跑",
+          "diff": "乙把交互层记 in_memory；甲认为消息文本仍在、不是“工作项丢失”，interactive_queue 写 null",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "in_memory 的“进程崩溃或退出后这些工作项丢失”与 persistent 的“由框架恢复，继续执行或重试”之间，没有给“记录写了盘、但重启后不自动执行”的情形归属"
+        },
+        {
+          "field": "F36",
+          "mechanism": "Canvas 默认注入的 request_secret 工具生成待用户填写或取消的密钥请求卡，队列存 localStorage、重载后仍显示",
+          "diff": "甲记 resumable_todo；乙看到了该工具，只按非阻塞判它不算 blocking_approval，认为四项都装不下",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "resumable_todo 的“持久保存、进程重启后仍然存在，并且明确等人来处理…的待办”没有说清：工具调用已立即返回、代理不等待的“向人索取材料”请求卡算不算等人处理的待办"
+        },
+        {
+          "field": "F36",
+          "mechanism": "自动化运行的 finish 回复带 TaskOutcome（status 枚举加 outcome_summary），Canvas 在运行记录、活动日志和首页按字段显示徽章与摘要",
+          "diff": "乙记 structured_handoff（confidence low）；甲只查了普通会话 finish 的自由文本，没有提到自动化运行的任务结果对象",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "cannot_tell",
+          "evidence": "software-agent-sdk openhands-tools/openhands/tools/preset/task_outcome.py#L1-L35（实验性模型，SDK 内只导出、未见接线）；OpenHands src/types/automation.ts#L250-L262、src/utils/automation-run-display.ts#L95-L135；文档导出 Managing automations 的 Run Statuses（无任务结果状态时显示成功徽章）。生成 finish_tool_response 的 automation 服务源码不在快照里，自动化路径上是否默认要求带 TaskOutcome 查不到；普通交互会话的 FinishAction 只有 message（openhands-sdk/openhands/sdk/tool/builtins/finish.py#L21-L22）",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "A16__grok-build__cli-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F12",
+          "mechanism": "默认路径上的调用预算：内置代理 max_turns 为 None、SamplerConfig 的 max_completion_tokens 为 None、纯文本截断续写预算本地默认关、由服务端 length_salvage_budget 决定",
+          "diff": "两人查到的是同一批源码默认值；甲按 R10“查不到发行版开关的按源码默认记”写 known_absent，乙按 F12 unknown_rule“版本对不上时写 unknown”以 version_unclear 留未知（1.0.77 构建源码不在快照、远端预算值和默认型号查不到）。另：乙在说明里提到截断工具调用连续恢复上限 5 次（sampler_turn.rs L16-L17）并以 Responses 后端改写 stop_reason 为由不计，甲的说明没有提到这一机制；两人都没把它记入取值。",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F19",
+          "mechanism": "恢复主会话后，模型可用默认 task 工具的 resume_from 按旧子代理编号从 subagents/<id>/meta.json 重建终态子代理",
+          "diff": "两人都看到 resume_from；乙记入 subagent_links 取值，甲因“恢复主会话后关联是否自动接回未确认”写进 unresolved。",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F19 subagent_links 判定标准里“恢复后模型用默认注册的工具按原编号重新连上子代理…也算”与“父会话能继续向原来的子代理发指令或收到结果”“只保留了可以追溯的编号的不计”之间，没说清只能续接已结束子代理、按旧编号另起一次运行算不算“重新连上”。"
+        },
+        {
+          "field": "F20",
+          "mechanism": "/rewind 回退时是否把工作区文件恢复到该点（workspace_snapshot）",
+          "diff": "两人都看到 /rewind；乙依 shell 侧 rewind.rs 的文件写回和 1.0.77 文档记入 workspace_snapshot，甲因 1.0.45 的 TUI 只发 conversation_only、1.0.77 文档却说恢复文件而写进 unresolved。快照事实：TUI 常量 REWIND_MODE_WIRE = \"conversation_only\"（xai-grok-pager/src/app/effects/mod.rs L5541-L5552），仓库内旧指南 17-sessions.md L141-L158 也说不恢复文件，与乙“旧指南与实现相反”的说法不符；shell 侧的文件写回只在请求带文件模式时执行。1.0.77 文档 Sessions 一节称回退恢复文件。",
+          "kind": "same_fact_different_reading",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "R10“官方文档和固定版本的实现说法相反时，以实现为准”：发行版落不到确切提交时“固定版本的实现”指近似提交 1.0.45，还是可由 1.0.77 文档补足；以及“实现”看所选入口（TUI 发的模式）还是后端支持的能力，两人读法不同；R7 又把“只出现在其他版本里的”排除出 unresolved 迹象。"
+        },
+        {
+          "field": "F26",
+          "mechanism": "调度器（scheduler_create 工具，/loop 是它的包装）到点时由 SchedulerActor 直接构造 SubagentRequest 起一个后台 general-purpose 子代理，不经主代理决定",
+          "diff": "乙记入 event_scheduling，甲在取值和说明里都没有提到调度器。1.0.45 源码与仓库内旧指南都说每次触发跑在独立后台子代理里、不作为对话中的一轮；1.0.77 文档（Background Tasks: Scheduled prompts）改写为“each firing is a new agent turn”，未说是否仍是子代理，且称 /loop 只在功能可用时出现，故 1.0.77 是否仍这样派生拿不准。default 按 1.0.45：scheduler_create 在主代理默认工具集中，模型可自行调用（R3 第一档），只在子代理被关闭时才被剥离。",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "gpt",
+          "exists": "cannot_tell",
+          "default": "default",
+          "evidence": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs#L463-L477, #L733-L757; crates/codegen/xai-grok-agent/src/config.rs#L242-L276; crates/codegen/xai-grok-agent/src/builder.rs#L189-L202, #L958-L960; crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L82-L84, #L160; docs-llms-full.txt 小节 Background Tasks > Scheduled prompts",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "B06__zed__editor-default",
+      "labels": {
+        "甲": "gpt",
+        "乙": "opus"
+      },
+      "items": [
+        {
+          "field": "F12",
+          "mechanism": "Zed 托管 Anthropic 路径把服务端型号列表下发的 max_output_tokens 填进请求，截断时只以 MaxTokens 结束、不续写",
+          "diff": "甲因服务端默认型号及其上限查不到记 unknown（not_found）；乙认为阈值完全来自服务端、截断只结束不续写，按定义不计 output_limit，记 known_absent",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F12 output_limit 判定标准里“代码里的默认值或按型号查的表”与“阈值完全来自服务端的，不算”并列：客户端照服务端型号列表填的上限，甲读成可能的按型号查表、需知道默认型号才能判，乙读成完全来自服务端。"
+        },
+        {
+          "field": "F13",
+          "mechanism": "build_request_messages 每轮从内存 self.messages 出发，其中 Resume 换成固定续写提示、Summary 型 Compaction 换成摘要文字并补回旧用户消息",
+          "diff": "甲把控制条目的按变体转换视为逐类解释，记 typed_event_rebuild；乙认为每轮直接取运行中维护的消息列表、控制条目只是修整，记 sequential_messages（layers 同样各记一项）",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F13 scope_rule 只说“只用控制条目定位从哪里取起的”仍记 sequential_messages，没说控制条目被换成固定文字或摘要文字算 sequential_messages 判定里的“修整（替换）”，还是 typed_event_rebuild 判定里的“逐类解释”。"
+        },
+        {
+          "field": "F14",
+          "mechanism": "auto_compact 默认开启、90% 阈值的模型摘要压缩，只在型号上下文窗口不小于 80000 时自动运行",
+          "diff": "甲因配置记录里默认型号由服务端决定、窗口门槛无法核实，把 summarization 放进 unresolved；乙直接记入取值",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F15",
+          "mechanism": "read_file 读超过 16KB 的文件且未给行号时，自动返回按语法解析得到的符号提纲（带行号）",
+          "diff": "甲据此记 structural_index；乙的 F15 只讨论了受 lsp-tool 开关挡下的 LSP 工具，没提到 read_file 自动提纲（乙只在 F14 的截断说明里提到它）",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/agent/src/tools/read_file_tool.rs#L454-L480；crates/agent/src/outline.rs#L10、#L28-L80",
+          "codebook_note": ""
+        },
+        {
+          "field": "F19",
+          "mechanism": "恢复父线程后能否用 spawn_agent 按原 session_id 继续原子代理（subagent_links）",
+          "diff": "两人都讨论了这一机制，差在代码事实：甲看 agent crate（from_db 不注册子代理、resume_subagent_thread 要求会话已在内存）判不计；乙看 agent_ui 的 conversation_view.rs load_subagent_session，认为打开父线程时会从数据库载入并登记子代理会话，判计入；属于对代码行为的事实分歧，不是码本读法，按 other 记，建议主控核对 crates/agent_ui/src/conversation_view.rs L2555-L2645",
+          "kind": "other",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F20",
+          "mechanism": "New From Summary：用当前线程摘要另开新线程，原线程留在列表里可继续",
+          "diff": "甲记 session_branch；乙认为它不是从某一点复制出的分支，不计",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F20 session_branch 判定里“在当前位置复制出独立会话、两边都能继续的，也算”没说以摘要而非逐字历史作种子的新线程算不算“复制出”。"
+        },
+        {
+          "field": "F20",
+          "mechanism": "ActionLog 在代理首次改文件前记下原文，Review Changes 的 Reject 把文件改回原样、删除代理新建的文件",
+          "diff": "甲把它记为 compensation（内置反向操作），不计 workspace_snapshot；乙把它记为 workspace_snapshot，并写“未见补偿操作”",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "workspace_snapshot“默认拍下工作区文件的快照，而且有内置入口能把文件恢复到那一点”与 compensation“为已执行的有副作用的动作内置了反向操作…经确认后执行”都能套上只记被改文件原文、经用户 Reject 改回的机制，码本没说按文件、内存中的原文记录归哪一项。"
+        },
+        {
+          "field": "F22",
+          "mechanism": "fetch 关闭 HTTP 客户端自带的重定向跟随，对初始 URL 和每一跳重定向的主机在执行中逐个发起沙箱网络授权请求",
+          "diff": "乙据此记 specific_operation；甲的 F22 没有提到 fetch 的重定向逐跳授权，只写了未发现执行中逐个网络访问弹窗",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "crates/agent/src/tools/fetch_tool.rs#L279-L304、#L352-L362（sandboxing 开关 enabled_for_all，见配置记录所引 crates/feature_flags/src/flags.rs L102-L121）",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "B10__factory-droid__cli-default",
+      "labels": {
+        "甲": "gpt",
+        "乙": "opus"
+      },
+      "items": [
+        {
+          "field": "F04",
+          "mechanism": "Git pull 失败后 Droid 先询问用户，获准后才改动工作树修复（CLI v0.200.0 发布说明）",
+          "diff": "甲据此记 escalate_to_human；乙的取值和说明里都没提这条，并写“未见框架因失败暂停任务等用户决定的默认规则”",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "docs-llms-full.txt#L52456-L52462（Full Changelog > CLI v0.200.0 · Desktop v0.157.0 > Improvements: Failed pull confirmation；条目未标 (app)）。闭源，看不出是框架规则还是提示里的要求",
+          "codebook_note": ""
+        },
+        {
+          "field": "F04",
+          "mechanism": "框架用乐观 JSON 解析恢复畸形的可选参数（CLI v0.22.9）",
+          "diff": "乙把 framework_input_repair 放进 unresolved；甲只以用户自装钩子为由排除 framework_input_repair，没有提到这条乐观解析",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "cannot_tell",
+          "default": "cannot_tell",
+          "evidence": "docs-llms-full.txt#L56209-L56230（CLI v0.22.9：recovery from malformed optional arguments using optimistic JSON parsing）；反证 docs-llms-full.txt#L51598-L51618（CLI v0.233.0：参数读不懂的工具调用改为返回可纠正错误，不再用编造的值执行），v1.8.0 是否保留可选参数修补查不到",
+          "codebook_note": ""
+        },
+        {
+          "field": "F07",
+          "mechanism": "本机 session.jsonl 会话记录与默认开启的 cloudSessionSync 云端镜像",
+          "diff": "两人看的是同一组文档；甲认为闭源文档分不出 client／execution_core，记 unknown（closed_source）；乙按“镜像”措辞和关闭同步后仍可用推断 execution_core",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F17",
+          "mechanism": "session.jsonl 里是否有压缩边界、待批审批一类控制条目",
+          "diff": "甲认为 JSONL 本身不证明有控制条目，整字段记 unknown；乙据压缩后重开载入旧消息（v1.5.0）和恢复待批审批推断有控制条目，记 event_log",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F17",
+          "mechanism": "回退用的带内容哈希的文件快照",
+          "diff": "两人都看到了文件快照；乙放进 unresolved 的 state_snapshot；甲认为 CLI 的持久生命周期和恢复入口不明，不借 SDK 文档，整字段记 unknown",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F18",
+          "mechanism": "--resume／/sessions 恢复会话：带回待答问题与待批审批（v0.204.0），重启遗留的未完成 Script 调用标为中断（v0.234.0）",
+          "diff": "甲按恢复待批审批记 checkpoint_resume；乙按未完成工具调用不接续、主入口读回对话记 rebuild_and_rerun",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "checkpoint_resume 的“待批准的动作……恢复时接着执行”与 rebuild_and_rerun 的“没做完的工具调用不接续”同时各命中一部分；“几种机制并存时取默认恢复入口实际用的那一种”没说待批审批被带回、但运行中调用被中断时算哪一种"
+        },
+        {
+          "field": "F20",
+          "mechanism": "/rewind-conversation 回退时把文件恢复到较早一点（文件快照）",
+          "diff": "乙记 workspace_snapshot；甲放进 unresolved。CLI 参考只写 Undo recent changes in the session，文件恢复的明确说法来自标了 (app) 的发布说明和 Python SDK 文档，甲不从桌面端和 SDK 借证据，乙借用",
+          "kind": "premise",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        },
+        {
+          "field": "F26",
+          "mechanism": "用户执行 /create-skill，CLI 直接把对话 fork 成 Spec 模式的新会话，由新会话里的 Droid 研究工作流并提议技能",
+          "diff": "甲按用户直接创建记 user；乙只看了 Task 委派和 Missions，没有提到 /create-skill",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "docs-llms-full.txt#L32146-L32163（Skills > Create a skill from a session > In the Droid CLI）。斜杠命令按 R3 属第二档，但 F26 规定 user 路径默认开放即计入，故写 default；这个 fork 出的会话算不算子代理是另一个口径问题",
+          "codebook_note": ""
+        },
+        {
+          "field": "F28",
+          "mechanism": "主代理被中止（abort）时 Task 子代理随之终止（CLI v0.19.8 修复）",
+          "diff": "甲据此记 cancel_propagation、cancel_depth=direct_children；乙称查过发布说明未见连带取消，没有提到这条",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "docs-llms-full.txt#L56338-L56363（CLI v0.19.8 > Bug fixes: Fixed task subagents to properly terminate on abort）。较早版本的条目，当前子代理文档没有取消矩阵，也没找到反证；cancel_coverage 仍查不到",
+          "codebook_note": ""
+        },
+        {
+          "field": "F29",
+          "mechanism": "SDK 的进程内工具：嵌入方定义函数，SDK 起本机回环 MCP 服务接入会话",
+          "diff": "甲按实际跨越的 MCP 边界和词表先后归入 external_protocol_service；乙按嵌入方为单个会话声明工具另记 embedder_declared",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "embedder_declared 写“工具由嵌入方经嵌入接口为某个会话声明的，记本项”，而 R8 和 plugin_api 条又要求按实际边界、按词表先后取第一项（external_protocol_service 在前）；工具经 SDK 起的回环 MCP 服务交回嵌入方执行时，两句指向不同取值"
+        },
+        {
+          "field": "F30",
+          "mechanism": "commands 目录里带 shebang 的可执行斜杠命令，由 CLI 运行脚本并把输出贴回会话",
+          "diff": "甲记 workflow_definition（executable_items 也记它）；乙归 prompt_template（executable_items 记 prompt_template）",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "workflow_definition 的“步骤定义可以写成文字或代码，推进由框架完成”可以读成包括框架执行的多命令脚本；prompt_template 要求“展开为一条提示”，而 executable_items 只说嵌入命令片段归所在模板，码本没写整份可执行命令文件归哪一项"
+        },
+        {
+          "field": "F32",
+          "mechanism": "droid exec --output-format acp 作为 Agent Client Protocol 服务端，供 JetBrains、Zed 驱动",
+          "diff": "乙记 public_protocol；甲称未见 ACP 的具体声明",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "optional",
+          "evidence": "docs-llms-full.txt#L9223（droid exec 的 -o 选项含 acp）；docs-llms-full.txt#L15361-L15424（IDE Integrations > JetBrains IDEs、Zed：ACP，args exec --output-format acp）。要换 exec 子命令，按 R5 记入取值但不进 via_default_entry",
+          "codebook_note": ""
+        },
+        {
+          "field": "F32",
+          "mechanism": "TypeScript SDK 连接本机 droid daemon，daemon 没有线协议文档",
+          "diff": "甲按 library 的 SDK 例外记入取值（needs_official_package 也记 library）；乙放进 unresolved",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "library 的例外“本机服务没有公开线协议文档、官方只给 SDK 作对接方式的，这个 SDK 记本项”与 F32 unknown_rule 的“文档没说清某个接口是否对外支持时，这一项写进 unresolved”在“没有线协议文档”这种情形下指向不同处理"
+        },
+        {
+          "field": "F33",
+          "mechanism": "Loop 工具／interval 循环命令的周期提示（CLI v0.111.0、v0.182.0 发布说明）",
+          "diff": "两人都看到了发布说明；甲按 R6 推断当前版本仍有，记 schedule 并进 via_default_entry；乙因 v1.8.0 命令表和工具文档都没有 Loop 或 interval，放 unresolved",
+          "kind": "evidence_gap",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "C01__hermes-agent__cli-default",
+      "labels": {
+        "甲": "gpt",
+        "乙": "opus"
+      },
+      "items": [
+        {
+          "field": "F12",
+          "mechanism": "自动复盘子代理（background review fork）的累计输入 Token 预算：默认 min(600000, 0.75×上下文窗口)，未知窗口 120000，越过后在下一次模型调用前停下",
+          "diff": "甲据此记 total_tokens（hard_stop），乙的取值和说明里都没有提到自动复盘及其 Token 预算",
+          "kind": "missed_fact",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "agent/background_review.py#L173-L224, agent/background_review.py#L1058-L1060, agent/turn_iteration_prep.py#L390-L401, hermes_cli/config_defaults.py#L785-L797（background_review enabled=True）, agent/turn_finalizer.py#L602-L616",
+          "codebook_note": ""
+        },
+        {
+          "field": "F19",
+          "mechanism": "后台委派子代理已完成但未交付的结果持久化在 state.db，进程重启后补投递回原会话；运行中的子代理不续跑",
+          "diff": "甲记入 subagent_links，乙看到同一机制但放进 unresolved",
+          "kind": "same_fact_different_reading",
+          "who_listed": "甲",
+          "listed_by": "gpt",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "subagent_links 判定标准“恢复后，父会话能继续向原来的子代理发指令，或能收到它的结果”没说明只补投递已完成、未交付的结果而不恢复子代理执行时算不算“关联”，也没说补投递依赖的进程（经典 CLI 退出后网关是否仍在）由哪方前提决定，甲按“能收到结果”计入，乙读成需另行确认。"
+        },
+        {
+          "field": "F22",
+          "mechanism": "经典 CLI 本地会话里，用户输入触发的 execute_code 脚本不做整段审批，脚本运行中每次 terminal() 调用命中危险模式时单独询问、一次批准只放行这一条命令",
+          "diff": "乙据此记 specific_operation，甲的取值和说明里没有提到 execute_code 脚本内的逐条审批（甲说明中的“不按文件数量推断 specific_operation”针对的是多文件 patch，另一机制）",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "tools/approval.py#L1345-L1394（check_execute_code_guard：交互 CLI 直接放行整段，terminal() 逐次检查）, tools/code_execution_rpc.py#L100-L106, toolsets.py#L11-L24（execute_code 在默认核心工具中）, website/docs/user-guide/security.md#L250-L262（execute_code Scripts）",
+          "codebook_note": ""
+        },
+        {
+          "field": "F30",
+          "mechanism": "技能组合（skill bundles）：~/.hermes/skill-bundles/<slug>.yaml 定义，用户 /<slug> 按名调用，展开为一条装入若干技能并附 instruction 的用户消息",
+          "diff": "乙据此记 prompt_template，甲的取值和说明里没有提到 skill bundles（甲说明中“技能按名展开不重复记 prompt_template”针对的是单个技能的斜杠调用）",
+          "kind": "missed_fact",
+          "who_listed": "乙",
+          "listed_by": "opus",
+          "exists": "yes",
+          "default": "default",
+          "evidence": "agent/skill_bundles.py#L1-L32, agent/skill_bundles.py#L131-L170, cli.py#L742-L751, website/docs/user-guide/features/skills.md#L520-L560（Skill Bundles / YAML schema）",
+          "codebook_note": ""
+        }
+      ]
+    },
+    {
+      "config_id": "D03__mini-swe-agent__cli-default",
+      "labels": {
+        "甲": "opus",
+        "乙": "gpt"
+      },
+      "items": [
+        {
+          "field": "F02",
+          "mechanism": "mini.yaml 任务模板要求每次回复先写解释分析与计划的推理文字、再给 bash 调用（另有六步 Recommended Workflow）",
+          "diff": "甲把这段要求读作推荐流程和每步说明里顺带提到计划，记 known_absent/none；乙把它读作明确要求先写出计划再动手，记 prompt_text_only",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F02 scope_rule 只区分“明确要求先产出计划”（prompt_text_only）与“泛泛鼓励规划、或在进度说明里顺带提到计划”（none），没说每一轮回复都要求的“analysis and plan”推理文字（不是单独的首轮计划）算哪一边，两人各取一边。"
+        },
+        {
+          "field": "F17",
+          "mechanism": "last_mini_run.traj.json 轨迹里，审批拒绝作为 role=user 消息记录，并在 extra 里带 interrupt_type=UserRejection",
+          "diff": "甲认为 UserRejection 是带内容的 user 消息、interrupt_type 只是消息字段，记 messages；乙认为它是挂在消息下的审批控制条目，记 event_log",
+          "kind": "same_fact_different_reading",
+          "who_listed": "",
+          "listed_by": "",
+          "exists": "",
+          "default": "",
+          "evidence": "",
+          "codebook_note": "F17 scope_rule 一边说审批控制条目“独立存放或挂在消息下都算”，一边说“消息自身的字段属于消息元数据……控制条目要有自己的条目类型或分片类型”；消息 extra 里的 interrupt_type 算“自己的条目类型”还是“消息自身的字段”，两人读法相反。"
+        }
+      ]
+    }
+  ]
+}

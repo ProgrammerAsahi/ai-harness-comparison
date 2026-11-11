@@ -42,7 +42,7 @@ npm run check:study
 | Markdown 与公式解析 | `research/quantification-markdown.mjs`；行内用 `$…$`，独立公式用前后各占一行的 `$$` |
 | 计算示例 | 本目录 `calculate_examples.py`、`test_examples.py` |
 | 试编码数据格式、校验与分歧比较 | 本目录 `data/`（说明见 [data/README.md](data/README.md)）、`validate_data.py`、`compare_codings.py`、`test_data_validation.py`；`data/codings/` 放两位编码者按现行码本做的、未经裁决的初稿 |
-| 试编码任务卡与分段合并 | 本目录 `pilot/coding-card.md`（改动时提升卡首的提示版本）、`pilot/parts.py`；编码者读的源码快照由 `pilot/fetch_sources.py` 按配置记录钉的提交取到本地，不入库；两轮编码的做法与一致率见 `pilot/round1.md`（码本 `fields-0.2`，编码文件归档在 `pilot/round1/`）和 `pilot/round2.md`（码本 `fields-0.3`，编码文件归档在 `pilot/round2/`）；现行码本是 `fields-0.4` |
+| 试编码任务卡与分段合并 | 本目录 `pilot/coding-card.md`（改动时提升卡首的提示版本）、`pilot/parts.py`；编码者读的源码快照由 `pilot/fetch_sources.py` 按配置记录钉的提交取到本地，不入库；三轮编码的做法与一致率见 `pilot/round1.md`（码本 `fields-0.2`，编码文件归档在 `pilot/round1/`）、`pilot/round2.md`（码本 `fields-0.3`，编码文件归档在 `pilot/round2/`）和 `pilot/round3.md`（现行码本 `fields-0.4`、十个新配置，编码文件在 `data/codings/`，算完一致率后的交叉核对在 `pilot/round3/`） |
 
 参考资料列表由来源表与正文引用共同生成，不单独修改。修改后提交正文、生成器和对应 SVG／HTML／JSON 产物。`npm run build` 与 `npm run check` 也已包含本研究报告。
 

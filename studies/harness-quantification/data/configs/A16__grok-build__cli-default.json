@@ -18,7 +18,7 @@
   "note": "公开仓库 xai-org/grok-build 只有 main 一个分支，没有 Release 和标签，51 个提交都叫“Synced from monorepo”，最后一次是 2026-09-29（2bdd1d6，树内 1.0.45，内部提交 559751fd）。此后官方又发了 1.0.46–1.0.77（2026-09-30 至 11-05），stable 指针 2026-11-06 更新为 1.0.77，alpha 为 1.0.81，公开仓库已约 6 周没有同步。版本对应：同步提交里的 CHANGELOG 最新一节 1.0.45 与官方外部日志同日，所以 2bdd1d6 可视为 1.0.45 的源码；1.0.77 的构建提交只存在于内部大仓，二进制里注入的短提交也指向内部大仓，不下载发布包读不到，下载了也无法在公开仓库解析。源码证据因此只有一层近似：取 2bdd1d6。为补上 32 个版本的差距，逐个读了官方外部日志 1.0.46–1.0.77，没有见到默认权限模式、子代理默认开启、目录信任规则或沙箱默认值的改变；变化集中在审批卡（1.0.51 web_fetch 按域名记住）、auto 模式判定（1.0.64）、未信任目录只运行组织托管钩子（1.0.64）和界面细节。默认型号在两版之间可能已变，见 environment_premises.default_model。官方文档已从仓库内用户指南（crates/codegen/xai-grok-pager/docs/user-guide/，27 篇，停在 1.0.45）转到站外 docs.x.ai/build（24 页，每页可加 .md 取原文）。本记录的权限、沙箱、子代理说法在两处一致，以站外文档为当前依据、仓库内文档给行号。主报告来源记录钉的是更早的 4247f66（2026-09-19）。产品名在官方材料中署名 SpaceXAI／SpaceXSI；官方发布说明仍称 Grok Build 为 beta。版本取法（配置钉当前正式版、源码用公开仓库最后一次同步的提交），入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "默认内置工具（用户指南所列）：read_file、search_replace、grep、list_dir、run_terminal_command、web_search、web_fetch、todo_write、spawn_subagent、memory_search（记忆为实验功能，默认关闭）；源码另有 ask_user_question、计划模式进出、图像与视频生成、后台任务、monitor、scheduler、workflow、lsp 等实现，默认是否都注册未逐一核实",
+    "内置工具（以下为快照 1.0.45 里主代理 grok-build 的情况，1.0.77 未逐一核对；用户指南 01-getting-started 列出的工具与代码里的默认注册不完全一致，以代码为准）。一、默认注册、没有本地开关也没有远程设置项：run_terminal_command、read_file、search_replace、list_dir、grep、todo_write、kill_command_or_subagent、get_command_or_subagent_output、wait_commands_or_subagents、scheduler_create／scheduler_delete／scheduler_list、monitor、search_tool、use_tool，以及进入／退出计划模式的两个工具；scheduler 与 monitor 在默认工具集里，远程设置字段里没有它们的项，用户指南把它们写成正常功能（/loop 就是 scheduler 的包装）。二、默认注册，但可被本地开关关掉：spawn_subagent（子代理总开关默认开，且有可用的子代理类型才保留）、ask_user_question（features.ask_user_question 默认开）、write_file（features.write_file 默认开）、web_search（--disable-web-search 可关，且要能解析出带凭据的搜索配置）。三、默认开、本地或服务端远程设置均可关：workflow（默认开，关闭后换成 update_goal）、image_gen、image_edit、image_to_video、reference_to_video（还需会话拿得到 API 凭据，远程设置可单独关掉某个工具）。四、源码默认关，要本地开关（features.* 或环境变量）或服务端远程设置打开才注册：web_fetch、lsp、send_subagent_message；memory_search 与 memory_get 只在记忆开启后注册（记忆为实验功能，默认关闭）。远程设置下发什么由服务端按账户决定，本记录未运行、未读到 1.0.77 下的实际取值。",
     "内置子代理类型：general-purpose、explore、plan",
     "MCP：没有预置服务器；默认合并兼容来源 ~/.claude.json、.cursor/mcp.json（用户级与项目级）和项目 .mcp.json 中已有的配置，项目级来源受目录信任约束",
     "技能：默认扫描 Claude 与 Cursor 的技能目录；官方随附技能缓存于 ~/.grok/bundled/skills/（清单由服务端分发，未列出）",
@@ -352,6 +352,132 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
       "note": "目录信任管住项目权限规则（.grok/config.toml、.claude/settings.json）以及项目指令和技能的启动加载；无界面运行需要 --trust 或先前授权。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L242-L288",
+      "locator": "crates/codegen/xai-grok-agent/src/config.rs",
+      "lines": "L242-L288",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "主代理 grok-build 的默认工具集：run_terminal_command、read_file、search_replace、list_dir、grep、todo_write、任务类工具、spawn_subagent、scheduler_create／scheduler_delete／scheduler_list、monitor、search_tool、use_tool、update_goal、workflow、send_feedback；scheduler 与 monitor 无条件列在其中。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/builder.rs#L783-L840",
+      "locator": "crates/codegen/xai-grok-agent/src/builder.rs",
+      "lines": "L783-L840",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "构建主代理时按开关追加工具：记忆后端存在才加 memory_search／memory_get，搜索配置启用才加 web_search，web_fetch 配置启用才加 web_fetch，lsp 句柄存在才加 lsp，图像与视频生成配置启用才加相应工具，主代理补上计划模式与 ask_user_question；scheduler 与 monitor 不在这些条件里。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/builder.rs#L264-L278",
+      "locator": "crates/codegen/xai-grok-agent/src/builder.rs",
+      "lines": "L264-L278",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "工具集的 workflow 门控（调用处在 L903）：后台工作流开启时去掉 update_goal，关闭时去掉 workflow；其余工具不受影响，scheduler 不在其中。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/builder.rs#L903-L923",
+      "locator": "crates/codegen/xai-grok-agent/src/builder.rs",
+      "lines": "L903-L923",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "子代理总开关关闭，或没有可用的子代理类型时，从工具集中去掉 spawn_subagent。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/registry.rs#L158-L174",
+      "locator": "crates/codegen/xai-grok-config-types/src/registry.rs",
+      "lines": "L158-L174",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "功能开关登记：lsp_tools 与 web_fetch 的默认值都是关，各有环境变量（GROK_LSP_TOOLS、GROK_WEB_FETCH）和服务端远程设置项（lsp_tools_enabled、web_fetch_enabled）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/registry.rs#L185-L208",
+      "locator": "crates/codegen/xai-grok-config-types/src/registry.rs",
+      "lines": "L185-L208",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "功能开关登记：ask_user_question 与 write_file 默认开，各有环境变量和远程设置项。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/registry.rs#L303-L309",
+      "locator": "crates/codegen/xai-grok-config-types/src/registry.rs",
+      "lines": "L303-L309",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "功能开关登记：active_agent_messages（send_subagent_message 所属）默认关，环境变量 GROK_ACTIVE_AGENT_MESSAGES，远程设置项 active_agent_messages_enabled。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/registry.rs#L448-L467",
+      "locator": "crates/codegen/xai-grok-config-types/src/registry.rs",
+      "lines": "L448-L467",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "功能开关的取值顺序：管理员锁定、环境变量、本地配置、服务端远程设置、默认值；所以源码默认关的功能在没有本地设置时由远程设置决定。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L2171-L2186",
+      "locator": "crates/codegen/xai-grok-shell/src/agent/config.rs",
+      "lines": "L2171-L2186",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "后台工作流默认开；远程设置、本地配置或环境变量 GROK_WORKFLOWS 可以关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L2065-L2089",
+      "locator": "crates/codegen/xai-grok-shell/src/agent/config.rs",
+      "lines": "L2065-L2089",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "image_gen 默认开；远程设置可强制关闭，本地配置和环境变量也可调整。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L2109-L2131",
+      "locator": "crates/codegen/xai-grok-shell/src/agent/config.rs",
+      "lines": "L2109-L2131",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "视频生成工具默认开；远程设置可强制关闭，本地配置和环境变量也可调整。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/spawn.rs#L537-L566",
+      "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/spawn.rs",
+      "lines": "L537-L566",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "web_search 的配置：disable_web_search 为真，或解析不出带 API 凭据的搜索采样配置时为关闭，否则启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config/src/remote_settings.rs#L389-L400",
+      "locator": "crates/codegen/xai-grok-config/src/remote_settings.rs",
+      "lines": "L389-L400",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "服务端远程设置字段举例（lsp_tools_enabled、write_file_enabled、active_agent_messages_enabled，另有 workflows_enabled、web_fetch_enabled）；该文件里没有 scheduler 或 monitor 相关字段。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L144-L148",
+      "locator": "crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md",
+      "lines": "L144-L148",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "用户指南把 scheduler（scheduler_create、scheduler_list、scheduler_delete）写成一般功能，没有提到开关；/loop 是它的包装。"
     }
   ],
   "environment_premises": {

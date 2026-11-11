@@ -1,0 +1,2110 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.4",
+  "synthetic": false,
+  "round": "pilot-2",
+  "config_id": "A12__goose__desktop-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v6",
+    "coded_at": "2026-11-11"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-11",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "user_stepwise"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "goose serve 里的状态机每一步先跑各项操作（工具执行、子代理、压缩、回合上限等），最后跑推理；模型回复带工具请求就执行并把结果交回模型，回复里没有待处理的工具请求时推理不再适用，状态机让出控制、交还用户。delegate 派生的子代理内部同样是模型循环。user_stepwise：桌面底栏的模式切换器把本会话切到 Chat Only（GooseMode::Chat，“Chat only, no tool calls”），模型只回复不调工具，每次回复后交还用户。可选：/goal、/grind 让框架在模型停下时续发（回合之间自动续跑，算模型循环的外层，不另记）；配方和配方、技能斜杠命令把事先写好的说明展开成提示交给模型循环，不算显式工作流；Code Mode（code_execution 平台扩展）默认关闭，要在扩展设置里打开。定时任务由内置 scheduler 按计划发起，任务内部仍是模型循环（发起方式属 F33）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/machine.rs#L154-L248",
+          "locator": "crates/goose-agent/src/machine.rs：StateMachine::step / run",
+          "lines": "L154-L248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "每步依次跑操作和推理，有操作或推理产生效果就继续，全都不适用时返回 Yielded 结束循环；取消令牌触发时返回 Cancelled。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/inference.rs#L439-L444",
+          "locator": "crates/goose-agent/src/inference.rs：InferenceRunner::applies",
+          "lines": "L439-L444",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "只有本轮没有尾随错误且需要再推理（有待回传的工具结果或新用户消息）时才再调模型，模型不再请求工具即结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/goose_mode.rs#L22-L31",
+          "locator": "crates/goose-provider-types/src/goose_mode.rs：enum GooseMode",
+          "lines": "L22-L31",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "内置模式",
+          "note": "默认 Auto；Chat 模式的说明是 Chat only, no tool calls。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/in-session-actions.md#L337-L362",
+          "locator": "documentation/docs/guides/sessions/in-session-actions.md：Mid-Session Changes（goose Desktop）",
+          "lines": "L337-L362",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "桌面底栏有 goose Mode 模式切换器，可在会话中途切换模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/execute_commands.rs#L19-L53",
+          "locator": "crates/goose/src/agents/execute_commands.rs：内置斜杠命令表",
+          "lines": "L19-L53",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令列表",
+          "note": "内置命令为 prompts、prompt、compact、clear、skills、doctor、goal、grind、status，没有改为显式工作流或事件调度的入口。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 核对清单（桌面版没有单独的命令总表，用内置命令表 execute_commands.rs、slash-commands.md、in-session-actions.md 的会中操作、goose-permissions.md 的模式表和 quickstart.md 代替）：/prompts、/prompt（列出或展开 MCP 提示，交给模型循环，不改推进方式）；/compact、/clear、/skills、/doctor、/status（管理或诊断，不改推进方式）；/goal、/grind（框架在回合之间续发，算模型循环外层，不另记）；配方斜杠命令和技能斜杠命令（展开成提示，不算）；以 ! 开头的 bang shell（不经模型，不进取值）；排队消息与中断关键词（打断，不改推进方式）；模式切换器的 Approve、Smart Approve（只加审批，F22）；Chat Only（记 user_stepwise）；quickstart 的快速开始路径就是直接描述任务（模型循环）。疑问：桌面模式切换器在 in-session-actions.md 里写“持续到新会话”，而 goose-permissions.md 写每个会话各有模式、默认值在设置里改，切换算第二档“切换内置模式”还是第三档“改设置”有歧义，这里按第二档记进子维度。"
+    },
+    "F02": {
+      "status": "known_absent",
+      "value": "none",
+      "unknown_reason": null,
+      "value_note": "默认系统提示只有扩展说明和“用 Markdown 回复”，没有要求先写计划；默认启用的平台扩展里没有计划或待办工具，内置模式（auto、approve、smart_approve、chat）和内置斜杠命令里也没有计划模式。可选：Todo 平台扩展默认关闭（default_enabled=false），在扩展设置里打开后提供待办工具，工具说明把它当作简短的计划笔记、条目不必勾掉。快速开始文档写“goose will create a plan”，与默认提示的实现不符，按实现记（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/prompts/system.md#L1-L39",
+          "locator": "crates/goose/src/prompts/system.md：默认系统提示模板",
+          "lines": "L1-L39",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认系统提示",
+          "note": "全文只有身份、扩展列表和 Markdown 格式要求，没有先写计划的要求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs#L55-L59",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：PLATFORM_EXTENSIONS 的 todo 项",
+          "lines": "L55-L59",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认工具清单",
+          "note": "Todo 扩展 default_enabled 为 false，默认安装不注册待办工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/goose_mode.rs#L22-L31",
+          "locator": "crates/goose-provider-types/src/goose_mode.rs：enum GooseMode",
+          "lines": "L22-L31",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "内置模式列表",
+          "note": "四种模式里没有计划模式。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/quickstart.md#L237-L248",
+          "locator": "documentation/docs/quickstart.md：Write Prompt",
+          "lines": "L237-L248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "官方说明",
+          "note": "文档说 goose 会先做计划再动手，但默认提示与工具清单里没有对应机制。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过：system.md、subagent_system.md、tiny_model_system.md（在这三份里搜 plan 均无要求），默认启用的平台扩展源码（developer、summon、tom、skills、apps、analyze、extensionmanager；全仓 platform_extensions 里只有 todo.rs 提到计划），GooseMode 枚举和内置斜杠命令表。"
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_end_signal：模型回复里没有工具请求时推理不再适用，状态机让出。budget：GOOSE_MAX_TURNS 默认 1000，每条用户消息之后的助手回合数到上限就停下并问是否继续；delegate 子代理默认同样取 1000（GOOSE_SUBAGENT_MAX_TURNS 未设时回落到 GOOSE_MAX_TURNS），主模型可用 max_turns 参数另设。user_interrupt：桌面输入框的停止按钮触发取消令牌；排队消息里含 stop、wait 等关键词也会打断当前任务。可选：/goal 只在结束前注入一次检查提醒，由模型自己决定继续还是结束，不算 verification_condition；/grind 续发到 max_turns；配方的 retry.checks 跑成功检查命令，不过就重置到起始消息重来，最多 max_retries 次，只在配方路径生效；Stop 钩子要插件提供 hooks/hooks.json，默认安装没有。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/machine.rs#L154-L248",
+          "locator": "crates/goose-agent/src/machine.rs：StateMachine::step / run",
+          "lines": "L154-L248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "没有操作或推理适用时返回 Yielded 结束；取消令牌触发时返回 Cancelled。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_maxturns.rs#L14-L66",
+          "locator": "crates/goose/src/agents/state_machine/ops_maxturns.rs：MaxTurnsOperation",
+          "lines": "L14-L66",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认回合上限",
+          "note": "助手回合数达到 max_turns 时发出“已达上限，是否继续”的消息并让出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/config/base.rs#L1358-L1360",
+          "locator": "crates/goose/src/config/base.rs：default_max_turns",
+          "lines": "L1358-L1360",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认回合上限",
+          "note": "GOOSE_MAX_TURNS 未设置时取 1000。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L1433-L1439",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：resolve_max_turns",
+          "lines": "L1433-L1439",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理",
+          "note": "子代理回合上限依次取参数、配方设置、GOOSE_SUBAGENT_MAX_TURNS，最后回落到默认 max_turns。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/ChatInput.tsx#L1453-L1458",
+          "locator": "ui/desktop/src/components/ChatInput.tsx：handleStop",
+          "lines": "L1453-L1458",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "输入框的停止操作调用 onStop（BaseChat 传入 stopStreaming）停下当前任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/in-session-actions.md#L174-L200",
+          "locator": "documentation/docs/guides/sessions/in-session-actions.md：Interrupt Task（goose Desktop）",
+          "lines": "L174-L200",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "桌面版可用中断关键词或改向消息打断正在处理的任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_retry.rs#L172-L240",
+          "locator": "crates/goose/src/agents/state_machine/ops_retry.rs：RetryOperation::run",
+          "lines": "L172-L240",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选路径",
+          "note": "goal 只注入一次检查提醒，grind 持续续发；成功检查只在会话带配方 retry 配置时执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：Tetrate 提供方请求套 with_retry，限流、服务端错误、网络错误和非永久性的请求失败自动重发，默认最多 3 次、指数退避；提供方返回空回复时也自动重发，最多 3 次。model_self_repair：工具执行出错、参数解析失败、调用未知工具都作为错误工具结果交回模型。framework_input_repair：parse_tool_arguments 解开二次编码的 JSON 对象、剥掉外层包装、修正未转义的控制字符后照常执行。其他：上下文超长错误先触发压缩再续跑（D 组压缩，不归本字段任何一项）；重复调用检测器默认不设上限，不生效；Auto 模式下框架不因失败暂停等人。模型接口错误重试用尽后错误消息留在会话末尾，ExitOnError 结束本轮、交还用户。可选：配方的 retry.on_failure 命令与重来只在配方路径生效。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/retry.rs#L108-L117",
+          "locator": "crates/goose-provider-types/src/retry.rs：should_retry（默认值见 L14-L15、L34-L43）",
+          "lines": "L108-L117",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型调用",
+          "note": "限流、服务端、网络错误和非永久请求失败可重试；默认 max_retries 为 3。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/providers/tetrate.rs#L129-L150",
+          "locator": "crates/goose/src/providers/tetrate.rs：TetrateProvider::stream",
+          "lines": "L129-L150",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钉住提供方",
+          "note": "Tetrate 的流式请求包在 with_retry 里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/inference.rs#L578-L603",
+          "locator": "crates/goose-agent/src/inference.rs：空回复重试",
+          "lines": "L578-L603",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型调用",
+          "note": "空回复时清空输出并重发，最多 MAX_EMPTY_RESPONSE_RETRIES（3）次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_toolcalling.rs#L440-L458",
+          "locator": "crates/goose/src/agents/state_machine/ops_toolcalling.rs：工具调用结果",
+          "lines": "L440-L458",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具执行",
+          "note": "工具调用出错时转成错误结果记录，作为工具结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/json.rs#L270-L295",
+          "locator": "crates/goose-provider-types/src/json.rs：parse_tool_arguments",
+          "lines": "L270-L295",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具参数解析",
+          "note": "依次尝试直接解析、剥包装、safely_parse_json，并解开二次编码的对象。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/openai.rs#L854-L896",
+          "locator": "crates/goose-provider-types/src/formats/openai.rs：tool_calls 解析",
+          "lines": "L854-L896",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具参数解析",
+          "note": "参数解析不出或不是对象时生成带错误的工具请求，随后作为错误结果回传。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "上下文超长后的反应式压缩再续跑是框架规则，但它改写了输入，不是“重发同一请求”，也不交给模型修，词表没有对应项；按总则 R8 的精神留给 D 组，只写 value_note。"
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "桌面版 Electron 主进程为聊天窗口以 goose serve --platform desktop --enable-scheduler --host 127.0.0.1 --port <空闲端口> 拉起随包二进制，界面经 /acp 的 WebSocket 地址（带令牌）连接；窗口关闭、租约释放时终止该进程，同一租约可挂多个窗口（例如应用窗口）。其他环境：设置里启用外部后端（externalGoosed）时改连远端或已有的 goose 服务。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServe.ts#L357-L402",
+          "locator": "ui/desktop/src/gooseServe.ts：startGooseServe",
+          "lines": "L357-L402",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "找空闲端口，构造 HTTP 与 /acp WebSocket 地址，以 serve 子命令拉起 goose，标准输入忽略。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServe.ts#L500-L530",
+          "locator": "ui/desktop/src/gooseServe.ts：cleanup",
+          "lines": "L500-L530",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "清理时向 goose serve 发 SIGTERM（Windows 用 taskkill）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/main.ts#L1066-L1222",
+          "locator": "ui/desktop/src/main.ts：createChat 中的外部后端判断与 gooseServeLeases.create",
+          "lines": "L1066-L1222",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "没有外部后端时本地启动 goose serve 并登记为窗口租约。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-cli/src/cli.rs#L858-L861",
+          "locator": "crates/goose-cli/src/cli.rs：Command::Serve",
+          "lines": "L858-L861",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "执行核心",
+          "note": "serve 子命令的说明是通过 HTTP 和 WebSocket 提供 ACP 服务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "两个取值都只部分吻合：生命周期像 subprocess_protocol（由前端拉起、随前端窗口退出），通信却走本机端口上的 HTTP/WebSocket API，不是标准输入输出或管道；同一服务可供几个窗口共用。按通信方式判为 local_service_api。建议码本写明“前端拉起的子进程、但经本地端口通信”归哪一项。"
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "默认启用的 developer 等平台扩展在 goose serve 进程内运行（is_in_process）；write、edit 直接用 fs::write 读写文件，tree、read_image 也在进程内。shell 工具为每条命令起一个 shell 子进程（单独进程组）。随包的内置 MCP 扩展（computercontroller 等）默认关闭，打开后也经进程内双工流运行。可选：用户添加的外部 stdio MCP 服务由核心拉起子进程；会话带容器编号时 stdio 扩展改经 docker 运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/extension_manager/mod.rs#L646-L651",
+          "locator": "crates/goose/src/agents/extension_manager/mod.rs：is_in_process",
+          "lines": "L646-L651",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认扩展",
+          "note": "平台扩展（含以 builtin 名义配置、但属平台扩展的 developer）在进程内运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/edit.rs#L62",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/edit.rs：write",
+          "lines": "L62",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "文件工具",
+          "note": "写文件直接调用 fs::write。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/shell.rs#L556",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/shell.rs：shell 命令启动",
+          "lines": "L556",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令工具",
+          "note": "用 tokio::process::Command 起用户 shell 执行命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs#L176-L179",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：developer 项",
+          "lines": "L176-L179",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认扩展",
+          "note": "Developer 是 default_enabled=true 的平台扩展。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "goose serve 里的 SessionManager 把会话和消息存进数据目录下的 sessions.db（SQLite 的 sessions、messages 表）；状态机每一步都按会话编号从这份存储重新载入会话再构造请求，桌面界面经 ACP 创建、读取会话，只负责显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/session_manager.rs#L1172-L1220",
+          "locator": "crates/goose/src/session/session_manager.rs：SessionStorage 建表（DB_NAME 见 L34）",
+          "lines": "L1172-L1220",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话存储",
+          "note": "核心建 sessions 和 messages 表，消息按 session_id 关联。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/machine.rs#L233-L248",
+          "locator": "crates/goose-agent/src/machine.rs：StateMachine::run",
+          "lines": "L233-L248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "请求构造",
+          "note": "每轮先 runtime.load(session_id) 从核心存储载入会话，再执行一步并写回效果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/sessions.ts#L124-L134",
+          "locator": "ui/desktop/src/sessions.ts：createSession",
+          "lines": "L124-L134",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "桌面版经 ACP 会话控制器向 goose serve 发 session/new 建会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "会话按编号存在同一个 sessions.db 的 sessions、messages 表里。会话记录自己的工作目录，但几个会话可以共用同一目录，不算 working_directory；桌面版每个新窗口另起一个 goose serve，但同一窗口里新建会话仍向同一个服务发 session/new，不算 process。可选：底栏目录切换器能手动选已有的 Git 工作树；会话可带用户指定的容器编号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/session_manager.rs#L1172-L1220",
+          "locator": "crates/goose/src/session/session_manager.rs：sessions、messages 表",
+          "lines": "L1172-L1220",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话管理",
+          "note": "会话以 id 为主键，消息按 session_id 分开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/Hub.tsx#L164",
+          "locator": "ui/desktop/src/components/Hub.tsx：新建会话",
+          "lines": "L164",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版入口",
+          "note": "在当前窗口内调用 createSession 新建会话，连接的是同一个 goose serve。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/bottom_menu/DirSwitcher.tsx#L98-L110",
+          "locator": "ui/desktop/src/components/bottom_menu/DirSwitcher.tsx：工作树列表",
+          "lines": "L98-L110",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选路径",
+          "note": "目录切换器只列出已有的 Git 工作树供手动选择，不自动为会话新建。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心内的 goose-provider-types/formats 带 openai（chat completions）、openai_responses、anthropic、google、databricks、ollama、snowflake 等转换，goose/src/providers/formats 另有 bedrock、gcpvertexai，随默认安装附带，用户只需添加提供方配置就能用。钉住环境的 Tetrate 走 OpenAI chat completions 格式（openai::create_request，POST v1/chat/completions）。辅助调用（标题、压缩、工具调用标题）用同一个提供方客户端。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/providers/tetrate.rs#L129-L156",
+          "locator": "crates/goose/src/providers/tetrate.rs：TetrateProvider::stream",
+          "lines": "L129-L156",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钉住提供方",
+          "note": "用 OpenAI 格式的 create_request 构造请求，发往 v1/chat/completions。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/anthropic.rs#L926-L945",
+          "locator": "crates/goose-provider-types/src/formats/anthropic.rs：create_request",
+          "lines": "L926-L945",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "适配实现",
+          "note": "Anthropic Messages 格式的转换。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/google.rs#L728-L737",
+          "locator": "crates/goose-provider-types/src/formats/google.rs：create_request",
+          "lines": "L728-L737",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "适配实现",
+          "note": "Google Gemini 格式的转换。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/openai.rs#L1697-L1720",
+          "locator": "crates/goose-provider-types/src/formats/openai.rs：create_request",
+          "lines": "L1697-L1720",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "适配实现",
+          "note": "OpenAI chat completions 格式的转换。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "native_structured：Tetrate 请求把工具定义放进 tools 字段，回复里的 tool_calls 按结构化字段取名称和参数。protocol_translation：所有扩展都经 MCP 客户端接口调用（平台扩展在进程内实现同一接口），用户添加一条 stdio 或 streamable HTTP 的 MCP 服务即可把它的工具登记成模型函数；默认启用的 Extension Manager 还让模型自己查找、启用扩展。解析失败：参数解析不出、不是对象或工具名为空时生成错误请求，作为错误结果交回模型；输出被截断时给出专门的截断错误。可选：toolshim（默认 false）改用另一个模型从文本里解析调用；Code Mode（code_execution 默认关闭）提供脚本分派。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/openai.rs#L794-L896",
+          "locator": "crates/goose-provider-types/src/formats/openai.rs：response_to_message 的 tool_calls 解析",
+          "lines": "L794-L896",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钉住提供方",
+          "note": "从 tool_calls 的 function.name 与 arguments 取出结构化调用，失败时生成错误请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/mcp_client.rs#L745-L760",
+          "locator": "crates/goose/src/agents/mcp_client.rs：McpClient::call_tool",
+          "lines": "L745-L760",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "外部工具协议",
+          "note": "把模型的调用转成 MCP CallToolRequest 发给扩展服务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/getting-started/using-extensions.md#L112-L130",
+          "locator": "documentation/docs/getting-started/using-extensions.md：Adding Extensions / MCP Servers",
+          "lines": "L112-L130",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "外部工具协议",
+          "note": "桌面版可直接添加 MCP 服务作扩展。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/model_config.rs#L174",
+          "locator": "crates/goose/src/model_config.rs：toolshim 默认值",
+          "lines": "L174",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选路径",
+          "note": "GOOSE_TOOLSHIM 未设时为 false，文本解析默认不开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs#L158-L162",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：code_execution 项",
+          "lines": "L158-L162",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选路径",
+          "note": "Code Mode 的 default_enabled 为 false。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": ""
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用会话型号（钉住为 tetrate/claude-haiku-5-5）。默认启用的 summon 扩展的 delegate 工具带 provider、model 参数，主模型可为子代理指定型号；解析顺序是配方设置、GOOSE_SUBAGENT_MODEL、参数里的 model、配置里的子代理型号、会话型号，默认安装前两项和第四项都没有，参数没给时子代理继承会话型号。会话开始时提供方不可用、回落到配置里的提供方，属开始前的型号选择，不算 failover。可选：GOOSE_SUBAGENT_MODEL/PROVIDER；GOOSE_AUTO_EFFORT_ENABLED（默认关）只调推理强度；toolshim 的解析型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L475-L542",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_delegate_tool",
+          "lines": "L475-L542",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理",
+          "note": "delegate 工具的参数里有 provider（Override LLM provider）和 model（Override model）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L1303-L1365",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：resolve_model_config",
+          "lines": "L1303-L1365",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理",
+          "note": "子代理型号按配方、环境变量、params.model、配置、会话型号的顺序解析。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/session_manager.rs#L681-L722",
+          "locator": "crates/goose/src/session/session_manager.rs：会话命名",
+          "lines": "L681-L722",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "辅助调用",
+          "note": "会话标题生成用会话自己的 model_config。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine_builder.rs#L167-L181",
+          "locator": "crates/goose/src/agents/state_machine_builder.rs：CompactionOperation 构造",
+          "lines": "L167-L181",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "辅助调用",
+          "note": "压缩操作拿到的是主循环同一个 provider 和 model_config。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/tool_call_labels.rs#L41-L44",
+          "locator": "crates/goose/src/tool_call_labels.rs：工具调用标题生成",
+          "lines": "L41-L44",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "辅助调用",
+          "note": "工具调用标题与链摘要用 model_config_for_session，即会话型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/apps.rs#L265-L275",
+          "locator": "crates/goose/src/agents/platform_extensions/apps.rs：effective_model_config",
+          "lines": "L265-L275",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "辅助调用",
+          "note": "Apps 扩展生成应用内容时用会话型号。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "auxiliary_models 核对清单：标题生成——会话型号；上下文压缩或摘要——同一 provider 与 model_config（工具对摘要 GOOSE_TOOL_PAIR_SUMMARIZATION 默认关）；动作审核分类——permission_judge 只在 smart_approve 模式下用，Auto 默认下无；联网搜索与网页抓取——默认启用的扩展里没有带模型调用的此类工具，无；媒体理解——read_image 把图片交给主模型，没有单独调用，无；生成类工具——Apps 扩展生成应用页面用会话型号。另有工具调用标题与链摘要（tool_call_labels）也用会话型号。各项都用主执行链同一型号，记 single_fixed。"
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [
+          "call_count"
+        ],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "call_count：GOOSE_MAX_TURNS 默认 1000，每条用户消息之后的助手回合数到上限就停下问是否继续；用到一半起每轮向模型注入 <turn-budget>已用/上限</turn-budget>（软提醒）；delegate 子代理默认同为 1000，主模型可用 max_turns 参数另设。output_limit：未设 GOOSE_MAX_TOKENS 时按内置型号表（canonical models）取输出上限写进 max_tokens；Tetrate 是元提供方，经映射查到 anthropic/claude-haiku-5.5 的表项为 64000，映射函数是否命中这一项没有逐行核对；输出截断时被截断的工具参数转成专门的截断错误交回模型。不计：Tetrate 余额不足（HTTP 402）属服务端限额；压缩阈值属 D 组；Stop 钩子拒绝次数上限。可选：/grind 续发到 max_turns；配方 settings.max_turns；GOOSE_MAX_TOKENS。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_maxturns.rs#L14-L66",
+          "locator": "crates/goose/src/agents/state_machine/ops_maxturns.rs：turn_budget_part / MaxTurnsOperation",
+          "lines": "L14-L66",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认回合上限",
+          "note": "过半时注入回合预算提示，到上限时让出并询问是否继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/config/base.rs#L1358-L1360",
+          "locator": "crates/goose/src/config/base.rs：default_max_turns",
+          "lines": "L1358-L1360",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认回合上限",
+          "note": "默认 1000。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/smart-context-management.md#L166-L168",
+          "locator": "documentation/docs/guides/sessions/smart-context-management.md：Maximum Turns",
+          "lines": "L166-L168",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认回合上限",
+          "note": "默认 1000，到上限停下并询问，用户同意后继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/model.rs#L148-L160",
+          "locator": "crates/goose-provider-types/src/model.rs：with_canonical_limits",
+          "lines": "L148-L160",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "单次输出",
+          "note": "max_tokens 未设时取型号表里的输出上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/formats/openai.rs#L57-L65",
+          "locator": "crates/goose-provider-types/src/formats/openai.rs：output_token_limit_tool_error",
+          "lines": "L57-L65",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "单次输出",
+          "note": "达到输出上限时被截断的工具参数改成专门的截断错误。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "call_count 的过半提示是到达阈值（一半）后向模型注入的提醒，按“先提醒再截止”同时写进 hard_stop 和 soft_notice。output_limit 的 confidence 只到 medium：Tetrate 型号名 claude-haiku-5-5 映射到型号表 claude-haiku-5.5 的过程没逐行核对；若映射不命中，max_tokens 不发、上限完全由服务端决定，只剩截断错误处理，按判定标准仍可能算（有专门处理）或不算（只转成普通错误），口径上有疑问。"
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "状态机每一步都用 SessionLoader 从会话库重读整份消息列表（messages 表），推理步骤从本回合起点取消息，按 agent_visible 标记过滤、去掉早先回合没有回应的工具请求、修整合并后，再附上每轮的上下文事件（turn context）发出；压缩靠把旧消息标成对模型不可见并插入一条带 compaction_summary 标记的摘要消息实现，这些都是消息自身的元数据字段，不是独立条目类型，所以按顺序消息记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/machine.rs",
+          "locator": "crates/goose-agent/src/machine.rs：StateMachine::run",
+          "lines": "L233-L248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "每一步先 runtime.load(session_id) 从存储重读会话，再执行 step 并把效果写回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/inference.rs",
+          "locator": "crates/goose-agent/src/inference.rs：messages_for_provider 与 InferenceRunner::infer",
+          "lines": "L257-L289",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "每次主模型请求",
+          "note": "请求消息取自会话的消息列表：只留 is_agent_visible 的消息并取 agent_visible_content，丢掉早先回合无回应的工具请求，再 fix_conversation、合并相邻消息后交给提供方。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/inference.rs",
+          "locator": "crates/goose-agent/src/inference.rs：messages_for_provider 与 InferenceRunner::infer",
+          "lines": "L450-L506",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "每次主模型请求",
+          "note": "请求消息取自会话的消息列表：只留 is_agent_visible 的消息并取 agent_visible_content，丢掉早先回合无回应的工具请求，再 fix_conversation、合并相邻消息后交给提供方。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/conversation/message.rs",
+          "locator": "crates/goose-provider-types/src/conversation/message.rs：MessageMetadata",
+          "lines": "L829-L859",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "消息格式",
+          "note": "user_visible、agent_visible、turn_context、compaction_summary、operations 都是消息元数据字段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/session.rs",
+          "locator": "crates/goose/src/agents/state_machine/session.rs：impl SessionLoader for SessionManager",
+          "lines": "L44-L49",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "load 调 get_session(id, true)，连同消息一起从会话库读出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "口径疑问：这个版本的主循环不在内存里维护消息数组，而是每一步都从 SQLite 重读消息再构造请求；scope_rule 说“每次请求都从存储重读消息和控制条目、按控制条目决定发什么的”记 typed_event_rebuild。这里决定发什么的是消息上的 agent_visible 标记（元数据字段），按“控制条目要有自己的条目类型或分片类型”不算控制条目，所以记 sequential_messages。消息里确有 ActionRequired 分片（工具确认请求与回应、MCP elicitation），属于审批类控制分片，但默认 Auto 模式不产生工具确认；即使出现，构造请求时也不是按它们决定取哪些内容。若码本认为“改变回放内容的可见性标记”也算控制条目，本字段会改判 typed_event_rebuild。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "truncation：developer 扩展的 shell 工具每路输出超过 2000 行或 50000 字节时，只留最后 50 行（不超过 10000 字节）进上下文，全文写进临时目录留路径。summarization：主循环里的 CompactionOperation 在用量超过上下文的 80%（且不超过 225000 token 的上限折算）时自动调模型写摘要，旧消息改为对模型不可见，保留最近一条纯文字用户消息；上下文超限报错时也会反应式压缩（最多两次）。tool_result_replacement：工具结果中单个文字块超过 200000 字符时，整块换成一句说明加临时文件路径。可选：/compact 命令手动压缩（第二档）；GOOSE_TOOL_PAIR_SUMMARIZATION 打开后把旧工具调用对改写成摘要（默认 false，第三档）；GOOSE_CONTEXT_RELEVANCE_SHADOW 加 TYPESAFE_API_KEY 的上下文相关性实验（默认关，第三档）。analyze 工具输出过大时返回报错、不截短。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/shell.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/shell.rs：OUTPUT_LIMIT_* 常量与 truncate_output",
+          "lines": "L161-L164",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 developer 扩展 shell 工具",
+          "note": "超过行数或字节上限时把全文存文件、上下文只留尾部预览和原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/shell.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/shell.rs：OUTPUT_LIMIT_* 常量与 truncate_output",
+          "lines": "L747-L780",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 developer 扩展 shell 工具",
+          "note": "超过行数或字节上限时把全文存文件、上下文只留尾部预览和原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_compaction.rs",
+          "locator": "crates/goose/src/agents/state_machine/ops_compaction.rs：CompactionOperation::run",
+          "lines": "L162-L255",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环（提供方不自管上下文）",
+          "note": "超过阈值或上下文超限报错时调 compact_messages 自动压缩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/context_mgmt/mod.rs",
+          "locator": "crates/goose/src/context_mgmt/mod.rs：auto_compact_threshold、tool_pair_summarization_enabled、compact_messages",
+          "lines": "L25-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认阈值与压缩流程",
+          "note": "默认阈值 0.8、上限 225000 token；工具对摘要默认 false；压缩时旧消息设为 agent 不可见，插入摘要与续写提示，保留最近一条用户文字消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/context_mgmt/mod.rs",
+          "locator": "crates/goose/src/context_mgmt/mod.rs：auto_compact_threshold、tool_pair_summarization_enabled、compact_messages",
+          "lines": "L114-L246",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认阈值与压缩流程",
+          "note": "默认阈值 0.8、上限 225000 token；工具对摘要默认 false；压缩时旧消息设为 agent 不可见，插入摘要与续写提示，保留最近一条用户文字消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/large_response_handler.rs",
+          "locator": "crates/goose/src/agents/large_response_handler.rs：process_tool_response、write_large_text_to_file",
+          "lines": "L5-L77",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "所有工具结果（ops_toolcalling.rs L253 调用）",
+          "note": "超过 200000 字符的文字块整块替换为说明和文件路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine_builder.rs",
+          "locator": "crates/goose/src/agents/state_machine_builder.rs：context_relevance_provider 与操作列表",
+          "lines": "L61-L75",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认操作列表",
+          "note": "相关性实验要显式开配置项；压缩操作在提供方不自管上下文时总在列表里；工具对压缩受配置开关控制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine_builder.rs",
+          "locator": "crates/goose/src/agents/state_machine_builder.rs：context_relevance_provider 与操作列表",
+          "lines": "L166-L188",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认操作列表",
+          "note": "相关性实验要显式开配置项；压缩操作在提供方不自管上下文时总在列表里；工具对压缩受配置开关控制。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "口径疑问：超大工具结果在进入上下文时就被整块换成文件引用，没有先截短这一步。truncation 的判定写“只针对工具结果、把整条结果换成占位的，记 tool_result_replacement”，而 tool_result_replacement 的主定义强调“已经在上下文里、后续轮次”。我按前一句记 tool_result_replacement；若码本意在“进入时整条换成文件引用”归 truncation，本项应改归 truncation。Tetrate 提供方未覆盖 manages_own_context（默认 false），所以压缩适用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "structural_index"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：桌面版输入框粘贴或拖入、用回形针选择的图片作为图像内容随消息发出；非图片文件的拖放、回形针和 @ 文件搜索只把路径插进消息，内容要模型自己用工具读。structural_index：默认启用的 analyze 平台扩展提供 analyze 工具，按 tree-sitter 解析给出目录概览、文件内函数类和导入、符号调用图。默认工具里没有专门的内容搜索工具，文本搜索靠模型经 shell 自己运行 rg、grep 一类程序，不计。skills 扩展默认启用，技能说明常驻、正文按需读取；extensionmanager 提供读取扩展 MCP 资源的工具。可选：chatrecall（默认关）检索的是历次会话，归 F16；Code Mode 默认关。没有向量检索。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/acp/prompt.ts",
+          "locator": "ui/desktop/src/acp/prompt.ts：messageToAcpPromptContent",
+          "lines": "L38-L62",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版输入",
+          "note": "消息里的图片内容以 image 块随提示发给 goose serve。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/ChatInput.tsx",
+          "locator": "ui/desktop/src/components/ChatInput.tsx：handlePaste 与文件选择处理",
+          "lines": "L862-L866",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版输入",
+          "note": "粘贴或选取的图片文件作为附件图片处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/ChatInput.tsx",
+          "locator": "ui/desktop/src/components/ChatInput.tsx：handlePaste 与文件选择处理",
+          "lines": "L1250-L1262",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版输入",
+          "note": "粘贴或选取的图片文件作为附件图片处理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/in-session-actions.md",
+          "locator": "documentation/docs/guides/sessions/in-session-actions.md：Share Files in Session（goose Desktop）",
+          "lines": "L305-L320",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版输入",
+          "note": "拖放、回形针、手写路径和 @ 搜索都是把文件路径加进消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/analyze/mod.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/analyze/mod.rs：AnalyzeClient::list_tools",
+          "lines": "L219-L231",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 analyze 扩展",
+          "note": "analyze 工具三种模式：目录概览、文件细节、符号调用图。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：PLATFORM_EXTENSIONS（analyze、chatrecall）",
+          "lines": "L39-L45",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认扩展",
+          "note": "analyze default_enabled=true；chatrecall default_enabled=false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：PLATFORM_EXTENSIONS（analyze、chatrecall）",
+          "lines": "L83-L89",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认扩展",
+          "note": "analyze default_enabled=true；chatrecall default_enabled=false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/mod.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/mod.rs：get_tools",
+          "lines": "L107-L180",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 developer 扩展",
+          "note": "developer 只有 write、edit、shell、tree、read_image，没有内容搜索工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "user_specified 只凭图片附件成立；文件拖放和 @ 搜索只插入路径、由模型自己读，我认为不满足“由框架读入上下文”。若码本把插入路径也算用户指定，结论不变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每次构建系统提示时读入全局配置目录里的 .goosehints、AGENTS.md（另含代理主目录下的 AGENTS.md）和工作目录到 Git 根之间各级的 .goosehints、AGENTS.md，放进系统提示。可选：memory 内置扩展（默认关）；chatrecall 平台扩展检索历次会话（默认关）；tom 扩展默认启用，但要设 GOOSE_MOIM_MESSAGE_TEXT 或 GOOSE_MOIM_MESSAGE_FILE 才注入内容；“项目”指令要用户建项目并选中才进提示。scheduler 默认启用，定时作业属于调度，不算记忆。没有默认开启的自动摘要或检索式记忆。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/hints/load_hints.rs",
+          "locator": "crates/goose/src/hints/load_hints.rs：load_hint_files",
+          "lines": "L232-L300",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "新会话系统提示",
+          "note": "读全局与各级本地提示文件，拼成 Global Hints 与项目提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/prompt_manager.rs",
+          "locator": "crates/goose/src/agents/prompt_manager.rs：with_hints",
+          "lines": "L90-L95",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "新会话系统提示",
+          "note": "系统提示构建时调用 load_hint_files。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/components/settings/extensions/bundled-extensions.json",
+          "locator": "ui/desktop/src/components/settings/extensions/bundled-extensions.json：memory",
+          "lines": "L36-L43",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版内置扩展默认状态",
+          "note": "memory 扩展 enabled=false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/tom.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/tom.rs：注入内容来源",
+          "lines": "L68-L78",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "tom 扩展",
+          "note": "注入内容只来自 GOOSE_MOIM_MESSAGE_TEXT 或 GOOSE_MOIM_MESSAGE_FILE 配置项。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "messages：会话存进 SQLite（sessions.db）的 messages 表，每行一条消息（角色、content_json、metadata_json、token 数），会话行另存用量、模式、目标等元数据；压缩会把整份会话替换为改了可见性标记的消息加摘要消息，子代理各存一个带 parent_session_id 的会话；usage_ledger 记每次调用用量。external_reference：工具结果中超过 200000 字符的文字块写进系统临时目录（tempfile 的 keep，进程退出不删），记录里只留路径；shell 截短输出的全文放在随工具对象销毁的临时目录里，不算持久。另有系统日志、服务日志（按日期两周清理）和最近 10 次 LLM 请求日志，属于诊断日志，不计。没有工作区快照。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/session_manager.rs",
+          "locator": "crates/goose/src/session/session_manager.rs：建表语句 sessions、messages、usage_ledger",
+          "lines": "L1172-L1245",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话存储",
+          "note": "消息逐条存 content_json 与 metadata_json。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/logs.md",
+          "locator": "documentation/docs/guides/logs.md：Session Records、Server Logs、LLM Request Logs",
+          "lines": "L30-L50",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话与日志存储",
+          "note": "会话库含消息、工具调用与结果、用量；日志另存。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/logs.md",
+          "locator": "documentation/docs/guides/logs.md：Session Records、Server Logs、LLM Request Logs",
+          "lines": "L96-L131",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话与日志存储",
+          "note": "会话库含消息、工具调用与结果、用量；日志另存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/large_response_handler.rs",
+          "locator": "crates/goose/src/agents/large_response_handler.rs：write_large_text_to_file",
+          "lines": "L68-L77",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具结果超过 200000 字符时",
+          "note": "临时文件 keep 后长期保留，会话里只存路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/developer/shell.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/developer/shell.rs：ShellTool::new",
+          "lines": "L211-L222",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "shell 截短输出",
+          "note": "截短全文所在目录是 tempfile::TempDir，随对象销毁删除。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "messages 与 event_log 的界线：消息里有 ActionRequired 分片（ToolConfirmation、ToolConfirmationResponse、Elicitation），属于审批类控制分片，但默认 Auto 模式不产生工具确认；压缩边界以 compaction_summary、agent_visible 元数据标记表示，不是独立条目或分片类型。按 scope_rule 记 messages。若把审批分片“格式上存在”就算有控制条目，或把可见性标记算控制条目，本项应改记 event_log。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "桌面版在侧栏或 Session History 点 Resume 重开会话，goose serve 从会话库读回消息；下一次运行从用户新消息开始，主循环每步从存储重读对话，早先回合里没有回应的工具请求在构造请求时被丢掉，由模型重新决定。其他环境：Approve、Smart Approve 模式下若会话停在待确认的工具调用上，载入会话时 resume_turn 会重新挂起这些确认，确认后直接执行原调用，接近检查点继续；默认 Auto 模式不产生待确认调用，resume_turn 返回空。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/session-management.md",
+          "locator": "documentation/docs/guides/sessions/session-management.md：Resume Session（goose Desktop）",
+          "lines": "L273-L310",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版恢复入口",
+          "note": "侧栏切换或从会话历史 Resume 继续原会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/services.rs",
+          "locator": "crates/goose/src/agents/services.rs：resume_turn",
+          "lines": "L975-L1008",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "载入会话后的续跑",
+          "note": "只有存在待确认或未应用的确认回应时才续跑本回合，否则返回 None。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/acp/server/load_session.rs",
+          "locator": "crates/goose/src/acp/server/load_session.rs：start_resumed_state_machine_turn",
+          "lines": "L248-L285",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版经 ACP 载入会话",
+          "note": "载入会话时调用 resume_turn；无待确认项就结束，等用户输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/inference.rs",
+          "locator": "crates/goose-agent/src/inference.rs：messages_for_provider",
+          "lines": "L257-L289",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复后的请求构造",
+          "note": "早先回合遗留的无回应工具请求不再发给模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：恢复后会话库里的全部消息（含工具调用与结果、压缩摘要）回到上下文。task_plan：用户用 /goal 或 /grind 设的目标存在会话的 extension_data 里，恢复后仍由默认操作列表里的 RetryOperation 在回合结束时催促继续，直到核对完成后清除（todo 扩展默认关，可选）。subagent_links：默认启用的 summon 扩展的 delegate 工具可用 resume 参数按子代理编号从会话库载入原子代理会话并继续，校验它属于当前父会话，不需用户另做操作。工作区文件不随恢复回退。已执行的命令、网络请求等外部副作用不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/session.rs",
+          "locator": "crates/goose/src/agents/state_machine/session.rs：impl SessionLoader for SessionManager",
+          "lines": "L44-L49",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复后每一步",
+          "note": "整份会话连同消息从存储读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/extension_data.rs",
+          "locator": "crates/goose/src/session/extension_data.rs：GoalState",
+          "lines": "L102-L115",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话目标",
+          "note": "goal、grind 存在会话 extension_data。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_retry.rs",
+          "locator": "crates/goose/src/agents/state_machine/ops_retry.rs：run_command（goal/grind）与 run",
+          "lines": "L81-L130",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认操作列表",
+          "note": "回合结束时读 GoalState，未核对的目标会注入催促消息让代理继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_retry.rs",
+          "locator": "crates/goose/src/agents/state_machine/ops_retry.rs：run_command（goal/grind）与 run",
+          "lines": "L176-L221",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认操作列表",
+          "note": "回合结束时读 GoalState，未核对的目标会注入催促消息让代理继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_delegate_tool 与 resume_subagent",
+          "lines": "L529-L541",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 summon 扩展",
+          "note": "resume 按子代理编号从会话库载入、核对父会话后追加指令继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_delegate_tool 与 resume_subagent",
+          "lines": "L886-L924",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 summon 扩展",
+          "note": "resume 按子代理编号从会话库载入、核对父会话后追加指令继续。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "task_plan 按“恢复时自动带回的目标，不论由模型工具还是用户命令设立都计入”记入 /goal；/goal 在桌面版经 ACP 的斜杠命令是否开放未在界面代码里逐一核对，按核心默认操作列表判。subagent_links 依据 delegate 的 resume 参数（总则 R3 第一档）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "facets": {
+        "unresolved": [
+          "idempotency_key"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "session_branch：桌面版在消息上点 Edit 后选 Fork Session，新会话带编辑点以前的历史，原会话保留；会话列表的复制按钮整份复制会话。Edit in Place 会删掉后续消息，不计。没有工作区快照或补偿操作：developer 的 write、edit 直接改文件，没有撤销入口。疑似幂等：状态机每步从存储重读，按持久化的工具请求编号查有没有对应结果，已有结果的请求不会再执行（ops_toolcalling.rs 的 pending_tool_requests）；但默认 Auto 模式下没有按编号重跑的恢复路径，范围只限同一回合内的重入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/acp/server/fork_session.rs",
+          "locator": "crates/goose/src/acp/server/fork_session.rs：handle_fork_session",
+          "lines": "L5-L45",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版经 ACP 分叉会话",
+          "note": "copy_session 复制出新会话，按需截到编辑点，原会话不动。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/in-session-actions.md",
+          "locator": "documentation/docs/guides/sessions/in-session-actions.md：Edit Message / Fork Session",
+          "lines": "L32-L90",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版",
+          "note": "Fork Session 另建会话并保留原会话；Edit in Place 删除后续历史。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/sessions/session-management.md",
+          "locator": "documentation/docs/guides/sessions/session-management.md：Duplicate Sessions",
+          "lines": "L337-L366",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版",
+          "note": "会话列表的复制按钮整份复制会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_toolcalling.rs",
+          "locator": "crates/goose/src/agents/state_machine/ops_toolcalling.rs：pending_tool_requests",
+          "lines": "L667-L690",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环（疑似幂等）",
+          "note": "只执行本回合内没有持久化结果的工具请求。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "idempotency_key 写进 unresolved：去重确实按持久化的调用编号查结果，但它是重入式主循环的常规簿记，默认路径上没有“重试或恢复重跑”去触发它（resume_turn 只在有待确认调用时续跑，属非默认模式），拿不准是否满足判定。工作区快照查过 developer 工具和桌面组件，没有 checkpoint、rewind、undo 一类入口。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：四种 goose mode（Auto、Approve、Smart Approve、Chat）可在桌面版底栏切换，另可在 permission.yaml（界面里按扩展逐个工具设）把单个工具设为 Always Allow、Ask Before、Never Allow，规则按工具名匹配；这些逐工具规则只在 Approve、Smart Approve 模式生效，默认 Auto 模式直接放行所有工具调用。没有按命令文本、文件路径或网络目标写的规则。可选：对抗审查（建 ~/.config/goose/adversary.md 才启用）按工具名挑选要审的调用，也是工具类别维度。默认效果：Auto 模式下改文件、运行命令、写工作区外、命令联网都直接放行；出站检查器只记日志。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/permission/permission_inspector.rs",
+          "locator": "crates/goose/src/permission/permission_inspector.rs：PermissionInspector::inspect",
+          "lines": "L144-L195",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "各权限模式",
+          "note": "Auto 直接 Allow；Approve、Smart Approve 先查用户按工具名设的级别，再按只读注解或判定模型处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/config/permission.rs",
+          "locator": "crates/goose/src/config/permission.rs：PermissionManager、get_user_permission",
+          "lines": "L13-L79",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可配置规则",
+          "note": "permission.yaml 以工具名为键存权限级别。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/managing-tools/tool-permissions.md",
+          "locator": "documentation/docs/guides/managing-tools/tool-permissions.md：Permission Levels / Configuring Tool Permissions",
+          "lines": "L29-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可配置规则",
+          "note": "三种逐工具级别，只在 Manual 或 Smart 模式下配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/goose_mode.rs",
+          "locator": "crates/goose-provider-types/src/goose_mode.rs：enum GooseMode",
+          "lines": "L22-L31",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "默认 Auto，另有 Approve、SmartApprove、Chat。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/security/egress_inspector.rs",
+          "locator": "crates/goose/src/security/egress_inspector.rs：inspect",
+          "lines": "L340-L372",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令联网",
+          "note": "识别出站目标后只记 LOG，结果为 Allow。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Never Allow 等逐工具规则在 Auto 模式下被代码整体跳过，但它们仍是本版本可配置的规则，按 question_rule 计入维度；默认效果按 Auto 填。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Auto 模式下 PermissionInspector 对所有工具调用返回 Allow，其余检查器（提示注入检测、对抗审查）默认关闭、出站检查器只记日志，子代理继承父会话的 Auto 模式，所以没有动作停下来等批准。可选：切到 Approve 或 Smart Approve 后在调用层（tool_call）拦下，由用户确认；Smart Approve 另用判定模型把只读调用自动放行。MCP elicitation 是向用户要输入，不算审批。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/permission/permission_inspector.rs",
+          "locator": "crates/goose/src/permission/permission_inspector.rs：PermissionInspector::inspect",
+          "lines": "L159-L161",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式 Auto",
+          "note": "Auto 模式所有工具获批，理由为 Auto mode - all tools approved。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/permission/permission_inspector.rs",
+          "locator": "crates/goose/src/permission/permission_inspector.rs：PermissionInspector::inspect",
+          "lines": "L198-L201",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式 Auto",
+          "note": "Auto 模式所有工具获批，理由为 Auto mode - all tools approved。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/services.rs",
+          "locator": "crates/goose/src/agents/services.rs：默认检查器注册",
+          "lines": "L572-L589",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认检查器",
+          "note": "依次注册 Security、Egress、Adversary、Permission、Repetition（无上限）检查器。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/managing-tools/goose-permissions.md",
+          "locator": "documentation/docs/guides/managing-tools/goose-permissions.md：Permission Modes",
+          "lines": "L25-L36",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "Autonomous Mode 默认生效，改文件、用扩展、删文件都不需批准。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Auto 模式下没有强制机制：权限检查器直接放行，提示注入检测（SECURITY_PROMPT_ENABLED 未设置时关闭）、对抗审查（要建 adversary.md）默认不启用，出站检查器只记日志，重复调用检查器未设上限不起作用；shell 以启动账户权限在本机运行，没有 Seatbelt、Landlock 一类隔离，也不在容器里。可选：Approve、Smart Approve 模式下由应用检查拦截；会话可绑定 Docker 容器（container_id），默认不用。delegate 工具会拒绝工作目录在父会话目录之外的子代理，这是工具参数校验，不计。启动 npx、uvx 类扩展前的 OSV 恶意包检查只在添加外部扩展时触发，默认环境没有外部扩展。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/permission/permission_inspector.rs",
+          "locator": "crates/goose/src/permission/permission_inspector.rs：PermissionInspector::inspect",
+          "lines": "L144-L195",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式 Auto",
+          "note": "Auto 分支不做任何拦截。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/security/mod.rs",
+          "locator": "crates/goose/src/security/mod.rs：is_prompt_injection_detection_enabled",
+          "lines": "L46-L55",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认安全检查",
+          "note": "SECURITY_PROMPT_ENABLED 未设置时为 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/services.rs",
+          "locator": "crates/goose/src/agents/services.rs：默认检查器注册",
+          "lines": "L572-L589",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认检查器",
+          "note": "RepetitionInspector::new(None) 不设重复上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_toolcalling.rs",
+          "locator": "crates/goose/src/agents/state_machine/ops_toolcalling.rs：Chat 模式跳过工具",
+          "lines": "L1060-L1075",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "Chat 模式",
+          "note": "Chat 模式由代码把工具调用答为已跳过，不只靠提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/getting-started/using-extensions.md",
+          "locator": "documentation/docs/getting-started/using-extensions.md：Access Control 警示",
+          "lines": "L29-L31",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "默认自主运行，配合 Developer 扩展可不经批准执行命令、改文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项判：默认 Auto 模式没有交代限制；可在底栏切换的 Approve、Smart Approve 由权限检查器代码拦截，Chat 模式由 ops_toolcalling 代码跳过工具调用并配合提示；默认会被调用的内置子代理只有 delegate 派出的临时或具名来源子代理，继承父会话模式，没有说成只读的内置角色（delegate 说明里的 “Research (read-only)” 是使用建议，不是产品角色）；文档列出的限制设置（逐工具权限、对抗审查、提示注入检测、扩展白名单）都有代码实现。因此记 absent。没有逐行审计全部工具实现，故 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "会话库按会话存消息：用户请求（回合起点消息）和模型同一条消息里的文字、思考内容与 ToolRequest（工具名、完整参数、调用编号）一起存在 content_json；ToolResponse 以同一调用编号存结果或错误。没有专门的审计日志。默认 Auto 模式不产生审批记录；Approve、Smart Approve 模式下 ToolConfirmation 请求与 ToolConfirmationResponse 决定会以 ActionRequired 分片按调用编号落库（可选）。记录里没有区分人或账户的身份字段，只有会话编号与工作目录。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/session/session_manager.rs",
+          "locator": "crates/goose/src/session/session_manager.rs：建表语句 sessions、messages",
+          "lines": "L1172-L1225",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话存储",
+          "note": "messages 表存角色、content_json、metadata_json；sessions 表无用户或账户字段。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/logs.md",
+          "locator": "documentation/docs/guides/logs.md：Session Records",
+          "lines": "L30-L50",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话存储",
+          "note": "会话库含对话消息和工具调用与结果（编号、参数、响应、成败）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/conversation/message.rs",
+          "locator": "crates/goose-provider-types/src/conversation/message.rs：MessageContentBlock、ActionRequiredData",
+          "lines": "L196-L219",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "消息格式",
+          "note": "消息分片含 Text、Thinking、ToolRequest、ToolResponse 与 ActionRequired（确认请求与回应）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-provider-types/src/conversation/message.rs",
+          "locator": "crates/goose-provider-types/src/conversation/message.rs：MessageContentBlock、ActionRequiredData",
+          "lines": "L318-L330",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "消息格式",
+          "note": "消息分片含 Text、Thinking、ToolRequest、ToolResponse 与 ActionRequired（确认请求与回应）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/tool_confirmation.rs",
+          "locator": "crates/goose/src/agents/state_machine/tool_confirmation.rs：persist_tool_confirmation_decision",
+          "lines": "L148-L186",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "非默认审批模式",
+          "note": "用户的确认决定按请求编号写成消息落库。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认启用的 summon 平台扩展给主代理注册 delegate 工具，调用后框架新建 SubAgent 类型的子会话（独立上下文、自己多步调用工具），由 foreground_subagent 操作跟踪运行并把结果交回父会话；另外桌面版以 --enable-scheduler 拉起 goose serve，默认启用的 scheduler 扩展到点时直接新建 Scheduled 会话跑一整个代理循环。其他环境：提供方换成 claude_acp、codex_acp 等经 ACP 拉起外部代理的 CLI 提供方时另有外部代理进程，本配置的凭据前提里没有。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L475-L546",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_delegate_tool",
+          "lines": "L475-L546",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的 summon 扩展",
+          "note": "delegate 工具说明：把任务交给带独立上下文的子代理，可临时任务、按来源名运行或续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine_builder.rs#L127-L166",
+          "locator": "crates/goose/src/agents/state_machine_builder.rs：operations 列表中的 SubagentOperation",
+          "lines": "L127-L166",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主执行链",
+          "note": "主循环的状态机默认挂上 SubagentOperation（并发上限 GOOSE_MAX_CONCURRENT_SUBAGENTS，默认 5），负责运行被委派的子会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/scheduler/full.rs#L843-L885",
+          "locator": "crates/goose/src/scheduler/full.rs：execute_job",
+          "lines": "L843-L885",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务（桌面版 --enable-scheduler）",
+          "note": "定时任务到点时直接按配方新建 SessionType::Scheduled 会话并启用扩展运行，不经主代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理调用 delegate 工具，summon 扩展据此建子会话并写入任务，框架随后运行它；子代理不能再委派（handle_delegate 拒绝 SubAgent 会话再派）。event_scheduling：scheduler 到点直接建 Scheduled 会话运行配方；定时任务可由用户在桌面版配方库里建，也可由模型调用 scheduler__manage_schedule 建，到点创建的一方都是定时器。用户写的 .goose/agents、.claude/agents 等代理定义文件只能由主代理用 delegate(source) 选用，不构成 user 路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L849-L884",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：handle_delegate",
+          "lines": "L849-L884",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主代理委派路径",
+          "note": "委派由主代理的工具调用发起；子会话调用时返回“Delegated tasks cannot spawn further delegations”。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs#L112-L125",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：scheduler 条目",
+          "lines": "L112-L125",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认平台扩展",
+          "note": "scheduler 扩展 default_enabled=true、hidden=true，在有调度器时提供管理定时任务的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/scheduler/full.rs#L843-L885",
+          "locator": "crates/goose/src/scheduler/full.rs：execute_job",
+          "lines": "L843-L885",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务",
+          "note": "定时器直接创建 Scheduled 会话并运行，goose mode 固定为 Auto。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/recipes/session-recipes.md#L460-L475",
+          "locator": "documentation/docs/guides/recipes/session-recipes.md：Schedule Recipe",
+          "lines": "L460-L475",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版定时任务",
+          "note": "桌面版配方库里可为配方建定时任务。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "框架内部条件自动派生的辅助代理没有找到：压缩、工具对摘要、上下文相关性等操作只调模型、不调工具，对抗审查默认关闭，未记 framework_internal。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：每个子代理是一个单独的 SubAgent 会话，有自己的对话记录和系统提示。messages：已完成的子代理可用 delegate(resume=ID, instructions=…) 续派，保留原有上下文接着做；失败或取消的也可续跑。shared_files：子会话工作目录默认就是父会话的工作目录（working_dir 参数只能取其子目录），工具说明也提醒同一文件会冲突。没有框架维护的共享结构化状态。权限：子会话继承父会话的 goose mode（默认 Auto），扩展默认继承父会话，可用 extensions 参数收窄；定时任务的会话固定 Auto，各自独立运行，与其他代理在执行中不共享。start_context 记 task_brief：默认只带 instructions 作为首条用户消息；模型可用 context 参数把参考内容注入子代理系统提示，也可用 source 带入配方或代理定义的内容。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L410-L449",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_subagent_session",
+          "lines": "L410-L449",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理是独立的 SubAgent 会话，继承父会话的 goose mode，并记下 parent_session_id。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L886-L925",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：resume_subagent",
+          "lines": "L886-L925",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "续派",
+          "note": "父代理可把新指令作为用户消息追加进已有子会话，已完成的子代理须带 instructions 续派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L1081-L1094",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：build_adhoc_recipe",
+          "lines": "L1081-L1094",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "启动时上下文",
+          "note": "临时委派只把 instructions 作为配方 prompt，子代理启动时只带任务说明。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L475-L546",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：create_delegate_tool 参数 working_dir、context、extensions",
+          "lines": "L475-L546",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工作目录与扩展继承",
+          "note": "工作目录默认取父会话目录；extensions 省略时继承父会话；说明写明同文件工作会冲突。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "子代理运行中需要决定的消息（审批请求）会转给父会话界面（subagent_handler.rs 的 forwarded），这是把审批交给人，不是代理之间的内容通道，未记 messages 的依据；messages 依据是续派。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "synchronous_return：delegate 这次工具调用本身立即返回“Delegated to subagent …”，随后状态机里排在推理之前的 foreground_subagent 操作运行子代理（最多 5 个并行），等到结果后作为一条父会话消息交回，全部交回前不进行下一次模型推理，父代理在此期间不能做别的；后台委派已移除（ops_subagent.rs 注释），没有异步等待。cancel_propagation：子代理用父运行的取消令牌启动，任务包在 AbortOnDropHandle 里，父回合被中断或其运行被丢弃时子代理一并中止，并给父会话补一条已取消的说明。子代理不能再委派，代理树只有一层。定时任务的独立运行不参与本字段，结果留在各自的 Scheduled 会话。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/subagent.rs#L252-L294",
+          "locator": "crates/goose-agent/src/subagent.rs：SubagentOperation::run",
+          "lines": "L252-L294",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "等待与结果交回",
+          "note": "操作启动待运行的子代理，用父运行的 cancel_token，等子代理完成后把结果作为消息效应交回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_subagent.rs#L15-L17",
+          "locator": "crates/goose/src/agents/state_machine/ops_subagent.rs：DELEGATED_META_KEY 注释",
+          "lines": "L15-L17",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "后台委派",
+          "note": "注释说明后台子代理已移除，只留下前台委派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/subagent_handler.rs#L175-L218",
+          "locator": "crates/goose/src/agents/subagent_handler.rs：spawn_run、SubagentEnding",
+          "lines": "L175-L218",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "取消",
+          "note": "子代理任务用 AbortOnDropHandle 包装，注释写明中止父回合会丢弃运行中的子代理任务并结束其会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose-agent/src/subagent.rs#L214-L250",
+          "locator": "crates/goose-agent/src/subagent.rs：finalize_cancellation",
+          "lines": "L214-L250",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "取消",
+          "note": "父运行取消时收拢已完成的结果，其余待运行子代理记为 cancelled 并告知父会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "synchronous_return 的判定标准说“看发出委派的那一次调用本身”。这里工具调用立即返回，阻塞发生在框架在下一次推理前运行子代理的步骤里，父模型并不能先做别的，因此按“调用方阻塞直到拿到结果”记同步返回；标准里的“那一次调用”对这种由框架接管等待的做法不太好套。cancel_coverage 记 all_ways：默认路径上等待不是单独的工具调用，打断回合与取消等待是同一件事；结束会话或关闭窗口会丢弃父运行，子任务随 AbortOnDrop 中止。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：developer、analyze、summon、skills 等平台扩展在核心进程内实现并默认启用。external_protocol_service：扩展配置支持 stdio 与 streamable_http 两类 MCP 服务，桌面版扩展页、配置文件或深链接加一条即可；Open Plugins 插件包里的 MCP 服务也走这条边界；随包的 computercontroller、memory 等 builtin 扩展经 goose 自带的 MCP 服务运行，但默认关闭，默认安装没有外部 MCP 服务在用。插件包只带技能、钩子和 MCP 服务，自己不能注册工具，未记 plugin_api；没有把用户脚本注册成工具的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/extension.rs#L158-L215",
+          "locator": "crates/goose/src/agents/extension.rs：enum ExtensionConfig",
+          "lines": "L158-L215",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "扩展边界",
+          "note": "扩展类型只有 stdio、builtin（随包 MCP 服务）、platform（进程内平台扩展）、streamable_http 四种。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/mod.rs#L33-L213",
+          "locator": "crates/goose/src/agents/platform_extensions/mod.rs：PLATFORM_EXTENSIONS",
+          "lines": "L33-L213",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认启用的内置工具",
+          "note": "进程内平台扩展及其 default_enabled 标记，developer、summon、skills 等默认启用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/getting-started/using-extensions.md#L120-L130",
+          "locator": "documentation/docs/getting-started/using-extensions.md：MCP Servers",
+          "lines": "L120-L130",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "外部 MCP 服务",
+          "note": "可以把任意 MCP 服务装成 goose 扩展，桌面版与 CLI 都有添加方法。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/gdk/hello-world.md#L60-L92",
+          "locator": "documentation/docs/gdk/hello-world.md：GDK 状态机与 ToolOperation",
+          "lines": "L60-L92",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "嵌入接口（GDK）",
+          "note": "调用方用 ToolOperation::with_async_tool 给自己组装的状态机注册工具，由框架分派调用、执行调用方实现的工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "unresolved 记 embedder_declared：GDK（goose-agent 等独立发布的 crate）让调用方在自建的状态机里注册自己实现的工具，形式接近“嵌入方声明的工具”；但 GDK 是用来组装新代理的构件，不是给 goose 自身的会话声明工具，ACP 服务端也只接收会话级 mcpServers（仍是 MCP 边界）。拿不准 GDK 算不算“嵌入本核心”，先写进 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ],
+        "unresolved": [
+          "embedder_declared"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "workflow_definition"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：工作目录到 Git 根之间的 .goosehints 与 AGENTS.md 每个会话自动装载（CONTEXT_FILE_NAMES 可改）。skill_directory：默认启用的 skills 扩展发现 ~/.agents/skills、项目 .agents/skills 及 .goose/skills、.claude/skills 等目录，也可经插件包带入。role_template：summon 扫描 .goose/agents、.claude/agents、.agents/agents 及全局同名目录里带 frontmatter 的代理定义，主代理用 delegate(source=名称) 派给子代理，load 也能按名装入。workflow_definition：配方（YAML）存为文件，按名运行（桌面版配方库、goose run --recipe、映射成斜杠命令、delegate(source)），框架负责参数代入、结构化输出校验，并按 retry 段运行检查命令、失败时重试整轮，属于框架按定义推进多步。斜杠命令在 goose 里是指向配方的别名，按同一机制只记一处（总则 R8）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/hints/load_hints.rs#L10-L21",
+          "locator": "crates/goose/src/hints/load_hints.rs：get_context_filenames",
+          "lines": "L10-L21",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "项目规则",
+          "note": "默认上下文文件为 .goosehints 与 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/context-engineering/using-skills.md#L50-L58",
+          "locator": "documentation/docs/guides/context-engineering/using-skills.md：技能目录",
+          "lines": "L50-L58",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "技能",
+          "note": "全局与项目技能目录及兼容目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/platform_extensions/summon.rs#L248-L319",
+          "locator": "crates/goose/src/agents/platform_extensions/summon.rs：discover_filesystem_sources",
+          "lines": "L248-L319",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "代理定义与配方",
+          "note": "从项目和用户目录发现配方与代理定义，作为 delegate/load 可按名使用的来源。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/recipes/recipe-reference.md#L411-L445",
+          "locator": "documentation/docs/guides/recipes/recipe-reference.md：Retry",
+          "lines": "L411-L445",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "配方",
+          "note": "retry 段定义成功检查命令和失败命令，框架检查不过就重置并重跑，直到通过或用完次数。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/context-engineering/slash-commands.md#L12-L45",
+          "locator": "documentation/docs/guides/context-engineering/slash-commands.md",
+          "lines": "L12-L45",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "斜杠命令",
+          "note": "自定义斜杠命令是运行配方的快捷方式，在配置的 slash_commands 里加一条映射。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "配方的归类拿不准：多数配方只是指令加首条提示，展开后由模型自己走，接近 prompt_template；但同一机制带 retry 检查（框架执行检查命令、按结果重跑）、结构化输出校验和子配方，按 R8 词表先后取 workflow_definition。配方还能经 delegate(source) 派给子代理、带扩展和型号设置，若按“能分派给子代理的角色定义”会先命中 role_template，这里没这样归，role_template 只因代理定义文件记入。executable_items 记 workflow_definition，依据是 retry.checks 与 on_failure 的命令由框架自己执行；判定标准说的是“展开或装载时”执行，重试检查发生在回合结束后，这一点请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "workflow_definition"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "事件点来自 Open Plugins 钩子（插件目录的 hooks/hooks.json，type=command）：UserPromptSubmit→input；PreToolUse、PreToolUseResult、PostToolUse、PostToolUseFailure、BeforeReadFile、AfterFileEdit、BeforeShellExecution、AfterShellExecution→tool_before_after；Stop、SessionEnd→end；SessionStart→session_start。只有 PreToolUse（退出码 2 或 stdout 的 decision:block）和 Stop（阻止结束、让回合继续）能干预；UserPromptSubmit 与 SessionStart 只能观察，SessionStart 的 banner 只给用户看、不进模型上下文。没有模型调用、保存或压缩事件。桌面版（goose serve）同样按进程当前目录加载用户与项目插件的钩子，主会话的 SessionEnd 只在 CLI 和子代理结束时触发，Stop 在桌面版照常触发。默认安装没有插件，没有处理器在用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/hooks/mod.rs#L54-L67",
+          "locator": "crates/goose/src/hooks/mod.rs：enum HookEvent",
+          "lines": "L54-L67",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钩子事件",
+          "note": "支持的十二个事件名。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/context-engineering/hooks.md#L131-L146",
+          "locator": "documentation/docs/guides/context-engineering/hooks.md：Supported Events",
+          "lines": "L131-L146",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钩子事件",
+          "note": "各事件的触发时点。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/context-engineering/hooks.md#L242-L259",
+          "locator": "documentation/docs/guides/context-engineering/hooks.md：Blocking a Tool Call",
+          "lines": "L242-L259",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "干预能力",
+          "note": "只有 PreToolUse 和 Stop 能阻断，其余事件只观察。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/session.rs#L258-L322",
+          "locator": "crates/goose/src/agents/state_machine/session.rs：session_start_message 与 SessionStart/UserPromptSubmit 触发",
+          "lines": "L258-L322",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "状态机主路径",
+          "note": "状态机在首个回合触发 SessionStart、每次提交触发 UserPromptSubmit；banner 消息设为模型不可见。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/services.rs#L383",
+          "locator": "crates/goose/src/agents/services.rs：HookManager::load",
+          "lines": "L383",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "加载",
+          "note": "服务层按进程当前目录发现已启用插件并加载钩子，CLI 与 goose serve 共用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "input 只有 UserPromptSubmit 一个事件且只能观察，写进 observe_only；session_start 同理。PreToolUseResult 是只观察的，但同属工具前后，该阶段有 PreToolUse 能阻断，所以 tool_before_after 不进 observe_only。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "observe_only": [
+          "input",
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess",
+        "library"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：goose acp 以 Agent Client Protocol 服务端经标准输入输出运行，goose serve 经 HTTP/WebSocket 提供 ACP，文档有自建 ACP 客户端的指南。cli_subprocess：goose run -t/-i 非交互运行，--output-format json 或 stream-json 输出结构化结果。library：GDK 把 goose 用的代理运行时（goose-agent 状态机、goose-providers、goose-context-management）作为独立 crate 发布，调用方在自己进程里组装并运行同一套状态机，Python/Kotlin 绑定只覆盖提供方。桌面版自己拉起的 goose serve 只监听 127.0.0.1、用每次启动随机生成的密钥和 TLS，只供本窗口前端使用，不算对外入口，所以所选入口直接开放的为空；随包 goose 二进制换子命令（acp、run）即可用前两项。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/goose-cli-commands.md#L700-L760",
+          "locator": "documentation/docs/guides/goose-cli-commands.md：acp、serve",
+          "lines": "L700-L760",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "协议服务端",
+          "note": "goose acp 经 stdio、goose serve 经 HTTP/WebSocket 作为 ACP 服务端。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/goose-cli-commands.md#L421-L454",
+          "locator": "documentation/docs/guides/goose-cli-commands.md：run [options]",
+          "lines": "L421-L454",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "非交互模式",
+          "note": "goose run 接受文本、文件或 stdin，--output-format 支持 json、stream-json。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/gdk/index.md#L12-L60",
+          "locator": "documentation/docs/gdk/index.md：GDK",
+          "lines": "L12-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "库",
+          "note": "GDK 是构建 goose 的代理运行时组件，供在自己的应用里运行代理；goose 二进制也可当 ACP 后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/release-plz.toml#L1-L50",
+          "locator": "release-plz.toml：GDK 发布的 crate",
+          "lines": "L1-L50",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "发布包",
+          "note": "goose-agent、goose-providers、goose-context-management、goose-sdk 等按 gdk-v 标签单独发布。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServe.ts#L365-L375",
+          "locator": "ui/desktop/src/gooseServe.ts：startGooseServe 启动参数",
+          "lines": "L365-L375",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版内部后端",
+          "note": "桌面版以 serve --platform desktop 在 127.0.0.1 随机端口拉起后端，密钥来自 main.ts 的随机 GENERATED_SECRET。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "library 拿不准：GDK 提供的是 goose 自己用的状态机运行时，调用方要自己挑操作和工具组装代理，并不是直接驱动完整的 goose（不带 developer、summon 等平台扩展）；按“官方公开发布的包，在调用方进程里运行核心循环”记入。GDK 版本线为 0.1.0-alpha.13，与 goose 1.59.0 不同，按 R5“版本号线不同也算”处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：桌面版对话框和 CLI 会话；另有实验性的 Telegram 网关（goose gateway，用户经 Telegram 机器人发消息）。api：goose run 非交互、ACP（goose acp / goose serve）、GDK 库，口径同 F32。schedule：调度器内置 cron 定时任务表，桌面版以 --enable-scheduler 启动，用户可在配方库建定时任务，模型也能调 scheduler__manage_schedule 建。没有找到网络回调、文件监视等外部事件触发入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServe.ts#L365-L375",
+          "locator": "ui/desktop/src/gooseServe.ts：startGooseServe 启动参数",
+          "lines": "L365-L375",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "所选入口",
+          "note": "桌面版后端带 --enable-scheduler 启动。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/recipes/session-recipes.md#L460-L475",
+          "locator": "documentation/docs/guides/recipes/session-recipes.md：Schedule Recipe",
+          "lines": "L460-L475",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时",
+          "note": "桌面版可为配方建定时任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/guides/goose-cli-commands.md#L421-L454",
+          "locator": "documentation/docs/guides/goose-cli-commands.md：run [options]",
+          "lines": "L421-L454",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "API",
+          "note": "脚本经 goose run 提交新任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/documentation/docs/experimental/remote-access/telegram-gateway.md#L14-L24",
+          "locator": "documentation/docs/experimental/remote-access/telegram-gateway.md：How It Works",
+          "lines": "L14-L24",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "聊天通道",
+          "note": "用户经配对的 Telegram 机器人给 goose 发消息，属于人经聊天通道发起。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "桌面版的 goose:// 深链接（配方、扩展）由别的程序打开时能把配方带进桌面版，但仍要用户在界面里发起，未记 api。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "桌面版 Electron 进程为每个窗口租用一个子进程 goose serve（主循环在其中）；窗口关闭时释放租约，最后一个使用它的窗口关闭即 SIGTERM（5 秒后 SIGKILL）结束 goose serve，退出应用时也全部清理。macOS 上菜单栏图标让应用本体留着，但执行核心随窗口退出，没有注册系统服务，也不脱离界面常驻。可选：设置里的外部后端（externalGoosed）可连接另行运行的 goose serve。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServe.ts#L501-L537",
+          "locator": "ui/desktop/src/gooseServe.ts：cleanup",
+          "lines": "L501-L537",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "后端进程生命周期",
+          "note": "清理时向 goose serve 发 SIGTERM，超时再 SIGKILL。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/gooseServeLeaseRegistry.ts#L121-L133",
+          "locator": "ui/desktop/src/gooseServeLeaseRegistry.ts：releaseWindow",
+          "lines": "L121-L133",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "窗口关闭",
+          "note": "窗口释放租约，租约不再有窗口时清理后端进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/main.ts#L1294-L1300",
+          "locator": "ui/desktop/src/main.ts：mainWindow closed → releaseWindow",
+          "lines": "L1294-L1300",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "窗口关闭",
+          "note": "主窗口关闭时释放该窗口的 goose serve 租约。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是定时任务：调度器把任务表写进存储文件，goose serve 重启后重新载入并按 cron 继续触发（桌面版默认启用调度器）；崩溃时正在跑的那一次只清掉运行标记，不补跑。交互层：运行中提交的引导消息进进程内的 SteerQueue（VecDeque），在模型与工具回合之间并入，进程退出即丢失。子代理待运行列表从已保存的会话记录推导，但要父会话再跑一轮才继续，不算持久队列。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/scheduler/full.rs#L75-L97",
+          "locator": "crates/goose/src/scheduler/full.rs：persist_jobs、clear_running_state",
+          "lines": "L75-L97",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务存储",
+          "note": "任务表写入存储文件；重新载入时清掉运行中标记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/scheduler/full.rs#L417-L440",
+          "locator": "crates/goose/src/scheduler/full.rs：load_jobs_from_storage",
+          "lines": "L417-L440",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "重启恢复",
+          "note": "启动时从存储文件恢复任务表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/state_machine/ops_steer.rs#L1-L30",
+          "locator": "crates/goose/src/agents/state_machine/ops_steer.rs：SteerQueue",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "交互输入队列",
+          "note": "运行中的用户引导消息排在进程内 VecDeque 里，在回合间并入。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "定时任务算不算“已经交给框架、还没执行完的工作项”：问题文字把计划任务列为工作项，所以按它记 persistent；但持久的是定时规则，崩溃中断的那一次运行不会补跑或重试。若把“未执行完”理解成单次运行，取值会降为 in_memory。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "message_notification：桌面版设置 enableNotifications 默认 true，回合结束时若没有窗口处于焦点就发一条系统通知（依赖系统授予通知权限）。默认 Auto 模式下权限检查器对所有工具直接放行，提示注入检测和对抗审查默认关闭，因而没有阻塞审批；默认安装没有外部 MCP 服务，也就没有经 elicitation 的提问，未见内置的提问工具。todo 扩展默认关闭；没有结构化交接对象。文档示例里启用扩展会问“do you approve?”，代码在 Auto 下直接放行（R10，按实现）。可选：把 goose mode 改为 Approve 或 Smart Approve 后有工具审批；添加带 elicitation 的 MCP 服务后会有提问。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/hooks/useChatSession.ts#L111-L131",
+          "locator": "ui/desktop/src/hooks/useChatSession.ts：onFinish",
+          "lines": "L111-L131",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "桌面版通知",
+          "note": "回合完成且无窗口在焦点时，按 enableNotifications 发系统通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/ui/desktop/src/utils/settings.ts#L85",
+          "locator": "ui/desktop/src/utils/settings.ts：默认设置 enableNotifications",
+          "lines": "L85",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认设置",
+          "note": "enableNotifications 默认为 true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/permission/permission_inspector.rs#L159-L161",
+          "locator": "crates/goose/src/permission/permission_inspector.rs：inspect",
+          "lines": "L159-L161",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "GooseMode::Auto 下每个工具请求都判为 Allow，不请求批准。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": null
+      }
+    }
+  }
+}

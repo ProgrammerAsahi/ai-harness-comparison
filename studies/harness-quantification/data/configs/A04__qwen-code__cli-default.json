@@ -18,11 +18,11 @@
   "synthetic": false,
   "subagents_enabled": true,
   "enabled_extensions": [
-    "默认注册的核心工具（名称取源码 ToolNames 常量的含义）：read_file、write_file、edit、notebook_edit、ls、glob、grep、shell、monitor、todo_write、web_fetch、agent（派子代理）、list_agents、send_message、task_stop、skill、manage_memory、search_memory、zoom_image、display_image、report_findings、ask_user_question、enter/exit_plan_mode、enter/exit_worktree、read_mcp_resource，以及 tool_search 与 tool_call 两个桥接工具（部分工具默认延迟声明，经 tool_search 取用）",
+    "默认注册的核心工具（名称取源码 ToolNames 常量的含义）：read_file、write_file、edit、notebook_edit、ls、glob、grep、shell、monitor、web_fetch、agent（派子代理）、list_agents、send_message、task_stop、skill、manage_memory、search_memory、zoom_image、display_image、report_findings、ask_user_question、enter/exit_plan_mode、enter/exit_worktree、read_mcp_resource、cron_create、cron_list、cron_delete、loop_wakeup（定时／循环类工具，experimental.cron 默认 true），以及 tool_search 与 tool_call 两个桥接工具（部分工具默认延迟声明，经 tool_search 取用）",
     "web_search：Qwen 账户订阅登录时自动启用，走订阅的 MCP 搜索后端（api.qwen.ai）；QwenCloud、ModelStudio Token Plan 或标准 API Key 登录时也自动启用，其他提供方需另配后端",
     "内置子代理：general-purpose（默认类型）、Explore、statusline-setup、review-agent；另有 claude-code、codex 两个外部执行器代理，需要本机另装对应工具才能用；也可 fork 当前会话",
     "随包技能（bundled skills，默认加载）：agent-delegation、autofix-pr、batch、batch-api、coordinate、dataviz、extension-creator、goal-draft、loop、new-app、qc-helper、review、simplify、stuck、workflow-authoring、workflow-creator、zvec-grep-install；其中 batch-api、coordinate、zvec-grep-install 设了 disable-model-invocation，只能由用户调用；各技能是否另受功能开关约束未逐个核实",
-    "默认关闭：Workflow 工具（tools.workflows 默认 false）、LSP、Cron、Agent Team、沙箱",
+    "默认关闭：todo_write 工具（tools.todoWrite.enabled 默认 false，不注册给模型）、Workflow 工具（tools.workflows 默认 false）、LSP、Agent Team、沙箱",
     "MCP 服务：无默认配置；扩展：无默认安装"
   ],
   "evidence": [
@@ -142,7 +142,25 @@
       "lines": "L13771-L13930",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "扩展",
-      "note": "普通会话注册的核心工具：tool_call、tool_search、read_mcp_resource、agent、list_agents、task_stop、send_message、skill、ls、read_file、记忆工具、grep、glob、edit、notebook_edit、write_file、shell 等；todo_write 与 web_fetch 在 L13639-L13650 的宿主会话工具里注册。"
+      "note": "普通会话注册的核心工具：tool_call、tool_search、read_mcp_resource、agent、list_agents、task_stop、send_message、skill、ls、read_file、记忆工具、grep、glob、edit、notebook_edit、write_file、shell 等；web_fetch 在 L13639-L13652 的宿主会话工具里注册，todo_write 在同一处受 isTodoWriteEnabled() 门控（见下条）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L3222-L3243",
+      "locator": "packages/cli/src/config/settingsSchema.ts：tools.todoWrite.enabled；packages/cli/src/config/config.ts：todoWriteEnabled；packages/core/src/config/config.ts：registerHostSessionTools",
+      "lines": "L3222-L3243",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "tools.todoWrite.enabled 默认 false，描述写明 Opt-in、默认禁用（docs/users/configuration/settings.md 同）。CLI 在 packages/cli/src/config/config.ts L2911 以 settings.tools?.todoWrite?.enabled === true 传入 todoWriteEnabled；core config.ts L13640-L13645 仅在 isTodoWriteEnabled() 为真时才注册 todo_write，因此默认会话里 todo_write 不注册给模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L4531-L4540",
+      "locator": "packages/cli/src/config/settingsSchema.ts：experimental.cron；packages/cli/src/config/config.ts：cronEnabled；packages/core/src/config/config.ts：isCronEnabled 与工具注册",
+      "lines": "L4531-L4540",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "experimental.cron 默认 true。CLI 在 packages/cli/src/config/config.ts L2907 以 settings.experimental?.cron ?? true 传入 cronEnabled；core config.ts L10778-L10782 的 isCronEnabled() 只在沙箱执行或环境变量 QWEN_CODE_DISABLE_CRON=1 时返回 false；L13983-L14000 在其为真时注册 cron_create、cron_list、cron_delete、loop_wakeup。默认安装未设该变量也未启用沙箱，所以这组定时／循环工具默认注册。docs/users/features/scheduled-tasks.md L11 同样写“默认启用”。"
     },
     {
       "evidence_kind": "source_path",

@@ -1,0 +1,1930 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.4",
+  "synthetic": false,
+  "round": "pilot-2",
+  "config_id": "A14__mistral-vibe__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v6",
+    "coded_at": "2026-11-11"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-11",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "直接在 TUI 输入任务时，Harness Core 的回合循环在模型回复带工具调用时执行工具批次、把结果并入当前回合再请求模型，回复不带工具调用时结束回合（turn.rs 的 AcceptedCompletionContinuation::Complete／ToolBatch 分支）。默认派生的子代理（agents.spawn、explore）和 run_typescript 程序都嵌在这个循环里，最外层仍是模型循环。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/turn.rs",
+          "locator": "harness/core/src/core/turn.rs：接受一次补全后的 continuation 分支与工具批次结束后的 ContinueTurn",
+          "lines": "L701-L745",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认主循环",
+          "note": "无工具调用时 complete_output 结束回合；有工具批次时执行后把消息并入当前回合并 continue_active_turn 再请求模型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/commands-shortcuts",
+          "locator": "Commands and shortcuts：Slash commands 表与 Keyboard shortcuts 表",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令列表（secondary_modes 核对清单）",
+          "note": "官方命令列表，用于逐个判断是否另有改变任务推进方式的入口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/commands/commands.rs",
+          "locator": "vibe/cli-rust/src/commands/commands.rs：COMMANDS 表",
+          "lines": "L70-L116",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令列表（secondary_modes 核对清单）",
+          "note": "TUI 内置斜杠命令与文档表一致，没有计划模式、工作流或目标续跑类命令。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 照官方命令表和 commands.rs 逐项判：/branch(/fork)、/clear(/new)、/compact、/config、/context、/copy、/data-retention、/debug、/exit、/help、/leanstall、/unleanstall、/log、/log-level、/mcp、/model、/paste-image、/plugins、/reload、/reload-plugins、/rename、/resume、/retry、/rewind、/status、/theme、/thinking、/voice、/whoami、/release-notes、/proxy-setup、/pr 都是会话管理、设置或展示，不改变任务推进方式；/retry 重发一次，任务仍是模型循环；Shift+Tab 切换代理只换权限档。/loop 让模型用 cron 工具排定定时提示，到点各发起一个新任务、任务内部仍是模型循环，按 scope_rule 属任务由谁发起（F33），不算控制方式，未记 event_scheduling。run_typescript 程序在一次工具调用内跑完、结果交回同一模型循环（程序时间预算 60 秒），按总则 R8 只在 F10 记 script_dispatch，不记 explicit_workflow。技能斜杠命令只把文件展开成提示，不算。-p 程序化模式同样是模型循环。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "默认注册 todo 工具（权限 always，exposure direct_and_programmatic），条目带 pending、in_progress、completed、cancelled 状态，由模型自行调用，界面可用 Cmd/Alt+\\ 切换待办面板；框架不按条目强制执行顺序。默认 CLI 系统提示同时要求多步任务先给简短编号计划（仅提示文本），按判定顺序取结构化任务表。内置主代理只有 ask、accept-edits、smart-approve、auto-approve，没有计划模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_provided_tools.py",
+          "locator": "vibe/app_server/_provided_tools.py：vibe_tool_groups 中 TODO_TOOL_NAME",
+          "lines": "L176-L202",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认工具清单",
+          "note": "todo 在可用工具内时作为模型可直接调用的工具注册给 Harness Core。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/builtins/todo.py",
+          "locator": "vibe/core/tools/builtins/todo.py：TodoStatus、TodoConfig.permission",
+          "lines": "L11-L80",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认工具清单",
+          "note": "待办条目有状态字段，工具默认权限 always。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/prompts/cli.md",
+          "locator": "vibe/core/prompts/cli.md：Open — state intent before acting",
+          "lines": "L113",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认系统提示",
+          "note": "多步任务先写简短编号计划，属于并存的提示文本约束。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "默认系统提示 id 为 SystemPrompt.CLI（vibe_schema.py system_prompt_id），服务端实验可换提示变体（cli_2026-07_v2 等），本配置按未进实验组的 cli.md 判；没有逐个核对各变体是否同样要求计划，但 todo 工具不随变体改变，取值不受影响。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型回复不带工具调用时 Core 结束回合（model_end_signal）；每回合迭代上限默认 1000（settings.max_turns 或 --max-turns 未设时取 1_000），到达后以 IterationLimit 结束回合（budget，与 F12 call_count 对应）；Esc 或空输入时 Ctrl+C 中断当前回合，Core 记 TurnInterrupted（user_interrupt）。可选：--max-turns、--max-tokens、--max-price 启动参数另设回合、会话 Token 和金额上限。没有默认生效的结束验证；post_agent_turn 钩子可拒绝回复，但默认没有配置这类钩子（内置的 AGENTS.md 钩子是工具后钩子）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/turn.rs",
+          "locator": "harness/core/src/core/turn.rs：continuation 分支、迭代上限判断、abandon_turn 的中断分支",
+          "lines": "L701-L745",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主循环结束判定",
+          "note": "无工具调用即完成回合；迭代数达到 max_iterations 时以 IterationLimit 结束；中断产生 TurnOutcome::Interrupted。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/turn.rs",
+          "locator": "harness/core/src/core/turn.rs：continuation 分支、迭代上限判断、abandon_turn 的中断分支",
+          "lines": "L1059-L1125",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主循环结束判定",
+          "note": "无工具调用即完成回合；迭代数达到 max_iterations 时以 IterationLimit 结束；中断产生 TurnOutcome::Interrupted。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：会话派生时的 max_iterations",
+          "lines": "L1948",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认上限",
+          "note": "max_iterations = settings.max_turns or options.max_turns or 1_000，传入 RustTurnSettings。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：会话派生时的 max_iterations",
+          "lines": "L2045-L2047",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认上限",
+          "note": "max_iterations = settings.max_turns or options.max_turns or 1_000，传入 RustTurnSettings。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/commands-shortcuts",
+          "locator": "Commands and shortcuts：Keyboard shortcuts（Escape、Ctrl+C）",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "用户中断",
+          "note": "Escape 中断当前操作；空输入时 Ctrl+C 中断代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/cli.rs",
+          "locator": "vibe/cli-rust/src/cli.rs：--max-turns、--max-price、--max-tokens",
+          "lines": "L76-L92",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选上限",
+          "note": "回合、金额、Token 上限是启动参数，默认不设。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "1000 次迭代的默认上限写在 app-server 代码里，用户几乎碰不到，但按 F12 口径属于始终生效的内部上限，所以 F03 记 budget。子代理是否沿用同一 max_iterations 没有逐行核实。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型接口出错（可重试的状态、网络错误、首段输出后静默超时等）由适配器 call_with_retries 按退避（0.5 秒起、×1.5、单次最多 30 秒，尊重 Retry-After）不经模型重发，总时长默认 300 秒（api_retry_max_elapsed_time）。工具参数不符合 JSON Schema、参数不是合法 JSON、工具执行失败时，错误作为工具结果交回模型。适配器和 Core 在执行前修正调用：空参数存成 {}、Mistral 回复里非字符串非对象的参数换成 {}（有损）、缺 id 的调用补 tool_call_<序号>、无名调用丢弃、带工具调用但 finish_reason 不是 tool_call 的改成 tool_call 后照常执行。没有找到框架规则触发的“失败后暂停等人决定”；失败后 /retry 由用户在回合结束后手动发起，不计入。没有找到重复调用检测。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/adapters/_retry.py",
+          "locator": "adapters/_retry.py：call_with_retries、退避常量",
+          "lines": "L63-L125",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型调用失败",
+          "note": "框架按退避自动重发同一请求，受总时长预算约束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/adapters/_retry.py",
+          "locator": "adapters/_retry.py：call_with_retries、退避常量",
+          "lines": "L191-L211",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型调用失败",
+          "note": "框架按退避自动重发同一请求，受总时长预算约束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/tools/arguments.rs",
+          "locator": "harness/core/src/core/tools/arguments.rs：SCHEMA_REJECTION_PREFIX、validate_arguments",
+          "lines": "L9-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具调用失败",
+          "note": "参数被模式拒绝时，拒绝说明以模型可读的文字交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/turn/completion/candidate.rs",
+          "locator": "harness/core/src/core/turn/completion/candidate.rs：ToolCall 参数解析",
+          "lines": "L479-L494",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "框架修正输入",
+          "note": "空参数存成 {} 让调用照常执行；其他解析失败记为 InvalidJson。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/adapters/mistral.py",
+          "locator": "adapters/mistral.py：工具调用条目解析",
+          "lines": "L700-L722",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "框架修正输入",
+          "note": "非字符串非对象的参数换成 {}，缺 id 时补 tool_call_<序号>。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/adapters/_tool_call_finish.py",
+          "locator": "adapters/_tool_call_finish.py：MalformedToolCalls、align_finish_reason",
+          "lines": "L1-L80",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "框架修正输入",
+          "note": "各适配器统一修正 finish_reason 与工具调用不一致、丢弃无名调用，并记录每种修正。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "工具执行出错、参数为非法 JSON 时交回模型，是从 Core 的工具结果路径和 run_typescript 提示里的 ToolError 代码推断的，没有逐行追到每类内置工具的出错分支，所以 confidence 写 medium。finish_reason 对齐和补 id 算不算“修整工具名”一类，定义没有直接覆盖，按“框架清洗畸形调用后照常执行”归入 framework_input_repair。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "value_note": "vibe 命令 exec 打包的 Rust TUI vibe-rs；vibe-rs 把 vibe-app-server 作为子进程启动（stdin/stdout 管道、kill_on_drop、Linux 上随父进程退出），以按行分隔的 JSON-RPC 2.0 通信。模型循环由 Harness Core（编译进 mistralai_vibe_local_harness._native 的 Rust 扩展）和 Python Runtime 在 app-server 进程内运行。其他环境：同一 app-server 也可用 --multiplex 服务多路运行；隐藏的 --agent-socket 实验入口不在本配置内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0016-rust-cli-delivery-surface.md",
+          "locator": "docs/adr/0016-rust-cli-delivery-surface.md：Decision",
+          "lines": "L5-L9",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "前端与核心连接",
+          "note": "vibe 总是运行 vibe-rs，它是 vibe-app-server 的薄客户端，经 stdio 上的 JSON-RPC 2.0 连接，不导入 Python 内部、不复制代理运行时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/server/child.rs",
+          "locator": "vibe/cli-rust/src/server/child.rs：ChildHandle::launch",
+          "lines": "L31-L72",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "前端与核心连接",
+          "note": "以管道启动 app-server 子进程，kill_on_drop，Linux 上设置随父进程退出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/pyproject.toml",
+          "locator": "pyproject.toml：[tool.maturin]",
+          "lines": "L155-L165",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "执行核心所在进程",
+          "note": "Harness Core 编译成 mistralai_vibe_local_harness._native，随 wheel 和 Runtime 包一起在 Python 进程内加载。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "参照点是 app-server 进程。read_file、write_file、edit 等文件工具在 Runtime 里直接读写主机文件（未配置沙箱时 on_host）；run_typescript 程序在 Core 内嵌的 deno_core 里运行，也在主进程。bash 为每条命令起 shell 子进程；后台进程工具（tools.process，enable_background_processes 默认 true）同样起子进程。默认的 web_search 及其 open_url（web_fetch）走 Mistral 托管连接器，在云端执行，不计入本地基线。可选：用户添加的 stdio MCP 服务由核心拉起为子进程，HTTP MCP 服务按其部署方式。隐藏的 --agent-socket 实验入口会让工具在外部沙箱里运行，不在本配置内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_shell_tools.py",
+          "locator": "vibe/_shell_tools.py：run_bash、_spawn_bash_command",
+          "lines": "L211-L240",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令工具执行位置",
+          "note": "没有沙箱时以 spawn_shell 在工作目录起 shell 子进程运行命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_shell_tools.py",
+          "locator": "vibe/_shell_tools.py：run_bash、_spawn_bash_command",
+          "lines": "L341-L366",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令工具执行位置",
+          "note": "没有沙箱时以 spawn_shell 在工作目录起 shell 子进程运行命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_file_tools.py",
+          "locator": "vibe/_file_tools.py：_run_file_tool",
+          "lines": "L235-L262",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "文件工具执行位置",
+          "note": "sandbox 为 None 时文件工具在主机上由 Runtime 直接执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：会话上下文构造的 sandbox 与 agent_socket 参数",
+          "lines": "L1022-L1068",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认无沙箱",
+          "note": "sandbox 默认 None，只有 agent_socket 实验入口才提供沙箱。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/Cargo.toml",
+          "locator": "harness/core/Cargo.toml：deno_core 依赖",
+          "lines": "L29-L30",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "run_typescript 执行位置",
+          "note": "TypeScript 程序由 Core 内嵌的 deno_core 执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "grep 工具在 unified 路径里的具体实现（是否经 rg 子进程）没有追到，不影响取值：主进程和子进程两个位置都已确认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话消息历史和运行状态由 Runtime 的 UnifiedSessionStore 写在 Vibe 主目录下 unified/<session_id>，恢复时由 Runtime 读回；Rust TUI 只接收 app-server 投影出的公开值，不另存会话库。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0002-core-engine-and-delivery-surfaces.md",
+          "locator": "docs/adr/0002-core-engine-and-delivery-surfaces.md：Ownership Boundaries 表",
+          "lines": "L7-L12",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话状态归属",
+          "note": "Runtime 负责一个会话的执行、持久化与恢复；客户端只负责展示与输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0006-local-sessions.md",
+          "locator": "docs/adr/0006-local-sessions.md：Decision",
+          "lines": "L5-L6",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话恢复",
+          "note": "执行恢复用 Runtime 私有的持久状态，公开快照只是投影。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "vibe/_storage.py：UnifiedSessionStore.__init__",
+          "lines": "L2413-L2422",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话状态存储",
+          "note": "每个会话的存储根是 unified/<session_id>，由 Runtime 持有。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0016-rust-cli-delivery-surface.md",
+          "locator": "docs/adr/0016-rust-cli-delivery-surface.md：Flag To User When",
+          "lines": "L41-L42",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "客户端不持有状态",
+          "note": "Rust 客户端不应有第二个会话或配置数据库。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个会话按会话编号存放在 unified/<session_id>，并以 <session_id>.lock.json 租约防止并发写。新会话（/clear、/new）在同一个 app-server 进程里开，不保证换进程；默认不为会话建专用目录或工作树。可选：--worktree 启动参数或 /vibe:worktree 技能让会话在工作树里运行；enter_worktree 工具只在客户端声明 agent_worktrees 能力时提供，Rust TUI 不声明。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "vibe/_storage.py：会话租约文件与 UnifiedSessionStore",
+          "lines": "L2223",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话隔离",
+          "note": "历史和状态按会话编号分目录存放，写入受按编号的租约保护。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "vibe/_storage.py：会话租约文件与 UnifiedSessionStore",
+          "lines": "L2413-L2422",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话隔离",
+          "note": "历史和状态按会话编号分目录存放，写入受按编号的租约保护。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/startup/mod.rs",
+          "locator": "vibe/cli-rust/src/startup/mod.rs：initialize 的 ClientCapabilities",
+          "lines": "L155-L166",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工作树隔离未默认开启",
+          "note": "TUI 只声明 callback_kinds，不声明 agent_worktrees、session_spawn 等能力。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "没有逐行核实 /clear 新会话是否一定复用同一 app-server 进程；process 未记，依据是 ADR 0002 把多会话托管放在 app-server（Hosting owns the catalogue, creation, routing），以及 multiplex 模式一个 app-server 服务多路运行。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "Runtime 内的适配表随默认安装附带 Mistral 原生格式（backend mistral）和 generic 后端的 OpenAI Chat、OpenAI Responses、Anthropic（含 Vertex Anthropic）格式，用户只需在 providers 里加一条提供方就能启用；默认提供方列表另带一条 llamacpp（OpenAI 兼容）。钉住环境实际走 Mistral 原生格式。适配实现以库的形式在 app-server 进程内运行，没有独立网关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_route_profile.py",
+          "locator": "vibe/_route_profile.py：_GENERIC_WIRES、adapter_capabilities",
+          "lines": "L33-L75",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型接口协议",
+          "note": "按 backend 与 api_style 选择 MISTRAL、OPENAI_CHAT、OPENAI_RESPONSES、ANTHROPIC 几种线格式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_completion.py",
+          "locator": "vibe/_completion.py：按 config.backend 分派 execute_mistral_completion 或 execute_generic_completion",
+          "lines": "L301-L335",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "模型调用路径",
+          "note": "主执行链的补全请求在进程内按后端分派到不同适配器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py：DEFAULT_PROVIDERS",
+          "lines": "L200-L214",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认提供方",
+          "note": "默认提供方为 mistral（Mistral 后端）和 llamacpp（本机 OpenAI 兼容端点）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具定义放进请求，模型经接口原生的 tool_calls 字段发出调用，适配器按结构化字段取名称和参数。MCP 默认开启（enable_mcp true），用户只需加一条服务配置，Runtime 就把 MCP 工具登记成模型可调用的函数；默认的 Mistral 托管连接器（web_search）也经连接器网关调用。run_typescript 默认开放（programmatic 设置未关），模型写 TypeScript，在 Core 内嵌的 deno_core 里按 tools.<group>.<function> 调用其他工具和子代理，结果交回同一模型循环（每个程序最多 1024 次操作、60 秒时间预算）。没有找到从普通文本里解析工具调用的路径。解析失败和出错的处理见 F04。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/adapters/mistral.py",
+          "locator": "adapters/mistral.py：tool_calls 条目转成 RustCompletionResultToolCallPart",
+          "lines": "L700-L722",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认调用形式",
+          "note": "从回复的结构化 tool_calls 字段取 id、名称和参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：RustToolSettings 中 programmatic=RustProgrammaticToolSettings",
+          "lines": "L2066-L2077",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "脚本分派默认开放",
+          "note": "默认构造 programmatic 设置（max_operations 1024、max_elapsed_ms 60000），未传关闭开关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/programmatic_tool_calling/settings.rs",
+          "locator": "programmatic_tool_calling/settings.rs：Switch、Settings.mode",
+          "lines": "L4-L27",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "脚本分派默认开放",
+          "note": "mode 省略即 Enabled，开放 run_typescript、search_tool_functions 和 tools.<group>.<function> 目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/prompt/default_prompts.json",
+          "locator": "harness/core/src/core/prompt/default_prompts.json：run_typescript 工具说明",
+          "lines": "L26",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "脚本分派",
+          "note": "程序只能经 tools.<group>.<function> 调外部系统，失败抛 ToolError。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py：enable_connectors、enable_mcp",
+          "lines": "L845-L846",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "外部工具协议",
+          "note": "连接器和 MCP 默认开启。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用钉住的 mistral-vibe-cli-latest；子代理（agents.spawn 的通用子代理、explore）沿用父配置，派生参数里没有型号或推理强度字段。可选：/model、/thinking 切换型号或思考档；start_session 工具带 model、reasoning_effort 参数，但只在客户端声明 session_spawn 能力时提供，Rust TUI 不声明。其他环境：服务端实验 CLI_MODEL_ROUTING 进组时可能改用路由型号。web_search／open_url 走 Mistral 托管连接器，型号由服务端决定，不计入辅助分配。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py：DEFAULT_ACTIVE_MODEL_CONFIG、get_compaction_model、get_vision_fallback_model",
+          "lines": "L216-L231",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主型号与辅助型号",
+          "note": "默认只有一个型号；压缩未单独配置时用主型号；主型号支持图像时不启用视觉回退型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py：DEFAULT_ACTIVE_MODEL_CONFIG、get_compaction_model、get_vision_fallback_model",
+          "lines": "L1356-L1393",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主型号与辅助型号",
+          "note": "默认只有一个型号；压缩未单独配置时用主型号；主型号支持图像时不启用视觉回退型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：title_model_config 与 classifier_model_config",
+          "lines": "L1887-L1906",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "标题生成与动作审核",
+          "note": "标题未配置 utility_models.title 时用主型号（思考关闭）；smart-approve 分类器另选快速型号，但默认代理 accept-edits 不启用它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/subagents/tools.rs",
+          "locator": "subagents/tools.rs：GenericSpawn、NamedSpawn、FreshGenericSpawn、ForkedGenericSpawn",
+          "lines": "L19-L100",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理型号",
+          "note": "派生参数只有 config_name、instructions、context 等，没有型号字段；通用子代理沿用父配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/agents/models.py",
+          "locator": "vibe/core/agents/models.py：EXPLORE",
+          "lines": "L122-L131",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "内置子代理",
+          "note": "explore 只覆盖可用工具和系统提示，不改型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/connectors/connector_registry.py",
+          "locator": "vibe/core/tools/connectors/connector_registry.py：_DEFAULT_BUILTIN_CONNECTORS",
+          "lines": "L55-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "联网搜索",
+          "note": "默认内置连接器只有托管的 web_search。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对清单：标题生成——主型号（思考 off），同一型号；上下文压缩——compaction_model 默认 None，用主型号；动作审核分类——smart-approve 默认不启用，无；联网搜索与网页抓取——托管连接器，型号在服务端，不计入（旧的 vibe/core/tools/builtins/web_search.py 写了 mistral-vibe-cli-with-tools，但 unified 路径走 connector_web_search，未见调用它）；媒体理解——主型号 supports_images=True，视觉回退返回 None，无；生成类工具——无。实验性旁白（turn_summary）默认关闭，未计入。各项都用主型号，所以写 single_fixed。子代理是否完全沿用父型号是从“has your configuration”的说明和派生参数推断，没有追到子代理配置构造里型号字段的每一处，confidence 写 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：Core 对截断有专门的重试处理，丢弃在输出上限处被截断的回复并带反馈要求缩短，默认每回合最多 6 次（output_limit_retries），用尽后以 OutputLimit 结束回合；单次输出上限 agent_max_output_tokens 默认 0，只在提供方要求时按型号的 max_output_tokens 发，Mistral 不要求。call_count：每回合迭代上限默认 1000，到达后以 IterationLimit 结束回合。可选：--max-turns、--max-tokens（会话 Token）、--max-price（金额）启动参数，及 config 里的 agent_max_output_tokens。不计入：run_typescript 单个程序的 60 秒时间预算和 1024 次操作上限（一次工具调用内）、子代理数量上限 32、接口超时与重试预算、压缩阈值。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/_defaults.py",
+          "locator": "vibe/core/config/_defaults.py：DEFAULT_OUTPUT_LIMIT_RETRIES",
+          "lines": "L27-L28",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "输出截断重试",
+          "note": "默认 6 次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py：agent_max_output_tokens、output_limit_retries",
+          "lines": "L1207-L1248",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "输出上限设置",
+          "note": "agent_max_output_tokens 默认 0；output_limit_retries 说明截断回复被丢弃并重问，0 则首次截断即结束回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/output_limit_recovery.rs",
+          "locator": "features/output_limit_recovery.rs：模块说明与 Settings",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "输出截断处理",
+          "note": "启用时丢弃截断补全并要求更短回复，每回合有次数上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/step_protocol/observation.rs",
+          "locator": "step_protocol/observation.rs：TurnStopReason",
+          "lines": "L15-L25",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "强制截止",
+          "note": "IterationLimit 与 OutputLimit 都是回合提前结束的原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：max_iterations 与 RustTurnSettings",
+          "lines": "L1948",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认上限",
+          "note": "迭代上限默认 1000；output_limit_retries 大于 0 时启用截断重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py：max_iterations 与 RustTurnSettings",
+          "lines": "L2045-L2055",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认上限",
+          "note": "迭代上限默认 1000；output_limit_retries 大于 0 时启用截断重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/cli.rs",
+          "locator": "vibe/cli-rust/src/cli.rs：--max-turns、--max-price、--max-tokens",
+          "lines": "L76-L92",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选上限",
+          "note": "Token 与金额上限只经启动参数设置，默认没有。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "1000 次迭代是写在代码里的兜底值，按 scope_rule 计入。子代理是否各自有不同的迭代上限没有核实，按主循环记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "Harness Core 在内存里维护一份 ModelContext 消息列表（push/extend 追加，压缩时 replace_with_compacted 整体替换）；每次 LLM 调用动作把自上次以来的追加段（Append）或整份（Replace）消息交给运行时，运行时按 revision 追加到自己的消息缓存后整份发出。图片按型号能力投影成 [Image] 占位，属于修整。checkpoint 与恢复日志只在进程重启或恢复时读。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/model_context.rs",
+          "locator": "harness/core/src/core/model_context.rs: ModelContext::push / replace_with_compacted / message_update_since",
+          "lines": "L100-L135",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认路径主循环的请求上下文",
+          "note": "运行中维护的是一份消息列表，只做追加，压缩时整体换成压缩后的消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/model_context.rs",
+          "locator": "harness/core/src/core/model_context.rs: replace_all / message_update_since",
+          "lines": "L266-L299",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "每轮请求构造",
+          "note": "每次请求从消息列表取追加段或整份，经 project_model_input_messages 修整后交给运行时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/runtime.py",
+          "locator": "harness/runtimes/python/python/mistralai_vibe_local_harness/runtime.py: _apply_model_input_update",
+          "lines": "L648-L680",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "运行时发请求前",
+          "note": "运行时把 Replace 换成新列表、把 Append 接在缓存消息后面，再发给模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "请求构造跨 Rust Core 和 Python 运行时两层，但两层持有的是同一份消息列表的同步副本（revision 对齐），没有经过类型化记录的逐类回放，按 scope_rule 只记 sequential_messages 一层。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "truncation：app server 给 Core 配的大输出策略是 Filesystem（max_output_tokens 4000、model_visible_output_tokens 2000），超限的工具结果整份存进会话记录目录，上下文只留截短摘录和文件路径；写盘失败或超过 25000 token 硬上限时也只留截短摘录。summarization：app server 固定传 AutomaticCompactionPolicy，下一次请求达到型号压缩阈值时调模型写摘要，重建为系统提示、最近几条用户消息和摘要；摘要被截断时保留截断文本，属于摘要流程。可选：会话内 /compact 手动压缩（总则 R3 第二档）。没找到工具结果整条换占位或按相关性挑段的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/large_output/mod.rs",
+          "locator": "harness/core/src/core/features/large_output/mod.rs: Policy::Filesystem / build_saved_output_message / format_truncated_output",
+          "lines": "L18-L35",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工具结果进入上下文时",
+          "note": "大输出存文件、上下文只留截短摘录与路径；另有 25000 token 硬上限。相关消息拼装在同文件 L368-L382。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py: RustContextSettings(compaction=RustAutomaticCompactionPolicy()) 与 large_output=RustFilesystemLargeOutputPolicy",
+          "lines": "L2057-L2093",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认会话配置",
+          "note": "默认会话开启自动压缩和文件化大输出；上限常量在 L180-L181。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/compaction/context.rs",
+          "locator": "harness/core/src/core/features/compaction/context.rs: rebuild 说明",
+          "lines": "L338-L345",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "自动压缩",
+          "note": "压缩后历史由系统提示、最近用户消息和模型写的摘要组成。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "用户在输入里用 @路径 附上文件、@ 或粘贴图片，内容作为用户资源块进入请求。统一 Harness 没有内置 grep 工具，代理经 bash 自己跑 rg/grep，按规则不计。默认工具里的 search_tool_functions 只搜工具定义，不检索材料；没找到语义检索或语言服务类工具。技能目录说明常驻、正文经 skill 工具按需读取；子目录 AGENTS.md 在读文件后由内置钩子注入。web_search、web_fetch 属网页途径，不计。Connectors 默认开启但要逐个连接或登录，document_library 实验性默认关（其他环境）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/work-with-cli.md",
+          "locator": "Work with the CLI：Reference files with `@`",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "交互入口",
+          "note": "@ 加路径把文件附进提示，图片可 @ 或粘贴。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/user_content.py",
+          "locator": "vibe/user_content.py: UserTextResource / UserBlobResource / UserResourceLink",
+          "lines": "L26-L60",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "用户输入",
+          "note": "用户输入里的文件以资源块形式携带内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/_setting_keys.py",
+          "locator": "vibe/core/config/_setting_keys.py: TOOLS_WITHOUT_EFFECT",
+          "lines": "L39-L47",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认工具清单",
+          "note": "统一 Harness 不运行 grep 工具，搜索走 shell；task 由 agents.spawn 取代。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录 enabled_extensions 把 grep、task 列为默认内置工具，但本提交的统一 Harness 不运行这两个工具（_setting_keys.py TOOLS_WITHOUT_EFFECT），explore 子代理的 enabled_tools 里的 grep 也因此无效；建议主控核对配置记录。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个新会话把 ~/.vibe/AGENTS.md 和可信目录链上的项目 AGENTS.md 放进系统提示；本配置仓库不带 AGENTS.md，用户级文件只要写入内容就生效（总则 R2）。没找到自动摘要、记忆工具、结构化记忆或检索库；会话 scratchpad 目录随会话存活，不自动带入新会话；vibe.cron 是定时提示，属调度。Le Chat 的 memories 属其他产品形态，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/agents.md",
+          "locator": "Agents：AGENTS.md support",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "新会话开始",
+          "note": "CLI 读入用户级 ~/.vibe/AGENTS.md 和到可信根为止的项目 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/system_prompt.py",
+          "locator": "vibe/core/system_prompt.py: get_agents_md_section",
+          "lines": "L278-L300",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "系统提示",
+          "note": "把用户级和项目 AGENTS.md 渲染进系统提示；app server 在 vibe/app_server/_runtime.py L401 调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/harness_files/_harness_manager.py",
+          "locator": "vibe/core/config/harness_files/_harness_manager.py: load_user_doc",
+          "lines": "L222-L230",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "用户级说明文件",
+          "note": "从 VIBE_HOME 读 AGENTS.md。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过 vibe/app_server 与运行时里的 memory、remember 关键词，只有会话内缓存和授权记忆，没有跨会话记忆流程。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个会话按代写入 checkpoint.json（Core 消息与执行状态）、runtime-state.json（待执行动作、回调等）、projection-state.json（公开记录，含压缩边界一类条目）和恢复日志 journal/*.jsonl（command_reserved、core_input、action_intent、action_result、callback_registered 等类型化记录）→ event_log；checkpoint 与 runtime-state 是恢复流程读取的执行状态 → state_snapshot；超过 4000 token 的工具输出另存会话记录目录里的文件，消息里只留路径（条件：超限）→ external_reference。转录正文还按 sha256 拆成内容寻址分块，代记录只存摘要。待办清单只在 app server 内存；rewind 用的每轮文件状态没查到落盘。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "_storage.py: 代提交（checkpoint.json、runtime-state.json、projection-state.json、journal、chunks）",
+          "lines": "L2484-L2575",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话持久化",
+          "note": "每代写三份状态文件、一段恢复日志和内容寻址分块。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "_storage.py: _JournalRecordBase 及各类日志记录",
+          "lines": "L1649-L1722",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复日志",
+          "note": "日志含动作意图、结果、回调、投影增量等多种条目类型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_saved_outputs.py",
+          "locator": "_saved_outputs.py 模块说明",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "超限工具输出",
+          "note": "过大的工具输出随会话记录写盘，模型拿到的是文件路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0006-local-sessions.md",
+          "locator": "docs/adr/0006-local-sessions.md: Decision",
+          "lines": "L3-L12",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话保存",
+          "note": "执行恢复用运行时私有的持久状态；压缩在公开记录里追加检查点。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "内容寻址分块是存储内部的拆分，是否也算 external_reference 有疑问；本条已由超限输出文件单独成立。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "checkpoint_resume",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "vibe --continue／--resume 或会话内 /resume 打开会话后，运行时读回持久的 Core checkpoint 与运行时状态；有中断中的回合时，用重放出的转移把它当作活回合继续驱动，已有结果的动作直接取记录结果，不由模型重新决定。中断在执行中的普通工具调用以“无法安全重连”失败交回，子代理、后台进程按 reconcile 处理；等批准的回调在重启后被关闭，不再保持等待。没有中断回合时，读回历史后等待下一句用户输入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_session.py",
+          "locator": "_session.py: Session.recover",
+          "lines": "L1369-L1385",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复会话",
+          "note": "先结清重启遗留，再把中断的回合作为活回合继续驱动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_runtime.py",
+          "locator": "_runtime.py: recover / prepare_recovery / _recover_session",
+          "lines": "L1486-L1517",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复会话",
+          "note": "从持久 checkpoint 的待执行动作和重放的转移接着跑；L4340-L4356 关闭重启前未答复的批准请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/work-with-cli.md",
+          "locator": "Work with the CLI：Continue or resume sessions",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "所选入口的恢复命令",
+          "note": "--continue、--resume、/resume 是官方恢复入口，依赖默认开启的会话记录。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按词表先后：rebuild_and_rerun 要求中断时没做完的调用不接续、由模型重新决定，这里运行时接着驱动中断回合并复用已记录结果，所以判 checkpoint_resume；但等批准的动作重启后被关闭、执行中的工具报失败交回模型，与 checkpoint_resume 例子里“仍在等批准”不同，两类界线请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "恢复读回 checkpoint 里的消息历史（含工具调用及其结果），模型照旧能看到。子代理记录随父会话持久化，重启后运行中的子代理被标为“被重启中断”的空闲子代理，父代理可用默认注册的 agents.send_message 继续给它发消息。待办清单只存在 app server 进程内存，进程重启后 todo read 返回空，不计 task_plan（旧 todo 调用仍在对话里）。不自动把工作区文件带回会话当时状态。外部副作用（已执行的命令、已推送的提交）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_runtime.py",
+          "locator": "_runtime.py: _recover_session",
+          "lines": "L1498-L1517",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认恢复入口",
+          "note": "恢复从持久 Core 状态继续，消息和工具结果都在其中。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_subagents/_controller.py",
+          "locator": "_subagents/_controller.py: _settle_child_for_restore",
+          "lines": "L2154-L2170",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理关联",
+          "note": "重启后运行中的子代理转为空闲、保留会话编号；_core_adapter.py L30-L35 列出 agents.send_message 等默认工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_provided_tools.py",
+          "locator": "vibe/app_server/_provided_tools.py: VibeProvidedTools.__init__ (_todos)",
+          "lines": "L337-L341",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "计划工具",
+          "note": "待办清单保存在进程内存字典里，没有持久化，进程重启后不带回。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "task_plan 按“进程重启后恢复”判为不带回；如果只在同一 app server 进程里 /resume，内存中的待办还在，时刻口径请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "session_branch：/branch 把当前对话分叉成可恢复的新会话、原会话不变；rewind（/rewind 或连按两次 Esc）可选“Fork to a new session”，原会话保留；选“Keep in current session”是就地截断，不计。workspace_snapshot：非沙箱会话里 app server 默认按回合记录本会话改过的文件状态，rewind 时选“Edit & restore files to this point”把文件改回；覆盖范围是适配器观察到的文件效果，bash 改的文件是否覆盖没有确认。idempotency_key：运行时给每个动作持久的 action_id，执行前把意图写进恢复日志，已记录结果的动作恢复重放时直接取用、不再执行；中断在执行中的普通工具调用恢复时不重跑、直接报失败；filesystem 类动作按 idempotent_retry 重试（范围：同一 action_id）。没有补偿操作。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/commands-shortcuts.md",
+          "locator": "Commands and shortcuts：/branch、/rewind",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "所选入口的回退命令",
+          "note": "/branch 分叉为新会话并保留当前会话；/rewind 回到之前的消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/rewind/mod.rs",
+          "locator": "vibe/cli-rust/src/rewind/mod.rs: options",
+          "lines": "L139-L147",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "rewind 选项",
+          "note": "有文件改动时可选恢复文件；再选留在当前会话或分叉新会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_harness_backend_adapter.py",
+          "locator": "_unified_harness_backend_adapter.py: rewind 分叉与 _rewind_snapshots.restore；RewindFileSnapshots 初始化",
+          "lines": "L4500-L4518",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "rewind 实现",
+          "note": "rewind 默认分叉保留原会话，选恢复文件时按快照改回；L7546-L7554 非沙箱会话默认建每回合文件快照。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_runtime.py",
+          "locator": "_runtime.py: _recovery_mode 与 _recover",
+          "lines": "L5819-L5833",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复重跑",
+          "note": "普通工具动作的恢复方式为 fail，L4722-L4729 不重跑；L3252-L3262 已有结果的动作直接复用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "idempotency_key 的依据是持久 action_id、执行前写意图、恢复时复用已记录结果、未完成的工具拒绝重跑；filesystem 动作反而重试，这种按动作类型区分的去重是否足以计入请复核。rewind 文件快照是否跨进程持久没查到，但定义不要求持久。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review",
+        "unresolved": [
+          "network_target"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：[tools.<名>] permission 的 always/ask/never、enabled_tools/disabled_tools，以及 ask、accept-edits、smart-approve、auto-approve 四个内置代理。command_rule：bash 的 allowlist/denylist 按命令前缀匹配。file_path：文件工具的 allowlist/denylist/sensitive_patterns 按路径模式，outside_workdir（ask/deny，可按工具设）管工作目录外的路径。默认效果：accept-edits 把 write_file、edit 设为 always，工作区内普通文件直接写（.env、.envrc 等敏感模式仍询问）；bash 默认 ask，构建脚本这类不在默认只读放行名单的命令逐次询问；工作区外路径默认 ask；命令联网没有单独管控，随 bash 逐次询问。统一 Harness 复用旧后端的 resolve_permission 判定这些规则。其他环境：服务端实验可把默认代理改为 ask 或 smart-approve。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/agents/models.py",
+          "locator": "vibe/core/agents/models.py: ASK / ACCEPT_EDITS / AUTO_APPROVE / SMART_APPROVE",
+          "lines": "L87-L118",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "accept-edits 只把 write_file、edit 设为 always；auto-approve 绕过权限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/base.py",
+          "locator": "vibe/core/tools/base.py: BaseToolConfig",
+          "lines": "L57-L66",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "规则格式",
+          "note": "每个工具有 permission、allowlist、denylist、sensitive_patterns、outside_workdir。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/builtins/bash.py",
+          "locator": "vibe/core/tools/builtins/bash.py: _get_default_allowlist；BashToolConfig.permission",
+          "lines": "L97-L99",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "命令默认效果",
+          "note": "默认放行名单只含 cd、echo、git diff/log/status、tree、whoami 和只读命令；L402 bash 默认 ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py",
+          "locator": "vibe/core/config/vibe_schema.py: outside_workdir",
+          "lines": "L813-L822",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "工作区外路径",
+          "note": "默认 ask，可设 deny，可按工具覆盖。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/safety-approvals-permissions.md",
+          "locator": "Safety, approvals, and permissions：Per-tool permissions、Bash allow and deny lists、Access outside the working directory",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "规则格式",
+          "note": "文档列出按工具、按命令前缀、按工作目录外路径的规则。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_permissions.py",
+          "locator": "vibe/app_server/_unified_permissions.py: 模块说明与 _persist",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "统一 Harness 的权限判定",
+          "note": "统一 Harness 复用各工具的 resolve_permission；L873-L910 的 always 授权写进工具 allowlist。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "network_target 列入 unresolved：web_fetch 按 URL origin 生成 URL_PATTERN 授权请求（web_fetch.py L80-L100），回答 always 时写进 [tools.web_fetch].allowlist（_unified_permissions.py _persist），但没确认后续调用会按这份 allowlist 放行，所以没计入取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认 accept-edits 下，bash（放行名单外）、web_fetch、web_search、触及工作目录外或敏感文件的调用，在执行前由运行时的门停下，请用户逐次批准，一次批准放行这一次调用。“Allow for the rest of the session”“Always allow”相当于新增规则。可选：smart-approve（实验或参数开启）先由分类模型判定、风险调用再问用户；auto-approve 全部放行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_local_actions.py",
+          "locator": "_local_actions.py: 工具门（deny/ask/classify/allow 分支）",
+          "lines": "L1300-L1347",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "ask 时在动作执行前调用批准回调，批准才执行这一次调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/safety-approvals-permissions.md",
+          "locator": "Safety, approvals, and permissions：Approval model（CLI）",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "审批界面",
+          "note": "CLI 底部弹出批准提示：允许一次、本会话允许、总是允许、拒绝。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：运行时的工具门按权限模式、命令前缀、路径规则在执行前放行、询问或拒绝。runtime_sandbox：默认启用的 run_typescript 把模型写的 TypeScript 放进内嵌 V8 隔离环境运行，fetch、eval、定时器被禁用，只能调用登记的工具函数；它只约束脚本本身，脚本发出的工具调用仍过权限门。本地 CLI 没有操作系统隔离或容器，工具以用户权限直接执行；Sandbox Adapter 只用于沙箱会话（其他环境：Vibe Code Web 云端沙箱）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_local_actions.py",
+          "locator": "_local_actions.py: 工具门",
+          "lines": "L1300-L1347",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "Harness 代码在执行前按规则拒绝或暂停。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/programmatic_tool_calling/code_mode/v8.rs",
+          "locator": "code_mode/v8.rs: 沙箱全局对象改写",
+          "lines": "L1462-L1478",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "run_typescript 脚本",
+          "note": "脚本里的 fetch、eval、setInterval 等被替换为报错。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py",
+          "locator": "vibe/app_server/_runtime.py: RustToolSettings(programmatic=RustProgrammaticToolSettings(...))",
+          "lines": "L2066-L2077",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认会话配置",
+          "note": "默认会话启用程序化工具调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/safety-approvals-permissions.md",
+          "locator": "Safety, approvals, and permissions：Smart approve 警告",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "隔离",
+          "note": "文档说明放行的调用以用户账户权限运行，不是沙箱。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项判：默认模式 accept-edits 的限制由工具门代码执行；不改设置可切换的 ask、accept-edits、auto-approve（smart-approve 默认隐藏，由分类器代码把关）都有代码对应；默认可派的内置子代理 explore 的只读靠 enabled_tools 限定工具，是代码限制；lean 需安装、没有内置 plan 代理；文档列出的 permission、allowlist/denylist、outside_workdir、enabled/disabled_tools 都由代码判定。文档承认 shell 只检查命令里写出的路径，但 bash 默认逐次询问，不是只靠提示，故记 absent。V8 隔离只读了全局对象改写一段，没有完整审计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "会话转录（checkpoint 消息）保存用户请求、模型同一回复里的文字或推理与工具调用参数、工具结果，按调用编号对应；恢复日志另记 action_intent（带请求和 sha256）与 action_result。工具门把 decision、approvalType、approvalSource（user、config、bypass）挂在工具结果的 _meta 上，并写进公开记录的 effect 条目，能分出人工批准、规则放行和拒绝。没有专门的审计账本。会话元数据只有 cwd、型号、代理名和会话编号，不含账户身份，不计 identity。遥测默认开启，但发往服务端，不算本地持久记录。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "_storage.py: ActionIntentPayloadV1",
+          "lines": "L1566-L1576",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "恢复日志",
+          "note": "每个动作的意图按 action_id 记下请求、请求哈希和恢复方式；L1666-L1674 的 action_intent、action_result 记录写进恢复日志。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_local_actions.py",
+          "locator": "_local_actions.py: _with_approval_note",
+          "lines": "L1228-L1254",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "审批记录",
+          "note": "把批准决定、类型和来源挂到工具结果上。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_projection.py",
+          "locator": "_projection.py: 已完成工具 effect 条目",
+          "lines": "L1760-L1765",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "公开记录",
+          "note": "effect 状态写入 decision、approvalType、approvalSource。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_storage.py",
+          "locator": "_storage.py: SessionMetadataV1",
+          "lines": "L808-L832",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "身份",
+          "note": "会话元数据没有账户或用户身份字段。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "approval 的持久化靠工具结果 _meta 进入 checkpoint 和 projection-state，没逐字核对 _meta 在 checkpoint 序列化时保留，故 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "enable_subagents 默认 true，Unified Harness 给主代理开放 tools.agents（spawn、send_message、interrupt、list、list_configs，经默认注册的 run_typescript 调用）；spawn 为子代理建独立会话和对话，子代理自己多步调用工具，结果由框架交回父代理。内置只读子代理配置 explore，另可派与父代理配置相同的通用子代理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L2066-L2085",
+          "locator": "vibe/app_server/_runtime.py：_build_unified_session_context_once 中的 RustToolSettings（model_wait、programmatic、subagents）",
+          "lines": "L2066-L2085",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置的工具设置",
+          "note": "config.enable_subagents 为真时给 Core 开 RustEnabledAgentTools(conversation_forking=False)，并开 wait 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py#L1143-L1149",
+          "locator": "vibe/core/config/vibe_schema.py：enable_subagents",
+          "lines": "L1143-L1149",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置",
+          "note": "enable_subagents 默认 true：在 run_typescript 里给代理提供子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/subagents/tools.rs#L194-L238",
+          "locator": "harness/core/src/core/features/subagents/tools.rs：ToolName（ListConfigs、List、Spawn、SendMessage、Interrupt）",
+          "lines": "L194-L238",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理工具",
+          "note": "Core 定义的五个代理工具，沙箱名 agents_spawn 等。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录 enabled_extensions 把子代理写成 task 工具（默认允许 explore）和 tools.subagent；本快照 Unified 路径里模型实际用的是 run_typescript 里的 tools.agents.*（_deprecated_tools.py 把 subagent.* 指向 tools.agents.*），没找到 task 作为独立模型工具注册在 Unified 路径上，只在 _projection.py 里把 spawn 投影成旧的 task 显示。不影响本字段取值，建议主控核对配置记录的措辞。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "主代理在 run_typescript 里调用 tools.agents.spawn 创建子代理（通用子代理，或按 list_configs 列出的命名配置如 explore、用户或插件定义的 subagent）。/loop 与 cron 工具的定时任务到点后只向主会话投递一条提示，由主代理决定是否委派，所以只记 main_agent，任务来源记在 F33。命令清单里没有让用户直接派子代理的命令；子代理不能再派孙代理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/prompt/default_prompts.json#L14-L23",
+          "locator": "harness/core/src/core/prompt/default_prompts.json：agent_tools.guidance、spawn、send_message、interrupt",
+          "lines": "L14-L23",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "主代理的委派工具说明",
+          "note": "主代理用 tools.agents 经 run_typescript 派子代理，spawn 不阻塞，结果之后作为消息到达。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_harness_backend_adapter.py#L6691-L6720",
+          "locator": "vibe/app_server/_unified_harness_backend_adapter.py：_start_scheduled_loop",
+          "lines": "L6691-L6720",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务触发路径",
+          "note": "定时任务到点时把提示作为一轮输入交给主会话（start_scheduled_turn），不直接创建代理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/agents.md",
+          "locator": "Agents：Built-in agents 与 Custom subagents 两节",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理创建方",
+          "note": "子代理不能用 --agent 选择，由代理在委派时派出（The agent spawns them when it wants to delegate）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "framework_internal 查过：smart-approve 的分类调用不在默认代理 accept-edits 上，压缩和标题是单次辅助调用，没找到框架按内部条件自动派出能多步调用工具的代理。user 查过命令清单（commands-shortcuts 页）和 Shift+Tab 切换，都是切换主代理配置，不创建子代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理各有独立会话和对话；主代理可用 send_message 按代理路径给已派出的子代理续发消息，子代理空闲时由父代理续派会开始新一轮并保留其上下文；子代理的策略上限 workdir 取同一工作区 cwd，读写根与父代理相同，靠同一工作目录交换文件。本配置 conversation_forking=False，不能复制父对话。权限：子代理工具权限只能比会话更严、不能更宽，不能向用户提问；钩子配置随父代理继承。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/prompt/default_prompts.json#L20-L22",
+          "locator": "harness/core/src/core/prompt/default_prompts.json：agent_tools.spawn、send_message",
+          "lines": "L20-L22",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认委派路径",
+          "note": "spawn 建全新对话的独立子代理并发送第一条消息；send_message 可给子代理发消息，父代理能唤醒已结束本轮的子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/features/subagents/tools.rs#L36-L48",
+          "locator": "harness/core/src/core/features/subagents/tools.rs：ChildTask、GenericSpawn",
+          "lines": "L36-L48",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理启动内容",
+          "note": "每个子代理带名字和任务说明作为第一条消息；通用子代理另带父代理为它写的 instructions。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_subagents/_configuration.py#L560-L575",
+          "locator": "mistralai_vibe_local_harness/vibe/_subagents/_configuration.py：_policy_ceiling",
+          "lines": "L560-L575",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "子代理工作目录",
+          "note": "子代理策略上限的 workdir 和读写根取父会话的工作区。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L2078-L2082",
+          "locator": "vibe/app_server/_runtime.py：RustEnabledAgentTools(conversation_forking=False)",
+          "lines": "L2078-L2082",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置",
+          "note": "默认关闭对话复制，子代理只能从全新对话启动。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "shared_state 查过：子代理图状态（children、operation_receipts）由 runtime 私有维护，代理不能读写；todo 工具是各代理自己的计划。start_context 选 task_brief：子代理系统提示之外带父代理写的任务消息和 instructions。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "value_note": "spawn 和 send_message 都不阻塞；子代理结果作为消息自动交给父代理，父代理需要结果时调用 Core 提供的 wait 工具等待（可设超时）。取消：用户按 Esc 中断主代理只中断主代理当前轮，没找到连带中断子代理的代码；interrupt 工具由模型逐个中断直接子代理；session/subagents/interrupt 是单独方法，只在 vibe -p 的无头运行停止时调用，不计。主会话关闭时 controller.close 会卸载子会话（unload_child→_close_session），是否等于取消没能确认，写进 unresolved。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/prompt/default_prompts.json#L14-L23",
+          "locator": "harness/core/src/core/prompt/default_prompts.json：agent_tools.guidance、spawn、interrupt",
+          "lines": "L14-L23",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "结果返回与等待",
+          "note": "Spawn does not wait；子代理结果之后作为消息到达，需要时调用 wait；interrupt 只中断直接子代理当前轮、不结束其会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L2066-L2071",
+          "locator": "vibe/app_server/_runtime.py：model_wait=RustEnabledModelWait()",
+          "lines": "L2066-L2071",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置",
+          "note": "开子代理时 Core 提供直接的 wait 工具，从子代理结果等输入中作答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_subagents/_controller.py#L709-L735",
+          "locator": "mistralai_vibe_local_harness/vibe/_subagents/_controller.py：close",
+          "lines": "L709-L735",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "父会话关闭",
+          "note": "父会话控制器关闭时逐个 unload_child；子会话随之关闭，但运行时状态可在恢复时继续，是否算取消不确定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/headless/subagents.rs#L60-L75",
+          "locator": "vibe/cli-rust/src/headless/subagents.rs：stop_subagents",
+          "lines": "L60-L75",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选：程序化模式",
+          "note": "只有无头运行停止时客户端另发 session/subagents/interrupt 中断全部子代理；交互入口没有调用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对四项：synchronous_return 无（spawn、send_message 都立即返回）；shared_board 无；cancel_propagation 未确认，Esc 中断经 runtime.interrupt 只对主会话 Core 发 RustInterruptEvent，随后 reconcile_actions 只处理未完成的代理操作回执，不中断已在跑的子代理。cancel_depth、cancel_coverage 因 value 不含 cancel_propagation 写 null。码本问题：父会话关闭时把子会话“卸载”（进程内关闭、状态可恢复）算不算取消传播，判定标准没说。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null,
+        "unresolved": [
+          "cancel_propagation"
+        ]
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具（read_file、grep、edit、write_file、bash、todo、skill、ask_user_question、web_fetch、web_search、cron、run_typescript 等）写在核心代码里；enable_mcp 默认 true，在 config.toml 或插件 mcp.json 里加一条 MCP 服务即接入，Mistral 托管的连接器默认可用但需单独连接；实验性 --agent-socket（需 -p，隐藏参数）让外部代理服务器在握手里声明工具，调用交回该服务器执行。插件不能自己注册工具；自定义 Python 工具（tool_paths、.vibe/tools/）已不再加载。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/vibe_schema.py#L845-L846",
+          "locator": "vibe/core/config/vibe_schema.py：enable_connectors、enable_mcp",
+          "lines": "L845-L846",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置",
+          "note": "连接器和 MCP 默认开启。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/mcp-servers.md",
+          "locator": "MCP servers 页",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "外部协议服务",
+          "note": "在配置里添加 MCP 服务器后其工具交给模型调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/programmatic-mode.md#L90-L108",
+          "locator": "docs/programmatic-mode.md：Agent Socket (--agent-socket, experimental)",
+          "lines": "L90-L108",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可选：程序化模式加 --agent-socket",
+          "note": "代理服务器在握手里声明工具，会话把它们和 Vibe 自己的工具一起交给模型，每次调用交回服务器。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/plugins.md",
+          "locator": "Plugins：Plugin layout、What a plugin can ship",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "插件边界",
+          "note": "插件只打包技能、MCP 服务、知识、子代理、钩子、库和连接器声明，没有进程内注册工具的接口。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/configuration.md",
+          "locator": "Configuration：关于 custom Python tools 的说明",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "用户脚本",
+          "note": "Vibe 不再从 ~/.vibe/tools/ 或 ./.vibe/tools/ 加载自定义 Python 工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "embedder_declared 依据的是仓库自带文档里标明实验性、从 --help 隐藏的 --agent-socket，按“官方有文档”记入，via_default_entry 不含。app-server 协议参考里 Desktop 经 clientToolDefinitions 声明工具，限于客户端自带的内置作用域插件，属自家前端接口，不单独计。plugin_api 与 user_script 都按判定标准排除，判断依据见 value_note。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "AGENTS.md：用户级 ~/.vibe/AGENTS.md 始终装载，项目级只在受信任目录装载（本环境前提下仓库里没有）；技能：skill_paths、./.vibe/skills、./.agents/skills（受信任时）、~/.vibe/skills、~/.agents/skills 里的 SKILL.md，可按 /技能名 调用或由模型按需装载；角色：~/.vibe/agents/*.toml 定义自定义代理（agent_type=agent 可用 --agent 或 Shift+Tab 选，agent_type=subagent 供委派），可带 system_prompt_id 指向的提示文件、工具与模型范围。插件的 knowledge 文件夹按描述列出、需要时读 KNOWLEDGE.md，归入 skill_directory。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/agents.md",
+          "locator": "Agents：Custom agents、Custom subagents、AGENTS.md support",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "角色模板与项目规则",
+          "note": "自定义代理和子代理文件、用户级与项目级 AGENTS.md 的装载规则。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/skills.md",
+          "locator": "Skills：Skill locations、Custom slash commands",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "技能目录",
+          "note": "从约定目录发现技能，user-invocable 的技能成为斜杠命令，模型也可自行装载。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/paths/_local_config_files.py#L30-L34",
+          "locator": "vibe/core/paths/_local_config_files.py：_VIBE_SKILLS_SUBDIR、_AGENTS_SUBDIR、_AGENTS_SKILLS_SUBDIR",
+          "lines": "L30-L34",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "装载目录",
+          "note": "技能与代理定义的约定目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/agents/models.py#L122-L131",
+          "locator": "vibe/core/agents/models.py：EXPLORE",
+          "lines": "L122-L131",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "内置角色",
+          "note": "内置只读子代理配置 explore（agent_type=subagent，工具 grep、read_file、skill）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_template 未记：文档明说自定义斜杠命令用技能实现，没有单独的命令模板目录；~/.vibe/prompts/ 只供 system_prompt_id 作代理系统提示，归角色模板。workflow_definition 未记：Workflows 属 Vibe Work 和 Studio，是另一产品形态。executable_items 判为空：技能和代理文件都是给模型读的文本，没找到装载时由框架执行的嵌入命令。码本疑问：插件 knowledge 文件夹（按描述列出、需要时读入的参考资料）词表没有专项，暂按 skill_directory 计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "hooks.toml（~/.vibe/ 始终生效，./.vibe/ 仅受信任目录）和插件 hooks.toml 可声明：pre_tool（可拒绝、改写参数）、post_tool（可替换或追加输出）、post_agent（可拒绝并要求重试，主代理和子代理轮末都触发）；实现还接受 pre_agent（每轮开始，strict 时可拦下消息）、session_start（会话开始或恢复，additional_context 注入下一条消息）、session_end 与 notification（仅后台运行，输出忽略；notification 在审批或提问打开、主代理轮结束或失败时触发）。官方文档只列前三种，按实现记（R10）。默认已在用：内置 AGENTS.md 惰性注入处理器挂在 post_tool_call 上。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/hooks.md",
+          "locator": "Hooks：Declare a hook、pre_tool、post_tool、post_agent",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钩子事件点",
+          "note": "文档列 pre_tool、post_tool、post_agent 三种及各自能返回的决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/hooks/models.py#L20-L39",
+          "locator": "vibe/core/hooks/models.py：HookType、STRICT_HOOK_TYPES、HOST_HOOK_TYPES",
+          "lines": "L20-L39",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "钩子类型",
+          "note": "HookConfig.type 接受 post_agent、pre_tool、post_tool、pre_agent、notification、session_start、session_end 七种。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_host_hooks.py#L1-L18",
+          "locator": "vibe/app_server/_host_hooks.py：模块说明",
+          "lines": "L1-L18",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "宿主钩子",
+          "note": "notification、session_end 后台运行且输出被忽略；session_start 的 additional_context 加到下一条用户消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_hook_config.py#L36-L41",
+          "locator": "mistralai_vibe_local_harness/vibe/_hook_config.py：_AUTHORABLE_POINTS",
+          "lines": "L36-L41",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "可写的 Core 钩子点",
+          "note": "用户可写的 Core 钩子点只有 pre_tool_call、post_tool_call、pre_agent_turn、post_agent_turn；Core 的 pre/post_llm_call 不开放给用户。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_agents_md_hooks.py#L232-L253",
+          "locator": "vibe/app_server/_agents_md_hooks.py：agents_md_hook_handlers、merge_agents_md_hook",
+          "lines": "L232-L253",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认已注册的处理器",
+          "note": "内置 AGENTS.md 处理器绑在 post_tool_call，合并进每个会话的钩子。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "model_call 未记：Core 有 PreLlmCall/PostLlmCall 钩子点，但 _AUTHORABLE_POINTS 不含，用户和插件挂不上。save、context_compaction 没有对应事件类型。observe_only 判为空：notification 的审批提醒并入工具前后、轮结束提醒并入结束，但这两阶段分别有 pre_tool、post_agent 可干预；session_end 只能观察，但结束阶段有 post_agent。in_use_by_default 记 tool_before_after 依据内置 AGENTS.md 处理器（写在核心代码里），session_start_context 内置处理器只在有 session_start 钩子时绑定，不计。码本疑问：一个事件类型（notification）横跨多个阶段时，按通知内容拆到各阶段的做法字段里没写明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "tool_before_after"
+        ],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "observe_only": []
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "同一 PyPI 包 mistral-vibe 提供 vibe-acp（ACP 服务端，编辑器作为客户端驱动完整代理循环）；vibe --prompt/-p 非交互模式，--output streaming 输出逐行 JSON；实验性 vibe run-server 以 stdio JSON-RPC 并发跑多个运行；vibe-app-server 也是 stdio 上的 JSON-RPC。都在同一安装里，不需另装包；所选入口 vibe 交互界面本身不提供嵌入方式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/pyproject.toml#L174-L177",
+          "locator": "pyproject.toml：[project.scripts]",
+          "lines": "L174-L177",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "发行包入口",
+          "note": "同一包定义 vibe、vibe-acp、vibe-app-server 三个命令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/use-vibe-in-other-ides.md",
+          "locator": "Use Vibe in other IDEs：ACP 一节",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "公共协议",
+          "note": "Vibe 实现 Agent Client Protocol，没有注册表的客户端指向安装 CLI 时带的 vibe-acp 命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/programmatic-mode.md#L1-L10",
+          "locator": "docs/programmatic-mode.md：Programmatic mode",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "非交互模式",
+          "note": "用管道或 --prompt 非交互运行，供脚本使用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/reference/app-server-protocol.md#L17-L19",
+          "locator": "docs/reference/app-server-protocol.md：Public contracts and transports",
+          "lines": "L17-L19",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "疑似库接口",
+          "note": "称 AppServerHost、AppServerSession 等为 public Python facades，但没说明是否作为对外支持的嵌入库。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "service_api 未记：没找到有对外文档的 HTTP 或套接字服务模式；--agent-socket 是 Vibe 作为客户端连外部服务器，方向相反。library 写进 unresolved：app-server 协议参考把 AppServerHost 等称为公开的 Python 门面，可在调用方进程里起服务，但官方文档没有给出库用法，拿不准是否对外支持。host_extension_api 未记：VS Code 扩展属另一产品形态。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [],
+        "unresolved": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "终端输入框发任务；外部程序经 vibe -p、vibe-acp、实验性 run-server 提交任务；/loop 斜杠命令和默认注册的 cron 工具（权限 ask）可建间隔或五段 cron 定时任务，到点向会话投递提示，定时器只在交互（非 headless）会话里运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_cron.py#L130-L163",
+          "locator": "vibe/app_server/_cron.py：run_cron",
+          "lines": "L130-L163",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务工具",
+          "note": "cron 工具可新建间隔或 cron 定时任务、列出、取消、清空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_provided_tools.py#L162-L222",
+          "locator": "vibe/app_server/_provided_tools.py：CRON_TOOL_NAME 默认权限与注册",
+          "lines": "L162-L222",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认注册的工具",
+          "note": "cron 工具默认权限 ask，未被 enabled/disabled_tools 排除时注册给模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_harness_backend_adapter.py#L6544-L6581",
+          "locator": "vibe/app_server/_unified_harness_backend_adapter.py：_run_scheduled_loops",
+          "lines": "L6544-L6581",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时器运行",
+          "note": "后台循环在会话空闲时取出到期任务并开始一轮。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/commands-shortcuts.md",
+          "locator": "Commands and shortcuts：/loop",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "用户发起定时任务",
+          "note": "/loop 用自然语言安排周期性提示，可让代理列出或取消。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/work-with-cli.md",
+          "locator": "Work with the CLI：Programmatic mode",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "API 入口",
+          "note": "--prompt（-p）运行单个任务后退出，用于脚本和 CI。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "external_event 查过：CLI 快照里没找到网络回调、文件变化订阅或事件源命令把外部事件送进会话的机制；内部通知只收子代理结果和后台进程完成，属内部续办。Slack 集成属 Vibe Code Web，另一产品形态，不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "vibe 启动器 exec 打包的 Rust TUI，TUI 以子进程拉起 vibe-app-server，经 stdin 驱动其生命周期，kill_on_drop，Linux 上另设随父进程退出；执行核心随前台 TUI 结束。可选：vibe run-server（实验性）是另一种前台命令，也不常驻。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/server/child.rs#L36-L53",
+          "locator": "vibe/cli-rust/src/server/child.rs：ChildHandle::launch",
+          "lines": "L36-L53",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认交互入口",
+          "note": "app-server 作为 TUI 的子进程启动，kill_on_drop(true)，生命周期经 stdin 驱动，Linux 上 die_with_parent。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/adr/0016-rust-cli-delivery-surface.md#L5-L9",
+          "locator": "docs/adr/0016-rust-cli-delivery-surface.md：Decision",
+          "lines": "L5-L9",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "进程结构",
+          "note": "vibe 命令总是运行 vibe-rs，它是经 stdio 连 vibe-app-server 的薄客户端。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "app-server 另有一个按需启动的后台 worker 子进程（_background_worker.py），只做 worktree 清理、PR 发现等杂务，也随 app-server 结束，不改变判定。退出后任务不继续：运行时有持久状态，下次恢复会话时可接回，但界面关闭期间不跑。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层：定时任务（/loop、cron 工具）写入会话目录的 scheduled-loops.json（会话保存后，session_logging 默认开），恢复会话时 restore 并由框架到点自动触发；协议参考也说重启后恢复的进行中轮次在 resume 时继续。运行中提交的后续消息排在 app-server 进程内队列里，停止或重启即丢。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_scheduled_loops.py#L114-L135",
+          "locator": "vibe/app_server/_unified_scheduled_loops.py：UnifiedScheduledLoops.__init__、restore",
+          "lines": "L114-L135",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "定时任务存储",
+          "note": "定时任务存放在会话旁的文件里，打开会话时从文件恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_harness_backend_adapter.py#L6454-L6468",
+          "locator": "vibe/app_server/_unified_harness_backend_adapter.py：restore_scheduled_loops",
+          "lines": "L6454-L6468",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "会话恢复",
+          "note": "恢复会话时读回定时任务，损坏则隔离并提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/reference/app-server-protocol.md#L95-L101",
+          "locator": "docs/reference/app-server-protocol.md：Accepted turn queue",
+          "lines": "L95-L101",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "交互输入队列",
+          "note": "排队的后续提示只在进程内，停止或进程重启即丢弃；持久执行恢复不包括排队提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/docs/reference/app-server-protocol.md#L203-L206",
+          "locator": "docs/reference/app-server-protocol.md：Callbacks and client tools",
+          "lines": "L203-L206",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "进行中轮次恢复",
+          "note": "resume 附着到仍在运行的轮次（例如重启后恢复的轮次）时先重发 turn/started。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "持久判定主要依据定时任务存储与恢复的代码；进行中轮次在崩溃后是否不经新消息自动续跑，只有协议参考的一句话，没逐行核对 runtime 的恢复路径，所以 confidence 写 medium。码本疑问：周期性定时任务的“下一次触发”算不算“未完成工作项”，字段说明列了计划任务但没说周期任务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认代理 accept-edits 下 bash（允许清单外）、web_fetch 等逐次询问，审批打开时代理暂停；ask_user_question 工具在交互会话默认注册，等用户回答后继续。enable_notifications 默认 true：终端未聚焦时，完成、需要输入（审批等待）或失败时响终端铃并更新终端标题，依赖终端支持焦点上报。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/builtins/bash.py#L402",
+          "locator": "vibe/core/tools/builtins/bash.py：bash 工具配置 permission",
+          "lines": "L402-L402",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认权限模式",
+          "note": "bash 默认权限 ask，需用户批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L2096-L2112",
+          "locator": "vibe/app_server/_runtime.py：ui 工具组 ask_user_question",
+          "lines": "L2096-L2112",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "交互会话",
+          "note": "交互会话注册 ask_user_question：向用户提问并等待回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/cli-rust/src/terminal_notifier.rs#L252-L271",
+          "locator": "vibe/cli-rust/src/terminal_notifier.rs：configure、flush",
+          "lines": "L252-L271",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "通知",
+          "note": "按 enable_notifications 配置输出终端铃（\\x07）并设置终端标题。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.mistral.ai/vibe/code/cli/configuration.md",
+          "locator": "Configuration：enable_notifications",
+          "lines": "",
+          "retrieved_at": "2026-11-11",
+          "configuration_scope": "默认配置",
+          "note": "默认 true；终端未聚焦时 Vibe 完成任务或需要输入（如审批等待）就响铃并更新标题，终端可能显示为系统通知。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "resumable_todo 未记：todo 工具是代理自用计划；定时任务由框架自动触发，不是等人处理的待办。structured_handoff 未记：-p 的 export.json 不在所选入口，且是运行导出而非交接单；交互界面只展示普通结果文本和改动审阅。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

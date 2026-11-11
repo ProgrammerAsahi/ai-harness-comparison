@@ -11,14 +11,14 @@
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：vibe（PyPI 包 mistral-vibe 的 console script vibe → vibe.cli.launcher:main，只负责 exec 打包在 wheel 里的 Rust TUI 二进制 vibe-rs；会话由本机 vibe-app-server 子进程承载，执行由 Unified Harness 的 Rust 核心与运行时负责）",
   "install_method": "command: curl -LsSf https://mistral.ai/vibe/install.sh | bash（官方快速开始的 macOS/Linux 默认路径：没有 uv 时先装 uv 0.11.26，再 uv tool install --python cpython-3.14+gil mistral-vibe，失败时先装 cpython-3.14 再装；取 PyPI 最新版）；manual: uv tool install mistral-vibe（任意平台，Windows 唯一方式）；source: https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/README.md#L24-L46（只作记录，未执行）",
-  "permission_mode": "默认代理 accept-edits（内置四个主代理 ask、accept-edits、smart-approve、auto-approve 中的默认项）：工作目录内 read_file、grep、todo、skill、ask_user_question 直接执行；write_file、edit 由 accept-edits 覆盖为自动批准；bash 默认逐次询问，但默认允许清单里的命令（cd、echo、git diff、git log、git status、tree、whoami 加只读命令表）直接执行，默认拒绝清单里的命令一律不执行；web_fetch、web_search 等联网工具逐次询问；任何工具触及工作目录和 --add-dir 目录以外的路径（含经符号链接）时询问，读写 .env、.envrc 时也询问，即使该工具权限为 always；按 explore 类型派子代理不询问。auto-approve 须显式选用。默认代理可被服务端 GrowthBook 实验 vibe_cli_default_agent 改成 ask 或 smart-approve（源码限定实验不会改成 auto-approve），本记录按未进实验组的静态默认值 accept-edits 编码。",
+  "permission_mode": "默认代理 accept-edits（内置四个主代理 ask、accept-edits、smart-approve、auto-approve 中的默认项）：工作目录内 read_file、todo、skill、ask_user_question 直接执行（todo 在 Unified Harness 上的审批模式是 ask，交给 Vibe 的权限判定，按 [tools.todo] 的权限取值，默认 always，故不询问；默认入口没有 grep 工具，按内容搜索走 bash，随 bash 的权限）；write_file、edit 由 accept-edits 覆盖为自动批准；bash 默认逐次询问，但默认允许清单里的命令（cd、echo、git diff、git log、git status、tree、whoami 加只读命令表）直接执行，默认拒绝清单里的命令一律不执行；联网搜索和打开网页（Mistral 托管连接器 web_search 的 web_search、open_url）与其他连接器、MCP 工具一样逐次询问；任何工具触及工作目录和 --add-dir 目录以外的路径（含经符号链接）时询问，读写 .env、.envrc 时也询问，即使该工具权限为 always；经 run_typescript 的 tools.agents.spawn 派子代理不询问（Vibe 的工具审批映射里没有 agents.* 项，按允许处理；子代理的工具权限不超过父代理）。auto-approve 须显式选用。默认代理可被服务端 GrowthBook 实验 vibe_cli_default_agent 改成 ask 或 smart-approve（源码限定实验不会改成 auto-approve），本记录按未进实验组的静态默认值 accept-edits 编码。",
   "operating_system": "macOS、Linux（一行安装脚本只支持这两种）；Windows 需先装 uv 再 uv tool install mistral-vibe。需要启用 GIL 的 Python 3.12+，安装脚本用 uv 取 cpython-3.14+gil。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "内置工具默认启用（enabled_tools、disabled_tools 默认为空）：read_file, grep, edit, write_file, bash, todo, skill, ask_user_question, task（子代理）, web_fetch, web_search（需能取到 Mistral 凭据才可用）",
-    "Unified Harness 经 run_typescript 提供的能力：tools.subagent（enable_subagents 默认 true，最多 32 个子代理）、tools.process 后台进程（enable_background_processes 默认 true）",
-    "内置子代理 explore（只读：grep、read_file、skill）；另有可选安装的 lean 代理，默认不装",
+    "内置工具默认启用（enabled_tools、disabled_tools 默认为空）：read_file, edit, write_file, bash, todo, skill, ask_user_question。配置里仍认 grep、task 两个名字，但默认入口走的 Unified Harness 不运行这两个工具，也不读它们的设置：没有 grep 工具，模型按内容搜索项目靠在 bash 里跑 rg 或 grep；子代理改由 tools.agents.spawn 派出。联网搜索和打开网页不走内置 web_search、web_fetch 工具，而是 Mistral 托管的内置连接器 web_search（run_typescript 里的 tools.web_search.web_search、open_url），需 enable_connectors（默认 true）且能取到 Mistral 凭据才可用",
+    "Unified Harness 经 run_typescript 提供的能力：tools.agents.*（spawn、send_message、list、interrupt；enable_subagents 默认 true，最多 32 个子代理；该设置的说明文字仍写旧名 tools.subagent）。子代理是独立会话，派出后不阻塞父代理，结束后结果作为新输入回到父代理（父代理可用 wait 等待）；另有 tools.process 后台进程（enable_background_processes 默认 true）",
+    "内置子代理 explore（只读：grep、read_file、skill）在默认入口不向模型公布：Unified Harness 只公布 ~/.vibe/agents、.vibe/agents 和插件里定义的子代理类型，都没有时模型派的是通用子代理（沿用父代理的配置和工具，不带父代理的指令，由派出时的消息交代任务）；另有可选安装的 lean 代理，默认不装",
     "内置插件 vibe 总是加载，带技能 /vibe:create-plugin、/vibe:import、/vibe:skill-creator、/vibe:vibe、/vibe:worktree",
     "Connectors（Mistral 托管集成）：enable_connectors 默认 true，各连接器需单独连接或登录；实验性的 document_library、Mistral MCP 连接器默认关",
     "MCP 服务：enable_mcp 默认 true，但没有默认配置的服务（需 vibe mcp add 或写进 config.toml）",
@@ -131,7 +131,7 @@
       "lines": "L97-L99",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "权限",
-      "note": "bash 默认允许清单：cd、echo、git diff、git log、git status、tree、whoami 加只读命令表；L402 bash 默认权限 ask。web_fetch.py L53、web_search.py L26、write_file.py L28、edit.py L49 默认 ask；read_file.py L43、grep.py L17 默认 always。"
+      "note": "bash 默认允许清单：cd、echo、git diff、git log、git status、tree、whoami 加只读命令表；L402 bash 默认权限 ask。read_file.py L43 默认 always，write_file.py L28、edit.py L49 默认 ask，todo.py L80 默认 always。Unified Harness 上这些默认值仍然生效：vibe/app_server/_unified_permissions.py L769-L779 按各工具的配置和 resolve_permission 判定每次调用，L594-L613 按 [tools.<名>] 的配置判定 vibe.todo 等外部提供的工具；vibe/app_server/_provided_tools.py L153-L161 把 todo 的审批模式设为 ask，以便交给这套判定。"
     },
     {
       "evidence_kind": "official_doc",
@@ -148,16 +148,16 @@
       "lines": "L1143-L1149",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "子代理",
-      "note": "enable_subagents 默认 true：经 run_typescript 的 tools.subagent 向代理提供子代理。"
+      "note": "enable_subagents 默认 true（说明文字写 tools.subagent in run_typescript）；vibe/app_server/_runtime.py L2078-L2082 据此给 Unified Harness 开启 RustEnabledAgentTools，模型看到的是 tools.agents.* 函数，subagent.spawn 是改名前的旧写法（vibe/cli-rust/src/subagents/view.rs L72-L77）。"
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/tools/builtins/task.py#L30-L32",
-      "locator": "vibe/core/tools/builtins/task.py",
-      "lines": "L30-L32",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_agent_types.py#L137-L171",
+      "locator": "vibe/app_server/_agent_types.py",
+      "lines": "L137-L171",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "子代理",
-      "note": "task 工具默认权限 ask，但默认允许清单含 explore，派 explore 子代理不询问；agents/models.py L122-L131 定义只读 explore 子代理。"
+      "note": "workspace_agent_types：向会话公布的子代理类型跳过内置子代理（含 explore），理由是不带 config_name 派出的通用子代理已沿用父代理的工具；只公布用户、项目 agents 目录里有源文件的类型（插件定义的另由 vibe/app_server/_plugins.py 汇入）。"
     },
     {
       "evidence_kind": "official_doc",
@@ -192,6 +192,51 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
       "note": "vibe 命令只 exec Rust TUI；L43-L74 选择打包的 vibe-rs 并设定其 app-server；docs/adr/0002-core-engine-and-delivery-surfaces.md L1-L12 说明 Harness Core、Runtime、App server、Clients 的职责划分。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/CHANGELOG.md#L642-L645",
+      "locator": "CHANGELOG.md（[3.0.0] - 2026-10-15，Removed 一节）",
+      "lines": "L642-L645",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "环境前提",
+      "note": "删除了 Harness 选择开关和旧执行运行时，Vibe、ACP、app-server、Desktop、IDE 会话一律走 Unified Harness；vibe/app_server 下的会话后端只有 UnifiedHarnessSessionBackend，vibe/core 下没有旧的 AgentLoop 循环类。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/core/config/_setting_keys.py#L39-L47",
+      "locator": "vibe/core/config/_setting_keys.py",
+      "lines": "L39-L47",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "TOOLS_WITHOUT_EFFECT：Unified Harness 从不运行 grep、task 这两个内置工具，其设置都不读；grep 的替代是在 shell 里跑 rg、grep，随 [tools.bash] 设置；task 的替代是 agents.spawn。vibe/app_server/_unified_tool_projection.py L675-L679 说明有意去掉 grep 工具，只把单纯的 grep/rg 命令在界面上显示成文件搜索；vibe/app_server/_unified_permissions.py L86-L97 给 Runtime 内置工具映射来源时也没有 grep。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/core/src/core/prompt/snapshots/_native__core__prompt__instruction_snapshots__built_in_tools_unix.snap#L157-L158",
+      "locator": "harness/core/src/core/prompt/snapshots/_native__core__prompt__instruction_snapshots__built_in_tools_unix.snap（Core 内置工具声明快照）",
+      "lines": "L157-L158",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "子代理",
+      "note": "wait：等子代理结果等新输入，输入进入模型上下文；L1146-L1151 agents_spawn（命名空间 agents.spawn）：新建独立子代理、发出第一条消息，不阻塞、不等它完成；同文件 agents_list_configs 说明不带 config_name 时派通用子代理，带父代理的配置、不带父代理的指令。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/connector_catalog.py#L1920-L1937",
+      "locator": "vibe/app_server/connector_catalog.py",
+      "lines": "L1920-L1937",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "扩展",
+      "note": "连接器目录只在 enable_connectors 为真且取到 Mistral 凭据时解析，内置连接器默认只请求 web_search（vibe/core/tools/connectors/connector_registry.py L60）；vibe/cli-rust/src/server/connector_web.rs L1-L9 把 connector_web_search.web_search、open_url 显示为网页搜索和打开网页。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L3148-L3157",
+      "locator": "vibe/app_server/_runtime.py",
+      "lines": "L3148-L3157",
+      "retrieved_at": "2026-11-11",
+      "configuration_scope": "权限",
+      "note": "非 auto-approve、非 smart-approve 时（L1940-L1946 为 PROMPT），连接器和 MCP 等外部提供的工具一律 ask；_unified_permissions.py L594-L613 对这类工具按其设置决定，未设置时默认 ask。_rust_tool_modes（L3079 起）只给 _unified_permissions.py L86-L97 列出的文件、shell、skill、process 工具定审批模式，agents.* 不在其中，执行层对没有模式的内置工具按 allow 处理（harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_local_actions.py L785-L788）。"
     }
   ],
   "note": "登录取浏览器登录，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。"
