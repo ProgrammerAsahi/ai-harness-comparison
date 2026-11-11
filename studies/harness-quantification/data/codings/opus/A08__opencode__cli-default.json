@@ -1,0 +1,1924 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.3",
+  "synthetic": false,
+  "round": "pilot-1",
+  "config_id": "A08__opencode__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "Claude Opus 5.5",
+    "prompt_version": "coding-card-v4",
+    "coded_at": "2026-11-11"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-11",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "user_stepwise"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "直接在 TUI 输入任务后由 SessionRunner 的 drain 循环推进：每一步调用模型、执行模型发出的工具调用，有工具调用就继续下一步，没有就进入空闲交还控制权。审批（ask）停顿不改变类别。子代理（subagent 工具派生的子会话）内部也是同一套模型循环。/goal 目标续跑是模型循环外层的回合间续跑，按口径不另记。secondary_modes 的 user_stepwise 指 /btw 侧问：经 session.generate 只做一次生成、不跑工具循环，答完即交还（第二档，斜杠命令进入）。! 开头的 shell 模式不经模型，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：drain 主循环 while(true){advanceToStep; runStep}",
+          "lines": "L215-L222",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认 TUI 入口的主循环",
+          "note": "每一步由 runStep 执行，返回 needsContinuation 决定是否继续下一步。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/publish-llm-event.ts",
+          "locator": "packages/core/src/session/runner/publish-llm-event.ts：record().needsContinuation",
+          "lines": "L592-L600",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主循环续步条件",
+          "note": "本步有本地执行的工具调用时需要继续，否则本轮结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/tui/src/feature-plugins/prompt/btw.tsx",
+          "locator": "packages/tui/src/feature-plugins/prompt/btw.tsx：/btw 调用 session.generate",
+          "lines": "L15-L20",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "/btw 斜杠命令（可选路径）",
+          "note": "注释写明 session.generate 不跑工具循环，提示要求不调用工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/tui.mdx",
+          "locator": "services/site/src/docs/content/cli/tui.mdx：开头快速说明、Shell、Commands、Side questions 小节",
+          "lines": "L6-L61",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "TUI 官方命令与模式说明",
+          "note": "列出 TUI 常用命令、shell 模式、/btw 侧问与代理切换；未见显式工作流或事件调度类入口。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 查过 TUI 文档（tui.mdx、commands.mdx）、CLI 子命令列表（commands.ts）和内置命令 /init、/review、/goal：opencode run、/init、/review、plan 代理切换都仍是模型循环。/btw 只做一次生成、不是完整任务，是否算一条“任务路径”拿不准，按“只收包含模型调用的任务路径”收进 user_stepwise。schedule_* 工具（Code Mode 内）按计时器发起任务，任务内部仍是模型循环，按口径归 F33，不进本字段。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "默认注册 todowrite 工具（codemode: false，直接出现在原生工具列表里），条目带 pending/in_progress/completed/cancelled 状态，由模型自行调用；框架把 todos 存进工具输出元数据并汇总显示，但不按表的顺序推进或拦截执行。默认型号 big-pickle 不命中 optimize 插件的任何专用系统提示（只对 gpt、claude、kimi、trinity、muse 型号换提示）。子代理 general 默认也继承 todowrite。可选：plan 主代理（Shift+Tab 或 /agents 切换）禁止编辑普通项目文件、只出计划，属于仅提示文本类的计划模式，用户切换才进入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/todo.ts",
+          "locator": "packages/core/src/tool/plugin/todo.ts：todowrite 输入模式与注册",
+          "lines": "L12-L23",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "todowrite 的条目含内容与四种状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/todo.ts",
+          "locator": "packages/core/src/tool/plugin/todo.ts：execute 只做权限检查并返回 todos",
+          "lines": "L56-L80",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "codemode: false 直接注册；执行时只保存、回显清单，不约束后续动作顺序。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/internal.ts",
+          "locator": "packages/core/src/plugin/internal.ts：pre 列表含 TodoTool.Plugin、PlanPlugin.Plugin",
+          "lines": "L244-L282",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认内置插件",
+          "note": "todowrite 属默认加载的内置工具插件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/optimize.ts",
+          "locator": "packages/core/src/plugin/optimize.ts：按型号选系统提示",
+          "lines": "L18-L59",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住型号 big-pickle 的系统提示",
+          "note": "专用提示只对 gpt、claude、kimi、trinity、muse 型号生效，big-pickle 不命中。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "未逐字读默认基础系统提示全文去判断是否“明确要求先写计划”；因 todowrite 已命中更靠前的 structured_task_list，不影响取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "模型这一步没有本地工具调用时 needsContinuation 为假，Completed 后会话进入空闲、交还用户；运行中按 Esc（session.interrupt）中断当前会话，Ctrl+D 中断子代理。build、general、explore 默认都没有 steps 上限，也没有默认的 Token、时长、金额预算，所以不含 budget；F12 的 hard_stop 只有 output_limit（单次输出截断，只在 F12 记）。可选：代理配置 steps 后，到上限的最后一步撤掉工具、要求文字总结（第三档）。可选：/goal 目标续跑由评审模型给出 done/continue/blocked 等结论，最多 50 轮、连续 3 次停滞即停（第二档，斜杠命令进入）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：runStep 的 Completed 分支与 stepLimitReached",
+          "lines": "L256-L276",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环结束判定",
+          "note": "步数上限只在代理设置了 steps 时生效；默认代理未设。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：Completed 分支返回 needsContinuation",
+          "lines": "L322-L329",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环结束判定",
+          "note": "没有工具调用需要续步时返回假，会话转入空闲。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/agent.ts",
+          "locator": "packages/core/src/plugin/agent.ts：内置代理定义",
+          "lines": "L52-L94",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认代理",
+          "note": "build、general、explore 都未设置 steps。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/keybinds.mdx",
+          "locator": "services/site/src/docs/content/cli/keybinds.mdx：session.interrupt 默认 escape；composer.subagent.interrupt 默认 ctrl+d",
+          "lines": "L199",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "TUI 默认按键",
+          "note": "用户可按键中断当前会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/agents.mdx",
+          "locator": "services/site/src/docs/content/agents.mdx：Options › Steps",
+          "lines": "L282-L290",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选设置",
+          "note": "steps 是代理的可选设置，到上限撤工具并要求总结。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "模型调用出错时 ModelRetry 按指数退避自动重发（一般最多 10 次、每次间隔封顶 10 秒，超时类最多 3 次；网络不可达另按 1 小时窗口重试），流在输出中途断开的也会重试后注入续写提示。工具执行失败以 error 结果回传给模型，下一步由模型改正；用户带反馈拒绝（CorrectedError）也作为工具失败交回模型。ToolInputRepairPlugin 默认在执行前按输入模式修正字符串化 JSON、数字/布尔字符串等，并把 bash 别名改成 shell。没有找到失败后由框架暂停请用户决定的规则；ask 权限审批记在 F22。V2 已无 V1 的 doom_loop 循环检测。可选：/goal 路径里停滞 3 次进入 blocked。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/model-retry.ts",
+          "locator": "packages/core/src/model-retry.ts：schedule、unreachableSchedule、policy",
+          "lines": "L22-L89",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主执行链模型调用",
+          "note": "可重试错误按退避自动重发，不经模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/step.ts",
+          "locator": "packages/core/src/session/runner/step.ts：attempt 内 retry 判定与 Outcome.Retry/Continue",
+          "lines": "L212-L226",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主执行链模型调用",
+          "note": "模型流失败且可重试时返回 Retry，由 runStep 等待后重发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/to-llm-message.ts",
+          "locator": "packages/core/src/session/runner/to-llm-message.ts：error 状态的工具结果转成 resultType error",
+          "lines": "L130-L135",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具失败处理",
+          "note": "失败的工具调用作为错误结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/tool-input-repair.ts",
+          "locator": "packages/core/src/plugin/tool-input-repair.ts：ToolInputRepairPlugin 的 execute.before 钩子",
+          "lines": "L4-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认内置插件（internal.ts pre 列表首项）",
+          "note": "执行前按工具输入模式修正参数并映射工具名别名。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "默认不带 --standalone、--server，且 service 配置未设 disabled 时，CLI 经 Service.ensure 发现或拉起本机常驻后台服务（opencode serve --service），TUI 通过本地 HTTP 端点和 SDK 客户端连接，多个前端可共用。全新安装首次启动时没有服务在跑，就拉起一个。其他情形：--standalone 起一个随 TUI 退出的私有服务子进程（经 stdin 管道做租约，但仍走 HTTP URL）；--server 连接指定地址。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/services/server-connection.ts",
+          "locator": "packages/cli/src/services/server-connection.ts：resolve",
+          "lines": "L26-L64",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认 CLI 入口",
+          "note": "默认分支 resolveManaged → Service.ensure，standalone 或 disabled 才起私有服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/client/src/effect/service.ts",
+          "locator": "packages/client/src/effect/service.ts：ensure 拉起 opencode serve --service",
+          "lines": "L49-L66",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认 CLI 入口",
+          "note": "没有服务时起服务竞争进程，命令为 opencode serve --service。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/commands/commands.ts",
+          "locator": "packages/cli/src/commands/commands.ts：Standalone、Server 全局参数",
+          "lines": "L14-L26",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "入口参数",
+          "note": "--standalone 说明为用私有服务代替后台服务，默认 false。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "执行核心在后台服务进程里。read、write、edit、patch、glob 等文件工具经 Environment 的本地驱动直接用 node:fs 在服务进程内执行；shell 工具为每条命令起一个 shell 子进程。Code Mode 的 execute 工具用核心内的 legacy 受限解释器（按配置记录），内部再调宿主工具。默认没有 MCP 服务器，也没有容器。可选：用户在配置里添加 MCP 服务器后，本地 MCP 服务由核心拉起（子进程），远程的走网络；可选：工作区（workspace）绑定时 Environment 改连工作区驱动。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/environment/environment.ts",
+          "locator": "packages/core/src/environment/environment.ts：layer 选择驱动",
+          "lines": "L17-L34",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认本地工作目录（未绑定工作区）",
+          "note": "没有 workspaceID 时使用 makeLocalDriver。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/environment/local.ts",
+          "locator": "packages/core/src/environment/local.ts：makeLocalDriver",
+          "lines": "L8-L20",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "文件工具",
+          "note": "注释与实现说明本地驱动直接用 node:fs 读写宿主文件系统。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/shell.ts",
+          "locator": "packages/core/src/shell.ts：create 中 spawner.spawn(ChildProcess.make(invocation.shell, …))",
+          "lines": "L336-L352",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "shell 工具",
+          "note": "每条命令起一个 shell 子进程执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话和消息由后台服务进程（执行核心）写进本机 SQLite 数据库（session_v2、session_message 等表），每一步由 runner 从存储读回上下文构造请求；TUI 只经 API 读取和显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/sql.ts",
+          "locator": "packages/core/src/session/sql.ts：SessionTable（session_v2）",
+          "lines": "L28-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "会话记录、用量、权限、代理与型号存在核心的数据库表里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/server-process.ts",
+          "locator": "packages/cli/src/server-process.ts：服务启动时传入 databasePath(global.data)",
+          "lines": "L115",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "后台服务",
+          "note": "数据库由服务进程打开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：runStep 每次重新 prepareContext/context.load",
+          "lines": "L244-L250",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "请求构造",
+          "note": "每一步和每次重试都从存储读回上下文。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "新会话由 Session.create 分配会话编号，消息按 session_id 分开存放；位置（location）取启动目录或父会话的位置，几个会话可共用同一目录，不另起进程、工作树或容器。子代理会话继承父会话的位置。可选：用户显式使用工作区或 opencode 命名空间的工作树工具才有独立目录。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session.ts",
+          "locator": "packages/core/src/session.ts：Session.create",
+          "lines": "L288-L318",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "新会话创建",
+          "note": "分配 SessionSchema.ID，位置沿用父会话或传入的目录，不新建目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/sql.ts",
+          "locator": "packages/core/src/session/sql.ts：SessionTable 与 session_message.session_id 外键",
+          "lines": "L28-L100",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "历史按会话编号分存，workspace_id 可空。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心进程内嵌 @opencode/ai 库，内部统一请求经路由（route）转成 anthropic-messages、openai-chat、openai-responses、gemini、bedrock-converse 等多种协议；另可按目录里的 npm 包名动态加载 @ai-sdk/* 提供方，由 aisdk.ts 适配。钉住环境下只用 opencode 提供方的免费型号，具体走哪种协议由目录条目决定，但抽象层本身不变。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/ai/src/protocols/index.ts",
+          "locator": "packages/ai/src/protocols/index.ts：协议导出",
+          "lines": "L1-L16",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用库",
+          "note": "同一库内有 AnthropicMessages、BedrockConverse、Gemini、OpenAIChat、OpenAIResponses 等协议实现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/model-resolver.ts",
+          "locator": "packages/core/src/model-resolver.ts：按包名加载提供方（含 @ai-sdk/* 与 @opencode/ai/providers/*）",
+          "lines": "L555-L590",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "型号解析",
+          "note": "核心按型号所属包选择适配实现，转换在核心进程内完成。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "script_dispatch",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "内置工具（read、edit、shell、todowrite、subagent 等标 codemode: false）放进请求的工具列表，模型以原生 tool-call 事件调用。Code Mode 默认开启（默认规则没有整体 deny execute）：execute 工具接收模型写的脚本，脚本内再调用 Code Mode 清单里的工具（如 schedule_*、session_rename 等 codemode: true 的工具）。MCP：默认不配服务器，但用户只需加一条服务配置即可，MCP 工具默认登记进 Code Mode 并转成 MCP 请求。参数 JSON 畸形或被输出上限截断时，框架把该调用记为失败回传模型（failToolInput），修整参数记在 F04。未找到从普通文本解析工具调用的路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/step.ts",
+          "locator": "packages/core/src/session/runner/step.ts：providerStream 收到 tool-call 事件后执行工具",
+          "lines": "L118-L144",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主循环工具调用",
+          "note": "按模型流中的结构化 tool-call 事件执行本地工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool.ts",
+          "locator": "packages/core/src/tool.ts：snapshot 中 codeModeEnabled 与直连/Code Mode 工具分组",
+          "lines": "L263-L283",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限规则下的工具清单",
+          "note": "默认注册 execute，codemode 不为 false 的工具只能经 Code Mode 调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/codemode/tool.ts",
+          "locator": "packages/core/src/codemode/tool.ts：execute 工具执行脚本并分派内部工具调用",
+          "lines": "L92-L142",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "Code Mode",
+          "note": "脚本里的工具调用经 executeTool 接到真实工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/mcp.ts",
+          "locator": "packages/core/src/tool/mcp.ts：MCP 工具登记（namespace、codemode）",
+          "lines": "L57",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "MCP 扩展点（默认开放，需用户添加服务配置）",
+          "note": "MCP 服务器的工具被包装成框架工具，默认进入 Code Mode。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "protocol_translation 按 R2 扩展点口径记入；本配置 MCP 工具默认还要再经 Code Mode 脚本调用，等于两层转换叠加，按一次各记一项（protocol_translation 与 script_dispatch）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用会话型号（钉住环境下为 opencode/big-pickle）；子代理默认继承父会话型号（general、explore 未设 model），但 subagent 工具带可选 model 参数，主模型可为子代理指定任一可用对话型号或变体，框架只校验是否可用。参数说明要求“除非用户明确要求否则不要设置”，代码并不拦，按 R3 第一档记入。未找到失败换型号或按请求路由。可选：/models、F2 切换型号（第二档）；代理配置 model 可按角色指定型号（第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：Input.model 参数说明",
+          "lines": "L37-L40",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认注册的 subagent 工具",
+          "note": "model 参数允许主模型为子代理指定型号或变体。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：override ?? agent.model ?? parent.model",
+          "lines": "L168-L193",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理型号解析",
+          "note": "显式型号优先，其次代理配置，最后继承父会话型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/context.ts",
+          "locator": "packages/core/src/session/context.ts：selectTitle",
+          "lines": "L99-L118",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "标题生成（辅助调用）",
+          "note": "标题先找同提供方的小型号，找不到则用主型号的较低变体或主型号本身。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/model.ts",
+          "locator": "packages/core/src/model.ts：Model.small 只认 gpt-luna、gemini-flash-lite、gemini-flash、claude-haiku 四个家族",
+          "lines": "L306-L318",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住环境（只有免费型号）",
+          "note": "这些家族在 opencode 提供方里都有输入价格，未登录时被停用，小型号查找落空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/compaction.ts",
+          "locator": "packages/core/src/session/compaction.ts：compaction 代理无 model 时用 context.model",
+          "lines": "L283-L292",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "压缩摘要（辅助调用）",
+          "note": "压缩默认用会话型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 依据仓库内目录快照 models-dev/snapshot.txt 判断：opencode 提供方免费型号的家族不含 Model.small 认的四个家族，所以标题、压缩都落回 big-pickle（标题可能用较低变体，名称相同算同一型号）。实际目录由服务端下发，可能与快照不同，故置信度取 medium。其他环境：登录或有付费型号时，标题会用 gpt-luna 等小型号（按角色），并在小型号失败时回落主型号。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "主请求默认设 maxTokens：取型号输出上限（缺省 32k，封顶 256k，按剩余上下文再收窄，最低 1024）；输出因长度截断时注入续写提示接着做，连续两次续写后仍截断即以 output-limit 错误停下。默认代理没有 steps、Token、时长或金额上限，子代理同样未设。可选：代理配置 steps 后到上限撤工具并要求总结（第三档）。可选：/goal 路径最多 50 轮、连续 3 次停滞即停（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/model-request.ts",
+          "locator": "packages/core/src/session/model-request.ts：outputLimit 与主请求 maxTokens",
+          "lines": "L95-L103",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主执行链单次输出",
+          "note": "框架为每次主请求计算默认输出上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/model-request.ts",
+          "locator": "packages/core/src/session/model-request.ts：kind primary/compaction 时传 maxTokens",
+          "lines": "L283-L297",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主执行链单次输出",
+          "note": "标题等辅助生成保持服务端默认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：OutputLimit 分支",
+          "lines": "L348-L382",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "输出截断处理",
+          "note": "截断后注入续写提示，连续两次续写仍截断即以 output-limit 失败停下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/agent.ts",
+          "locator": "packages/core/src/plugin/agent.ts：内置代理定义",
+          "lines": "L52-L94",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认代理",
+          "note": "内置代理均未设 steps。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "子代理嵌套深度上限（experimental.subagent_depth 默认 1）按 call_count 定义不算，未计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "typed_event_rebuild",
+      "facets": {
+        "layers": [
+          "typed_event_rebuild",
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每一步 runStep 都重新调用 SessionContext.load → SessionHistory.entriesForRunner，从 SQLite 的 session_message 表读出自最近一次完成压缩起的全部记录；这些记录有 user、assistant、synthetic、system、skill、shell、compaction、agent-switched、model-switched、location-switched、idle 等多种类型，toLLMMessage 逐类解释（切换类多数跳过，模型切换可能转成 effort 提示，压缩记录转成 <conversation-checkpoint> 用户消息）后才拼出消息列表，再由 baseTranscript 加系统提示发出。运行中没有一份内存消息数组被逐轮追加。插件的 session context 钩子（例如 plan 模式提醒）在发送前还会改这份消息列表。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：SessionRunner.runStep",
+          "lines": "L236-L275",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环每一步的请求构造",
+          "note": "每次尝试都 prepareContext + context.load 重新载入，再用 baseTranscript(loaded.messages) 构造主请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/context.ts",
+          "locator": "packages/core/src/session/context.ts：SessionContext.load",
+          "lines": "L178-L194",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "load 每次从数据库取 history.entries 作为 messages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/history.ts",
+          "locator": "packages/core/src/session/history.ts：messageEntries",
+          "lines": "L193-L233",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "从最近一次完成的 compaction 记录起按 seq 读出 session_message 行并解码，过滤不可重放的条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/to-llm-message.ts",
+          "locator": "packages/core/src/session/runner/to-llm-message.ts：toLLMMessage / toLLMMessages",
+          "lines": "L226-L301",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "按记录类型逐类转换成对话消息，切换类与 idle 记录跳过，压缩记录转成摘要检查点消息。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "session_message 表名叫 message，但每行是带类型的记录（含模型切换、代理切换、目录切换、压缩、idle），每轮逐类解释，所以判 typed_event_rebuild。真正的事件流（event 表）在本地默认不持久化，内存里有事件总线，消息表是它的投影；layers 只记了请求构造实际读的两层，没有把总线事件算一层。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "truncation：每个工具结果进入上下文前经 ToolOutput.truncate，超过 2000 行或 50 KiB 就截短，完整输出写到数据目录 tool-output/ 下的文件并在上下文留路径；另外 boundImages 在图片总量超过 25 MiB 时把最早的图片（含工具结果里的图片）换成固定的“已移除”文字，不区分是否工具结果，归 truncation。summarization：compaction.auto 默认 true，上下文接近窗口（默认留 15% 且至少 16k 余量）或提供方报超长时自动调模型写摘要，保留最近约 15000 token 原文；对声明 native 压缩的型号改用提供方原生压缩，产物可否读写进记录。可选：/compact 或 <leader>c 手动压缩（第二档）；后台预先摘要 background_compaction 为实验开关、正式版默认关（第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool-output.ts",
+          "locator": "packages/core/src/tool-output.ts：MAX_LINES / MAX_BYTES / truncate",
+          "lines": "L13-L118",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具结果",
+          "note": "超限结果截到上限并另存文件，上下文里附 full output saved to 路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/step.ts",
+          "locator": "packages/core/src/session/runner/step.ts：工具执行后 Effect.flatMap(toolOutput.truncate)",
+          "lines": "L127-L136",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "每次本地工具调用的结果都先经 truncate 再发布。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/compaction.ts",
+          "locator": "packages/core/src/session/compaction.ts：layer 初始设置与 compact",
+          "lines": "L269-L332",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认设置",
+          "note": "初始 auto: true、keep: 15000；auto 或 overflow 触发时走 summarize 或 compactNatively。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/compaction.mdx",
+          "locator": "Compaction › How it works / Start",
+          "lines": "L1-L41",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认设置",
+          "note": "文档写明自动压缩默认开启，用摘要替换旧对话并保留最近约 15000 token。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/model-request.ts",
+          "locator": "packages/core/src/session/model-request.ts：boundImages",
+          "lines": "L216-L245",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主请求",
+          "note": "图片负载超过触发值时把最早的图片替换成固定占位文字。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "boundImages 只换掉图片部件、按字节量从最早的开始，不区分用户附件和工具结果；按 scope_rule“不区分其中是不是工具结果的，记 truncation”归入 truncation，没有单独计 tool_result_replacement。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：TUI 输入里打 @ 搜索并附上文件（可带 #行号范围），附件按 uri 进入提示；配置了 references 的外部目录也由用户在客户端附上别名。keyword：默认注册的 grep 工具按正则或字面文本搜文件内容（权限默认 allow）。glob 只按路径模式找文件名，没有单独计；shell 里自己跑 rg 不计。未见语义检索或代码结构索引（LSP）工具，文档写明 lsp 不是 V2 Core 权限动作。网页搜索 websearch、网页抓取 webfetch 默认注册，不计入取值；浏览器命名空间依赖桌面端。技能目录：技能列表常驻、正文经 skill 工具按需读入。可选：MCP 资源工具要先配置 MCP 服务器（第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/tui.mdx",
+          "locator": "TUI › 文件引用（Type @ to search for a file）",
+          "lines": "L21-L30",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "CLI TUI 入口",
+          "note": "用户在提示里用 @ 引用文件并附进提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/tools.mdx",
+          "locator": "Tools › Files › Glob / Grep",
+          "lines": "L39-L64",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "grep 按正则或字面文本搜文件内容并返回路径、行号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/internal.ts",
+          "locator": "packages/core/src/plugin/internal.ts：pre 内置插件列表",
+          "lines": "L244-L283",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具注册",
+          "note": "默认注册的工具插件含 Glob、Grep、Read、Shell、WebFetch、WebSearch、Skill 等，没有语义检索或 LSP 工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/permissions.mdx",
+          "locator": "Permissions › Actions（doom_loop and lsp are not current V2 Core permission actions）",
+          "lines": "L104-L139",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "内置工具动作表里没有语义检索或 LSP。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "新会话开始时自动读入全局 ~/.config/opencode/AGENTS.md 和从工作目录到项目根的各级 AGENTS.md；读到子目录时再按需载入下层 AGENTS.md（V2 不读 CLAUDE.md）。核心源码与文档里未见自动摘要记忆、结构化记忆条目或跨会话检索库；会话记录留在数据库里，但没有内置流程在新会话读回。/goal 的目标状态按会话存放、子会话和分叉不继承，不算跨会话记忆。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/instructions.mdx",
+          "locator": "Instructions › Scope / Discovery",
+          "lines": "L1-L62",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认说明文件读入",
+          "note": "全局与项目各级 AGENTS.md 自动载入，子目录的在探索时载入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/context.ts",
+          "locator": "packages/core/src/session/context.ts：select 中 builtins/discovery/skills/references/mcp/entries 指令来源",
+          "lines": "L147-L156",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "新会话注入内容",
+          "note": "会话上下文载入的指令来源只有内置、发现的说明文件、技能、引用、MCP 与会话自身条目，没有跨会话记忆来源。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "event_log：运行记录存在本地 SQLite 的 session_message（附 session_part 存每步的文字、推理、工具调用与结果）里，每行带 type，除 user/assistant 外还有 compaction、model-switched、agent-switched、location-switched、idle、shell、synthetic 等独立记录。总线的 event 表在本地 CLI 服务默认 persist=false，不保存事件载荷（云端 workerd 才开）。state_snapshot：Git 仓库里每一步前后用独立的内部 Git 对象库拍工作区快照，assistant 记录存 snapshot.start/end 与改动文件，/undo、Revert 读它恢复。external_reference：超限工具输出另存为数据目录 tool-output/ 下的文件（保留 7 天，不随会话结束删除），记录里只留 outputPath。实验开关 media_blob（正式版默认关）开后媒体才去重存进 blob 表。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/sql.ts",
+          "locator": "packages/core/src/session/sql.ts：SessionMessageTable / SessionPartTable",
+          "lines": "L86-L128",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "会话记录按带 type 的行和其分部持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/session-message.ts",
+          "locator": "packages/schema/src/session-message.ts：Info 联合类型",
+          "lines": "L304-L316",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "记录类型包括 AgentSelected、ModelSelected、LocationSwitched、User、Synthetic、System、Skill、Shell、Assistant、Compaction、Idle。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/bus.ts",
+          "locator": "packages/core/src/bus.ts：configured 中 persist 默认值",
+          "lines": "L214",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "本地服务默认",
+          "note": "persist 默认 false，事件载荷不写 event 表；只有 server/src/workerd.ts 传 persist: true。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/snapshots.mdx",
+          "locator": "Snapshots › Capture / Storage / Settings",
+          "lines": "L36-L102",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "Git 仓库工作区默认",
+          "note": "每个模型步骤前后拍快照，存于数据目录下独立的内部 Git 对象库，默认开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool-output.ts",
+          "locator": "packages/core/src/tool-output.ts：RETENTION / truncate 写文件并记 outputPath",
+          "lines": "L13-L118",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具结果",
+          "note": "完整输出另存文件保留 7 天，记录元数据只留路径。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "messages 与 event_log 的界线：session_message 存储单位接近消息，但同一张表里还有模型切换、压缩等独立记录，按 event_log 定义“消息只是其中一类，另有模型切换、压缩等独立事件”判了 event_log；若码本认为表名和主体是消息就该记 messages，这一格会翻转。没有审批类记录。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "用户用 opencode --continue / --session <id>、TUI 的 /sessions 回到原会话时，下一步从数据库重新载入记录重建上下文，等用户输入。后台服务进程异常退出后重启时，resumeSuspendedSessions 自动接回未结束的回合：把运行中的工具调用标为中断失败，插入一条“服务已重启，请接着做”的合成消息，再发一次新的模型调用，由模型重新决定，不续跑原调用；同一回合最多自动续 10 次。这一自动路径同样属于重建对话再运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/commands/commands.ts",
+          "locator": "packages/cli/src/commands/commands.ts：Root 参数 continue / session",
+          "lines": "L47-L68",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "CLI 入口恢复参数",
+          "note": "根命令提供 --continue（继续上一会话）与 --session（继续指定会话）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/execution/restart.ts",
+          "locator": "packages/core/src/session/execution/restart.ts：CONTINUE_AFTER_SERVER_RESTART / prepareResume",
+          "lines": "L16-L98",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务重启后的自动恢复",
+          "note": "重启后插入继续提示的合成消息再跑，重试上限 10 次，注释写明恢复为至少一次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/llm.ts",
+          "locator": "packages/core/src/session/runner/llm.ts：settleStaleToolCalls",
+          "lines": "L421-L446",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务重启后的自动恢复",
+          "note": "未完成的工具调用被标为 Tool execution interrupted 失败，不续执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/tui.mdx",
+          "locator": "TUI › Sessions",
+          "lines": "L69-L72",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "CLI TUI 入口",
+          "note": "用 /sessions 或 <leader>l 回到已有会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：恢复后从数据库重建全部消息，工具调用连同 input 与结果内容（超限的只留截短部分和文件路径）一起回到上下文。subagent_links：子代理是持久化的子会话，subagent 工具结果里带 sessionID，父代理恢复后可把它传回 subagent 工具继续给原子代理发指令（running 或已结束都可），服务重启时还会把后台子代理的完成结果补投给父会话。task_plan 不计：todowrite 是实验开关，正式版（latest 通道）默认关；可选：开 experimental.todo 后待办由最近一次 todowrite 调用重建（第三档）。workspace 不计：恢复不动工作区文件，回退归 F20。外部副作用（已执行的命令、网络请求）不在恢复范围内，重启恢复按至少一次处理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/runner/to-llm-message.ts",
+          "locator": "packages/core/src/session/runner/to-llm-message.ts：toLLMMessage",
+          "lines": "L226-L301",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "恢复后重建上下文",
+          "note": "assistant 记录连同工具调用和结果转回模型消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：Input.sessionID 与工具说明",
+          "lines": "L41-L58",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认子代理工具",
+          "note": "传入已有 sessionID 可向原子代理（运行中或已结束）发后续指令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/execution/restart.ts",
+          "locator": "packages/core/src/session/execution/restart.ts：recoverSubagent",
+          "lines": "L167-L210",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务重启后的自动恢复",
+          "note": "重启时把后台子代理的完成结果投递回父会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/flag.ts",
+          "locator": "packages/core/src/flag.ts：onByDefault",
+          "lines": "L35",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "正式版默认",
+          "note": "实验开关只在 local、dev 通道默认开，正式版 todo 默认关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/config.mdx",
+          "locator": "Config › Experimental › Todos",
+          "lines": "L639-L641",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "正式版默认",
+          "note": "todowrite 工具默认 false。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "subagent_links 是从工具说明和子会话持久化推出的：恢复后父代理要从历史工具结果里拿到 sessionID 再调用，没有在源码里看到恢复流程主动重连子代理，所以整体给 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "session_branch：TUI 的 /fork（命令面板“Fork session”，或在消息菜单选 Fork）从某条消息分出新会话，原会话保留在会话列表；opencode run/mini 另有 --fork 参数。workspace_snapshot：在 Git 仓库里默认每步前后拍快照，/undo（<leader>u）或选旧消息 Revert 会暂存回退、把后续步骤改过的文件恢复到边界前，/redo 取消；/undo 对对话部分是裁掉后续消息、不另开分支（写此不计）。快照不管 Git 元数据、被忽略文件、目录外文件和命令的外部副作用。没有补偿操作；重启恢复注释写明是至少一次、不防外部副作用重复，未见幂等标识。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/tui/src/routes/session/index.tsx",
+          "locator": "packages/tui/src/routes/session/index.tsx：命令 session.fork（slash: fork）",
+          "lines": "L1079-L1095",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "CLI TUI 入口",
+          "note": "TUI 提供 /fork 打开分叉对话框。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session.ts",
+          "locator": "packages/core/src/session.ts：Session.fork",
+          "lines": "L339-L383",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "分叉",
+          "note": "以父会话某条消息为边界新建会话并复制历史，父会话不改。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/snapshots.mdx",
+          "locator": "Snapshots › Workflow / Capture / Restore / Settings / Safety",
+          "lines": "L1-L127",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "Git 仓库工作区默认",
+          "note": "快照默认开启，/undo、/redo、Revert 恢复文件；不撤销命令的外部效果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/revert.ts",
+          "locator": "packages/core/src/session/revert.ts：SessionRevert.stage / plan",
+          "lines": "L22-L112",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "回退",
+          "note": "按边界后各 assistant 记录的 snapshot.start 恢复相关文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/execution/restart.ts",
+          "locator": "packages/core/src/session/execution/restart.ts：Service 注释（Recovery is at-least-once）",
+          "lines": "L47-L63",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "重复执行",
+          "note": "注释写明恢复不防止崩溃后外部副作用重复。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "规则是有序的 {action, resource, effect}（allow/ask/deny），最后一条匹配生效、没有匹配为 ask。tool_category：action 按工具名（read、edit、shell、subagent、skill、webfetch、execute、MCP 工具等），内置主代理 plan/build 也按动作类别放行或拒绝。command_rule：shell 的 resource 是扫描器拆出的命令文本，支持前缀通配。file_path：read/edit 的路径与 external_directory 目录边界。network_target：webfetch 的 resource 是 URL，仅限该工具，不管命令联网；没有进程级联网开关。另有 policies 硬拒绝层和“Allow always”保存的项目级 allow 规则。默认效果：基础规则 \"*\" allow，所以改工作区文件、运行命令、写工作区外（external_directory 也随 * 放行）、shell 联网都直接放行；只有读 .env/.env.* 为 ask。可选：--auto 自动批准未被 deny 的请求（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/permissions.mdx",
+          "locator": "Permissions › Rules / Matching / Actions / Directories / Defaults",
+          "lines": "L31-L241",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则格式与默认策略",
+          "note": "规则按动作与资源（命令、路径、URL 等）匹配；默认基础策略 * allow，外部目录不提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/agent.ts",
+          "locator": "packages/schema/src/agent.ts：Agent.Info.default permissions",
+          "lines": "L39-L52",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "每个代理的基础规则 * allow，.env 读取 ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/permission.ts",
+          "locator": "packages/core/src/permission.ts：evaluate",
+          "lines": "L94-L104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则求值",
+          "note": "取最后一条匹配规则，否则 ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/shell.ts",
+          "locator": "packages/core/src/tool/plugin/shell.ts：ShellTool.prepare",
+          "lines": "L114-L133",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "命令规则",
+          "note": "扫描器拆出子命令与推断目录，先查外部目录再按命令文本 assert shell 权限。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认模式下规则解析为 ask 时，工具在执行前经 permission.assert 暂停等客户端答复（Allow once / Allow always / Reject），一次批准放行这次调用的全部资源（多文件 patch、复合命令只问一次）。在默认 build 代理下实际会停下的只有读 .env/.env.*（explore 子代理同样）；其余动作被 * allow 直接放行。“Allow always”等于新增项目级 allow 规则；Reject 会同时拒绝该会话其他待批请求。没有自动审核器。可选：--auto 让未被 deny 的请求自动通过（第二档）；加 ask 规则可让 shell、edit 等也走审批（第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/permissions.mdx",
+          "locator": "Permissions › Approvals",
+          "lines": "L271-L294",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "审批答复",
+          "note": "ask 时客户端可答 once、always、reject，always 保存为项目级 allow 规则。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/read.ts",
+          "locator": "packages/core/src/tool/plugin/read.ts：读取前 permission.assert",
+          "lines": "L64-L75",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "read 工具在读取前做权限断言，ask 时整次调用暂停。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/agent.ts",
+          "locator": "packages/schema/src/agent.ts：Agent.Info.default permissions",
+          "lines": "L39-L52",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "默认只有 .env 读取是 ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/cli/src/commands/commands.ts",
+          "locator": "packages/cli/src/commands/commands.ts：PermissionParams.auto",
+          "lines": "L35-L45",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "CLI 入口",
+          "note": "--auto 默认 false。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "默认审批只覆盖 .env 读取这一窄路径，仍按“会停下等批准”记 tool_call；如果码本希望区分“默认几乎全放行”，现在只能靠 F21 的四个默认效果体现。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：权限引擎在工具执行前按规则放行、询问或拒绝（默认 .env 读取 ask、general 子代理禁 question 与再派子代理、explore 只放开只读类工具、plan 禁 edit），shell 扫描器解析不了的命令直接报错不执行。runtime_sandbox：默认注册的 Code Mode execute 工具在自研受限解释器里跑脚本，脚本没有文件、进程、定时器和导入能力，只能经宿主工具和 fetch 对外；它只约束 execute 脚本本身，管不到 shell 工具。shell 以宿主用户权限运行，源码未见 Seatbelt、Landlock、bubblewrap 或容器。prompt_only=present（部分兜底）：内置 plan 模式向用户交代为只读代理，代码只禁了 edit/write/patch，提示里“不要修改其他文件或让子代理去改”对 shell 和派 general 子代理没有代码检查。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/permission.ts",
+          "locator": "packages/core/src/permission.ts：evaluate",
+          "lines": "L94-L104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "权限引擎按规则决定 allow/ask/deny。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/codemode/README.md",
+          "locator": "packages/codemode/README.md：概述与 How it differs from JavaScript",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "Code Mode execute",
+          "note": "受限解释器不能直接访问网络、文件系统、进程，只能经宿主工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool.ts",
+          "locator": "packages/core/src/tool.ts：codeModeEnabled",
+          "lines": "L263",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具注册",
+          "note": "execute 未被整体 deny 时注册，默认规则下开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/plan.ts",
+          "locator": "packages/core/src/plugin/plan.ts：enter 提示与 plan 代理规则",
+          "lines": "L14-L42",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置 plan 模式",
+          "note": "提示要求不改其他文件、不让子代理去改；规则只 deny edit，shell 与 subagent 仍随 * 放行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/permissions.mdx",
+          "locator": "Permissions › Directories（shell runs with the host user's filesystem, process, and network authority）/ Scanner / Defaults",
+          "lines": "L141-L241",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "文档写明 shell 以宿主用户权限运行，扫描器拒绝无法分析的命令，各内置代理附加规则。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "runtime_sandbox 只管 execute 脚本、不管主要的 shell 路径，按定义仍计入；os_isolation 的“没有”是按 shell 源码和文档推断，没有审计全部代码，所以 confidence 给 medium。prompt_only 只核对了文档列出的内置代理（build、plan、general、explore、title、summary、compaction）和 --auto，未见其他交代给用户的限制。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "审计记录就是本地数据库里的会话记录，没有专门的审计日志。intent：用户消息，以及同一 assistant 记录里排在工具调用前的文字和推理部件，按消息编号与序号能对上。actual_operation：每个工具部件存工具名、调用 id 和完整 input。result：同一部件的 completed 状态存输出内容与元数据，error 状态存错误；时间戳记 created/ran/completed。approval 不计：permission.asked/replied 是不落盘的临时事件，只有被拒后的工具错误留在记录里，Allow always 另存为不关联调用的项目级规则。identity 不计：本前提下不登录，记录里只有会话、项目、代理和模型编号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/session-message.ts",
+          "locator": "packages/schema/src/session-message.ts：ToolState* / AssistantTool / AssistantReasoning / Assistant",
+          "lines": "L135-L246",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话记录",
+          "note": "工具部件存名称、id、input、输出或错误和时间；assistant 记录同时存文字与推理部件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/permission.ts",
+          "locator": "packages/schema/src/permission.ts：Event.Asked / Replied",
+          "lines": "L45-L54",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "审批记录",
+          "note": "审批请求和答复都定义为 ephemeral 事件，不持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/permission/sql.ts",
+          "locator": "packages/core/src/permission/sql.ts：PermissionTable",
+          "lines": "L7-L20",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "审批记录",
+          "note": "持久化的只是按项目保存的 action/resource allow 规则，没有调用编号。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认注册 subagent 工具（内置插件 SubagentTool），主代理 build 调用它就在子会话里派出 general 或 explore 子代理；子代理有自己的会话上下文、能多步调用工具，结果作为工具结果或完成通知交回父会话。配置记录写明子代理开启。默认嵌套深度为 1（experimental.subagent_depth）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts#L55-L256",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：SubagentTool.Plugin 的 execute",
+          "lines": "L55-L256",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单／子代理",
+          "note": "subagent 工具创建带 parentID 的子会话、向其投递任务、按前台或后台等待并交回结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/internal.ts#L244-L309",
+          "locator": "packages/core/src/plugin/internal.ts：内置插件列表",
+          "lines": "L244-L309",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认安装",
+          "note": "SubagentTool.Plugin 在内置插件列表里，默认加载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/agents.mdx#L100-L142",
+          "locator": "services/site/src/docs/content/agents.mdx：Modes、Built-ins 小节",
+          "lines": "L100-L142",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "代理文档",
+          "note": "subagent 模式的代理只经 subagent 工具在子会话里运行；内置 general、explore 两个子代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理逐次调用 subagent 工具创建子会话。user：用户在 .opencode/commands/ 写带 subagent: true（或所选代理为 mode: subagent）的命令文件，运行该斜杠命令时框架直接创建后台子会话，不经主代理决定（用户添加的内容，按总则 R2 算开放）。定时任务（experimental.schedules）在正式版默认关闭，且只向已有会话投递提示；goal 插件的裁判只做一次 generate 调用，属辅助调用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts#L184-L198",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：execute 里 sessions.create({ parentID })",
+          "lines": "L184-L198",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "主代理委派",
+          "note": "主代理的 subagent 工具调用直接创建子会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/config/plugin/command.ts#L53-L98",
+          "locator": "packages/core/src/config/plugin/command.ts：ConfigCommandPlugin 的 execute（subagent ?? subtask 分支）",
+          "lines": "L53-L98",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "用户命令文件",
+          "note": "命令带 subagent 或所选代理为 subagent 模式时，框架直接创建子会话并转入后台。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/commands.mdx#L210-L242",
+          "locator": "services/site/src/docs/content/commands.mdx：Background 小节",
+          "lines": "L210-L242",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "用户命令文件",
+          "note": "subagent: true 让命令在后台子会话运行，完成后把结果送回父会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "user 这一项依赖用户先写命令文件；码本说命令文件属用户添加的内容，所以记入。内置命令 /init、/review 都只在当前会话投递提示，不派子代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理在自己的子会话里运行，只收到“You are a subagent…”加任务说明（fresh context）；主代理可凭 sessionID 再调 subagent，向运行中或已完成的子代理追加消息（运行中按 steer 投递）；子会话继承父会话的 location，与主代理在同一工作目录读写文件。权限：子会话继承父会话的会话级 permissions，代理规则用子代理自己的配置（general 禁止 question 和再派子代理）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts#L19-L62",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：backgroundResult、Input.sessionID、description",
+          "lines": "L19-L62",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "委派工具说明",
+          "note": "新子会话以全新上下文启动；可凭 sessionID 向运行中的子代理发后续消息或改指令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts#L203-L218",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：sessions.prompt 向子会话投递",
+          "lines": "L203-L218",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理启动上下文",
+          "note": "新子会话的首条提示只有固定前缀加任务说明；已有子会话直接投递新提示，运行中会被 steer。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session.ts#L292-L310",
+          "locator": "packages/core/src/session.ts：Session.create",
+          "lines": "L292-L310",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理工作目录与权限",
+          "note": "子会话取父会话的 location，并继承父会话的 metadata 与 permissions。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/agents.mdx#L118",
+          "locator": "services/site/src/docs/content/agents.mdx：Modes 小节",
+          "lines": "L118",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理权限",
+          "note": "子代理以全新上下文运行；父代理的 subagent 权限决定能派谁，子代理用自己配置的权限。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "前台（默认）调用阻塞在 jobs.block，子代理最终回复作为工具结果返回；模型可选 background: true，子代理在后台跑，完成时 SubagentJob.notify 把结果送回父会话。前台等待被中断时，onInterrupt 自动中断子会话并取消其作业；后台委派路径上没有找到父代理中断时自动取消子代理的代码，故 cancel_scope 记 some_paths。默认嵌套深度为 1，所以只有一层。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/tool/plugin/subagent.ts#L229-L256",
+          "locator": "packages/core/src/tool/plugin/subagent.ts：background 分支、jobs.block 与 Effect.onInterrupt",
+          "lines": "L229-L256",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "委派等待与取消",
+          "note": "后台立即返回；前台阻塞等待结果，被中断时自动 interrupt 子会话并 cancel 作业。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/subagent-job.ts#L30-L70",
+          "locator": "packages/core/src/session/subagent-job.ts：notify、background",
+          "lines": "L30-L70",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "后台委派",
+          "note": "后台子代理完成后由观察者把结果投递给父会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/tools.mdx#L209-L223",
+          "locator": "services/site/src/docs/content/tools.mdx：Automation › Subagent",
+          "lines": "L209-L223",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "委派工具",
+          "note": "前台等待结果，background: true 立即返回并在完成时通知父代理；默认嵌套深度为一。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "后台子代理在父会话被中断时是否被取消，只查了 subagent.ts、subagent-job.ts、session.ts 的 interrupt/remove（remove 会级联删子会话，但那是删除而非取消），没找到自动取消，因此记 some_paths；也可能另有路径没查到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_scope": "some_paths"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具（read、edit、shell、subagent、execute 等）作为 core 内置插件实现；用户插件（opencode.json 的 plugins 或 .opencode/plugins/ 下的 .ts/.js）可经 ctx.tool.transform 注册新工具；MCP 服务器在配置里加一条即接入，工具默认经 Code Mode execute 的命名空间调用。默认不配置 MCP 服务器、没有用户插件。未见把用户脚本按名注册成工具的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/internal.ts#L244-L309",
+          "locator": "packages/core/src/plugin/internal.ts：内置插件列表",
+          "lines": "L244-L309",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置工具",
+          "note": "各内置工具插件写在 core 里并默认注册。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/plugins/server.mdx#L969-L1054",
+          "locator": "services/site/src/docs/content/build/plugins/server.mdx：API › Tools",
+          "lines": "L969-L1054",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "插件接口",
+          "note": "服务端插件经 ctx.tool.transform 添加工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/plugins.mdx#L1-L50",
+          "locator": "services/site/src/docs/content/plugins.mdx：Configure、Discover",
+          "lines": "L1-L50",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "插件装载",
+          "note": "在配置里列插件或在 .opencode/plugins/ 放文件即装载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/tools.mdx#L295-L310",
+          "locator": "services/site/src/docs/content/tools.mdx：Extensions",
+          "lines": "L295-L310",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "MCP 工具",
+          "note": "MCP 服务器提供的工具默认经 execute 在服务器命名空间下调用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "内置浏览器插件 @opencode/plugin-browser 是独立包但由 core 默认注册，算 internal_code 还是 plugin_api 的 in_use_by_default 有歧义；这里只把 internal_code 记为默认在用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：每个会话自动装载全局与工作区到项目根的 AGENTS.md（读到子目录时再装载嵌套的）。skill_directory：扫描 .opencode/skills 等目录，相关时广告，模型用 skill 工具装载全文。role_template：.opencode/agents/ 下的代理定义，可选为主代理或由主代理派为子代理。prompt_template：.opencode/commands/ 下的命令文件变成斜杠命令，展开为一条提示。未见按名运行的多步工作流定义文件。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/instructions.mdx#L17-L43",
+          "locator": "services/site/src/docs/content/instructions.mdx：Scope",
+          "lines": "L17-L43",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "说明文件",
+          "note": "全局与各级 AGENTS.md 自动装载并合并。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/skills.mdx#L13-L66",
+          "locator": "services/site/src/docs/content/skills.mdx：Workflow、Create、Discovery",
+          "lines": "L13-L66",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "技能",
+          "note": "技能目录自动发现，相关时广告，模型用 skill 工具装载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/agents.mdx#L1-L118",
+          "locator": "services/site/src/docs/content/agents.mdx：开头示例、Selection、Modes",
+          "lines": "L1-L118",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "代理定义",
+          "note": "用 Markdown 或 JSONC 定义命名代理，可作主代理或子代理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/commands.mdx#L1-L18",
+          "locator": "services/site/src/docs/content/commands.mdx：开头示例",
+          "lines": "L1-L18",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "命令模板",
+          "note": "命令文件变成斜杠命令，参数填入模板后作为一条用户提示提交。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "命令模板里的 !`…` shell 块由框架在展开时执行（commands.mdx Shell 小节），但装载的主体仍是提示文字，所以 executable_items 记 []；码本没说明“提示模板里嵌框架执行的命令”算不算可执行项。带 subagent: true 的命令仍是单步模板，按 scope_rule 记 prompt_template。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "服务端插件钩子：session 的 prompt（提交后、入队前，可改写）→ input；context、model.request、http.request/response 等 → model_call；compaction（可直接给出摘要）→ context_compaction；tool 的 execute.before/after 与 permission 的 evaluate → tool_before_after；session 的 experimental.idle（会话将要空闲时运行，可注入输入继续）→ end。会话创建只能经 ctx.event.subscribe 订阅 session.created 事件观察 → session_start（仅观察）。未见保存前后的钩子。默认已挂处理器：内置 identity、verbosity、subagent 等插件挂 context/compaction，tool-input-repair 挂 execute.before/after，policy 挂 permission.evaluate，goal 挂 experimental.idle。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/plugin/src/effect/session.ts#L181-L213",
+          "locator": "packages/plugin/src/effect/session.ts：SessionIdle、SessionHooks",
+          "lines": "L181-L213",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话钩子清单",
+          "note": "会话钩子有 prompt、context、compaction、model.request、http、retry、experimental.idle 等；idle 钩子可在会话空闲前注入输入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/plugins/server.mdx#L1348-L1440",
+          "locator": "services/site/src/docs/content/build/plugins/server.mdx：Hooks › Sessions（Prompt admission、Model requests）",
+          "lines": "L1348-L1440",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "插件钩子",
+          "note": "prompt 钩子可改写提交的提示；context 与 compaction 钩子可改写模型请求、给出压缩摘要。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/plugins/server.mdx#L1707-L1811",
+          "locator": "services/site/src/docs/content/build/plugins/server.mdx：Hooks › Permissions、Shell、Tools",
+          "lines": "L1707-L1811",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "插件钩子",
+          "note": "permission.evaluate 可改判定；tool 的 execute.before/after 可改输入和结果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/plugins/server.mdx#L1319-L1347",
+          "locator": "services/site/src/docs/content/build/plugins/server.mdx：API › Events",
+          "lines": "L1319-L1347",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "事件订阅",
+          "note": "插件可订阅服务器公开事件流，只接收事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/session-event.ts#L40-L259",
+          "locator": "packages/schema/src/session-event.ts：session.created、session.execution.* 事件",
+          "lines": "L40-L259",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "事件名",
+          "note": "事件流含 session.created 与 session.execution.succeeded/failed/interrupted。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/goal.ts#L205-L220",
+          "locator": "packages/core/src/plugin/goal.ts：ctx.session.hook(\"experimental.idle\")",
+          "lines": "L205-L220",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认已挂处理器",
+          "note": "内置 goal 插件默认在 idle（结束）点挂了处理器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/tool-input-repair.ts#L25-L51",
+          "locator": "packages/core/src/plugin/tool-input-repair.ts：execute.before/after",
+          "lines": "L25-L51",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认已挂处理器",
+          "note": "内置插件默认挂工具前后钩子。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "experimental.idle 名字带 experimental 但未见 flag 门控，且没写进 server.mdx 文档，按源码记为 end。session_start 只能经通用事件流观察；按“只能观察的通知事件仍记入 value”记入，但事件订阅算不算“挂处理器”码本可再说明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction"
+        ],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess",
+        "library",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：opencode acp 以 Agent Client Protocol 服务端身份供 Zed 等客户端驱动。cli_subprocess：opencode run 非交互模式，--format json 输出结构化结果。library：官方包 @opencode/sdk 在调用方进程内组装服务器、运行会话。service_api：opencode serve 与默认自动拉起的共享后台服务提供有 API 参考的 HTTP 接口，@opencode/client 是其客户端。VS Code 扩展的 activate 不导出接口，未见宿主扩展接口。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/acp.mdx#L1-L22",
+          "locator": "services/site/src/docs/content/cli/acp.mdx：开头",
+          "lines": "L1-L22",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "公共协议",
+          "note": "opencode acp 作为 ACP 代理供 ACP 客户端启动。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/commands.mdx#L8-L86",
+          "locator": "services/site/src/docs/content/cli/commands.mdx：run",
+          "lines": "L8-L86",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "非交互模式",
+          "note": "opencode run 接受任务并可按 JSON 输出，含 CI 用法。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/sdk/index.mdx#L1-L30",
+          "locator": "services/site/src/docs/content/build/sdk/index.mdx：Overview、Create a host",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "库",
+          "note": "@opencode/sdk 在应用进程内承载 OpenCode，不开 HTTP 监听。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/index.mdx#L46-L69",
+          "locator": "services/site/src/docs/content/cli/index.mdx：Background service",
+          "lines": "L46-L69",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务接口／默认入口",
+          "note": "默认发现或启动共享后台服务器，指向 API 参考里的服务端点。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/build/client/index.mdx#L1-L25",
+          "locator": "services/site/src/docs/content/build/client/index.mdx：开头",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务接口",
+          "note": "@opencode/client 是 OpenCode HTTP API 的 TypeScript 客户端。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 记 service_api 的依据是默认入口会自动拉起共享后台服务，它开放有文档的 HTTP API；如果码本认为默认入口只看 TUI 本身，这一项应去掉。@opencode/client 只包 HTTP，按 service_api 记，不计入 needs_official_package。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在 TUI 输入新任务；外部程序经 run、acp、HTTP 服务和 SDK 提交任务（口径同 F32）。可选：experimental.schedules 打开后才有定时任务工具（向会话投递提示）；experimental.console_watches 打开后经 OpenCode Console 监视 Slack、GitHub 等事件唤醒会话；两者在正式版默认关闭，按总则 R3 第三档不进取值。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/commands.mdx#L8-L86",
+          "locator": "services/site/src/docs/content/cli/commands.mdx：run",
+          "lines": "L8-L86",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "API 入口",
+          "note": "非交互模式由脚本传入任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/schema/src/config/flag.ts#L6-L21",
+          "locator": "packages/schema/src/config/flag.ts：registry（schedules、console_watches）",
+          "lines": "L6-L21",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "定时与外部事件开关",
+          "note": "flag 在正式版默认关闭，schedules 与 console_watches 都是 flag。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/flag.ts#L33-L34",
+          "locator": "packages/core/src/flag.ts：onByDefault",
+          "lines": "L33-L34",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "发行渠道默认",
+          "note": "只有 local、dev 渠道默认打开 flag，正式发行渠道关闭。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/tui.mdx#L17",
+          "locator": "services/site/src/docs/content/cli/tui.mdx：输入框说明",
+          "lines": "L17",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "用户交互",
+          "note": "用户在 TUI 输入框提交、steer 或排队提示。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "via_default_entry 的 api 与 F32 同口径：默认入口自动拉起的共享后台服务开放 HTTP API。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "默认 opencode 发现或启动一个按用户共享的后台服务器（opencode serve --service），以 detached 子进程拉起并 unref，脱离终端常驻；TUI 只是客户端。未见注册给 launchd/systemd 的代码。其他环境：--standalone 用私有服务进程，--server 连指定服务；可选：opencode service set disabled true 改为私有服务器默认。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/client/src/service-contender.ts#L14-L43",
+          "locator": "packages/client/src/service-contender.ts：spawnServiceContender",
+          "lines": "L14-L43",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认首次启动",
+          "note": "以 detached: true 启动服务进程并 unref。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/client/src/effect/service.ts#L45-L70",
+          "locator": "packages/client/src/effect/service.ts：ensure",
+          "lines": "L45-L70",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认首次启动",
+          "note": "复用健康的服务，否则以 opencode serve --service 拉起。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/index.mdx#L46-L69",
+          "locator": "services/site/src/docs/content/cli/index.mdx：Background service",
+          "lines": "L46-L69",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "共享后台服务器拥有会话、配置、权限与工具执行，各客户端连接它。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "continues_after_ui_exit 记 yes 是推断：执行在服务器进程里，默认入口的处理代码里没看到退出时中断会话；没有文档正面写“关掉 TUI 任务继续”。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "待处理输入（steer 与 queue）写进数据库的 session inbox 表；执行开始时写持久认领，服务器启动时 resumeSuspendedSessions 恢复崩溃或重启中断的回合（每回合最多 10 次）并恢复仍在跑的后台子代理作业。运行中 Enter 为 steer、Ctrl+X Enter 为排队。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/execution/restart.ts#L15-L60",
+          "locator": "packages/core/src/session/execution/restart.ts：SessionRestart 说明与选项",
+          "lines": "L15-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "崩溃恢复",
+          "note": "崩溃、SIGKILL、优雅重启留下的持久认领在下次启动时恢复执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/execution/restart.ts#L220-L258",
+          "locator": "packages/core/src/session/execution/restart.ts：resumeSuspendedSessions",
+          "lines": "L220-L258",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "崩溃恢复",
+          "note": "恢复待完成的后台作业与挂起会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/server/src/process.ts#L248-L252",
+          "locator": "packages/server/src/process.ts：installRestartContinuity",
+          "lines": "L248-L252",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "服务启动",
+          "note": "服务器进程启动时运行恢复扫描。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/session/inbox.ts#L22-L60",
+          "locator": "packages/core/src/session/inbox.ts：SessionInbox（Database、SessionInboxTable）",
+          "lines": "L22-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互输入队列",
+          "note": "排队与 steer 的输入存在数据库表里，按 steer/input 边界提升。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "执行回合的崩溃恢复证据直接；交互输入队列记 persistent 是推断：inbox 行在数据库里，恢复的回合会经 runner 提升待处理行，但没逐行核对空闲会话里只剩排队行时重启后是否自动处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "persistent"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval"
+      ],
+      "unknown_reason": null,
+      "value_note": "权限：读取 .env 与无规则匹配的请求为 ask，代理暂停等待用户批准；默认主代理 build 允许 question 工具，可停下向用户提问。可选：TUI 的系统通知与提示音（attention.notifications、attention.sound）默认 false，要在 cli.json 打开。可选：/goal 设定的目标会持久保存，暂停后等用户 /goal resume（第二档，不进取值）。未见结构化交接对象。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/permission.ts#L94-L104",
+          "locator": "packages/core/src/permission.ts：规则判定",
+          "lines": "L94-L104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "没有规则匹配时为 ask，需用户批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/core/src/plugin/agent.ts#L52-L94",
+          "locator": "packages/core/src/plugin/agent.ts：build 代理规则",
+          "lines": "L52-L94",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主代理",
+          "note": "build 允许 question 工具，可向用户提问并等待回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/packages/tui/src/config/index.tsx#L307-L314",
+          "locator": "packages/tui/src/config/index.tsx：attention 默认值",
+          "lines": "L307-L314",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "通知默认",
+          "note": "系统通知与提示音默认 false。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/anomalyco/opencode/blob/fedc6f208aa2bd54c1019227214568083f6380ad/services/site/src/docs/content/cli/config.mdx#L217-L247",
+          "locator": "services/site/src/docs/content/cli/config.mdx：Alerts",
+          "lines": "L217-L247",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "通知设置",
+          "note": "系统通知与提示音要在 cli.json 打开。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "只核对了 TUI 的 attention 通知；终端标题或其他状态序列是否默认发出没有查。/goal 暂停后等用户决定恢复，接近 resumable_todo，但要用户先用斜杠命令设目标，按第二档写进 value_note。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

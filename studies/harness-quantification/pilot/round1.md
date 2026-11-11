@@ -67,4 +67,4 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 这一轮的编码文件在哪里
 
-这一轮的 20 份编码文件在提交 `eb029f2` 的 `data/codings/` 下，按码本 `fields-0.2` 填写。码本修订为 `fields-0.3` 时把它们从工作树里移走了：重新编码的编码者能看到仓库，手边不该有上一次的答案。重新编码完成后，这些文件连同当时的码本归档到 `pilot/round1/`。
+这一轮的 20 份编码文件在提交 `eb029f2` 的 `data/codings/` 下，按码本 `fields-0.2` 填写。码本修订为 `fields-0.3` 时把它们从工作树里移走了：重新编码的编码者能看到仓库，手边不该有上一次的答案。重新编码已经完成（见 [`round2.md`](round2.md)），这些文件连同当时的码本 `fields-0.2.json` 归档在 [`round1/`](round1/)，不参加现在的校验和对比。

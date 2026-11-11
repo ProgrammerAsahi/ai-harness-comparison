@@ -1,0 +1,2135 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.3",
+  "synthetic": false,
+  "round": "pilot-1",
+  "config_id": "A02__codex__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "Claude Opus 5.5",
+    "prompt_version": "coding-card-v4",
+    "coded_at": "2026-11-11"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-11",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主要入口是模型循环：模型的工具调用由框架执行、结果交回模型，直到模型不再需要后续、发出最终消息（final 频道）为止。secondary_modes 记 explicit_workflow（模型现写）：钉住型号 gpt-6.1-sol 的 tool_mode 为 code_mode_only，模型在一次 exec 调用里现写 JavaScript，由代码模式运行时按脚本依次调用嵌套工具，嵌套在模型循环内部。可选：/plan 计划模式、/review、codex exec 非交互子命令仍是模型循环；/goal 目标续跑是回合之间自动续发的外层，按口径不另记。其他环境：型号目录 tool_mode 不是 code_mode 的型号走直接工具，没有这一层嵌套。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L750-L790",
+          "locator": "codex-rs/core/src/session/turn.rs › run_turn 循环：!needs_follow_up 时运行 Stop 钩子后结束本轮",
+          "lines": "L750-L790",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "模型回复不再需要后续（无工具调用待处理）时，框架运行 Stop 钩子并结束本轮；钩子 should_block 时注入续写提示继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L248",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol（tool_mode code_mode_only、multi_agent_version v2、prefer_websockets、use_responses_lite）",
+          "lines": "L177-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的默认型号",
+          "note": "钉住型号的内置目录条目：工具模式为 code_mode_only，多代理用 v2 工具，优先 WebSocket 传输。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/code-mode-protocol/src/description.rs#L16-L46",
+          "locator": "codex-rs/code-mode-protocol/src/description.rs › exec 工具说明（嵌套工具挂在全局 tools 对象上，如 await tools.exec_command(...)）",
+          "lines": "L16-L46",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具表达",
+          "note": "模型在脚本里经 tools 对象调用嵌套工具（shell、MCP 等），由框架分派到真实工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/cli/slash-commands",
+          "locator": "Slash commands in Codex CLI › Built-in slash commands（/plan、/goal 等）（快照 docs-llms-full.txt）",
+          "lines": "docs-llms-full.txt L10123-L10190",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选路径",
+          "note": "官方命令列表：/plan 切换计划模式、/goal 设定持续目标等，都是用户显式进入的路径。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "代码模式（模型现写脚本、运行时按脚本调用多个工具）同时符合 F01 explicit_workflow 的“模型现写”嵌套层和 F10 script_dispatch，两处都记了；R8 没有把这对列为只在一处计，请确认是否应只记在 F10。另：goal 扩展的 create_goal 工具默认注册给模型，说明写“只在用户明确要求时创建”，代码不拦（R3 第一档按代码算），但 F03/F04 字段定义把目标续跑定为用户先设定的可选路径，两处口径有张力。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known_absent",
+      "value": "none",
+      "unknown_reason": null,
+      "value_note": "钉住型号 gpt-6.1-sol 的默认指令（models.json instructions_template）没有要求先写出计划，只在进度说明（commentary）里顺带提到 plans for the turn，按口径记 none；计划工具 update_plan 自 0.152.0 起默认关闭、需改设置开启，本提交不注册。可选：/plan 进入计划模式（用户显式进入，第二档）；可选：设 tools.update_plan.enabled = true 开启结构化计划工具（第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L2826-L2832",
+          "locator": "codex-rs/core/src/config/mod.rs › resolve_update_plan_enabled",
+          "lines": "L2826-L2832",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "只有配置写了 tools.update_plan.enabled = true 时计划工具才开启；默认关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1301-L1303",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › update_plan_enabled 为真才 registry.add(PlanHandler)",
+          "lines": "L1301-L1303",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "计划工具（update_plan）默认不注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L248",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol（tool_mode code_mode_only、multi_agent_version v2、prefer_websockets、use_responses_lite）",
+          "lines": "L177-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的默认型号",
+          "note": "钉住型号的内置目录条目：工具模式为 code_mode_only，多代理用 v2 工具，优先 WebSocket 传输。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/cli/slash-commands",
+          "locator": "Slash commands in Codex CLI › /plan（Switch to plan mode and optionally send a prompt）（快照 docs-llms-full.txt）",
+          "lines": "docs-llms-full.txt L10182",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选路径",
+          "note": "计划模式由用户用 /plan 进入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "已查默认系统提示（钉住型号的 instructions_template）、默认工具注册（spec_plan.rs）和内置协作模式（Default/Plan，Plan 只能由用户切换）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型不再请求工具、把最终消息发到 final 频道时框架结束本轮；用户可在进行中中断当前回合（Op::Interrupt）。默认不设任务级 Token、步数、时长或金额上限（token_budget、rollout_budget 默认关），子代理也没有默认用量上限，所以不含 budget。可选：Stop 钩子（hooks 特性默认开，但要用户写脚本）可以拦住结束；可选：/goal 目标续跑在目标 complete、blocked、paused 或 token_budget 用尽时停下，token_budget 默认不设上限（max_goal_token_budget 默认 None）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L750-L790",
+          "locator": "codex-rs/core/src/session/turn.rs › run_turn 循环：!needs_follow_up 时运行 Stop 钩子后结束本轮",
+          "lines": "L750-L790",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "模型回复不再需要后续（无工具调用待处理）时，框架运行 Stop 钩子并结束本轮；钩子 should_block 时注入续写提示继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/protocol/src/protocol.rs#L694-L702",
+          "locator": "codex-rs/protocol/src/protocol.rs › Op::Interrupt（Abort current task …）",
+          "lines": "L694-L702",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认主循环",
+          "note": "协议提供中断当前任务的操作，界面经它停止进行中的回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/hooks/src/events/stop.rs#L240-L310",
+          "locator": "codex-rs/hooks/src/events/stop.rs › Stop 钩子聚合 should_block",
+          "lines": "L240-L310",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "扩展点",
+          "note": "Stop 钩子可以阻止结束并给出续写提示；默认安装没有钩子内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L2120-L2137",
+          "locator": "codex-rs/features/src/lib.rs › token_budget、rollout_budget 特性（UnderDevelopment，default_enabled: false）",
+          "lines": "L2120-L2137",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认上限",
+          "note": "按 Token 的任务预算与共享 rollout 预算默认都关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "verification_condition 未计入：hooks 特性默认开启、Stop 钩子能拦住结束，但默认安装没有任何钩子内容。F03 写“默认安装就启用的插件或钩子做这件事的也算”，而 R2 又说用户只需添加一个脚本就能用的扩展点算开放，两条对“空扩展点”的处理不一致，这里按 F03 的字段口径判为不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型流或请求出错时框架按退避自动重发（流默认 5 次、请求 4 次，unbounded_connection_retries 默认开、连接失败持续重连，用尽后从 WebSocket 回退 HTTPS 再试）；工具出错、未知工具、沙箱拒绝都作为工具结果交回模型自修。内容过滤拒绝时注入指引后用同一型号重发（同属重试）。escalate_to_human 不计：默认 on-request 下沙箱拒绝不由框架发起放行请求（UnlessTrusted 或 granular sandbox_approval 才会），模型自己带提权参数重新请求属于 F22。其他环境：开启托管网络代理时，网络被拦可在 on-request 下由框架发起网络放行请求，默认未启用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/responses_retry.rs#L58-L135",
+          "locator": "codex-rs/core/src/responses_retry.rs › handle_response_stream_error（按 retry_delay 退避重试；连接失败无上限重连；用尽后从 WebSocket 回退到 HTTPS）",
+          "lines": "L58-L135",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用出错",
+          "note": "模型流出错时框架不经模型自动重发，连接失败按退避等待重连。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/model-provider-info/src/lib.rs#L73-L79",
+          "locator": "codex-rs/model-provider-info/src/lib.rs › DEFAULT_STREAM_MAX_RETRIES = 5、DEFAULT_REQUEST_MAX_RETRIES = 4",
+          "lines": "L73-L79",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型调用出错",
+          "note": "默认重试次数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/registry.rs#L767-L788",
+          "locator": "codex-rs/core/src/tools/registry.rs › dispatch：未注册的工具 → FunctionCallError::RespondToModel(unsupported call)",
+          "lines": "L767-L788",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具调用出错",
+          "note": "未知工具等错误以工具结果形式交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/stream_events_utils.rs#L412-L420",
+          "locator": "codex-rs/core/src/stream_events_utils.rs › RespondToModel → FunctionCallOutput",
+          "lines": "L412-L420",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具调用出错",
+          "note": "工具层错误转成 FunctionCallOutput 回传给模型，由模型改正。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/orchestrator.rs#L446-L470",
+          "locator": "codex-rs/core/src/tools/orchestrator.rs › 沙箱拒绝后：wants_no_sandbox_approval 为假时直接返回拒绝",
+          "lines": "L446-L470",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "on-request 下沙箱拒绝不由框架自动发起放行请求，拒绝结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/sandboxing.rs#L349-L356",
+          "locator": "codex-rs/core/src/tools/sandboxing.rs › wants_no_sandbox_approval：OnRequest => false",
+          "lines": "L349-L356",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "默认审批策略 on-request 下，沙箱失败后不自动请求无沙箱重跑。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有找到框架按输入模式改正参数或工具名的逻辑（未知工具名直接报错回传），framework_input_repair 不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "全新安装首次启动时，TUI 默认拉起一个脱离终端的共享 app-server 守护进程（执行核心在其中运行），界面经本地 Unix 套接字上的 app-server 协议连接；同一服务可供多个前端共用，退出 TUI 后继续运行。其他环境：加 --no-daemon、WSL 的 drvfs 目录、云提供方登录向导或连接远程工作区时退回进程内嵌入（in_process）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/startup_orchestration.rs#L570-L640",
+          "locator": "codex-rs/tui/src/startup_orchestration.rs › auto_start_daemon 判定与 codex_app_server_daemon::start_with_features → AppServerTarget::LocalDaemon{UnixSocket}",
+          "lines": "L570-L640",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "选定入口（TUI）",
+          "note": "daemon_auto_start 开启、未加 --no-daemon、未连远程时，TUI 启动或复用后台 app-server 守护进程，经本地 Unix 套接字连接。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1099-L1104",
+          "locator": "codex-rs/features/src/lib.rs › daemon_auto_start：Stable，default_enabled: true",
+          "lines": "L1099-L1104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "选定入口（TUI）",
+          "note": "自动拉起守护进程的开关默认开启。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "执行核心在 app-server 守护进程里（F05）。shell 命令（unified_exec）为每条命令起子进程并套操作系统沙箱；workspace-write 下文件写入（apply_patch 等）经沙箱化辅助子进程，读文件和查看图片在核心进程内完成；代码模式的 JavaScript 在核心拉起的 codex-code-mode-host 子进程里运行，嵌套工具调用回到核心分派。可选：用户添加的 stdio MCP 服务由核心拉起，属子进程。默认开启的 apps（ChatGPT 连接器）在云端执行，不计入本地基线。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/exec-server/src/local_file_system.rs#L91-L122",
+          "locator": "codex-rs/exec-server/src/local_file_system.rs › file_system_for_reads / file_system_for_writes",
+          "lines": "L91-L122",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式（workspace-write）",
+          "note": "沙箱策略有全盘读权限时读文件在核心进程内完成；写入受限时改走沙箱化文件系统。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/exec-server/src/fs_sandbox.rs#L522-L554",
+          "locator": "codex-rs/exec-server/src/fs_sandbox.rs › spawn_command（沙箱化文件操作另起辅助子进程）",
+          "lines": "L522-L554",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式（workspace-write）",
+          "note": "受沙箱限制的文件写入在辅助子进程里执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/exec-server/src/environment.rs#L789-L808",
+          "locator": "codex-rs/exec-server/src/environment.rs › Environment::local（exec_backend LocalProcess、filesystem LocalFileSystem）",
+          "lines": "L789-L808",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认本地环境",
+          "note": "默认本地环境用 LocalProcess 起命令进程，不经独立服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/exec-server/src/local_process.rs#L2160-L2170",
+          "locator": "codex-rs/exec-server/src/local_process.rs › codex_utils_pty::spawn_from_driver",
+          "lines": "L2160-L2170",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "命令执行",
+          "note": "shell 命令经 PTY 子进程运行（统一执行默认开）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/code-mode/src/remote_session/connection.rs#L161-L176",
+          "locator": "codex-rs/code-mode/src/remote_session/connection.rs › Connection::spawn（Command::new(host_program)，stdin/stdout 管道，kill_on_drop）",
+          "lines": "L161-L176",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具执行位置",
+          "note": "代码模式的 JavaScript 运行在由核心拉起的 codex-code-mode-host 子进程里。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "文件读写分在进程内和辅助子进程两处，依据 should_read_from_sandbox/should_write_into_sandbox 推断；没有逐个核对每个文件类工具（apply_patch、view_image）是否都经 LocalFileSystem。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话历史由执行核心（守护进程里的 app-server/core）持有并写入本机 rollout 文件（另有默认开启的 sqlite 状态库，同样由核心维护）；TUI 只显示，恢复时经 app-server 的 thread/resume 由核心读回。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/recorder.rs#L1-L86",
+          "locator": "codex-rs/rollout/src/recorder.rs › RolloutRecorder（Persist Codex session rollouts (.jsonl)）",
+          "lines": "L1-L86",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话持久化",
+          "note": "核心把会话条目写成 CODEX_HOME/sessions 下的 JSONL rollout。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/thread_manager.rs#L1455-L1470",
+          "locator": "codex-rs/core/src/thread_manager.rs › resume_thread_with_history（以读回的 InitialHistory 恢复线程）",
+          "lines": "L1455-L1470",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话恢复",
+          "note": "恢复会话时由核心从 rollout 读回历史。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话靠线程编号区分，历史按编号存成单独文件；多个会话共用同一守护进程和同一工作目录。可选：启动时加 --worktree 为会话建独立工作树（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/list.rs#L420-L430",
+          "locator": "codex-rs/rollout/src/list.rs › 目录布局 sessions/YYYY/MM/DD/rollout-…-<uuid>.jsonl",
+          "lines": "L420-L430",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "每个会话按线程 UUID 单独存放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/startup_orchestration.rs#L541-L569",
+          "locator": "codex-rs/tui/src/startup_orchestration.rs › cli.shared.worktree 时才 worktree_startup::prepare",
+          "lines": "L541-L569",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "可选路径",
+          "note": "独立工作树只在启动参数 --worktree 时创建。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "value_note": "核心只说 OpenAI Responses 协议（WireApi 只有 Responses）；WebSocket 与 HTTPS 只是同一消息格式的两种传输，use_responses_lite 是同一接口的精简变体；Amazon Bedrock、本地 Ollama/LM Studio 等提供方都按 Responses 兼容端点接入，只差地址和认证。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/model-provider-info/src/lib.rs#L116-L120",
+          "locator": "codex-rs/model-provider-info/src/lib.rs › enum WireApi { Responses }",
+          "lines": "L116-L120",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "模型接口",
+          "note": "提供方配置只支持 Responses 一种接口协议。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L248",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol（tool_mode code_mode_only、multi_agent_version v2、prefer_websockets、use_responses_lite）",
+          "lines": "L177-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的默认型号",
+          "note": "钉住型号的内置目录条目：工具模式为 code_mode_only，多代理用 v2 工具，优先 WebSocket 传输。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型经 Responses 原生的函数/自定义（自由格式）工具调用字段发出调用；钉住型号 gpt-6.1-sol 为 code_mode_only，模型主要调用 exec 写 JavaScript，脚本里经 tools 对象调用 exec_command、MCP 等嵌套工具，由框架分派（script_dispatch）；MCP 默认开放，用户添加一条 mcp_servers 配置就能用，框架把 MCP 工具包装成模型可调用的工具并转成 MCP 请求（protocol_translation）。解析失败、未知工具都以工具结果交回模型。其他环境：tool_mode 为 direct 的型号直接暴露各工具，没有 script_dispatch。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/code_mode/execute_spec.rs#L5-L26",
+          "locator": "codex-rs/core/src/tools/code_mode/execute_spec.rs › create_code_mode_tool（exec 自由格式工具，lark 语法）",
+          "lines": "L5-L26",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具表达",
+          "note": "代码模式只向模型暴露一个自由格式的 exec 工具，模型写 JavaScript。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/code-mode-protocol/src/description.rs#L16-L46",
+          "locator": "codex-rs/code-mode-protocol/src/description.rs › exec 工具说明（嵌套工具挂在全局 tools 对象上，如 await tools.exec_command(...)）",
+          "lines": "L16-L46",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具表达",
+          "note": "模型在脚本里经 tools 对象调用嵌套工具（shell、MCP 等），由框架分派到真实工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/mod.rs#L66-L88",
+          "locator": "codex-rs/core/src/tools/mod.rs › requested_tool_mode / effective_tool_mode",
+          "lines": "L66-L88",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工具暴露方式",
+          "note": "型号目录给出 tool_mode 时优先采用；CodeModeOnly 不回退为直接工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L248",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol（tool_mode code_mode_only、multi_agent_version v2、prefer_websockets、use_responses_lite）",
+          "lines": "L177-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的默认型号",
+          "note": "钉住型号的内置目录条目：工具模式为 code_mode_only，多代理用 v2 工具，优先 WebSocket 传输。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/mcp_tool_call.rs#L137-L145",
+          "locator": "codex-rs/core/src/mcp_tool_call.rs › handle_mcp_tool_call",
+          "lines": "L137-L145",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "外部工具协议",
+          "note": "把模型对 MCP 工具的调用转成 MCP 服务的 tools/call 请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/mcp",
+          "locator": "Model Context Protocol › Connect an existing MCP server（快照 docs-llms-full.txt）",
+          "lines": "docs-llms-full.txt L33304-L33320",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "外部工具协议",
+          "note": "官方文档：在 Codex（含 CLI）里添加 MCP 服务即可使用其工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环默认用钉住的 gpt-6.1-sol；子代理默认继承父代理型号和推理强度，内置角色（default、explorer、worker）不另配型号，所以没有 per_role。v2 的 spawn_agent 默认向模型开放 model 和 reasoning_effort 参数，主模型可为子代理指定型号或强度（model_selected_delegation）。auxiliary_models 记 single_fixed：远程上下文压缩用当前型号；审批自动审核（guardian）默认不启用（approvals_reviewer = user）。可选：/model 切换型号；可选：agents.default_subagent_model 配置子代理默认型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L650-L685",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_spec.rs › spawn_agent_common_properties_v2（model、reasoning_effort 参数）",
+          "lines": "L650-L685",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "v2 spawn_agent 带 model 与 reasoning_effort 覆盖参数；省略时继承父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L1412-L1432",
+          "locator": "codex-rs/core/src/config/mod.rs › MultiAgentV2Config::defaults_for_max_concurrency（expose_spawn_agent_model_overrides: true）",
+          "lines": "L1412-L1432",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "默认向模型开放型号/推理强度覆盖参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/agent/role.rs#L344-L389",
+          "locator": "codex-rs/core/src/agent/role.rs › built_in::configs（default、explorer、worker；explorer.toml 为空）",
+          "lines": "L344-L389",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理角色",
+          "note": "内置角色不指定不同型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L248",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol（tool_mode code_mode_only、multi_agent_version v2、prefer_websockets、use_responses_lite）",
+          "lines": "L177-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的默认型号",
+          "note": "钉住型号的内置目录条目：工具模式为 code_mode_only，多代理用 v2 工具，优先 WebSocket 传输。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/compact_remote_v2_installation.rs#L240-L248",
+          "locator": "codex-rs/core/src/compact_remote_v2_installation.rs › 压缩请求用 compaction_turn_context 的型号",
+          "lines": "L240-L248",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "辅助调用",
+          "note": "上下文压缩用当前回合的型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "辅助调用只核对了上下文压缩；标题生成、记忆（memories 默认关）等没有逐一查。失败回退：只见到请求的型号不可用时换成提供方默认型号的会话启动逻辑（allow_provider_model_fallback），不是调用失败后的换型重发，未记 failover。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "固定提交的配置模式（core/config.schema.json）里没有默认生效的 Token、调用次数、时长或金额上限：token_budget、rollout_budget 特性默认关，钉住型号目录里的 token_budget 段 enabled 为 false；请求不设 max_output_tokens，输出不完整直接作为错误返回。不计入：自动压缩触发点、工具输出截断（10000 Token）、子代理并发数。可选：features.rollout_budget（limit_tokens，enforce_limit 默认停下）、goals.max_goal_token_budget、/goal 带 token_budget 的目标续跑（预算用尽即停）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L2120-L2137",
+          "locator": "codex-rs/features/src/lib.rs › token_budget、rollout_budget 特性（UnderDevelopment，default_enabled: false）",
+          "lines": "L2120-L2137",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认上限",
+          "note": "按 Token 的任务预算与共享 rollout 预算默认都关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/rollout_budget.rs#L1-L60",
+          "locator": "codex-rs/core/src/rollout_budget.rs › RolloutBudget（未配置时 record_usage 返回 false）",
+          "lines": "L1-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认上限",
+          "note": "共享 rollout Token 预算只在配置后生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L2955-L2990",
+          "locator": "codex-rs/core/src/session/turn.rs › ResponseIncomplete 只记用量后作为错误返回",
+          "lines": "L2955-L2990",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "输出截断",
+          "note": "模型输出不完整时不续写，作为普通错误结束；框架自己不为单次输出设上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/config/src/config_toml.rs#L757-L790",
+          "locator": "codex-rs/config/src/config_toml.rs › GoalsToml.max_goal_token_budget、AgentsToml（无默认用量上限）",
+          "lines": "L757-L790",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认上限",
+          "note": "目标预算与子代理配置都没有默认用量阈值。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "F12 状态为 known_absent 时 hard_stop/soft_notice/mode_unknown 按“value 子集只在 known 时填”留 null。create_goal 工具允许模型自填 token_budget，代码不拦（说明只叫模型在用户明确要求时设），按 R3 第一档可以算模型可选参数，但它没有默认阈值，按 F12“默认带有阈值”口径不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每轮在 run_turn 里用 sess.clone_history() 取运行中维护的 ContextManager（ResponseItem 列表），run_sampling_request 再经 for_prompt 做规范化、去掉不支持的图像音频、替换无法解析的图片后整份交给 build_prompt 发出。环境说明、权限、AGENTS.md 等“world state”按差量作为消息记进同一份历史，不是独立投影的请求主体；rollout 里的类型化条目只在恢复时回放。子代理（multi_agent）走同一套会话代码。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L587-L601",
+          "locator": "codex-rs/core/src/session/turn.rs › run_turn：Construct the input that we will send to the model（clone_history → run_sampling_request）",
+          "lines": "L587-L601",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认路径主循环",
+          "note": "每轮请求从运行中维护的历史副本出发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L1838-L1858",
+          "locator": "codex-rs/core/src/session/turn.rs › run_sampling_request：history.for_prompt → build_prompt",
+          "lines": "L1838-L1858",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认路径主循环",
+          "note": "构造请求时直接取消息列表并修整后发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/context_manager/history.rs#L627-L657",
+          "locator": "codex-rs/core/src/context_manager/history.rs › ContextManager::for_prompt / for_prompt_annotated",
+          "lines": "L627-L657",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "上下文管理",
+          "note": "for_prompt 只做规范化和图像替换，返回现成的 ResponseItem 列表。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：工具输出（FunctionCallOutput／CustomToolCallOutput）记入运行中历史时按模型的截断策略截短，rollout 里保留全文。summarization：上下文到达自动压缩阈值时 run_auto_compact 自动压缩；钉住的 ChatGPT 登录走 OpenAI 提供方，RemoteCompactionSupport::V2，由服务端生成 Compaction 条目（encrypted_content，内容不可读），压缩时保留的用户消息另行截短属于摘要流程。其他环境：非 OpenAI 提供方走本地 run_inline_auto_compact_task（模型写可读摘要）。可选：/compact 手动压缩（总则 R3 第二档）；async_compaction、token_budget 默认关闭。本地压缩时对摘要器输入 remove_first_item 属辅助调用，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/context_manager/history.rs#L541-L601",
+          "locator": "codex-rs/core/src/context_manager/history.rs › record_annotated_items / record_item_with_metadata：truncate_function_output_payload",
+          "lines": "L541-L601",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "上下文管理",
+          "note": "工具输出进入运行中历史时被截短（Tool output truncation applies only to live history）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/turn.rs#L1592-L1690",
+          "locator": "codex-rs/core/src/session/turn.rs › run_auto_compact（RemoteCompactionSupport::V2 → run_inline_remote_auto_compact_task_v2；Unsupported → run_inline_auto_compact_task）",
+          "lines": "L1592-L1690",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认路径主循环",
+          "note": "到达阈值时自动压缩，按提供方能力选远端或本地压缩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/model-provider/src/capabilities.rs#L33-L42",
+          "locator": "codex-rs/model-provider/src/capabilities.rs › ProviderCapabilities::from_config",
+          "lines": "L33-L42",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的提供方",
+          "note": "OpenAI 提供方默认 remote_compaction = V2。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/protocol/src/models.rs#L1306-L1314",
+          "locator": "codex-rs/protocol/src/models.rs › ResponseItem::Compaction { encrypted_content }",
+          "lines": "L1306-L1314",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "压缩产物",
+          "note": "远端压缩产物是加密内容，不可读。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L2283-L2287",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec AsyncCompaction（default_enabled: false）；同文件 L2121-L2125 TokenBudget 也默认关闭",
+          "lines": "L2283-L2287",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认开关",
+          "note": "后台压缩与 token_budget 压缩路径默认不开。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有找到把已在上下文里的旧工具结果整条换成占位的默认机制（compact_retained_tool_outputs 只是在压缩时保留特定标记的输出，且 retain_client_tool_outputs 默认关），故未记 tool_result_replacement。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：用户可用 -i/--image 或在输入框粘贴图片，框架把本地图片读成 data URL 附进请求（UserInput::LocalImage）；输入里键入 @ 只是模糊搜索文件并把路径插进提示，文件内容由模型自己去读。默认注册的工具里没有框架自带的内容搜索、语义检索或符号查询工具（检索靠模型用 shell 自己跑 rg/grep，不计）。网页搜索默认 web_search = cached，不计入取值。技能目录（system skills 说明常驻、正文按需读取，skill_search 默认开）属“说明常驻、正文按需读取”的途径，写在这里不计。MCP 资源读取工具要用户另配 MCP 服务器，可选。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/protocol/src/user_input.rs#L28-L44",
+          "locator": "codex-rs/protocol/src/user_input.rs › UserInput::Image / LocalImage（converted to base64 data URL during request serialization）",
+          "lines": "L28-L44",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口输入",
+          "note": "用户指定的本地图片由框架读入请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Image inputs（Codex CLI：Paste an image into the interactive composer, or pass one or more files on the command line）；快照 docs-llms-full.txt",
+          "lines": "L36667-L36697",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口输入",
+          "note": "官方文档说明 CLI 可粘贴或用 -i 附图。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex CLI › Interactive shortcuts（Type @ to search for a file in the workspace and add its path to the prompt）；快照 docs-llms-full.txt",
+          "lines": "L10102-L10105",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口输入",
+          "note": "@ 只把路径加进提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1260-L1450",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › build_tool_router 中 registry.add(...) 的默认工具注册（exec_command、apply_patch、view_image、MCP 资源、plan 等）",
+          "lines": "L1260-L1450",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具清单",
+          "note": "默认工具清单里没有关键词、语义或结构检索工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "@ 文件提及只插入路径，严格说不算“由框架读入上下文”；本次只凭图片附件记 user_specified。若码本把“输入里引用文件路径”也算作用户指定，结论不变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：每次会话启动时自动读入 CODEX_HOME（~/.codex）下的 AGENTS.md（或 AGENTS.override.md）和从仓库根到工作目录各级的 AGENTS.md，拼进指令（F30 另记 project_rules）。可选：features.memories（Stable，默认 false）开启后有本地自动记忆，属总则 R3 第三档；chronicle 也默认关。~/.codex/history.jsonl 只是输入框历史，不带入模型上下文；网页搜索不算记忆。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/agents_md.rs#L1-L60",
+          "locator": "codex-rs/core/src/agents_md.rs › 模块说明与 load_project_instructions",
+          "lines": "L1-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "新会话开始",
+          "note": "启动时发现并加载用户级和项目级 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Custom instructions with AGENTS.md › How Codex discovers guidance；快照 docs-llms-full.txt",
+          "lines": "L563-L575",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "新会话开始",
+          "note": "官方文档：Codex 在开始工作前读 AGENTS.md，全局和项目两级。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1398-L1403",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec MemoryTool（key memories，default_enabled: false）",
+          "lines": "L1398-L1403",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认开关",
+          "note": "本地记忆功能默认关闭。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Memories › Configure local memories（Local Codex memories are off by default）；快照 docs-llms-full.txt",
+          "lines": "L18552-L18556",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认开关",
+          "note": "官方文档确认本地记忆默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话写成 rollout JSONL，每行是带类型的 RolloutItem（SessionMeta、ResponseItem、Compacted、TurnContext、WorldState、TokenUsageRecord、EventMsg 中的回合开始/结束、中止、回退等），消息只是其中一类，判 event_log。子代理各有自己的 rollout，父子关系另存 agent graph store。另有 SQLite 状态库（会话列表等元数据）和 shell 环境快照，属派生缓存或执行辅助，不计 state_snapshot；undo（GhostCommit）已移除，无工作区快照。附件存储只实现了 InlineAttachmentStore，图片内联在记录里，不计 external_reference。审批请求等瞬时事件不落盘。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/history/src/lib.rs#L214-L233",
+          "locator": "codex-rs/history/src/lib.rs › enum RolloutItem",
+          "lines": "L214-L233",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "持久化单位是多类型的 RolloutItem。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/policy.rs#L79-L101",
+          "locator": "codex-rs/rollout/src/policy.rs › should_persist_response_item",
+          "lines": "L79-L101",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "消息、工具调用与结果、推理、压缩等 ResponseItem 都持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/policy.rs#L127-L160",
+          "locator": "codex-rs/rollout/src/policy.rs › persisted_event_msg（TurnStarted、TurnComplete、TurnAborted、ThreadRolledBack、TokenCount 等）",
+          "lines": "L127-L160",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "回合与回退等独立事件也落盘。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1131-L1135",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec GhostCommit（key undo，Stage::Removed）",
+          "lines": "L1131-L1135",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工作区快照",
+          "note": "undo 快照功能已移除。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "官方入口 codex resume（含 --last）和会话内 /resume 读回 rollout，reconstruct_history_from_rollout 重建 ContextManager 历史，然后等待用户下一条输入；中断时未完成的调用不接续，由模型重新决定。后台守护进程重启时的 daemon recovery 也“using normal resume semantics”，对被打断的回合按记录的输入重新发起一回合，仍是重建后再运行。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Command line options › codex resume；快照 docs-llms-full.txt",
+          "lines": "L10053-L10061",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口恢复命令",
+          "note": "官方继续入口：按会话 ID 或最近一次会话继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/rollout_reconstruction.rs#L186-L215",
+          "locator": "codex-rs/core/src/session/rollout_reconstruction.rs › Session::reconstruct_history_from_rollout / ContextManager::reconstruct_rollout",
+          "lines": "L186-L215",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "恢复流程",
+          "note": "恢复时回放 rollout 重建对话历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server/src/request_processors/daemon_snapshot.rs#L1-L2",
+          "locator": "codex-rs/app-server/src/request_processors/daemon_snapshot.rs › 模块说明（managed daemon recovery using normal resume semantics）",
+          "lines": "L1-L2",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "守护进程恢复",
+          "note": "守护进程恢复复用普通的恢复语义。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "facets": {
+        "unresolved": [
+          "subagent_links"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "恢复时回放 rollout 重建历史：消息、模型的工具调用及其输出（FunctionCallOutput 等）都回到上下文，不需重跑。task_plan 不计：钉住的配置里 update_plan 默认不注册；Plan 模式的方案只在消息文字里，归 conversation；/goal 的目标（ThreadGoalUpdated 落盘）不是计划工具维护的清单，写在这里。子代理：父子边持久化在 agent graph store，multi_agent v1 的 resume_agent 工具能按编号把已关闭的子代理从其 rollout 重新打开（会连带打开仍处 Open 的后代），但没确认根会话 codex resume 时是否自动重开子代理，故放进 unresolved。外部副作用（已执行的命令、已写的文件）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/rollout_reconstruction.rs#L208-L215",
+          "locator": "codex-rs/core/src/session/rollout_reconstruction.rs › ContextManager::reconstruct_rollout",
+          "lines": "L208-L215",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "恢复流程",
+          "note": "重建的是完整的 ResponseItem 历史，包括工具调用与输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/policy.rs#L79-L101",
+          "locator": "codex-rs/rollout/src/policy.rs › should_persist_response_item（FunctionCall、FunctionCallOutput 等为 true）",
+          "lines": "L79-L101",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "恢复数据",
+          "note": "工具调用与结果都在记录里，可回放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/agent/control/spawn.rs#L927-L990",
+          "locator": "codex-rs/core/src/agent/control/spawn.rs › LocalAgentControl::resume_agent_from_rollout（list_thread_spawn_children Open）",
+          "lines": "L927-L990",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "按编号恢复子代理时会从图存储里重开仍处 Open 的后代。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L2826-L2832",
+          "locator": "codex-rs/core/src/config/mod.rs › resolve_update_plan_enabled",
+          "lines": "L2826-L2832",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "计划工具",
+          "note": "update_plan 只在显式配置时启用，默认不注册。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "subagent_links 的判定标准要求“恢复后父会话能继续向原子代理发指令”，这里需要模型先调用 resume_agent 工具才能重新连上，是否算“恢复命令自动带回”码本没写清楚。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：/fork 或 codex fork（可选会话列表、--last）把会话复制成新 ID 的新会话，原会话不变、可在会话列表里切回；SessionMeta 记 forked_from_id。Esc Esc 回溯（backtrack）在同一会话里撤到所选提示之前并重新编辑，属于裁掉后续、写 value_note 不计。workspace_snapshot 不计：undo（GhostCommit）在本版本已移除，没有内置的文件恢复入口；fork 到托管 worktree（--worktree）是新建工作区，不是回退。没有找到补偿操作或按调用编号去重的幂等机制（mcp_tool_call 里的 idempotent_hint 只是 MCP 工具注解）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Slash commands in Codex CLI › Fork the current chat with /fork；快照 docs-llms-full.txt",
+          "lines": "L10678-L10689",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口回退/分叉",
+          "note": "Fork 生成新 ID 的会话并保留原会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Command line options › codex fork；快照 docs-llms-full.txt",
+          "lines": "L10063-L10073",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "所选入口回退/分叉",
+          "note": "命令行可从已保存的会话分叉。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/app_backtrack.rs#L1-L15",
+          "locator": "codex-rs/tui/src/app_backtrack.rs › 模块说明（backtrack：reverts before the selected turn）",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话内回溯",
+          "note": "Esc 回溯是在原会话里裁掉后续回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1131-L1135",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec GhostCommit（key undo，Stage::Removed）",
+          "lines": "L1131-L1135",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "工作区快照",
+          "note": "工作区 undo 快照已移除。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "fork 只能从会话当前末尾分出（再在新会话里回溯即可得到“过去某一点”的分支），是否完全符合“从过去某一点分出”的判定，码本可以再说清楚。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：web_search 可设 disabled/cached/live/indexed，MCP/应用工具可按工具设 enabled 与 approval_mode（auto/prompt/approve），内置的 read-only/workspace/danger-full-access 档按动作类别区分。command_rule：rules/*.rules 里的 prefix_rule（allow/prompt/forbidden），TUI 里“加入允许列表”写进 ~/.codex/rules/default.rules。file_path：权限 profile 的 filesystem 规则（路径或 glob 设 write/read/deny）、workspace_roots、--add-dir。network_target：[sandbox_workspace_write] network_access 进程级联网总开关，以及 permissions.<name>.network.domains 按域名 allow/deny（域名规则要开 network_proxy，默认关）。默认效果（已信任仓库、workspace-write + on-request）：改工作区内文件 allow（apply_patch 落在可写根内自动放行）；运行普通命令 allow（在沙箱里直接跑，被判为危险命令的才 prompt）；写工作区外 review（apply_patch 越界 AskUser，命令被沙箱拦下后模型可带 require_escalated 申请放行）；命令联网 review（默认沙箱断网，需申请越出沙箱）。工作区内 .git、.codex、.agents 等受保护路径是写死名单。其他环境：未信任目录为 read-only，改工作区文件也变成 review。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/safety.rs#L67-L124",
+          "locator": "codex-rs/core/src/safety.rs › assess_patch_safety",
+          "lines": "L67-L124",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "补丁限于可写根时 AutoApprove，否则 OnRequest 下 AskUser。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/exec_policy.rs#L807-L885",
+          "locator": "codex-rs/core/src/exec_policy.rs › render_decision_for_unmatched_command_for_platform",
+          "lines": "L807-L885",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "OnRequest + 受限沙箱下，未命中规则、非危险且未申请越权的命令直接 Allow；申请越权或危险命令 Prompt。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/permissions.rs#L72-L83",
+          "locator": "codex-rs/core/src/config/permissions.rs › default_builtin_permission_profile_name",
+          "lines": "L72-L83",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "已信任项目默认 workspace 档，否则 read-only。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Rules › Create a rules file / Understand rule fields（prefix_rule，decision allow/prompt/forbidden）；快照 docs-llms-full.txt",
+          "lines": "L716-L790",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则格式",
+          "note": "命令前缀规则的格式与效果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Agent approvals & security › Network access / web search（[sandbox_workspace_write] network_access；web_search = cached 默认）；快照 docs-llms-full.txt",
+          "lines": "L107-L287",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则格式",
+          "note": "联网总开关、域名规则需 network_proxy、网页搜索模式开关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Agent approvals & security › Sandbox and approvals / Defaults and recommendations / Protected paths（Auto preset：approval to edit outside the workspace or to run commands that require network access）；快照 docs-llms-full.txt",
+          "lines": "L76-L310",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "官方说明默认 Auto 预设下的放行与需批准范围，以及受保护路径。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Sample Configuration › [permissions.workspace.filesystem] / [permissions.workspace.network.domains]；快照 docs-llms-full.txt",
+          "lines": "L17130-L17195",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则格式",
+          "note": "权限 profile 可按路径和域名写规则。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex App Server › config/read 示例（apps._default.default_tools_approval_mode；tools.<name>.approval_mode / enabled）；快照 docs-llms-full.txt",
+          "lines": "L5700-L5730",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "规则格式",
+          "note": "应用工具可逐个设启用与审批模式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认 on-request 下，拦截点都在一次调用执行前：exec_command 带 sandbox_permissions=require_escalated（附 justification）时先请求批准；apply_patch 越出可写根时 AskUser；命中 prompt 规则或被判危险的命令先请求批准；带破坏性注解的 MCP/应用工具调用先请求批准。一次批准放行这一次调用。沙箱拒绝后不自动重试，由模型重新申请越权（OnRequest 下 orchestrator 不做 retry without sandbox）。批准者默认 user（approvals_reviewer = user）。可选：approvals_reviewer = auto_review 时由审核代理放行（guardian_approval 特性默认开，但不改设置不会路由）；network_proxy 开启后按主机的网络审批会在命令运行中逐个目的地询问（操作层），默认关闭。“本会话一律允许”与“加入允许列表”相当于新增规则。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/exec_policy.rs#L807-L885",
+          "locator": "codex-rs/core/src/exec_policy.rs › render_decision_for_unmatched_command_for_platform",
+          "lines": "L807-L885",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "申请越权或危险命令返回 Prompt，在执行前拦下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/shell_spec.rs#L228-L252",
+          "locator": "codex-rs/core/src/tools/handlers/shell_spec.rs › sandbox_permissions / justification 参数",
+          "lines": "L228-L252",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认工具",
+          "note": "模型通过 require_escalated 请求在沙箱外执行，justification 是给用户的审批问题。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/orchestrator.rs#L436-L470",
+          "locator": "codex-rs/core/src/tools/orchestrator.rs › 沙箱拒绝后的处理（Under Never or OnRequest, do not retry without sandbox）",
+          "lines": "L436-L470",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "默认模式下沙箱拒绝直接返回给模型，不在执行中途逐项询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Agent approvals & security › Automatic approval reviews（By default, approval requests route to you：approvals_reviewer = \"user\"）；快照 docs-llms-full.txt",
+          "lines": "L322-L334",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "批准者",
+          "note": "默认批准者是用户，自动审核需显式配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1555-L1563",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec NetworkProxy（Experimental，default_enabled: false）",
+          "lines": "L1555-L1563",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "网络审批",
+          "note": "按主机的网络代理默认不开。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "os_isolation"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：执行前由 exec policy（规则与危险命令判断）、assess_patch_safety、MCP 工具审批模式决定放行、询问或拒绝。os_isolation：模型生成的命令在 macOS 上用 Seatbelt、Linux 上用 codex-linux-sandbox（seccomp 加 bubblewrap/Landlock）运行，默认 workspace-write 只能写工作区、默认断网。可选：hooks 特性默认开但默认没有钩子；auto_review 审核代理要改设置；network_proxy 域名代理默认关。prompt_only 记 absent：文档列出的权限档（read-only、workspace/Auto、danger-full-access、auto-review）都有代码检查；内置角色 default/worker/explorer 没有向用户交代限制（explorer.toml 为空）；Plan 模式的“不做修改”只写在 plan.md 提示里、沙箱不变，但官方文档把“只计划不修改”的需求指向 read-only 档，没有把 Plan 模式作为一项限制交代给用户。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/sandboxing/src/manager.rs#L50-L64",
+          "locator": "codex-rs/sandboxing/src/manager.rs › get_platform_sandbox",
+          "lines": "L50-L64",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "macOS 用 Seatbelt，Linux 用 LinuxSeccomp 沙箱。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/exec_policy.rs#L807-L885",
+          "locator": "codex-rs/core/src/exec_policy.rs › render_decision_for_unmatched_command_for_platform",
+          "lines": "L807-L885",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "框架代码在命令执行前判放行、询问或禁止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/safety.rs#L67-L124",
+          "locator": "codex-rs/core/src/safety.rs › assess_patch_safety",
+          "lines": "L67-L124",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "文件修改执行前按可写路径判断。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Agent approvals & security › Sandbox and approvals（Codex CLI / IDE extension：OS-level mechanisms enforce sandbox policies）；快照 docs-llms-full.txt",
+          "lines": "L76-L80",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "官方说明 CLI 的沙箱由操作系统机制强制，默认断网、只写工作区。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/collaboration-mode-templates/templates/plan.md#L17-L39",
+          "locator": "codex-rs/collaboration-mode-templates/templates/plan.md › Execution vs. mutation in Plan Mode",
+          "lines": "L17-L39",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置模式",
+          "note": "Plan 模式的禁止修改只在提示里。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Agent approvals & security › Sandbox and approvals（If you want to chat or plan without making changes, switch to read-only mode with /permissions）；快照 docs-llms-full.txt",
+          "lines": "L80-L80",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置模式",
+          "note": "文档把“不做修改”的需求交给 read-only 档（有代码检查）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Plan 模式算不算“产品向用户交代的限制”有灰度：模式名和提示都表明只计划不执行，但文档没明说它禁止修改，沙箱也不变。若码本认为内置模式名本身就构成交代，prompt_only 应改为 present。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result",
+        "identity"
+      ],
+      "facets": {
+        "unresolved": [
+          "approval"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "按钉住的 ChatGPT 登录：rollout 记下用户消息和模型推理条目（intent）、每次 FunctionCall/CustomToolCall 的工具名与参数（actual_operation）、对应 call_id 的输出（result），SessionMeta 记 creator_user_id 和 creator_account_id（identity，即发起会话的 ChatGPT 用户与账户）。approval 不计：ExecApprovalRequest、GuardianAssessment 等审批事件属瞬时事件，不落盘；被拒调用只留错误输出，分不出人工批准和自动放行。没有专门的审计日志；可选：OpenTelemetry 导出需另配。其他环境：用 API key 登录时 creator_* 为空，identity 不成立。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/policy.rs#L79-L101",
+          "locator": "codex-rs/rollout/src/policy.rs › should_persist_response_item",
+          "lines": "L79-L101",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "消息、推理、工具调用与输出都落盘，可按 call_id 对上。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/rollout/src/policy.rs#L161-L205",
+          "locator": "codex-rs/rollout/src/policy.rs › persisted_event_msg 中的 Transient, non-durable events（ExecApprovalRequest、GuardianAssessment 等）",
+          "lines": "L161-L205",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话存储",
+          "note": "审批请求与审核结论不落盘。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/protocol/src/protocol.rs#L3418-L3424",
+          "locator": "codex-rs/protocol/src/protocol.rs › SessionMeta.creator_user_id / creator_account_id",
+          "lines": "L3418-L3424",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "会话元数据",
+          "note": "会话记录带创建它的 ChatGPT 用户与账户编号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/session.rs#L1101-L1102",
+          "locator": "codex-rs/core/src/session/session.rs › SessionMeta 构造（get_chatgpt_user_id、get_account_id）",
+          "lines": "L1101-L1102",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钉住的凭据",
+          "note": "ChatGPT 登录时写入用户与账户编号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "ThreadHistoryMode 默认 Legacy；Paginated 模式下 CommandExecution 条目带 Declined 状态，可能部分体现审批结果，但没能确认 CLI 默认用哪种模式，故把 approval 放进 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认 multi_agent 开启，默认型号 gpt-6.1-sol 按目录走 MultiAgentV2，主代理默认可调 spawn_agent 等委派工具派出独立线程的子代理；另有 /review 由框架起独立审阅子线程。可选：agents.enabled = false 可关闭多代理工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1592-L1603",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec multi_agent / multi_agent_v2",
+          "lines": "L1592-L1603",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认配置",
+          "note": "multi_agent（Collab）Stable、default_enabled true；multi_agent_v2 特性开关默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L1687-L1713",
+          "locator": "codex-rs/core/src/config/mod.rs › multi_agent_version_override / multi_agent_version_for_model",
+          "lines": "L1687-L1713",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认配置与默认型号",
+          "note": "未开 multi_agent_v2 特性且 agents.enabled 未关时无覆盖值，取型号目录里的 multi_agent_version，型号没写才回退到特性开关推出的 V1。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/models-manager/models.json#L177-L195",
+          "locator": "codex-rs/models-manager/models.json › slug gpt-6.1-sol › multi_agent_version",
+          "lines": "L177-L195",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认型号 gpt-6.1-sol",
+          "note": "内置目录里 gpt-6.1-sol 的 multi_agent_version 为 v2，故默认型号走 MultiAgentV2 工具面。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1457-L1567",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › add_collaboration_tools",
+          "lines": "L1457-L1567",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认注册的工具",
+          "note": "V2 下注册 spawn_agent、send_message、followup_task、wait_agent、interrupt_agent、list_agents；V1 下注册 spawn_agent、send_input、resume_agent、wait_agent、close_agent。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Subagents › Availability；Triggering subagent workflows（cli）；快照 docs-llms-full.txt",
+          "lines": "L957-L992",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "当前发行版默认启用子代理；CLI 里请 Codex 使用子代理或按 AGENTS.md/技能指示委派，主线程汇总结果。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录写的是 V1 内置角色（default/worker/explorer），但固定提交里默认型号 gpt-6.1-sol 的目录项 multi_agent_version = v2，config.multi_agent_version_for_model 会取型号值，所以默认工具面是 V2（spawn_agent/send_message/followup_task/wait_agent/interrupt_agent/list_agents）。服务端下发目录可能改这个值，源码里看不到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理模型调用 spawn_agent，框架按调用创建子线程（文档说当前本地版本在用户直接要求或 AGENTS.md/技能指示时委派，但代码不拦，按 R3 第一档记）。user：/review 斜杠命令由框架直接起审阅子线程，中间不经主代理决定。memories 整理代理（MemoryConsolidation）默认关闭，审批审阅代理只在 approvals_reviewer = auto_review 时出现，均不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1457-L1567",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › add_collaboration_tools",
+          "lines": "L1457-L1567",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认注册的工具",
+          "note": "V2 下注册 spawn_agent、send_message、followup_task、wait_agent、interrupt_agent、list_agents；V1 下注册 spawn_agent、send_input、resume_agent、wait_agent、close_agent。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L94-L239",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs › handle_spawn_agent / SpawnAgentArgs::fork_mode",
+          "lines": "L94-L239",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认委派路径",
+          "note": "spawn_agent 交给 thread_spawn 创建子线程后立即返回 task_name；fork_turns 缺省为 all，即 FullHistory（复制父对话）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tasks/review.rs#L98-L140",
+          "locator": "codex-rs/core/src/tasks/review.rs › start_review_conversation",
+          "lines": "L98-L140",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "/review 委派路径",
+          "note": "/review 起一个独立的子 Codex 线程（SubAgentSource::Review），关掉 web 搜索和多代理工具，审批策略 Never，父任务读取其事件直到结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/slash_command.rs#L99-L103",
+          "locator": "codex-rs/tui/src/slash_command.rs › SlashCommand::Review description",
+          "lines": "L99-L103",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "TUI 斜杠命令",
+          "note": "TUI 内置 /review：review my current changes and find issues。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Subagents › Availability；Triggering subagent workflows（cli）；快照 docs-llms-full.txt",
+          "lines": "L957-L992",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "当前发行版默认启用子代理；CLI 里请 Codex 使用子代理或按 AGENTS.md/技能指示委派，主线程汇总结果。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "/review 按 F26 的 user 判定记入（命令直接创建子代理），但它同时是 R3 第二档的斜杠命令；字段说明写明 user 不按第二档排除，照此处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个子代理在自己的线程里维护对话；V2 提供 send_message/followup_task 和邮箱，子代理可给父代理和其他运行中代理发消息；子代理 cwd 取父回合的 cwd，与主代理在同一工作目录读写。权限：子代理继承父回合的审批策略、审批人和沙箱 profile，自定义代理文件不能改。/review 子线程不复制父对话，只带审阅输入。可选：multi_agent_v2.message_board_in_memory 或 message_board_remote 打开共享留言板（默认关）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L94-L239",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs › handle_spawn_agent / SpawnAgentArgs::fork_mode",
+          "lines": "L94-L239",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认委派路径",
+          "note": "spawn_agent 交给 thread_spawn 创建子线程后立即返回 task_name；fork_turns 缺省为 all，即 FullHistory（复制父对话）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_spec.rs#L800-L808",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_spec.rs › spawn_agent_tool_description_v2",
+          "lines": "L800-L808",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认委派路径",
+          "note": "工具说明：子代理与父代理同样的工具、可再派子代理；能给父代理和其他运行中的代理发消息；结束时最终回答交给父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/agent/child_config.rs#L175-L200",
+          "locator": "codex-rs/core/src/agent/child_config.rs › apply_spawn_agent_runtime_overrides",
+          "lines": "L175-L200",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理配置",
+          "note": "子代理继承父回合的审批策略、审批人、cwd 和权限 profile（沙箱）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L1390-L1436",
+          "locator": "codex-rs/core/src/config/mod.rs › MultiAgentV2Config::defaults_for_max_concurrency",
+          "lines": "L1390-L1436",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认配置",
+          "note": "V2 默认 wait_agent_enabled true、disable_direct_message false、disable_native_tools false、message_board_in_memory false、message_board_remote None。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Subagents › Approvals and sandbox controls（cli）；Custom agents；快照 docs-llms-full.txt",
+          "lines": "L1213-L1278",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "子代理继承父回合的沙箱与审批设置；内置 default/worker/explorer，可在 ~/.codex/agents/ 或 .codex/agents/ 写 TOML 自定义代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "start_context 按默认委派路径（spawn_agent 不传 fork_turns 时为 all → FullHistory）记 parent_copy；模型可传 fork_turns=none 改成只带任务说明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "parent_copy"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "async_wait：V2 spawn_agent 立即返回任务名，子代理在后台跑，主代理可调 wait_agent 等邮箱活动，子代理回合结束时框架把终态转发给父代理。synchronous_return：/review 路径父任务一直读子线程事件直到拿到审阅结果。cancel_propagation 只在 /review 委派路径成立（父取消令牌级联，shutdown_delegate）；用户中断主线程时 interrupt_task 只中止本会话，V2 派出的子线程不随之取消，需主代理调 interrupt_agent。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs#L94-L239",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs › handle_spawn_agent / SpawnAgentArgs::fork_mode",
+          "lines": "L94-L239",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认委派路径",
+          "note": "spawn_agent 交给 thread_spawn 创建子线程后立即返回 task_name；fork_turns 缺省为 all，即 FullHistory（复制父对话）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs#L40-L110",
+          "locator": "codex-rs/core/src/tools/handlers/multi_agents_v2/wait.rs › Handler::handle_call",
+          "lines": "L40-L110",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "等待路径",
+          "note": "wait_agent 订阅邮箱活动，在收到消息、用户插话或超时时返回（MailboxActivity / Steered / TimedOut）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/mod.rs#L2616-L2640",
+          "locator": "codex-rs/core/src/session/mod.rs › maybe_notify_parent_of_terminal_turn",
+          "lines": "L2616-L2640",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "结果回传",
+          "note": "V2 子线程回合结束（完成或中止）时把终态事件转发给直接父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/session/mod.rs#L5669-L5676",
+          "locator": "codex-rs/core/src/session/mod.rs › Session::interrupt_task",
+          "lines": "L5669-L5676",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "取消路径",
+          "note": "用户中断只对本会话 abort_all_tasks，未见对 V2 子线程的级联中断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tasks/mod.rs#L573-L600",
+          "locator": "codex-rs/core/src/tasks/mod.rs › Session::abort_all_tasks",
+          "lines": "L573-L600",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "取消路径",
+          "note": "中止本会话当前任务并清理待处理输入，不涉及派出的子线程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/codex_delegate.rs#L204-L230",
+          "locator": "codex-rs/core/src/codex_delegate.rs › forward_session_io",
+          "lines": "L204-L230",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "/review 委派路径",
+          "note": "委派子线程用父取消令牌的子令牌（注释：parent cancel cascades），父取消时 forward_events 调 shutdown_delegate。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tasks/review.rs#L98-L140",
+          "locator": "codex-rs/core/src/tasks/review.rs › start_review_conversation",
+          "lines": "L98-L140",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "/review 委派路径",
+          "note": "/review 起一个独立的子 Codex 线程（SubAgentSource::Review），关掉 web 搜索和多代理工具，审批策略 Never，父任务读取其事件直到结束。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "V2 主中断不级联是按 interrupt_task/abort_all_tasks 的代码路径推断，没找到其他地方在主线程中断时遍历子线程；如果 app-server 或 TUI 另有级联，这一层会变。V1 close_agent 会 shutdown_agent_tree（整棵子树），但那是模型主动关闭、且默认型号不走 V1。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_scope": "some_paths"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具写在核心代码里；外部 MCP 服务器只需在 config.toml 加 mcp_servers 条目即接入（默认开放）。插件包只打包技能、MCP、应用、钩子，按其中 MCP 记 external_protocol_service，不记 plugin_api。没有把用户脚本注册成同名工具的机制。另有 app-server 实验性 dynamicTools（宿主客户端提供并执行的工具），词表装不下，见 vocabulary_proposals。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1388-L1452",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › 内置工具注册（SleepHandler、ViewImageHandler 等）",
+          "lines": "L1388-L1452",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "内置工具",
+          "note": "内置工具在核心代码里实现并按特性注册。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Configuration Reference › Sample Configuration › [mcp_servers]；快照 docs-llms-full.txt",
+          "lines": "L17484-L17500",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "扩展边界",
+          "note": "config.toml 的 mcp_servers 表定义外部 MCP 服务器，留空即不启用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex MCP server removal › Connect Codex to MCP tools；快照 docs-llms-full.txt",
+          "lines": "L37461-L37486",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "扩展边界/嵌入",
+          "note": "codex mcp-server 已移除（不再作 MCP 服务端）；Codex 继续支持外部 MCP 服务器，用 codex mcp 管理；app-server 为自家 JSON-RPC 协议、实验性。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/plugin/src/manifest.rs#L17-L25",
+          "locator": "codex-rs/plugin/src/manifest.rs › PluginManifest 组件",
+          "lines": "L17-L25",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "插件包",
+          "note": "插件清单只含 skills、mcp_servers、apps、hooks 四类资源，没有进程内注册工具的接口。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex App Server › Dynamic tool calls (experimental)；快照 docs-llms-full.txt",
+          "lines": "L5410-L5420",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "扩展边界",
+          "note": "app-server 客户端可在 thread/start 传 dynamicTools（需 experimentalApi），调用时由客户端执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default 只记 internal_code。ChatGPT 登录且 apps 特性默认开时会连接内置的 codex_apps MCP（托管连接器网关），但未连接任何应用时它是否向模型提供工具没查清，所以没记 external_protocol_service 为默认在用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [
+        {
+          "value": "host_client_tool",
+          "definition": "嵌入方（经框架自家的嵌入协议连接的客户端）在会话启动时声明工具，模型调用时框架把调用回传给该客户端执行；框架是服务端，工具实现在宿主一侧。"
+        }
+      ],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：AGENTS.md 每会话自动装载（F16 也记）。skill_directory：.agents/skills 等位置的技能按名或按描述装载，另有默认安装的系统技能。role_template：~/.codex/agents/、.codex/agents/ 的 TOML 代理定义及内置 default/worker/explorer，主代理 spawn_agent 时按 agent_type 选用。prompt_template：/presets 保存的可复用提示，用户按编号运行。都是给模型读的文字，没有以可执行代码装载的项。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/agents_md.rs#L42-L60",
+          "locator": "codex-rs/core/src/agents_md.rs › DEFAULT_AGENTS_MD_FILENAME / load_project_instructions",
+          "lines": "L42-L60",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "项目说明文件",
+          "note": "每个会话从项目层级读 AGENTS.md（或 AGENTS.override.md），与用户说明合并进指令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Build skills › How ChatGPT and Codex use skills；Where Codex loads local skills；快照 docs-llms-full.txt",
+          "lines": "L8006-L8066",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "技能",
+          "note": "从仓库 .agents/skills、用户、管理员和系统位置发现技能；可显式（/skills、$）或按描述隐式调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/agent-roles/src/loader.rs#L74-L82",
+          "locator": "codex-rs/agent-roles/src/loader.rs › discover_agent_roles_in_dir(config_folder/agents)",
+          "lines": "L74-L82",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "角色定义",
+          "note": "从各配置层目录下的 agents/ 发现代理角色定义文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Subagents › Approvals and sandbox controls（cli）；Custom agents；快照 docs-llms-full.txt",
+          "lines": "L1213-L1278",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "子代理",
+          "note": "子代理继承父回合的沙箱与审批设置；内置 default/worker/explorer，可在 ~/.codex/agents/ 或 .codex/agents/ 写 TOML 自定义代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/config/src/types.rs#L845-L853",
+          "locator": "codex-rs/config/src/types.rs › QuickDial（Preset）",
+          "lines": "L845-L853",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "提示模板",
+          "note": "TUI 预设：一条可复用的提示或斜杠命令，保存在配置里，从 /presets 按编号运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Slash commands in Codex CLI › Reuse prompts and commands with /presets；快照 docs-llms-full.txt",
+          "lines": "L10304-L10309",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "提示模板",
+          "note": "/presets 里按 n 保存提示或斜杠命令到编号槽位，之后按编号运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Custom Prompts；快照 docs-llms-full.txt",
+          "lines": "L17939-L17944",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "提示模板",
+          "note": "自定义提示（~/.codex/prompts/*.md，/prompts:名称）文档标为 deprecated。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "文档仍描述已弃用的自定义提示（~/.codex/prompts，/prompts:名称），但固定提交的 Rust 源码里没找到读取 prompts 目录的代码，按实现不计。prompt_template 只凭 /presets：它存在 config.toml 的 [tui.presets.N] 里、按编号而非名称调用、不带参数，算不算“以文件保存、按名调用”的提示模板拿不准，这里按记入处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "hooks 特性默认开，用户写 hooks.json 或 [hooks] 即可挂。input=UserPromptSubmit；model_call=PreModelRequest/PostModelRequest（只诊断）；tool_before_after=PreToolUse、PermissionRequest、PostToolUse、SubagentStart；end=Stop、SubagentStop、SessionEnd、Interrupt；context_compaction=PreCompact/PostCompact；session_start=SessionStart。没有会话记录或文件持久化前后的事件，不记 save。非托管钩子要先经 /hooks 审阅信任才运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/protocol/src/protocol.rs#L1786-L1801",
+          "locator": "codex-rs/protocol/src/protocol.rs › HookEventName",
+          "lines": "L1786-L1801",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钩子事件",
+          "note": "14 个钩子事件：PreToolUse、PermissionRequest、PostToolUse、PreCompact、PostCompact、SessionStart、SessionEnd、UserPromptSubmit、SubagentStart、SubagentStop、Stop、Interrupt、PreModelRequest、PostModelRequest。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1465-L1469",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec hooks",
+          "lines": "L1465-L1469",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认配置",
+          "note": "hooks 特性 Stable、default_enabled true。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Hooks（总览表、Where Codex looks for hooks、Review and trust hooks）；快照 docs-llms-full.txt",
+          "lines": "L35099-L35176",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钩子",
+          "note": "钩子来自 hooks.json 或 config.toml 的 [hooks]，也可由插件打包；非托管钩子须先在 /hooks 审阅信任才运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Hooks › Hooks（SessionStart … Interrupt 各事件）；快照 docs-llms-full.txt",
+          "lines": "L35751-L36238",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "钩子",
+          "note": "UserPromptSubmit 可阻断或注入；PreToolUse/PermissionRequest/PostToolUse 可拦截；Pre/PostCompact 可停止；SessionStart、SubagentStart 可注入上下文；Stop/SubagentStop 可要求继续；Pre/PostModelRequest 只作诊断；SessionEnd、Interrupt 不能改变流程。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "in_use_by_default 写 []：默认安装没有注册钩子（插件默认未安装），但没逐一核对托管/云端下发钩子，Plus 账户不取云端配置。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "model_call"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "cli_subprocess：codex exec（--json JSONL）和 codex app-server 默认 stdio JSON-RPC；两个官方 SDK 都只是包装子进程（TS 起 codex exec，Python 起 app-server），按背后边界记，不记 library。service_api：app-server 在 Unix 套接字或 WebSocket 上提供有文档的 JSON-RPC。codex mcp-server 已移除，没有公共协议服务端。所选入口 codex 默认拉起监听默认控制套接字的守护进程，故 service_api 记入 via_default_entry。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Non-interactive mode › Make output machine-readable；快照 docs-llms-full.txt",
+          "lines": "L38784-L38792",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "嵌入",
+          "note": "codex exec --json 把事件按 JSONL 输出到 stdout，供脚本读取。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex App Server › Protocol › Supported transports；快照 docs-llms-full.txt",
+          "lines": "L3913-L3939",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "嵌入",
+          "note": "app-server 用 JSON-RPC：stdio（默认）、WebSocket（实验、不受支持）、Unix 套接字（默认控制套接字或自定路径）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex SDK › TypeScript library；Python library；快照 docs-llms-full.txt",
+          "lines": "L11510-L11612",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "嵌入",
+          "note": "TypeScript SDK（@openai/codex-sdk）与 Python SDK（openai-codex，经 JSON-RPC 控制本地 app-server）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/sdk/typescript/src/exec.ts#L95-L203",
+          "locator": "sdk/typescript/src/exec.ts › CodexExec.run（commandArgs exec --experimental-json；spawn）",
+          "lines": "L95-L203",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "SDK",
+          "note": "TypeScript SDK 以子进程启动 codex exec，不在调用方进程里跑核心循环。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex MCP server removal › Connect Codex to MCP tools；快照 docs-llms-full.txt",
+          "lines": "L37461-L37486",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "扩展边界/嵌入",
+          "note": "codex mcp-server 已移除（不再作 MCP 服务端）；Codex 继续支持外部 MCP 服务器，用 codex mcp 管理；app-server 为自家 JSON-RPC 协议、实验性。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1099-L1104",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec daemon_auto_start",
+          "lines": "L1099-L1104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "daemon_auto_start Stable、default_enabled true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server-daemon/src/backend/pid.rs#L396-L406",
+          "locator": "codex-rs/app-server-daemon/src/backend/pid.rs › PidCommandKind 启动参数",
+          "lines": "L396-L406",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "守护进程以 app-server --listen unix:// 启动，即默认控制套接字。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "官方把 app-server 命令称为实验性、不支持生产负载，WebSocket 传输更明确标为不受支持；但它有完整协议文档，稳定版 Python SDK 也建在上面，这里仍记 service_api。via_default_entry 是否应包括默认守护进程顺带开放的控制套接字，码本没说清。IDE 扩展是否向其他扩展导出接口不在本快照里，未记 host_extension_api。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：TUI 输入框。api：codex exec、app-server（stdio/套接字）、SDK、codex queue 子命令都能从外部程序提交新任务。schedule：CLI 发行版没有原生定时器，文档写明定时任务在网页或桌面应用里建。external_event：没有原生回调或事件触发；官方 GitHub Action 只是在 CI 里调 codex exec，按 api 计。via_default_entry 与 F32 一致，默认守护进程的控制套接字可直接接收任务。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Non-interactive mode › Make output machine-readable；快照 docs-llms-full.txt",
+          "lines": "L38784-L38792",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "嵌入",
+          "note": "codex exec --json 把事件按 JSONL 输出到 stdout，供脚本读取。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex App Server › Protocol › Supported transports；快照 docs-llms-full.txt",
+          "lines": "L3913-L3939",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "嵌入",
+          "note": "app-server 用 JSON-RPC：stdio（默认）、WebSocket（实验、不受支持）、Unix 套接字（默认控制套接字或自定路径）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Command line options › codex queue；快照 docs-llms-full.txt",
+          "lines": "L9827-L9842",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "触发",
+          "note": "codex queue --thread … --message … 给已有会话排一条消息；--resume 在本地守护进程或远程服务器上恢复会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Scheduled tasks（cli）；快照 docs-llms-full.txt",
+          "lines": "L7007-L7011",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "触发",
+          "note": "Codex CLI 不提供定时任务管理界面，定时任务在 ChatGPT 网页或桌面应用里建。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Codex GitHub Action；快照 docs-llms-full.txt",
+          "lines": "L34707-L34716",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "触发",
+          "note": "openai/codex-action 在 GitHub Actions 工作流里安装 CLI 并运行 codex exec。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server-daemon/src/backend/pid.rs#L396-L406",
+          "locator": "codex-rs/app-server-daemon/src/backend/pid.rs › PidCommandKind 启动参数",
+          "lines": "L396-L406",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "守护进程以 app-server --listen unix:// 启动，即默认控制套接字。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "GitHub Action 由 GitHub 事件触发，但触发器在 GitHub 一侧、调用的是 CLI 子进程，接近“自写脚本调用命令行”，没记 external_event；如果码本把官方集成算外部事件，这里会变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "默认 daemon_auto_start 开，codex 首次启动时以 setsid 拉起 app-server --listen unix:// 的后台守护进程，主循环在其中运行，TUI 经 Unix 套接字连接；没有注册给 launchd/systemd。可选：--no-daemon 或 features.daemon_auto_start = false 退回进程内嵌入（前台进程）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L1099-L1104",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec daemon_auto_start",
+          "lines": "L1099-L1104",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "daemon_auto_start Stable、default_enabled true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/startup_orchestration.rs#L570-L574",
+          "locator": "codex-rs/tui/src/startup_orchestration.rs › auto_start_daemon 条件",
+          "lines": "L570-L574",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "Unix/Windows 上默认开关开、隐式连接、未加 --no-daemon、非远程工作区时自动拉起或复用本地守护进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server-daemon/src/backend/pid.rs#L396-L406",
+          "locator": "codex-rs/app-server-daemon/src/backend/pid.rs › PidCommandKind 启动参数",
+          "lines": "L396-L406",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认入口",
+          "note": "守护进程以 app-server --listen unix:// 启动，即默认控制套接字。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server-daemon/src/backend/pid_start.rs#L160-L166",
+          "locator": "codex-rs/app-server-daemon/src/backend/pid_start.rs › pre_exec setsid",
+          "lines": "L160-L166",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "进程生命周期",
+          "note": "守护进程以 setsid 脱离启动终端。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Run Codex with an NFS home directory（daemon mode）；快照 docs-llms-full.txt",
+          "lines": "L32936-L32945",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "进程生命周期",
+          "note": "守护模式下 CLI 连到在会话之间持续运行的后台服务器；daemon_auto_start=false 或 --no-daemon 可不用它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/app/input.rs#L526-L580",
+          "locator": "codex-rs/tui/src/app/input.rs › Ctrl+C 时 Task is still running 选择框",
+          "lines": "L526-L580",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "退出界面",
+          "note": "连接本地守护进程且任务在跑时按 Ctrl+C，可选 Cancel task、Run in background（退出 Codex、任务继续）或 Exit。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/app/event_dispatch.rs#L1073-L1100",
+          "locator": "codex-rs/tui/src/app/event_dispatch.rs › RunningTaskExit 处理",
+          "lines": "L1073-L1100",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "退出界面",
+          "note": "Run in background 走 ExitMode::Immediate，只退界面不发中断；Exit 才中断并暂停目标。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "continues_after_ui_exit 记 yes：守护进程脱离终端，Ctrl+C 退出时提供 Run in background 选项；直接关掉终端窗口时任务是否在守护进程里跑完，只按“线程无订阅者且无活动才卸载”的设计推断，没逐行核对卸载条件。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "默认路径上的排队层是界面里的后续消息（TUI 内存队列）和核心会话的待处理输入、代理邮箱，均在进程内存里。可选：codex queue 子命令或实验性 thread/queue/add 会把消息写进守护进程的 SQLite 持久队列，空闲时派发，但这要换子命令或用实验接口（总则 R3 第二档），不进取值。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tui/src/chatwidget/input_queue.rs#L23-L50",
+          "locator": "codex-rs/tui/src/chatwidget/input_queue.rs › InputQueueState",
+          "lines": "L23-L50",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "交互输入队列",
+          "note": "回合进行中用户提交的消息排在 TUI 进程内存的 queued_user_messages / pending_steers 里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/app-server/src/message_processor.rs#L321-L352",
+          "locator": "codex-rs/app-server/src/message_processor.rs › queue_store / QueuedItemService",
+          "lines": "L321-L352",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "持久队列",
+          "note": "有 SQLite 状态库时 app-server 建 LocalQueueStore 和 QueuedItemService（Durable user-message queue and idle dispatch）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Command line options › codex queue；快照 docs-llms-full.txt",
+          "lines": "L9827-L9842",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "触发",
+          "note": "codex queue --thread … --message … 给已有会话排一条消息；--resume 在本地守护进程或远程服务器上恢复会话。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "持久队列在默认守护进程里是开着的，只是默认 TUI 路径不往里写；“最强一层”是否应包括这种第二档才用到的层，码本没写清，按 R3 判为不计。崩溃后 SQLite 队列能否被重新派发只读到 watch_external_messages 的设计注释，没核对。sleep 工具的 durable sleep 也可能是持久工作项，默认是否注册取决于型号和 current_time 配置，没查清。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：on-request 下越出沙箱的动作停下等用户批准。message_notification：TUI 默认在终端失焦时发 OSC 9 或 BEL 终端通知，依赖终端支持。非审批提问工具 request_user_input 只在 Plan 模式可用（可选：/plan 等切换协作模式，第二档）；MCP 服务器的 elicitation 也会停下等回答，但要用户先加服务器。可选：/goal 启动目标模式，目标持久保存、可暂停后恢复，退出时会暂停；notify 配置可在回合结束时调外部程序（第三档）。没有框架定义的结构化交接对象。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/config/mod.rs#L3956-L3988",
+          "locator": "codex-rs/core/src/config/mod.rs › approval_policy 推导",
+          "lines": "L3956-L3988",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "默认权限模式",
+          "note": "未显式配置时审批策略为 OnRequest，审批人默认 User。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/core/src/tools/spec_plan.rs#L1317-L1324",
+          "locator": "codex-rs/core/src/tools/spec_plan.rs › RequestUserInputHandler 注册",
+          "lines": "L1317-L1324",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "提问工具",
+          "note": "request_user_input 默认注册，但只在 available_modes 里的协作模式可用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/tools/src/tool_config.rs#L6-L15",
+          "locator": "codex-rs/tools/src/tool_config.rs › request_user_input_available_modes",
+          "lines": "L6-L15",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "提问工具",
+          "note": "只有 Plan 模式允许 request_user_input；Default 模式要 default_mode_request_user_input（UnderDevelopment，默认关）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/config/src/types.rs#L730-L739",
+          "locator": "codex-rs/config/src/types.rs › Notifications Default",
+          "lines": "L730-L739",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "通知",
+          "note": "TUI 通知默认 Enabled(true)。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://developers.openai.com/codex/llms-full.txt",
+          "locator": "# Sample Configuration › UI, Notifications, and Misc (tables)；快照 docs-llms-full.txt",
+          "lines": "L17234-L17246",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "通知",
+          "note": "TUI 桌面通知默认 true；方式 auto（osc9 或 bel）；默认只在终端失焦时发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openai/codex/blob/086ccc833bc9cf01024ad2dd6af7dbd421b6bf9a/codex-rs/features/src/lib.rs#L2115-L2119",
+          "locator": "codex-rs/features/src/lib.rs › FeatureSpec goals",
+          "lines": "L2115-L2119",
+          "retrieved_at": "2026-11-10",
+          "configuration_scope": "目标",
+          "note": "goals 特性 Stable、默认开。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "目标（/goal）持久、可暂停恢复，接近 resumable_todo，但要用户显式进入（第二档），没记进取值；如果码本认为默认开放的斜杠功能也算，这里会变。没核对目标在进程重启后的存储位置。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission"
+        ]
+      }
+    }
+  }
+}
