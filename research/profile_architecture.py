@@ -60,15 +60,17 @@ add('A07','插件树、事件日志与模型可见历史','plugin',
 'DeepSeek Harness 通过 Profile、Bundle 和有序补丁装配插件树，核心服务也参与这套组合机制。模型、工具、日志与循环都通过共享上下文协作。另一条重要边界是实时事件与持久事件：屏幕上的流式片段用于即时显示，已落入 SessionEvent 的事实才是恢复与历史投影的依据。',
 [('启动组合','按 Bundle、用户与命令行补丁的顺序装配','替换服务时，核对依赖它的模块及相应配置。默认预设里的插件管理工具还能在会话中经审批改变插件集。'),('能力接缝','接口定义、提供者和消费者分别承担职责','换远程文件系统时，相关进程环境也应一致。'),('历史投影','从日志生成模型可见消息','日志同时参与决定下一轮模型输入。')],
 '比如工具产生一条结果，循环把它写入会话事件，再由投影生成后续模型历史；Web 同时可以接收实时流更新。若进程在流输出尚未落定时丢失，不能保证每个屏幕片段都能恢复。调查问题时要区分即时显示、已提交事件和重建后的上下文。',
-'与 OpenCode 的 SessionProcessor 路线相比，DSH 把替换点推进到共享服务与事件层。自由度更高，也意味着插件组合、生命周期及日志不变量需要共同维护。',
+'与 OpenCode 由内置执行器推进会话、插件在固定钩子上介入的做法相比，DSH 把替换点推进到共享服务与事件层。自由度更高，也意味着插件组合、生命周期及日志不变量需要共同维护。',
 ['deepseek-harness:docs/architecture.md','deepseek-harness:packages/core/agent-loop/src/agent.ts','deepseek-harness:packages/core/agent-loop/src/tool-calls.ts'])
-add('A08','流式处理、压缩与子会话的连接点','loop',
-['任务输入\n客户端会话','Session 消息\n用户、助手与 parts','模型响应流\n增量文字和工具调用','SessionProcessor\n更新调用生命周期','工具执行／task\n工具或子会话','消息部件与结果\n持久化任务进度','会话交付\n变更与答复','SessionCompaction\n超限时摘要，事后修剪'],
-'OpenCode 的 SessionProcessor 处理的不只是完整回复，而是模型流中的不同事件，并据此更新消息部件和工具状态。压缩模块单独管理历史整理，只在上下文接近上限时生成摘要，修剪则在一轮循环结束后于后台进行，并不是每次工具结果都要经过它；task 工具（2.x 改称 subagent 工具）则把工作放进子会话。于是一个可恢复的任务至少涉及三类信息：对话内容、工具调用状态，以及仍然存在于工作目录中的文件。',
-[('Processor','消费流事件并推进工具状态','流中断可能留下未完成调用，不能按普通答复处理。'),('Compaction','清理或摘要较早上下文','减少输入体积不等于删除真实文件。'),('task','通过子会话完成委派','子会话 ID 与结果是交接线索，不自动隔离工作目录。')],
-'例如主任务改后端，同时委派调查前端调用点：task 返回调查结论，主任务继续处理。排查断线问题时，先看调用是否已执行、结果是否已记录，再决定续跑或重试，避免重复执行有副作用的命令。',
-'与源自同一代码路线的产品比较，要分别看工具注册、模型适配、压缩和持久化改动。同样的 Session 名称不代表这些策略继续保持一致。',
-['opencode:packages/opencode/src/session/processor.ts','opencode:packages/opencode/src/session/compaction.ts','opencode:packages/opencode/src/tool/task.ts','page:opencode-prompt'])
+# OpenCode 2 links point at the commit read for this rewrite; the manifest still pins A08's older snapshot.
+OC2='https://raw.githubusercontent.com/anomalyco/opencode/fedc6f208aa2bd54c1019227214568083f6380ad/'
+add('A08','终端界面、后台服务与逐步执行的分工','host',
+['终端界面 TUI\n前台进程\n显示进度、回答审批','本机后台服务\nopencode serve --service\nHTTP 收输入，SSE 推事件','会话收件箱\nSession.prompt\n接纳输入并唤醒执行','事件总线\n增量只推给界面\n完整事件交给投影','SessionRunner\n逐步循环；每步前\n检查压缩、重装历史','SQLite opencode.db\n会话、消息与收件箱表\n只写完整事件','模型流 steps.attempt\n文字、推理、工具调用\n分段到达','工具执行与 subagent\n逐个检查权限\n子代理另建子会话'],
+f'OpenCode 2 把“显示界面”和“真正干活”分给两个进程。在终端输入 `opencode` 后，前台只运行终端界面（TUI）；它先找本机已经在运行、版本相符的后台服务，找不到或版本不符时，另起一个脱离终端的 `opencode serve --service`（[默认入口]({OC2}packages/cli/src/commands/handlers/default.ts)、[服务启动]({OC2}packages/client/src/effect/service.ts)）。服务默认只监听本机地址 127.0.0.1，模型请求、工具执行和会话记录都归它管；界面用 HTTP 提交输入，再从 SSE 事件流接收进度。服务会一直运行，直到被停止、重启或被新版本替换，关掉界面不会顺带停掉它（[服务进程]({OC2}packages/cli/src/server-process.ts)）。\n\n一次输入进了服务，先由 `Session.prompt` 记入这个会话的收件箱，再唤醒执行（[会话入口]({OC2}packages/core/src/session/session.ts)）。执行器 SessionRunner 一步一步推进：每一步先估算要发给模型的内容有多大，快到上限就先压缩，再把历史重新整理成模型能读的消息发出去（[逐步循环]({OC2}packages/core/src/session/runner/llm.ts)）。模型的回复以流的形式分段到达，文字、推理和工具调用各成一段；某个工具调用的参数一到齐，对应工具就开始执行，不等整段回复结束（[单步执行]({OC2}packages/core/src/session/runner/step.ts)）。这一步只要执行过本地工具，下一步就带着工具结果再请求一次模型；模型直接作答、又没有新的输入时，会话回到空闲。\n\n写进磁盘的内容有明确分界。流式的文字片段只推给界面，大约每 100 毫秒合并发送一次，不写库；一段文字或一组工具参数结束时，带完整内容的结束事件才经投影写进本机 SQLite 文件 opencode.db 的会话、消息和收件箱表（[事件定义]({OC2}packages/schema/src/session-event.ts)、[合批发布]({OC2}packages/core/src/session/runner/publish-llm-event.ts)、[投影]({OC2}packages/core/src/session/projector.ts)、[表结构]({OC2}packages/core/src/session/sql.ts)）。所以重新打开会话时看到的，是已经结束并写入的内容；进程在一段文字结束前意外退出，屏幕上出现过的半段话不保证留在记录里。以上依据固定提交 fedc6f2 的源码阅读，没有运行验证。',
+[('后台服务与中断恢复',f'一轮执行开始时，服务在数据库里留下一条“执行中”的记录，执行结束才清掉；服务重启后会找出没清掉的会话，提醒模型“从中断处继续、不要重复已完成的工作”，自动续跑，同一轮默认最多续 10 次（[重启恢复]({OC2}packages/core/src/session/execution/restart.ts)）。','源码注释说明这种恢复是“至少一次”：能防止同一会话被两处同时执行，防不住崩溃后外部副作用重复发生。命令或改动在中途被打断后，先查它是否已经执行、结果是否已记录，再决定续跑还是重试。'),('上下文压缩',f'默认自动开启。每一步请求模型前估算输入量，超过“模型窗口减去预留量”就先压缩，预留量取窗口的 15%，窗口够大时至少 16000 token；模型报告上下文超长时也会触发。普通压缩由模型写一份结构化摘要，并原样保留最近约 15000 token 的内容；支持原生压缩的模型改用供应商自己的方式（[压缩]({OC2}packages/core/src/session/compaction.ts)）。',f'压缩只改变之后发给模型的内容：模型从最近一次压缩开始读历史，数据库里的旧消息还在（[历史读取]({OC2}packages/core/src/session/history.ts)）。单个工具输出超过 2000 行或 50 KiB 时会当场截断，全文另存为文件并在结果里给出路径（[输出截断]({OC2}packages/core/src/tool-output.ts)），这一步和压缩是两回事。'),('subagent 子会话',f'模型调用 subagent 工具时，服务新建一个记着父会话 ID 的子会话，把任务说明当作它的第一条输入，走和普通输入相同的 `Session.prompt` 流程；父会话的聊天记录不会复制过去。默认前台等待，把子会话 ID 和它最后的回答作为工具结果交回；设了 background 就立即返回，子会话完成后再通知父会话（[subagent 工具]({OC2}packages/core/src/tool/plugin/subagent.ts)）。',f'子会话继承父会话的工作位置、元数据和会话级权限（[建会话]({OC2}packages/core/src/session.ts)），不会另开工作目录，并行的子会话可能改到同一批文件。默认只允许一层子代理，子会话里不能再开子会话。')],
+'例如让它“修复登录接口的报错，并让子代理查一下前端哪里调用了这个接口”。界面把这句话交给后台服务，服务记入收件箱并唤醒执行。第一步模型决定先读代码、跑测试，工具参数一到齐就开始执行，结果写进消息，下一步连同历史再发给模型。模型调用 subagent 后，服务新建子会话；子会话自己完成查找，把结论作为工具结果交回，主会话接着修改后端。中途关掉终端，后台服务仍在执行；再次运行 `opencode` 会连上同一个服务，界面向服务取回会话和消息，再接上实时事件。服务本身意外中断时，重启后会自动续跑这一轮，这时先核对测试命令和改动是否已经做过，避免重复执行有副作用的操作。',
+'OpenCode 1.x 以 SessionProcessor 处理模型流、以 task 工具委派子会话；2.x 换成收件箱、逐步执行器和事件投影这一套，源码里没有逐个模块的迁移对照，两者不能按名称一一对应。比较不同版本或从 OpenCode 衍生的产品时，要分别看进程划分、工具注册、压缩策略和存储方式。和界面、执行同在一个进程里的命令行代理相比，OpenCode 2 关掉界面后任务还能继续跑，代价是多了一个要管版本和端口的常驻进程，排查问题时也要分清界面、服务和数据库三处状态。',
+['page:opencode2-cli-default','page:opencode2-session-prompt','page:opencode2-runner-llm','page:opencode2-runner-step','page:opencode2-projector','page:opencode2-compaction','page:opencode2-subagent'])
 add('A09','小型代理循环与树状会话如何组合','state',
 ['prompt／继续运行\nAgentMessage 输入','Agent 循环\n内层工具、外层跟进','模型边界转换\nconvertToLlm','工具结果\n加入当前消息','SessionManager\n条目与父子关系','当前分支\n选中的上下文路径','其他历史分支\n仍可回看','扩展与界面\n订阅事件、添加能力'],
 'Pi 在代理内部使用 AgentMessage，到调用模型时才转换成模型接口消息。循环内层处理工具与插入的指令，外层接续排队的后续任务；会话管理器则用带父子关系的条目表达历史分支。这样“继续当前工作”“在旧节点另开一条思路”“扩展工具”不必全部硬编码进一个庞大工作流。',
@@ -439,6 +441,7 @@ LAYOUTS={
 EDGES={
  'A02':[(0,1),(1,2),(1,3),(2,3),(3,4),(3,5),(5,3),(4,6),(6,7),(7,5)],
  'A07':[(0,2),(1,2),(2,3),(2,5),(4,5),(5,6),(5,7)],
+ 'A08':[(0,1),(1,0),(1,2),(2,4),(4,6),(6,7),(7,6),(6,3),(3,5),(5,4),(3,1),(7,2)],
  'A04':[(0,2),(2,1),(1,3),(2,4),(3,5),(4,5),(5,6),(6,7)],
  'A09':[(0,1),(1,2),(2,3),(3,1),(1,4),(4,5),(4,6),(7,1)],
  'A10':[(0,1),(2,1),(1,3),(1,4),(3,5),(4,5),(5,6),(6,1),(5,7)],
