@@ -1,0 +1,1859 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.5",
+  "synthetic": false,
+  "round": "batch-1",
+  "config_id": "A10__cline__vscode-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v7",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Act 模式下，扩展用 SDK 的 AgentRuntime.execute 循环：模型回复里有工具调用就执行，结果交回模型；回复不含工具调用就以 completed 结束本轮。扩展把 maxIterations 设为 undefined，子代理与 Agent Teams 写死关闭。Plan 模式要用户切换开关（总则 R3 第二档），内部仍是模型循环。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L838-L1030",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：AgentRuntime.execute 主循环",
+          "lines": "L838-L1030",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 Act 模式主执行链",
+          "note": "模型输出决定工具调用，执行结果作为消息交回模型，无工具调用即 finishRun('completed')。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1174-L1206",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：CoreSessionConfig 构造",
+          "lines": "L1174-L1206",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展会话配置",
+          "note": "enableSpawnAgent=false、enableAgentTeams=false、mode 取 act/plan、maxIterations=undefined。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/slashCommands.ts#L1-L40",
+          "locator": "apps/vscode/src/shared/slashCommands.ts：内置斜杠命令表",
+          "lines": "L1-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令清单",
+          "note": "内置命令只有 newtask、deep-planning、compact、smol 等，均展开提示或压缩，不改推进方式。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/core-workflows/using-commands.mdx#L13-L58",
+          "locator": "docs/core-workflows/using-commands.mdx：Slash Commands",
+          "lines": "L13-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令清单",
+          "note": "官方命令表：/newtask、/smol（/compact）、/newrule、/deep-planning、/reportbug。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 逐个入口判过：Plan/Act 切换仍是模型循环；/newtask 把当前上下文打包成新任务，新任务仍是模型循环；/smol、/compact 只压缩历史；/newrule、/deep-planning、/reportbug 把一段说明展开成提示交给模型循环；技能、工作流和 MCP prompt 斜杠命令同样把文件展开成提示，按 explicit_workflow 的判定不算；云端任务（Local | Cloud 切换）默认关闭（cloudSessionsEnabled=false），要改设置且属云端；子代理和 Agent Teams 在扩展里写死关闭；SDK 里的 task/agenda 工具和定时任务只在 hub 入口注册，扩展用 local 后端时不挂载。没有发现另一种控制方式，故写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "value_note": "默认 Act 系统提示明确要求先给计划再动手（Always show your planning process before executing any task；present your plan at the start of your response along with tool calls before proceeding with the task），计划只出现在回复文本里。默认工具（act 预设：read_files、search_codebase、run_commands、fetch_web_content、editor、skills、ask_question）没有计划或待办工具，也没有模型能自己进入的计划模式。可选：Plan 模式要用户拨开关进入（第二档），提示要求给出结构化计划，命令守卫拦下改文件的命令，用户切回 Act 后不再按计划条目检查；/deep-planning 命令让模型把计划写进 implementation_plan.md（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/prompt/system/act.ts#L15-L30",
+          "locator": "sdk/packages/shared/src/prompt/system/act.ts：CLINE_SYSTEM_PROMPT_ACT_MODE",
+          "lines": "L15-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 Act 模式系统提示",
+          "note": "提示要求动手前先展示计划，并在回复开头给出计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/prompt/cline.ts#L155-L212",
+          "locator": "sdk/packages/shared/src/prompt/cline.ts：buildClineSystemPrompt",
+          "lines": "L155-L212",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "系统提示拼装",
+          "note": "非 yolo 模式用 ACT 基础提示，只有 mode=plan 时才附加 Plan 模式约定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/presets.ts#L20-L37",
+          "locator": "sdk/packages/core/src/extensions/tools/presets.ts：ToolPresets.act",
+          "lines": "L20-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "act 预设没有计划或待办工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1077-L1093",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：buildClineSystemPrompt 调用",
+          "lines": "L1077-L1093",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展",
+          "note": "扩展不暴露 switch_to_act_mode，Plan/Act 由用户拨开关切换。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "none 与 prompt_text_only 的界线在这里不太清楚：Act 提示一边要求动手前先给计划，一边要求在回复开头给出计划（看上去每次回复都有）。按 before proceeding with the task 理解为动手前先给覆盖任务的计划，记 prompt_text_only；若口径认为这只是每次回复附带的打算说明，应改记 none。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "模型回复不含工具调用时框架以 completed 结束本轮；扩展不挂完成工具（act 预设 enableSubmitAndExit=false，vscode-runtime-builder 注释写明直接以文本回复结束）。completionPolicy 只在要求完成工具或 Agent Teams 时设置，扩展都没开，所以没有验证条件。用户可点 Cancel，扩展调 sdkHost.abort 停下当前任务。扩展传 maxIterations=undefined，没有步数、Token、时长、金额上限，故不含 budget；F12 的 hard_stop 只有 output_limit。连续 6 次失误、连续 5 次相同调用的强停记在 F04；输出截断的续写与连续截断后停下记在 F12。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L952-L976",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：execute 中 toolCalls.length === 0 分支",
+          "lines": "L952-L976",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 Act 模式",
+          "note": "没有工具调用且无完成提醒时 finishRun('completed')。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-runtime-builder.ts#L92-L95",
+          "locator": "apps/vscode/src/sdk/vscode-runtime-builder.ts：createVscodeExtraTools",
+          "lines": "L92-L95",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展工具",
+          "note": "注释写明不暴露完成工具，代理以文本回复结束回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L890-L899",
+          "locator": "sdk/packages/core/src/runtime/orchestration/runtime-builder.ts：completionPolicy",
+          "lines": "L890-L899",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "结束判定",
+          "note": "只有要求完成工具或 Agent Teams 时才设完成守卫。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-control-coordinator.ts#L79-L100",
+          "locator": "apps/vscode/src/sdk/sdk-task-control-coordinator.ts：cancelTask",
+          "lines": "L79-L100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户中断",
+          "note": "Cancel 先清掉待答提问，再 abort 当前会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1206",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：maxIterations",
+          "lines": "L1206",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上限",
+          "note": "扩展不设步数上限。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "钩子（hooksEnabled 默认 true）理论上可在任务结束时介入，但默认没有钩子文件，且未查到钩子能拒绝结束，未计入 verification_condition。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：限流、5xx、网络等可重试的提供方错误，框架按指数退避（1 秒起，上限 15 秒）最多重发 3 次（PROVIDER_ERROR_MAX_RETRIES），AI SDK 层另设 maxRetries=3；结束原因未知时补发一次续写。model_self_repair：工具抛错、未知工具名作为 isError 结果交回模型；相同调用连续 3 次注入提醒，连续 5 次强停；整轮工具全失败计一次失误，连续 6 次失误时扩展的回调直接停下任务，提示用户发消息继续。framework_input_repair：AI SDK 的 experimental_repairToolCall 用 jsonrepair 修好非法 JSON 参数后照常执行；read_files 和 editor 的行号参数用 z.coerce 把字符串转成数字，old_text 为 null 时当作省略。escalate_to_human：提供方错误重试用完后，扩展把 ask:api_req_failed 放成最后一条消息，界面给出 Retry、Sign In、Buy Credits；用户点 Retry 后，同一会话收到续跑提示（[TASK RESUMPTION] Please continue where you left off.）接着走。未登录 Cline 账户时先停在登录提示，登录后点 Retry 用原提示重新开始。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L77-L90",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：PROVIDER_ERROR_MAX_RETRIES 等常量",
+          "lines": "L77-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用失败",
+          "note": "可重试错误最多重发 3 次，指数退避。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L1245-L1275",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：withProviderErrorRetry",
+          "lines": "L1245-L1275",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用失败",
+          "note": "不经模型重发同一回合请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L2575-L2615",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：工具执行结果",
+          "lines": "L2575-L2615",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用失败",
+          "note": "未知工具和执行异常都作为 isError 结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts#L1519-L1550",
+          "locator": "sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts：inspectLoopForToolCall",
+          "lines": "L1519-L1550",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "循环检测",
+          "note": "soft 时注入提醒消息，hard 时按失误上限强停（阈值见 loop-detection.ts L113-L116：3 与 5）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L89-L116",
+          "locator": "apps/vscode/src/sdk/sdk-interaction-coordinator.ts：handleConsecutiveMistakeLimitReached",
+          "lines": "L89-L116",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "失误上限",
+          "note": "连续失误到上限时显示错误并直接停下，交还用户。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/llms/src/providers/ai-sdk.ts#L912-L944",
+          "locator": "sdk/packages/llms/src/providers/ai-sdk.ts：repairMalformedToolCall（L2447 接入 streamText）",
+          "lines": "L912-L944",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具参数修正",
+          "note": "非法 JSON 参数经 jsonrepair 修好后照常执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/schemas.ts#L19-L40",
+          "locator": "sdk/packages/core/src/extensions/tools/schemas.ts：ReadFileLineRangeSchema",
+          "lines": "L19-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具参数修正",
+          "note": "字符串形式的行号被 coerce 成数字。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/message-translator.ts#L1322-L1347",
+          "locator": "apps/vscode/src/sdk/message-translator.ts：pushTurnErrorRows",
+          "lines": "L1322-L1347",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "失败后等用户",
+          "note": "回合失败时以 ask:api_req_failed 收尾，界面给出 Retry、Buy Credits、Sign In。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-followup-coordinator.ts#L173-L200",
+          "locator": "apps/vscode/src/sdk/sdk-followup-coordinator.ts：continueIdleSession",
+          "lines": "L173-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "失败后等用户",
+          "note": "无内容的 Retry 在同一会话发 TASK_RESUMPTION_PROMPT 续跑。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "escalate_to_human 拿不准：SDK 这次运行其实已以 failed 结束，Retry 是在保留历史的同一会话里发一条续跑提示，不是挂起后重放原请求；界面把它做成一个 ask（重试或放弃），按“请用户选择重试或放弃，答复后接着走”记入。若口径要求任务本身挂起等待，应移出。失误上限的处理是直接停下交还控制权，按 scope_rule 不记 escalate_to_human。上下文溢出时先压缩再重发也属 call_retry（压缩记 F14）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "VscodeSessionHost 以 backendMode:'local' 调 ClineCore.create，跳过 hub 发现，直接 createLocalRuntimeHost，在扩展宿主进程里跑代理循环；网页面板和扩展之间的消息桥不计。其他环境：不指定 backendMode 的入口按 auto 优先连本机 hub。云端任务默认关闭。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-session-host.ts#L179-L190",
+          "locator": "apps/vscode/src/sdk/vscode-session-host.ts：ClineCore.create",
+          "lines": "L179-L190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展入口",
+          "note": "扩展固定用 backendMode:'local'。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/host/host.ts#L17-L31",
+          "locator": "sdk/packages/core/src/runtime/host/host.ts：resolveConfiguredBackendMode 与 createLocalRuntimeHost 分支（L263-L265）",
+          "lines": "L17-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "运行时宿主选择",
+          "note": "显式 local 时不走 hub，最后 createLocalRuntimeHost 在本进程建宿主。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "读文件、编辑、搜索在扩展宿主进程内用 node fs 执行。run_commands 默认是 vscodeTerminal 模式，在 VS Code 集成终端里跑（终端由 VS Code 拉起 shell，默认复用）；backgroundExec 模式改用 child_process.spawn 起 shell 子进程。可选：MCP 服务要用户添加配置才有。云端任务默认关闭，不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/executors/file-read.ts#L257",
+          "locator": "sdk/packages/core/src/extensions/tools/executors/file-read.ts：fs.readFile",
+          "lines": "L257",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件工具",
+          "note": "文件读取在核心进程内用 fs 完成。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-run-commands-tool.ts#L1-L12",
+          "locator": "apps/vscode/src/sdk/vscode-run-commands-tool.ts：模块说明与 executeForeground（L222-L290）",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令工具",
+          "note": "前台模式经 VS Code 终端执行，后台模式经 child_process.spawn。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/storage/state-keys.ts#L76-L81",
+          "locator": "apps/vscode/src/shared/storage/state-keys.ts：terminalReuseEnabled、vscodeTerminalExecutionMode",
+          "lines": "L76-L81",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "默认 vscodeTerminal 模式，终端默认复用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/executors/bash.ts#L733",
+          "locator": "sdk/packages/core/src/extensions/tools/executors/bash.ts：spawn",
+          "lines": "L733",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台命令执行",
+          "note": "后台执行器为命令起子进程。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "VS Code 集成终端的 shell 由编辑器拉起、默认跨命令复用，不完全是“用完即退的子进程”，也不是独立工具服务；按另起 shell 进程归 subprocess，请主控看口径是否合适。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话进行中的消息由 SDK 的 AgentRuntime 和会话服务持有，写进 Cline 数据目录下的 sessions/<sessionId>/（清单 <id>.json、消息文件，另有 sessions.db）。恢复任务时，扩展经 SDK host 读回这些消息作为 initialMessages。扩展另存的界面消息（ClineMessage）只供显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-resume.ts#L42-L71",
+          "locator": "apps/vscode/src/sdk/sdk-task-resume.ts：prepareTaskResumeStartInput",
+          "lines": "L42-L71",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复会话",
+          "note": "恢复时经 SDK 会话宿主读回持久化消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/storage/paths.ts#L194-L200",
+          "locator": "sdk/packages/shared/src/storage/paths.ts：resolveSessionDataDir",
+          "lines": "L194-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话数据目录由 SDK 核心决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1253-L1272",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：buildResumeSessionInput",
+          "lines": "L1253-L1272",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复会话",
+          "note": "注释写明恢复时由 SDK 的会话持久化从磁盘读回历史。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个任务一个 sessionId，历史按编号分目录存放。会话都在同一个扩展宿主进程里，用同一个工作区目录；没看到为会话分配专用目录、工作树、文件系统视图或容器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/host/history.ts#L489",
+          "locator": "sdk/packages/core/src/runtime/host/history.ts：会话清单路径",
+          "lines": "L489",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话清单存于 sessions/<id>/<id>.json。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1174-L1186",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：cwd、workspaceRoot",
+          "lines": "L1174-L1186",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话配置",
+          "note": "新会话直接用当前工作区作 cwd，不另建目录。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "llms 包按提供方的族推断协议：openai-responses、anthropic（含 Bedrock）、gemini（含 Vertex）、openai-chat（OpenAI 兼容），经 AI SDK 各家适配器在核心进程内转换。这些适配随默认安装附带，用户在设置里选提供方、填凭据即可启用。钉住环境用 Cline 提供方（family cline，OpenAI 兼容接口，经 @ai-sdk/openai-compatible 或 OpenRouter 适配器）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/llms/src/providers/builtins.ts#L609-L652",
+          "locator": "sdk/packages/llms/src/providers/builtins.ts：inferProtocol、inferClient",
+          "lines": "L609-L652",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接入",
+          "note": "内置四种协议和多种客户端适配。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/llms/src/providers/vendors/cline.ts#L1-L25",
+          "locator": "sdk/packages/llms/src/providers/vendors/cline.ts：导入与 createOpenAICompatible（L191）",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境的提供方",
+          "note": "Cline 提供方走 OpenAI 兼容或 OpenRouter 适配器。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "工具定义作为 AI SDK 的 ToolSet 传给 streamText，模型用原生工具调用字段返回。MCP 服务的工具由 createMcpTools 包装成模型函数，调用时转成 MCP callTool 请求；MCP 扩展点默认开放，用户添加一条服务配置即可，默认没有服务。解析失败时，非法 JSON 参数先经 jsonrepair 修复（记 F04），修不好或工具名未知的，作为错误结果交回模型。没看到从文本里解析工具调用的路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/llms/src/providers/ai-sdk.ts#L871-L887",
+          "locator": "sdk/packages/llms/src/providers/ai-sdk.ts：工具定义转 ToolSet",
+          "lines": "L871-L887",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用表达",
+          "note": "工具以原生结构化定义交给模型接口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/mcp/tools.ts#L17-L45",
+          "locator": "sdk/packages/core/src/extensions/mcp/tools.ts：createMcpTools",
+          "lines": "L17-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 工具",
+          "note": "MCP 工具包装成模型函数，执行时转成 callTool。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-runtime-builder.ts#L68-L90",
+          "locator": "apps/vscode/src/sdk/vscode-runtime-builder.ts：createVscodeExtraTools",
+          "lines": "L68-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展工具",
+          "note": "已配置 MCP 服务的工具追加进会话工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环只用会话配置的 providerId 和 modelId（钉住 anthropic/claude-sonnet-5.5），子代理关闭。Cline 提供方给 Anthropic 型号的请求带 allow_fallbacks，这是服务端换托管商，型号不变，不算 failover。其他环境：直连 Anthropic 时请求带 fallbacks:'default'（服务端拒答时回退型号）。可选：Plan/Act 分设型号（planActSeparateModelsSetting 默认 false），用户切到 Plan 模式时可以用另一型号。web_search 由 Cline 服务端执行，属于托管服务，不计入辅助分配。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1174-L1180",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：providerId、modelId、providerConfig",
+          "lines": "L1174-L1180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链型号",
+          "note": "会话只有一个提供方和型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/llms/src/providers/routing/provider-option-rules.ts#L123-L171",
+          "locator": "sdk/packages/llms/src/providers/routing/provider-option-rules.ts：directAnthropicProviderRule、routedAnthropicProviderFallbackRule",
+          "lines": "L123-L171",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "失败回退",
+          "note": "Cline 提供方只开托管商回退；型号回退只在直连 Anthropic 时开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-compaction.ts#L61-L76",
+          "locator": "apps/vscode/src/sdk/sdk-compaction.ts：压缩摘要的模型",
+          "lines": "L61-L76",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用：压缩",
+          "note": "摘要用会话同一 providerConfig 和 modelId。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/storage/state-keys.ts#L278",
+          "locator": "apps/vscode/src/shared/storage/state-keys.ts：planActSeparateModelsSetting",
+          "lines": "L278",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径",
+          "note": "Plan/Act 分设型号默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 清单逐项：标题生成——无（core 与扩展 SDK 层未见标题生成调用）；上下文压缩或摘要——用主执行链同一型号；动作审核分类——无；联网搜索——web_search 由 Cline 服务端 /search/websearch 执行，客户端不选型号，不计；网页抓取 fetch_web_content——执行器里没有模型调用；媒体理解——无；生成类工具——无。标题生成只做了关键词搜索，没逐文件确认，confidence 写 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "客户端默认不设输出上限（maxTokensPerTurn 只在用户覆盖型号参数或用 openai 提供方时才传），但截断后有专门处理：只出文本、没有工具调用的截断回合，先强制压缩重试一次，再注入请模型写短些的提示重试；连续 3 次截断就以错误结束（MAX_TOKENS_RECOVERY_LIMIT=3），单次输出到型号上限即被截断。扩展传 maxIterations=undefined，没有步数上限；旧版 maxRequests=20 已移除，只是遗留字段。没有 Token、时长、金额上限。连续 6 次失误、连续 5 次相同调用记 F04；压缩触发点属 D 组。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L60-L75",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：MAX_TOKENS_RECOVERY_LIMIT、MAX_TOKENS_RECOVERY_NUDGE",
+          "lines": "L60-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "输出截断",
+          "note": "截断后最多 3 次提示重试，之后结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts#L928-L941",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：max-tokens 分支与 recoverFromIncompleteMaxTokensTurn（L1166-L1186）",
+          "lines": "L928-L941",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "输出截断",
+          "note": "截断回合先尝试恢复，失败就抛错结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1055-L1059",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：maxTokensPerTurn",
+          "lines": "L1055-L1059",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认输出上限",
+          "note": "只有用户覆盖或 openai 提供方才设每回合输出上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/AutoApprovalSettings.ts#L10-L12",
+          "locator": "apps/vscode/src/shared/AutoApprovalSettings.ts：maxRequests",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "请求次数上限",
+          "note": "最大请求数功能已移除，只留遗留字段。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "output_limit 计入的理由是“对截断有专门的续写、重试处理”，而不是客户端自设上限；钉住型号的实际输出上限由服务端或型号决定，快照里看不到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次请求时 AgentRuntime 从运行中维护的 state.messages 拷贝一份，追加排队的用户输入，再经 prepareTurn（压缩）和 beforeModel 钩子修整后发出；消息分片只有文字、图片、工具调用、工具结果、思考、文件等内容类型。压缩结果存为旁挂的 compaction 状态（已压缩消息加原始消息计数），每轮按它替换前缀、其后的原始消息照原样接上，属于定位起点，不是逐类解释。每轮还把消息转成提供方格式（MessageBuilder.buildForApi：截短、补缺失工具结果），这一层每轮现转、不跨轮保留，不另算层。displayOnly 等是消息元数据。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：构造 AgentModelRequest（messages: cloneMessages(this.state.messages)）及 prepareTurnForModelRequest",
+          "lines": "L1675-L1720",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "每轮请求直接取运行中维护的消息列表，追加待处理输入后交 prepareTurn 和 beforeModel 修整。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/context/compaction.ts",
+          "locator": "sdk/packages/core/src/extensions/context/compaction.ts：createCompactionStateAwarePrepareTurn",
+          "lines": "L753-L830",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的自动压缩",
+          "note": "已有压缩状态时用 projectSessionCompactionState 把压缩消息与原始尾部拼接，属于按边界定位起点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/models/session-compaction.ts",
+          "locator": "sdk/packages/core/src/session/models/session-compaction.ts：SessionCompactionStateSchema",
+          "lines": "L25-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "压缩旁挂状态",
+          "note": "压缩状态只含已压缩消息、原始消息计数与前缀哈希，不是消息列表里的控制条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts",
+          "locator": "sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts：createRuntimePrepareTurn / prepareProviderMessagesForApi",
+          "lines": "L1255-L1320",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径请求构造",
+          "note": "每轮把消息转成提供方格式并经 MessageBuilder.buildForApi 截短和修补，转换结果不跨轮保留。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "压缩状态放在会话外的旁挂文件里、每轮按它替换前缀，我按 scope_rule 的“定位起点”处理为 sequential_messages；若码本把旁挂状态视为一类控制条目，可能有人记 typed_event_rebuild。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "summarization：扩展默认 useAutoCondense=true、策略默认 agentic，接近窗口时调用模型生成摘要并保留最近若干 token 原文，替换旧历史（服务端无关，摘要可读）；也在窗口溢出或输出超限时强制压缩重试。truncation：每条工具结果默认按 8000 字符中间截短（完整结果存进会话内存缓存、给出 URI，进程退出即丢），助手文字、总字节预算另有截短；agentic 摘要失败时回退到 basic 策略，不调模型按位置丢掉较早消息、只留工具活动清单通知。tool_result_replacement：同一文件后来再读或被改时，旧的读取结果在可回收字节达 64KB 后被整段换成“[outdated - see the latest file content]”。用户点压缩按钮或 /compact 触发的手动压缩属第二档，不另计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：useAutoCondense 默认 true、compaction.enabled",
+          "lines": "L1112-L1118",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展默认设置",
+          "note": "自动压缩默认开启并把策略传给 SDK 会话（同文件 L1193-L1200）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/services/global-settings.ts",
+          "locator": "sdk/packages/core/src/services/global-settings.ts：readCompactionStrategyGlobally",
+          "lines": "L269-L271",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认压缩策略",
+          "note": "未设置时压缩策略为 agentic。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/context/compaction.ts",
+          "locator": "sdk/packages/core/src/extensions/context/compaction.ts：BUILTIN_COMPACTION_STRATEGIES 与 agentic 失败回退 basic",
+          "lines": "L160-L180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动压缩",
+          "note": "agentic 走摘要器，失败时回退 basic（L555-L572）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/context/basic-compaction.ts",
+          "locator": "sdk/packages/core/src/extensions/context/basic-compaction.ts：被丢弃段落的工具活动通知",
+          "lines": "L82-L92",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退压缩",
+          "note": "basic 策略不调模型，丢掉较早内容并留下固定格式的工具活动清单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/services/message-builder.ts",
+          "locator": "sdk/packages/core/src/session/services/message-builder.ts：DEFAULT_MAX_TOOL_RESULT_CHARS、OUTDATED_FILE_CONTENT、transformBlock",
+          "lines": "L29-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每轮请求构造",
+          "note": "工具结果默认截短；过时读取结果按 L285-L307 换成固定占位。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/features/auto-compact.mdx",
+          "locator": "docs/features/auto-compact.mdx：How It Works",
+          "lines": "L16-L26",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "接近窗口上限时自动摘要并替换历史。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "工具结果截短后完整结果放进 ToolResultCache（内存）并给 URI，按 truncation 的“余下部分另存留路径”只记 truncation。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：输入里的 @/路径（文件、文件夹）、拖入文件由 parseMentions 读入并内联进消息。keyword：默认注册的 search_codebase 工具按正则搜索代码库（优先用 ripgrep）；默认自动批准。没有找到语义检索或代码结构查询工具。web_search（Cline 服务端执行）、fetch_web_content 不计。技能目录（skills 工具，只发现用户自己的技能，默认没有）属“说明常驻、正文按需读取”，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/SdkController.ts",
+          "locator": "apps/vscode/src/sdk/SdkController.ts：用户输入经 parseMentions 内联文件内容",
+          "lines": "L1198-L1220",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 入口用户输入",
+          "note": "发送前把 @ 引用的文件、URL 内容内联进提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/core-workflows/working-with-files.mdx",
+          "locator": "docs/core-workflows/working-with-files.mdx：@ mentions 与拖放",
+          "lines": "L7-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "用户用 @ 或拖放把文件、文件夹带进对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/definitions.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/definitions.ts：createSearchTool（search_codebase）",
+          "lines": "L360-L378",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "模型可直接调用的正则代码搜索工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/presets.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/presets.ts：act 预设",
+          "lines": "L25-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 Act 模式",
+          "note": "act 预设开启 enableSearch，工具清单里没有语义或结构检索工具（另见 constants.ts L11-L37）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查了 SDK 内置工具清单、presets、vscode 追加工具（只加 MCP 工具与 run_commands），以及 core 里 semantic/embedding/tree-sitter 关键词，均无语义或结构检索。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "规则文件（工作区 AGENTS.md、.clinerules/、.cline/rules/，全局 ~/.agents/AGENTS.md、~/Documents/Cline/Rules 等）由默认开启的 rules 运行时扩展每个会话自动读入系统提示。没有专门的记忆工具、会话结束摘要或检索库；官方“Memory Bank”只是让模型用通用编辑工具维护说明文件的做法，不计 auto_summary。会话历史搜索只在 hub 服务端接口里，不是模型工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/storage/paths.ts",
+          "locator": "sdk/packages/shared/src/storage/paths.ts：resolveWorkspaceRulesConfigPaths / resolveRulesConfigSearchPaths",
+          "lines": "L530-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则文件搜索路径",
+          "note": "工作区与全局规则文件的自动发现路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-session-host.ts",
+          "locator": "apps/vscode/src/sdk/vscode-session-host.ts：configExtensions 默认取全部种类、仅去掉 hooks",
+          "lines": "L164-L174",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展会话",
+          "note": "rules 扩展默认启用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/customization/cline-rules.mdx",
+          "locator": "docs/customization/cline-rules.mdx：Supported Rule Types / Where Rules Live",
+          "lines": "L7-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "规则文件跨所有对话自动生效。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查了 core 和 vscode SDK 适配层里 memory 关键词（只命中 MCP、子进程内存等无关处）、默认工具清单、会话开始注入内容（规则、技能目录、偏好语言）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "messages：每个会话一份 messages JSON（MessageWithMetadata 数组，分片只有内容类型），另有清单 manifest（会话元数据，含 checkpoint 历史）和旁挂的 compaction 状态文件（压缩后的消息，也是消息）。扩展不再写旧版 ui_messages.json。state_snapshot：默认开启的检查点在每个用户回合开始前用 git stash create（含未跟踪文件）拍下工作区，存为用户仓库里的私有引用 refs/cline/checkpoints/<会话>/<回合>，恢复流程按它回退文件。截短工具结果的完整内容只在内存缓存里，进程退出即丢，不计 external_reference；“Proceed While Running”把后台命令输出写到临时目录日志文件，属用户按钮触发，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/stores/session-manifest-store.ts",
+          "locator": "sdk/packages/core/src/session/stores/session-manifest-store.ts：persistSessionMessages / persistSessionCompactionState",
+          "lines": "L220-L313",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "消息整份写入 messages 文件，压缩状态另写旁挂文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/llms/messages.ts",
+          "locator": "sdk/packages/shared/src/llms/messages.ts：ContentBlock",
+          "lines": "L117-L125",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "消息格式",
+          "note": "分片只有文字、图片、媒体、工具调用、工具结果、思考、文件，没有控制分片。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/hooks/checkpoint-hooks.ts",
+          "locator": "sdk/packages/core/src/hooks/checkpoint-hooks.ts：createCheckpointHooks（beforeRun、update-ref、writeSessionMetadata）",
+          "lines": "L625-L705",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的检查点",
+          "note": "每个回合前拍工作区快照并存为私有 git 引用，引用记进会话元数据。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：enableCheckpointsSetting 默认 true",
+          "lines": "L1117-L1117",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展默认设置",
+          "note": "检查点默认开启（L1188 传入 checkpoint.enabled）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-control-coordinator.ts",
+          "locator": "apps/vscode/src/sdk/sdk-task-control-coordinator.ts：clearTask 注释",
+          "lines": "L141-L146",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展",
+          "note": "会话历史由 SDK 持久化负责，不再写 ui_messages.json。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "官方 Checkpoints 文档说“每次工具使用后”拍快照、存于影子 Git 仓库；该提交实现是每个用户回合开始前、存为用户仓库内私有引用。按实现记，两者都满足 state_snapshot。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "从任务历史打开旧任务后显示 Resume 提示；用户继续时 prepareTaskResumeStartInput 读回该会话保存的消息（旧版任务先转换），以同一会话编号新开 SDK 会话，压缩旁挂状态一并读回，再从用户新的输入接着跑。中断时没做完的工具调用不接续，由模型重新决定（MessageBuilder 只为缺结果的调用补占位）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-resume.ts",
+          "locator": "apps/vscode/src/sdk/sdk-task-resume.ts：prepareTaskResumeStartInput",
+          "lines": "L42-L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认恢复入口",
+          "note": "恢复时读回持久化消息作为新会话的 initialMessages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-followup-coordinator.ts",
+          "locator": "apps/vscode/src/sdk/sdk-followup-coordinator.ts：resumeSessionFromTask",
+          "lines": "L238-L256",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认恢复入口",
+          "note": "用户在恢复的任务里继续时，以读回的消息新开会话再发送用户输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-control-coordinator.ts",
+          "locator": "apps/vscode/src/sdk/sdk-task-control-coordinator.ts：appendFreshResumeMessage",
+          "lines": "L294-L311",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "任务历史",
+          "note": "打开历史任务时追加 resume_task 提示，等待用户继续。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "恢复时读回消息（含工具调用及其结果），压缩旁挂状态也读回、继续作为工作上下文。没有计划或待办工具，子代理默认关闭，工作区不自动回到会话当时的状态（回退要用户点 Restore，归 F20）；检查点历史随会话元数据保留，只供回退。截短工具结果的完整内容存在内存缓存里，重启后取不回。待批准的调用不会重新呈现。外部副作用不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-resume.ts",
+          "locator": "apps/vscode/src/sdk/sdk-task-resume.ts：prepareTaskResumeStartInput",
+          "lines": "L42-L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认恢复入口",
+          "note": "读回整份消息作为新会话初始消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/host/local-runtime-host.ts",
+          "locator": "sdk/packages/core/src/runtime/host/local-runtime-host.ts：startSession 恢复时读回 compaction 状态",
+          "lines": "L627-L652",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "以原会话编号恢复时读回清单和压缩状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/services/tool-result-cache.ts",
+          "locator": "sdk/packages/core/src/session/services/tool-result-cache.ts：ToolResultCache",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具结果缓存",
+          "note": "完整工具结果只存于会话内存缓存，进程退出即丢。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查了 vscode SDK 适配层与 core 里 todo、focus chain、task_progress 关键词，只在旧版状态读取器里出现，当前工具集没有计划工具。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "workspace_snapshot：检查点默认开启，用户点 Restore 选 Restore Files 或 Restore Files & Task，按 git 快照把工作区改回（先做恢复事务，失败可回滚）；需要工作区是 Git 仓库（环境前提满足）。session_branch：选 Restore Task Only 或 Restore Files & Task（编辑旧消息走同一路径）时，框架以裁到该回合前的消息新开一个会话、加入任务历史，原会话只被停止、不删除，仍留在历史列表里可打开继续。官方文档说这两项“删除此后的消息”，与实现不一致，按实现记。没有补偿操作；没有调用级去重，恢复时只为缺结果的调用补占位。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/SdkController.ts",
+          "locator": "apps/vscode/src/sdk/SdkController.ts：performRestoreCheckpoint",
+          "lines": "L1949-L2041",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "检查点恢复入口",
+          "note": "按恢复类型回退文件和/或以裁剪后的消息新开会话并写入任务历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-session-lifecycle.ts",
+          "locator": "apps/vscode/src/sdk/sdk-session-lifecycle.ts：restoreActiveSession",
+          "lines": "L359-L392",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "检查点恢复",
+          "note": "恢复得到新会话编号后，只停止原会话、不删除。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/session-versioning-service.ts",
+          "locator": "sdk/packages/core/src/session/session-versioning-service.ts：restoreCheckpoint",
+          "lines": "L306-L345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "检查点恢复",
+          "note": "消息恢复时启动新会话并保留检查点引用，原会话不删除。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-task-history.ts",
+          "locator": "apps/vscode/src/sdk/sdk-task-history.ts：历史列表只滤掉子代理会话",
+          "lines": "L452-L452",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "任务历史",
+          "note": "历史列表来自 SDK 会话记录，只滤掉子代理，原会话仍可见。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/core-workflows/checkpoints.mdx",
+          "locator": "docs/core-workflows/checkpoints.mdx：Restoring Checkpoints",
+          "lines": "L48-L64",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "三种恢复选项：只恢复文件、只恢复任务、两者都恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "session_branch 依据是原会话不删、历史列表只滤子代理，我没逐行追踪界面上是否还有别处把原会话隐藏，所以 confidence 记 medium。文档说法（删除此后消息）与实现（新开会话、旧会话保留）不同。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "allow",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "Auto Approve 按类别开关：读文件、改文件、执行命令、网页（fetch/web_search）、MCP（一个开关管全部 MCP 工具）；Plan/Act 内置模式按工具类别去掉编辑工具。没有用户可写的命令规则、路径规则或域名规则。文档写有“Read all files”“Edit all files”（工作区外）开关，但代码里 readFilesExternally/editFilesExternally 是遗留字段，isToolAutoApproved 不区分工作区内外，所以不计 file_path；.clineignore 文档自称不是访问控制，SDK 路径里也没有检查。默认效果：改文件（含工作区外）直接放行；命令（含联网命令）因 executeSafeCommands=false 要用户批准，批准后不限网络。其他环境：企业远程配置可限定允许的 MCP 服务；用户自写 PreToolUse 钩子可拦截，归 F31。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/AutoApprovalSettings.ts",
+          "locator": "apps/vscode/src/shared/AutoApprovalSettings.ts：DEFAULT_AUTO_APPROVAL_SETTINGS",
+          "lines": "L28-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "读、写、网页、MCP 默认自动批准，executeSafeCommands=false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-tool-policies.ts",
+          "locator": "apps/vscode/src/sdk/sdk-tool-policies.ts：buildToolPolicies / isToolAutoApproved",
+          "lines": "L13-L68",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "按工具类别决定是否静默批准，不看路径或命令内容。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/features/auto-approve.mdx",
+          "locator": "docs/features/auto-approve.mdx：权限开关表",
+          "lines": "L27-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "文档列出各类别开关及工作区外读写的扩展开关（代码未区分）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/presets.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/presets.ts：plan 预设",
+          "lines": "L38-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Plan 模式",
+          "note": "Plan 模式去掉 editor 工具，属按工具类别限制。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "命令自动批准只看 executeSafeCommands，没有按命令文本的规则；官方文档的 Execute safe commands 依赖模型对命令安全性的判断，但代码不读它，故不计 command_rule。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认模式下 run_commands 每次调用发出前停下，界面显示 Approve/Reject，一次批准放行这次调用里的全部命令（commands 数组）。读、写、网页、MCP 默认静默放行，不弹审批。命令执行中途不再询问。可选：用户关掉 Auto Approve 各开关后，其他类别也走同一调用层审批；Plan 模式下模型给出计划、由用户切到 Act，属用户切换模式，不改变后续放行方式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：工具执行前按 policy.autoApprove 请求审批",
+          "lines": "L2491-L2510",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "工具调用执行前拦下，未获批准则跳过执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-interaction-coordinator.ts",
+          "locator": "apps/vscode/src/sdk/sdk-interaction-coordinator.ts：handleRequestToolApproval",
+          "lines": "L118-L170",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 审批界面",
+          "note": "不在自动批准范围的调用在界面上等用户批准或拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/AutoApprovalSettings.ts",
+          "locator": "apps/vscode/src/shared/AutoApprovalSettings.ts：DEFAULT_AUTO_APPROVAL_SETTINGS",
+          "lines": "L28-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "只有命令类默认需要人工批准。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：工具策略加审批回调在执行前拦下命令调用；Plan 模式注册 beforeTool 钩子按命令名单拒绝改文件的命令。没有操作系统隔离或容器：命令在 VS Code 终端或后台子进程里以用户权限运行；core 的 subprocess-sandbox 只是插件进程间调用，不是安全隔离。prompt_only=present（部分兜底）：Plan 模式被说成只计划、不改文件（文档还说不执行命令），代码去掉了 editor，但 run_commands 仍可用，命令名单源码自承拦不住 python -c 一类写法，剩下靠提示；默认下这些命令还要用户批准。MCP 工具在 Plan 模式下仍默认自动批准。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/agents/src/agent-runtime.ts",
+          "locator": "sdk/packages/agents/src/agent-runtime.ts：beforeTool 钩子与 policy 审批",
+          "lines": "L2480-L2510",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "钩子可跳过、策略可要求审批，均在执行前。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/command-guard.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/command-guard.ts：文件头注释",
+          "lines": "L1-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Plan 模式",
+          "note": "源码承认命令黑名单拦不住全部改文件写法。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/command-guard-extension.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/command-guard-extension.ts：文件头注释",
+          "lines": "L1-L16",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Plan 模式",
+          "note": "Plan 模式命令守卫作为 beforeTool 钩子覆盖 VS Code 的 run_commands。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/core-workflows/plan-and-act.mdx",
+          "locator": "docs/core-workflows/plan-and-act.mdx：Plan mode",
+          "lines": "L15-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方文档",
+          "note": "文档称 Plan 模式不能改文件或执行命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/presets.ts",
+          "locator": "sdk/packages/core/src/extensions/tools/presets.ts：plan 预设",
+          "lines": "L38-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Plan 模式",
+          "note": "Plan 模式保留 enableBash，去掉 editor。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 核对：默认 Act 模式——命令要人工批准（代码）、读写网页 MCP 放行，没有交代未落实的限制；Plan 模式（不改设置就能切换）——见 value_note，记 present；默认子代理——关闭（enableSpawnAgent=false），没有内置角色；文档列出的限制设置——Auto Approve 各开关由代码执行，“Edit/Read all files”工作区外开关代码未区分，但它们默认都放行，不构成只靠提示的限制；.clineignore 文档自称不是边界。Plan 模式命令同时受用户审批，算不算“剩下靠提示”有口径疑问，故 confidence 记 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "会话 messages 文件按顺序保存用户请求、助手文字和思考、tool_use（工具名、完整参数、调用编号）及按 tool_use_id 对上的 tool_result（输出、is_error）。审批：批准不落盘，只有被拒时工具结果写入拒绝原因文字，分不出人工批准和自动放行，不计。身份：只有会话、模型编号，不计。没有专门的审计日志；PostHog 使用数据默认上报到远端，不是本地记录。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/session/stores/session-manifest-store.ts",
+          "locator": "sdk/packages/core/src/session/stores/session-manifest-store.ts：persistSessionMessages",
+          "lines": "L220-L240",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "整份消息（含工具调用与结果）持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/llms/messages.ts",
+          "locator": "sdk/packages/shared/src/llms/messages.ts：ContentBlock",
+          "lines": "L117-L125",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "消息格式",
+          "note": "消息含工具调用、工具结果、思考等分片。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/tool-approval-denial.ts",
+          "locator": "apps/vscode/src/sdk/tool-approval-denial.ts：buildToolApprovalDenialReason",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批",
+          "note": "拒绝只以写给模型的原因文字进入工具结果，批准没有记录。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known_absent",
+      "value": "absent",
+      "unknown_reason": null,
+      "value_note": "VS Code 扩展建 SDK 会话时写死 enableSpawnAgent=false、enableAgentTeams=false，覆盖 SDK act 预设里的 true，所以模型拿不到 spawn_agent 和团队工具；/newtask 在本版本只是 /compact 的别名（压缩后继续），不再开新任务。可选：云端任务（cloudSessionsEnabled 默认 false，属另一种托管运行）。其他入口：CLI 与 Desktop 有子代理和 Agent Teams，不属所选入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/cline-session-factory.ts#L1187-L1192",
+          "locator": "apps/vscode/src/sdk/cline-session-factory.ts：CoreSessionConfig 构造",
+          "lines": "L1187-L1192",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展默认会话",
+          "note": "扩展会话配置写死 enableSpawnAgent: false、enableAgentTeams: false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L476-L480",
+          "locator": "sdk/packages/core/src/runtime/orchestration/runtime-builder.ts：configuredAgents",
+          "lines": "L476-L480",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "运行时工具装配",
+          "note": "只有 enableSpawnAgent 为真时才加载代理定义并注册派生工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/features/subagents.mdx#L7-L9",
+          "locator": "docs/features/subagents.mdx：开头 Warning",
+          "lines": "L7-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "官方文档写明子代理只在 CLI 与 Desktop 可用，VS Code 与 JetBrains 扩展不用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/slashCommands.ts#L8-L19",
+          "locator": "apps/vscode/src/shared/slashCommands.ts：BASE_SLASH_COMMANDS newtask",
+          "lines": "L8-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令清单",
+          "note": "/newtask 是 /compact 的别名，执行压缩，不经旧的 new_task 工具开新任务。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核对清单：默认工具清单（sdk/packages/core/src/extensions/tools/constants.ts 与 presets.ts 的 act 预设，扩展另加 MCP 工具与自带 run_commands，见 vscode-session-host.ts L150-L161）没有委派工具；命令清单（slashCommands.ts、builtin-slash-commands.ts）只有 newtask/compact/smol/deep-planning 和用户工作流、技能展开；agentic 压缩（extensions/context/agentic-compaction.ts）走 generateSummary 单次总结调用，不是自己多步调用工具的代理；钩子在扩展里是脚本子进程，不是模型循环。配置记录 subagents_enabled=false 与代码一致；subagentsEnabled 状态键存在，但会话构造处写死 false，不读这个键。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "value_note": "F25 已知为无。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "value_note": "F25 已知为无。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": null
+      }
+    },
+    "F28": {
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "value_note": "F25 已知为无。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：read_files、editor、run_commands 等内置工具写在 SDK 核心里，Cline 提供方的 web_search 也在核心代码里改写成函数工具。plugin_api：AgentPlugin 的 setup 里 api.registerTool 注册新工具；扩展会话的运行时扩展种类含 plugins，会从 <工作区>/.cline/plugins、Cline 目录 plugins、文稿目录 Plugins 自动发现并加载插件，放一个插件文件属于添加内容，所以进 via_default_entry。官方 Plugins 与 Custom Tools 文档写“暂不适用于 VS Code 扩展”，与该提交的代码相反，按实现记（总则 R10）。external_protocol_service：MCP 服务在设置里加一条即可用，默认没有预置服务。embedder_declared：ClineCore 会话配置的 extraTools 由嵌入方按会话声明工具；VS Code 扩展本身就是经 extraTools 为会话声明自带 run_commands 与 MCP 工具的官方前端，所以算在用；这一边界属于官方 SDK，不进 via_default_entry（总则 R5）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/plugins.mdx#L40-L66",
+          "locator": "docs/sdk/plugins.mdx：What is a Plugin?",
+          "lines": "L40-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件接口",
+          "note": "AgentPlugin 在 setup 里经 api.registerTool 等注册工具、钩子。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-session-host.ts#L150-L187",
+          "locator": "apps/vscode/src/sdk/vscode-session-host.ts：prepareStartSessionInput / ClineCore.create",
+          "lines": "L150-L187",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展默认会话",
+          "note": "扩展把自带工具和 MCP 工具作为 extraTools 声明给会话，configExtensions 默认取全部运行时扩展种类、只滤掉 hooks（保留 plugins）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/services/local-runtime-bootstrap.ts#L462-L479",
+          "locator": "sdk/packages/core/src/services/local-runtime-bootstrap.ts：resolveAndLoadAgentPlugins",
+          "lines": "L462-L479",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件加载",
+          "note": "含 plugins 种类时发现并加载插件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/storage/paths.ts#L618-L625",
+          "locator": "sdk/packages/shared/src/storage/paths.ts：resolvePluginConfigSearchPaths",
+          "lines": "L618-L625",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件发现目录",
+          "note": "插件自动发现目录：工作区 .cline/plugins、Cline 目录 plugins、文稿目录 Plugins。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/tools.mdx#L79-L90",
+          "locator": "docs/sdk/tools.mdx：Registering Tools",
+          "lines": "L79-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 嵌入接口",
+          "note": "用 ClineCore 时自定义工具作为会话配置的 extraTools 传入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/tools-reference/all-cline-tools.mdx#L50-L62",
+          "locator": "docs/tools-reference/all-cline-tools.mdx：MCP Tools / Custom Tools",
+          "lines": "L50-L62",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具边界",
+          "note": "MCP 服务配置后其工具与内置工具一起加载；自定义工具经插件加入，文档称暂不适用于 VS Code 扩展（与代码不符）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "user_script 判没有：工具文档只给内置、MCP、插件三条路，CLI 的 hook 命令是钩子，不注册工具。core/src/extensions/composio 有一个 Composio 扩展目录，文档里没有找到，没有追查它的边界，未计入。plugin_api 的 via_default_entry 依据代码（扩展打包时复制 plugin-runtime，见 apps/vscode/esbuild.mjs L194-L203，另有扩展内的插件市场管理），与官方文档相反，按 R10 以实现为准；若主控认为这属 conflicting_sources 应写进 unresolved，请改。embedder_declared 记在用依据 R2 末句（官方前端经嵌入接口声明的工具），MCP 工具虽然也经 extraTools 交给会话，但边界按 MCP 记 external_protocol_service，默认无服务不算在用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "embedder_declared"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：工作区 .clinerules/、.cline/rules/、AGENTS.md 与全局 Rules 目录、~/.agents/AGENTS.md 每个会话自动装载。skill_directory：SKILL.md 技能目录，只把简介放进提示，模型用 skills 工具按需读入全文。prompt_template：.clinerules/workflows 等目录里的工作流文件变成斜杠命令，调用时展开成一条提示由模型自行推进；技能也可按 / 名调用展开。角色模板不记：代理定义只在 enableSpawnAgent 为真时加载，扩展写死 false。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/customization/cline-rules.mdx#L24-L40",
+          "locator": "docs/customization/cline-rules.mdx：规则位置表与 Workspace/Global rules",
+          "lines": "L24-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则文件",
+          "note": "工作区与全局规则目录、AGENTS.md，VS Code、Desktop、CLI 都支持。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/customization/skills.mdx#L17-L25",
+          "locator": "docs/customization/skills.mdx：progressive loading",
+          "lines": "L17-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能",
+          "note": "模型看到技能简介，匹配时用 skills 工具装载 SKILL.md 全文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/SdkController.ts#L1146-L1174",
+          "locator": "apps/vscode/src/sdk/SdkController.ts：resolveSlashCommands",
+          "lines": "L1146-L1174",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 斜杠命令",
+          "note": "工作流与技能命令经 expandSlashCommands 展开成提示文本后交给模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/storage/paths.ts#L586-L616",
+          "locator": "sdk/packages/shared/src/storage/paths.ts：resolveRulesConfigSearchPaths / resolveWorkflowsConfigSearchPaths",
+          "lines": "L586-L616",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则与工作流目录",
+          "note": "规则含工作区 AGENTS.md 与规则目录；工作流目录含 .clinerules/workflows、文稿 Workflows、Cline 目录 workflows。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L476-L480",
+          "locator": "sdk/packages/core/src/runtime/orchestration/runtime-builder.ts：configuredAgents",
+          "lines": "L476-L480",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代理定义",
+          "note": "代理定义文件只在启用派生代理时加载。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "executable_items 判空：规则、技能、工作流都是给模型读的文字，技能附带脚本由模型经命令工具自己运行，不算。疑问：插件可经 registerRule 贡献“包含在运行时系统提示里”的规则（sdk/packages/shared/src/extensions/contribution-registry.ts L125-L140），这是插件代码在装载时执行产生的规则文字；扩展会自动加载插件，但我没有追到 VS Code 自建系统提示的路径是否真把插件规则并进去，所以没有把 project_rules 记进 executable_items。工作流定义不记：没有看到按步骤推进的工作流运行时，/deep-planning 也只是一段提示。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end"
+      ],
+      "unknown_reason": null,
+      "value_note": "插件钩子 beforeRun（可 stop、appendContext，每次运行开始触发，归输入）、beforeModel/afterModel 与 registerMessageBuilder（改写请求或停止）、beforeTool/afterTool（skip、改输入、改结果、要求审批）、afterRun 与会话结束的 onDispose（返回值不用，仅观察）。VS Code 扩展另有自己的文件钩子适配：TaskStart/UserPromptSubmit→beforeRun，PreToolUse/PostToolUse→工具前后，TaskComplete/TaskCancel→afterRun；hooksEnabled 默认 true，放钩子脚本即可用。CLI 的文件钩子还有 TaskError、SessionShutdown（都挂在 afterRun）。子维度未确认：in_use_by_default 按配置记录写空，扩展的钩子适配和核心的审计、检查点钩子属核心代码，未计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/plugins.mdx#L187-L201",
+          "locator": "docs/sdk/plugins.mdx：Hooks 表",
+          "lines": "L187-L201",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件生命周期钩子",
+          "note": "列出 beforeRun、afterRun、beforeModel、afterModel、beforeTool、afterTool、onEvent 及各自可返回的控制项；afterRun 不返回任何控制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/shared/src/agent.ts#L483-L515",
+          "locator": "sdk/packages/shared/src/agent.ts：AgentRuntimeHooks",
+          "lines": "L483-L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子接口",
+          "note": "afterRun 与 onEvent 返回 void，其余钩子返回可改写或停止的结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/hooks-adapter.ts#L1-L12",
+          "locator": "apps/vscode/src/sdk/hooks-adapter.ts：文件头映射说明",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 文件钩子",
+          "note": "扩展接上 TaskStart、UserPromptSubmit、PreToolUse、PostToolUse、TaskComplete、TaskCancel；TaskResume、TaskError、SessionShutdown、PreCompact、Notification 暂未接。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/hooks-adapter.ts#L253-L275",
+          "locator": "apps/vscode/src/sdk/hooks-adapter.ts：afterRun",
+          "lines": "L253-L275",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 文件钩子",
+          "note": "TaskComplete/TaskCancel 在 afterRun 里运行，输出不回流，属仅观察。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/hooks/hook-file-config.ts#L17-L43",
+          "locator": "sdk/packages/core/src/hooks/hook-file-config.ts：HOOK_CONFIG_FILE_EVENT_MAP",
+          "lines": "L17-L43",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI/SDK 文件钩子",
+          "note": "PreCompact 映射为 undefined（未接线），TaskResume 映射 agent_resume，SessionShutdown 映射 session_shutdown。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/types/config.ts#L159-L170",
+          "locator": "sdk/packages/core/src/types/config.ts：CoreCompactionConfig.compact",
+          "lines": "L159-L170",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 会话配置",
+          "note": "会话配置可传自定义 compact 函数，框架在压缩时调用并用其返回的消息；文档里没有找到这一项。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "unresolved 三项：context_compaction（SDK 会话配置 compaction.compact 自定义函数，源码类型公开但文档未见；文件钩子 PreCompact 名字保留但未接线）；save（同文件 L205-L225 的 checkpoint.createCheckpoint 自定义函数，同样只在源码）；session_start（插件 setup(api, ctx) 每会话调用一次并注册工具和规则，算不算处理器拿不准；CLI 恢复会话时经环境变量 CLINE_HOOK_AGENT_RESUME 把 beforeRun 换成 TaskResume，见 apps/cli/src/runtime/run-interactive.ts L148-L162，但它仍挂在每次运行的 beforeRun 上，文档也没写）。via_default_entry 依据扩展自动发现插件目录与钩子脚本目录（添加内容），与官方 Plugins 文档“VS Code 暂不适用”相反，按 R10 记实现。onEvent 事件流里有 status-notice（reason 可为 auto_compaction），但事件类型不是压缩专属，没有据此记 context_compaction。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end"
+        ],
+        "observe_only": [
+          "end"
+        ],
+        "unresolved": [
+          "context_compaction",
+          "save",
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "library",
+        "public_protocol",
+        "host_extension_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "cli_subprocess：同一提交的 Cline CLI（npm 包 cline）可带提示词运行或从管道读入，--json 把消息按 JSON 输出。library：@cline/sdk（重导出 @cline/core），文档说它就是 IDE 扩展和 CLI 用的同一套 harness；本机 hub 守护进程只在文档里描述了 WebSocket 与 client.register，没有线协议文档，按 library 例外记，不记 service_api。public_protocol：cline --acp 以 ACP 服务端身份经标准输入输出接受编辑器驱动。host_extension_api：扩展 activate 返回 ClineAPI（startNewTask、sendMessage、pressPrimaryButton 等），同一 VS Code 里其他扩展可调用。Cline API（api.cline.bot 的对话补全接口）是厂商托管服务，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/exports/README.md#L1-L35",
+          "locator": "apps/vscode/src/exports/README.md：Cline API",
+          "lines": "L1-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展导出接口",
+          "note": "其他扩展经 vscode.extensions.getExtension(\"saoudrizwan.claude-dev\").exports 调用 startNewTask、sendMessage。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/extension.ts#L519",
+          "locator": "apps/vscode/src/extension.ts：activate 返回值",
+          "lines": "L519-L519",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展导出接口",
+          "note": "activate 返回 createClineAPI(webview.controller)。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/cli/cli-reference.mdx#L17-L47",
+          "locator": "docs/cli/cli-reference.mdx：Help Menu",
+          "lines": "L17-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI",
+          "note": "--json 输出 JSON 消息，--acp 进入 ACP 模式，-z 让会话在后台 hub 运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/cli/cli-reference.mdx#L105-L115",
+          "locator": "docs/cli/cli-reference.mdx：cline (default)",
+          "lines": "L105-L115",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI",
+          "note": "cline \"prompt\" 与 echo \"prompt\" | cline 直接发起任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/usage/acp.mdx#L7-L21",
+          "locator": "docs/usage/acp.mdx：How it works",
+          "lines": "L7-L21",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP",
+          "note": "Cline CLI 支持 Agent Client Protocol，客户端启动 cline --acp 并经 stdio 通信；前提是 npm i -g cline。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/overview.mdx#L7-L18",
+          "locator": "docs/sdk/overview.mdx：开头与 Install",
+          "lines": "L7-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK",
+          "note": "SDK 是 IDE 扩展和 CLI 使用的同一套 harness，npm install @cline/sdk。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/architecture/hub-spoke.mdx#L36-L75",
+          "locator": "docs/sdk/architecture/hub-spoke.mdx：Communication Flow / Backend Modes",
+          "lines": "L36-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "hub 守护进程",
+          "note": "客户端经 WebSocket 连 hub、由 ClineCore 自动发现或拉起；只给出命令名，没有线协议文档。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "needs_official_package：CLI 是单独发布的 npm 包 cline，ACP 也要它，SDK 是 @cline/sdk，都与 VS Code 扩展不是同一个包。host_extension_api 的说明在仓库里的 README（不在 docs 站点），按官方有文档算。hub 有 cline hub dashboard 浏览器界面，按界面不计。Kanban（cline kanban）没有展开查，未计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "host_extension_api"
+        ],
+        "needs_official_package": [
+          "cli_subprocess",
+          "library",
+          "public_protocol"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：VS Code 侧边栏面板、CLI 终端，以及 CLI connectors 把 Telegram、Slack 等聊天消息变成会话。api：按 F32，所选入口经扩展导出的 ClineAPI.startNewTask 直接开放。schedule：CLI 的 cline schedule 与 SDK 的 cline.automation 读取 ~/.cline/cron/ 的定时定义，经 hub 运行，文档写明跨进程重启保留；文档也写明不适用于 VS Code 扩展。external_event：插件可登记 automation 事件类型，由外部事件（新 PR、Slack 消息）触发代理动作，SDK automation 会摄入事件；CLI 的 Linear connector 收 webhook。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/cli/scheduling.mdx#L6-L11",
+          "locator": "docs/cli/scheduling.mdx：开头",
+          "lines": "L6-L11",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "CLI 经 hub 按 cron 运行代理，定时任务跨进程重启保留；不适用于 VS Code 扩展。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/guides/scheduled-agents.mdx#L33",
+          "locator": "docs/sdk/guides/scheduled-agents.mdx：cline.automation",
+          "lines": "L33-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 自动化",
+          "note": "cline.automation 读取 ~/.cline/cron/ 的定义，调和、摄入事件并列出运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/plugins.mdx#L19-L38",
+          "locator": "docs/sdk/plugins.mdx：Extension Glossary",
+          "lines": "L19-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "Events 扩展点用于登记会触发代理动作的外部事件，例如新 PR、Slack 消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/cli/connectors.mdx#L6-L30",
+          "locator": "docs/cli/connectors.mdx：开头与 Supported Platforms",
+          "lines": "L6-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI connectors",
+          "note": "聊天平台消息新建或继续会话；Linear connector 需要 webhook 签名密钥。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/exports/README.md#L1-L35",
+          "locator": "apps/vscode/src/exports/README.md：Cline API",
+          "lines": "L1-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展导出接口",
+          "note": "其他扩展可调用 startNewTask 发起新任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "external_event 依据插件文档的 Events 一行和 SDK 自动化“摄入事件”，没有逐行追到 automation 事件进入新会话的代码；Linear 是否属于“人在平台上点名代理”（应记用户交互）没有细查。via_default_entry 只有 user_interaction 与 api（F32 的 via_default_entry 有 host_extension_api）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "扩展用 ClineCore.create({ backendMode: \"local\" }) 在 VS Code 扩展宿主进程里直接跑代理循环，关掉编辑器窗口即随宿主退出。官方 hub-spoke 文档把 VS Code 列为连 hub 的客户端、默认 auto 模式会优先连 hub，与该提交扩展写死 local 相反，按实现记（总则 R10）。其他入口：CLI 的 -z 与定时任务在后台 hub 运行，不属所选入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/vscode-session-host.ts#L179-L190",
+          "locator": "apps/vscode/src/sdk/vscode-session-host.ts：ClineCore.create",
+          "lines": "L179-L190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 扩展默认会话",
+          "note": "扩展以 backendMode: \"local\" 创建核心，进程内执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/docs/sdk/architecture/hub-spoke.mdx#L58-L75",
+          "locator": "docs/sdk/architecture/hub-spoke.mdx：Backend Modes",
+          "lines": "L58-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后端模式",
+          "note": "local 模式始终在进程内执行，不用 hub，不共享会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "continues_after_ui_exit 记 no：local 模式没有把在跑的任务交给别的进程；云端任务开关默认关。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "任务运行中提交的后续消息经 fireAndForgetSend 以 queue 方式交给核心，排在活动会话对象的 pendingPrompts 数组里，回合结束后由核心自动取出；没有看到写盘或重启后自动续发。所选入口没有定时任务或待重试请求的存放处；重启后要用户在历史里重新打开并发消息才继续。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-followup-coordinator.ts#L128-L163",
+          "locator": "apps/vscode/src/sdk/sdk-followup-coordinator.ts：queueToActiveSession",
+          "lines": "L128-L163",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 运行中输入",
+          "note": "会话在跑时把后续消息以 queue 交付给核心，注释说核心持有队列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/runtime/turn-queue/pending-prompt-service.ts#L14-L27",
+          "locator": "sdk/packages/core/src/runtime/turn-queue/pending-prompt-service.ts：PendingPromptEntry / PendingPromptQueueState",
+          "lines": "L14-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "核心待发提示队列",
+          "note": "待发提示（queue 或 steer）存在会话状态的 pendingPrompts 数组里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/types/session.ts#L37",
+          "locator": "sdk/packages/core/src/types/session.ts：ActiveSession.pendingPrompts",
+          "lines": "L37-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "核心待发提示队列",
+          "note": "pendingPrompts 是内存中活动会话对象的字段。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "崩溃语义按“没有找到写盘路径”判：grep 了 core 里引用 pendingPrompts 的存储、记录相关文件，没有命中；没有逐个审计会话持久化代码，故取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval"
+      ],
+      "unknown_reason": null,
+      "value_note": "permission：执行命令默认要人工批准（executeSafeCommands=false），审批回调把消息挂在面板上等用户允许或拒绝。question：act 预设默认注册 ask_question，扩展把它变成 followup 提问并等待用户回答。连续出错到上限时扩展只显示错误并停止运行，不停下提问。可选：enableNotifications（批准与完成时的通知）默认 false。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/shared/AutoApprovalSettings.ts#L27-L44",
+          "locator": "apps/vscode/src/shared/AutoApprovalSettings.ts：DEFAULT_AUTO_APPROVAL_SETTINGS",
+          "lines": "L27-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "executeSafeCommands 默认 false（命令要批准），enableNotifications 默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/sdk/packages/core/src/extensions/tools/presets.ts#L24-L37",
+          "locator": "sdk/packages/core/src/extensions/tools/presets.ts：ToolPresets.act",
+          "lines": "L24-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Act 模式工具",
+          "note": "act 预设 enableAskQuestion: true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L177-L197",
+          "locator": "apps/vscode/src/sdk/sdk-interaction-coordinator.ts：handleAskQuestion",
+          "lines": "L177-L197",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "VS Code 提问",
+          "note": "发出 followup ask 并等待用户回答的 Promise。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/cline/cline/blob/a459f1d04dea030833b558be645011ab739c463b/apps/vscode/src/sdk/sdk-interaction-coordinator.ts#L88-L116",
+          "locator": "apps/vscode/src/sdk/sdk-interaction-coordinator.ts：handleConsecutiveMistakeLimitReached",
+          "lines": "L88-L116",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "错误上限",
+          "note": "连续出错上限时显示错误并 stop，注释说明不用阻塞提问。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "resumable_todo 与 structured_handoff 判没有：submit_and_exit 在 act 预设里关闭，完成时的 attempt_completion 风格结果只是结果文本展示；没有找到等人处理的持久待办。message_notification 只查了 enableNotifications 默认值，没有追它在 SDK 路径里是否还接线。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

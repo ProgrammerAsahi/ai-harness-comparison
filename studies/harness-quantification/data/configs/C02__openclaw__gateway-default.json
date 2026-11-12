@@ -21,7 +21,11 @@
     "记忆插件 memory-core：记忆槽位默认选它（不靠 enabledByDefault 字段），网关启动时加载，给模型注册 memory_search、memory_get、intent 三个工具；memory_search 默认用 OpenAI 嵌入。",
     "memory-core 的 dreaming（后台记忆整理）默认开启：默认每天 03:00 由定时任务跑一轮，写 DREAMS.md 日记，用代理默认型号发起不带工具的后台模型请求。",
     "心跳与定时任务：cron.enabled 默认开，模型可用 automations（cron）工具；未配置心跳时主代理自动入列，默认每 30 分钟由定时任务调度器排一次主会话心跳回合。文档称默认投递给 owner，没有可解析的私信对象时定时轮询以 no-route 跳过；本配置未接渠道，是否实际发起模型请求未运行验证。",
-    "内置钩子 session-memory：Quick start 引导收尾时写入 hooks.internal.entries.session-memory.enabled: true，/new、/reset 和自动重置时把近期对话摘录存到工作区 memory/（默认用时间戳命名，不调用模型）；其余内置钩子不在默认选择里。"
+    "内置钩子 session-memory：Quick start 引导收尾时写入 hooks.internal.entries.session-memory.enabled: true，/new、/reset 和自动重置时把近期对话摘录存到工作区 memory/（默认用时间戳命名，不调用模型）；其余内置钩子不在默认选择里。",
+    "Code Mode（默认生效，前提见 environment_premises.other）：tools.codeMode 未配置时按 auto，只对型号目录里标了 compat.codeMode: preferred 的型号启用；默认型号 openai/gpt-6-astra 带这个标记，且本配置的回合由内置 OpenClaw 运行时执行，所以模型面对的工具面是 Code Mode 的 exec/wait 控制工具，其余工具在脚本里调用。走提供方原生运行时（如 Codex）的回合不经过这道开关。docs/concepts/experimental-features.md 称默认关闭，与代码和 docs/tools/code-mode.md 不一致。",
+    "Swarm（开关默认开，依附 Code Mode）：子代理编排的 enabled 默认 true，并发上限默认 32；只有 Code Mode 生效且 sessions_spawn 可执行时，才在 Code Mode 脚本里向模型暴露，由脚本经 sessions_spawn 派出收集型子代理。",
+    "自学习后台审阅（skills.workshop.autonomous.mode 默认 auto）：同一会话累计 10 次模型迭代后排队，空闲 30 秒后启动一个审阅代理，工具限于 skill_workshop、read、ls、view_image、web_search、web_fetch、sessions_history、sessions_search、memory_search、memory_get，其中只有 skill_workshop 能改动学到的技能。这是独立于 memory-core dreaming 的另一套后台机制。",
+    "suggest_task 工具（按会话来源注册）：只在网关进程里、由操作者界面发起的会话注册给模型（客户端是 Control UI 或连网关的 TUI，带 operator.admin 范围并声明 task-suggestions 能力）；渠道会话不注册。工具只登记一张后续任务卡，不启动任务，卡不跨网关重启保留。"
   ],
   "operating_system": "macOS、Linux、Windows（官方推荐原生 Windows Hub 应用；另有 PowerShell 安装器、WSL2 网关，Tauri 桌面应用为备选）；需 Node 24.x 的 24.16.0+ 或 26.1.0+（文档建议 24.22.1+/26.12.1+）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -34,7 +38,7 @@
     "credentials": "环境里只有 OPENAI_API_KEY；本机没有可检测到的 Claude Code、Codex CLI 登录，也没有可访问的 Ollama、LM Studio",
     "other": "Quick start 结束时网关留在当前终端前台；之后按官方快速开始的下一步，停掉前台网关并运行 openclaw gateway install，把网关装成系统服务（macOS 为 LaunchAgent，Linux 为 systemd 用户单元）。本配置编码的是装成服务以后的状态。Quick start 对 OPENAI_API_KEY 这条路线把 openai/gpt-6-astra 显式钉到内置的 OpenClaw 运行时（agentRuntime openclaw），代理回合由内置运行时执行；官方 codex 插件不随安装启用，引导在这条路线上也不安装它。tools.codeMode 未配置时按 auto，默认型号标为 preferred，所以内置运行时下 Code Mode 默认生效（docs/concepts/experimental-features.md 称默认关闭，与代码和 docs/tools/code-mode.md 不一致）"
   },
-  "evidence_cutoff": "2026-11-11",
+  "evidence_cutoff": "2026-11-12",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -467,7 +471,142 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "扩展",
       "note": "session-memory 钩子挂在 command:new、command:reset、session:auto-reset 三个事件上，把最近若干条对话存到工作区 memory/ 下按时间戳命名的文件；同文件 L74 写 llmSlug 默认 false，即默认不调用模型起文件名。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-runtime.ts#L66-L72",
+      "locator": "src/agents/code-mode-runtime.ts",
+      "lines": "L66-L72",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "全局 tools.codeMode 没配置时取 { enabled: \"auto\" }（L70）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-runtime.ts#L132-L151",
+      "locator": "src/agents/code-mode-runtime.ts",
+      "lines": "L132-L151",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "isCodeModeEngagedForModel：true/false 直接生效，auto 只在型号目录 compat.codeMode 为 preferred 时启用；注释写明走提供方原生运行时的回合不经过这道开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-surface-plan.ts#L83-L88",
+      "locator": "src/agents/tool-surface-plan.ts",
+      "lines": "L83-L88",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "有工具可用时由 isCodeModeEngagedForModel 决定是否给模型换成 Code Mode 的控制工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/openai/openclaw.plugin.json#L100-L123",
+      "locator": "extensions/openai/openclaw.plugin.json",
+      "lines": "L100-L123",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "型号目录里 gpt-6-astra 的 compat 带 \"codeMode\": \"preferred\"（L122）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/code-mode.md#L20-L26",
+      "locator": "docs/tools/code-mode.md",
+      "lines": "L20-L26",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文档：tools.codeMode 缺省时用 auto 档，只对标为 preferred 的型号启用。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/experimental-features.md#L54-L57",
+      "locator": "docs/concepts/experimental-features.md",
+      "lines": "L54-L57",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文档另一处称 Code Mode 在打开 Labs 开关或显式设置前保持关闭，与上面的代码和 docs/tools/code-mode.md 不一致；本记录以代码为准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/subagents/swarm/swarm-config.ts#L5-L12",
+      "locator": "src/agents/subagents/swarm/swarm-config.ts",
+      "lines": "L5-L12",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展/子代理",
+      "note": "DEFAULT_SWARM_CONFIG：enabled true、maxConcurrent 32、maxChildrenPerGroup 50、maxTotalPerGroup 200。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-bridge.ts#L151-L169",
+      "locator": "src/agents/code-mode-bridge.ts",
+      "lines": "L151-L169",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展/子代理",
+      "note": "isCodeModeSwarmAvailable：Swarm 开启且 sessions_spawn 在目录里并可执行时，才在 Code Mode 里提供 Swarm。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/config.ts#L14-L22",
+      "locator": "src/skills/workshop/config.ts",
+      "lines": "L14-L22",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "skills.workshop.autonomous.mode 只认 off 和 auto，缺省取 auto。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/experience-review-scheduler.ts#L17-L19",
+      "locator": "src/skills/workshop/experience-review-scheduler.ts",
+      "lines": "L17-L19",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "审阅触发阈值：10 次迭代；空闲 30 秒后开跑。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/review-run.ts#L13-L24",
+      "locator": "src/skills/workshop/review-run.ts",
+      "lines": "L13-L24",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "审阅代理的工具白名单：skill_workshop、read、ls、view_image、web_search、web_fetch、sessions_history、sessions_search、memory_search、memory_get。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/self-learning.md#L12-L14",
+      "locator": "docs/tools/self-learning.md",
+      "lines": "L12-L14",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文档：自学习默认开启（skills.workshop.autonomous.mode: \"auto\"）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.ts#L512-L518",
+      "locator": "src/agents/openclaw-tools.ts",
+      "lines": "L512-L518",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "suggest_task 等任务建议工具的注册条件：非内嵌模式、有会话键、taskSuggestionDeliveryMode 为 gateway。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/gateway/agent-turn/agent-run-execution-phase.ts#L427-L430",
+      "locator": "src/gateway/agent-turn/agent-run-execution-phase.ts",
+      "lines": "L427-L430",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "supportsTaskSuggestions：发起客户端是操作者界面、带 operator.admin 范围、并声明 task-suggestions 能力。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tools/task-suggestion-tools.ts#L73-L90",
+      "locator": "src/agents/tools/task-suggestion-tools.ts",
+      "lines": "L73-L90",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "suggest_task 的工具说明：只登记一张卡，不启动任何东西；建议不跨网关重启保留。"
     }
   ],
-  "note": "版本：GitHub releases/latest 与 npm dist-tag latest 均为 2026.11.2（上次 2026-10-20 为 2026.10.5）；另有 beta 2026.11.5-beta.1（预发布）与 extended-stable 2026.9.36。annotated tag cb19dfea… 解引用到提交 b556fdf4…。官方安装脚本默认装 npm latest。；2026.10.5→2026.11.2 复核：exec 默认（security=full、ask=off、askFallback=deny，源码 exec-approvals-config.ts 未改）、沙箱默认 off、onboarding 未配置时 tools.profile: full、Single-agent mode 默认均未变；文档改动以措辞和 Windows 安装推荐为主。；子代理：本机 onboarding 在未配置时写入 tools.profile: \"full\"（不过滤核心工具），因此 sessions_spawn / subagents 工具默认可用；但多代理路由默认为 Single-agent mode（只有 agentId main）。subagents_enabled=true 指框架管理的子代理工具可用，不代表默认配置了多个独立代理。；若用户手动选 coding profile，group:sessions 仍包含 sessions_spawn；minimal profile 不含。；exec 审批旧字段 security/ask 已由 tools.exec.mode 取代，doctor 会迁移；full 对应 security=full + ask=off。；默认启用插件：按固定提交 extensions/*/openclaw.plugin.json 的 enabledByDefault 字段机器统计为 86 个（按插件 id 列出；目录 kimi-coding 的 id 为 kimi），较上次新增 particle（模型提供方，api.particle.ai）；仅 macOS 默认启用的仍为 apple-fm、bonjour。；原待核项（默认启用插件是否在网关中全部加载）部分核实：默认启用判定只看 manifest 字段与平台（default-enablement.ts）；网关启动时实际加载另由启动规划决定（src/plugins/gateway-startup-plugin-plan.ts）：88 个默认启用插件中 18 个声明 activation.onStartup: true（其中 bonjour 仅 macOS），此外已启用的内置工具插件、默认记忆槽位插件以及已配置的模型提供方和渠道对应的插件也在启动时加载（这部分是读代码推断，没有运行验证），其余在提供方、命令等触发时加载；启动加载数随平台和配置变化，不是固定的 18；凭据缺失时能否用仍取决于运行时，启用不等于已连接可用。；待核：bundled skills 默认对 agent 可见的数量取决于本机二进制与配置，无法给出固定名单（skills/ 下 SKILL.md 仍为 49 个）。；网关启动时默认检查更新并发匿名更新 ping（update.checkOnStart 默认 true，可关）。；2026-11-11 由第二位读者 Claude Opus 5.5（claude-opus-5-5）对照钉住的源码快照复核，核实和落实也由 Claude Opus 5.5（claude-opus-5-5）完成：enabled_extensions 补入 memory-core 记忆插件、dreaming、心跳与定时任务、session-memory 钩子四条，note 补启动更新检查一句，onboard-guided.ts 小卡改到 L537-L541；记录原有说法核下来都对得上，版本和提交仍是原来钉的 v2026.11.2 / b556fdf457b026574bf0f1e7b4914b15f3f179ce。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，补全了两张小卡的位置并新增一张。"
+  "note": "版本：GitHub releases/latest 与 npm dist-tag latest 均为 2026.11.2（上次 2026-10-20 为 2026.10.5）；另有 beta 2026.11.5-beta.1（预发布）与 extended-stable 2026.9.36。annotated tag cb19dfea… 解引用到提交 b556fdf4…。官方安装脚本默认装 npm latest。；2026.10.5→2026.11.2 复核：exec 默认（security=full、ask=off、askFallback=deny，源码 exec-approvals-config.ts 未改）、沙箱默认 off、onboarding 未配置时 tools.profile: full、Single-agent mode 默认均未变；文档改动以措辞和 Windows 安装推荐为主。；子代理：本机 onboarding 在未配置时写入 tools.profile: \"full\"（不过滤核心工具），因此 sessions_spawn / subagents 工具默认可用；但多代理路由默认为 Single-agent mode（只有 agentId main）。subagents_enabled=true 指框架管理的子代理工具可用，不代表默认配置了多个独立代理。；若用户手动选 coding profile，group:sessions 仍包含 sessions_spawn；minimal profile 不含。；exec 审批旧字段 security/ask 已由 tools.exec.mode 取代，doctor 会迁移；full 对应 security=full + ask=off。；默认启用插件：按固定提交 extensions/*/openclaw.plugin.json 的 enabledByDefault 字段机器统计为 86 个（按插件 id 列出；目录 kimi-coding 的 id 为 kimi），较上次新增 particle（模型提供方，api.particle.ai）；仅 macOS 默认启用的仍为 apple-fm、bonjour。；原待核项（默认启用插件是否在网关中全部加载）部分核实：默认启用判定只看 manifest 字段与平台（default-enablement.ts）；网关启动时实际加载另由启动规划决定（src/plugins/gateway-startup-plugin-plan.ts）：88 个默认启用插件中 18 个声明 activation.onStartup: true（其中 bonjour 仅 macOS），此外已启用的内置工具插件、默认记忆槽位插件以及已配置的模型提供方和渠道对应的插件也在启动时加载（这部分是读代码推断，没有运行验证），其余在提供方、命令等触发时加载；启动加载数随平台和配置变化，不是固定的 18；凭据缺失时能否用仍取决于运行时，启用不等于已连接可用。；待核：bundled skills 默认对 agent 可见的数量取决于本机二进制与配置，无法给出固定名单（skills/ 下 SKILL.md 仍为 49 个）。；网关启动时默认检查更新并发匿名更新 ping（update.checkOnStart 默认 true，可关）。；2026-11-11 由第二位读者 Claude Opus 5.5（claude-opus-5-5）对照钉住的源码快照复核，核实和落实也由 Claude Opus 5.5（claude-opus-5-5）完成：enabled_extensions 补入 memory-core 记忆插件、dreaming、心跳与定时任务、session-memory 钩子四条，note 补启动更新检查一句，onboard-guided.ts 小卡改到 L537-L541；记录原有说法核下来都对得上，版本和提交仍是原来钉的 v2026.11.2 / b556fdf457b026574bf0f1e7b4914b15f3f179ce。同日由 Claude Sonnet 5.5（claude-sonnet-5-5）逐条核对这次改动所引的快照位置，补全了两张小卡的位置并新增一张。；2026-11-12 第一批编码完成后补记：两位编码者和第三位读者在快照里读到四项本记录没列的默认机制，由 Claude Sonnet 5.5（claude-sonnet-5-5）对照钉住的源码快照逐条核实，Claude Fable 5（claude-fable-5-2）复看所引各行后落实：enabled_extensions 补入 Code Mode、Swarm、自学习后台审阅、suggest_task 四条并各配小卡。第一批的编码是按补记前的记录做的。版本和提交仍是原来钉的 v2026.11.2 / b556fdf457b026574bf0f1e7b4914b15f3f179ce。"
 }

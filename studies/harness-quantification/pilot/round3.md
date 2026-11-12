@@ -184,6 +184,6 @@ python3 studies/harness-quantification/compare_codings.py
 ## 编码文件在哪里
 
 - 这一轮：[`round3/`](round3/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `round3/fields-0.4.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.4` 填写并通过了 `validate_data.py`；码本按这一轮的分歧修订为 `fields-0.5` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.5.md`。
-- `data/codings/` 现在空着，留给按 `fields-0.5` 做的分批正式编码。
+- `data/codings/` 现在放按 `fields-0.5` 做的分批正式编码，第一批的记录见 [`../batches/batch-1.md`](../batches/batch-1.md)。
 - 交叉核对：[`round3/crosscheck-card.md`](round3/crosscheck-card.md) 是读者拿到的任务卡，[`round3/crosscheck.json`](round3/crosscheck.json) 是 75 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者。
 - 前两轮：[`round2/`](round2/)、[`round1/`](round1/)，各自连同当时的码本，只作历史记录，不参加现在的校验和对比。

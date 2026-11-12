@@ -1,0 +1,2268 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.5",
+  "synthetic": false,
+  "round": "batch-1",
+  "config_id": "A17__step-code__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v7",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "直接描述任务时走 agent-core 的双层循环：模型回复里有工具调用就执行并把结果交回模型，直到没有工具调用、出错或中止。目标续跑（create_goal 后框架在回合结束时自动续发）是模型循环的外层，不另记。workflow 工具默认注册，模型现写 JavaScript 脚本交给 QuickJS 运行时，由脚本的 agent()/parallel()/pipeline()/iterate() 推进多个子代理，属模型现写的显式工作流，嵌在模型循环里，记进 secondary_modes；工具说明要求用户以 ultracode/ultraloop 等表态同意，但代码是软闸（未同意的调用只记日志、不拦截），按总则 R3 按代码算默认。快照为公开 main 29eb460，钉住版本为 0.1.7（构建提交不明），按总则 R10 confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/agent-core/src/agent-loop.ts#L211-L332",
+          "locator": "packages/agent-core/src/agent-loop.ts：runLoop 内外两层 while",
+          "lines": "L211-L332",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "模型回复含工具调用就执行并把结果放回上下文继续，无工具调用且无排队消息时结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/step-workflow.ts#L144-L152",
+          "locator": "packages/coding-agent/src/features/workflow/step-workflow.ts：workflow 工具注册与说明",
+          "lines": "L144-L152",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "workflow 工具运行模型给出的脚本，脚本经 agent()/parallel()/pipeline()/iterate() 协调多个代理；说明里写着需用户表态同意。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/ultraloop-opt-in.ts#L1-L22",
+          "locator": "packages/coding-agent/src/features/workflow/ultraloop-opt-in.ts：文件头注释",
+          "lines": "L1-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "注册默认开启，同意只是软闸：未同意的 workflow 调用只记入日志，不被拦下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/registration-gate.ts#L22-L31",
+          "locator": "packages/coding-agent/src/features/workflow/registration-gate.ts：resolveWorkflowRegistration",
+          "lines": "L22-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "只有 STEP_DISABLE_WORKFLOW 或 enabled:false 才关闭注册，默认注册。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单（命令列表取源码内置命令表 core/slash-commands.ts L20-L80、各扩展 registerCommand、step/slash-commands.ts，以及 docs/quickstart.md 与启动参数）：/settings /model /tree /effort /scoped-models /export /import /copy /name /session /hotkeys /fork /clone /trust /login /logout /new /clear /compact /clm /clm-compact /resume /reload /quit /exit /usage /mcp /theme /status /feedback /permissions /todos /llama /plugin /connect——管理或显示类，不改推进方式；/btw 只答一次附带提问，不算任务路径；/init 生成项目说明，仍是模型循环；/plan 与 --plan 进入计划模式，仍是模型循环；/goal 设目标续跑，是模型循环外层；/cron 建定时任务，到点往主会话发起一轮，属任务发起（F33），不记 event_scheduling；/ultracode、/ultraloop 打开 workflow 同意，/workflows 只列出已存工作流，对应 explicit_workflow（已因软闸按默认记入）；--print、--mode json/rpc 非交互，仍是模型循环；--completion-check、--completion-review 只在 print/json 下加完成检查，仍是模型循环。workflow 的同意是软闸，按总则 R3“文档说要用户同意但代码并不拦的，按代码算”记成默认可用，这一点两位编码者可能分歧。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "task_create / task_update / task_get / task_list 默认注册，带条目、状态和计划编号，框架持久保存并展示，不强制按表执行；默认系统提示要求多步工作用任务工具记进度，但写明待办表不是计划提案。可选：计划模式只能由用户用 /plan 或 --plan 进入（系统提示写明模型不能自己进入，旧的 enter_plan_mode 工具已移除），计划模式下由 tool_call 策略拦下计划文件以外的修改，exit_plan_mode 提交审批，批准后不再按条目检查。workflow 的 iterate() HoH 循环有只读规划者角色，但它是模型现写脚本里的一环，规划结果不约束主循环，写在这里备查。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-tasks.ts#L308-L338",
+          "locator": "packages/coding-agent/src/features/step-tasks.ts：task_create 注册",
+          "lines": "L308-L338",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "task_create 建条目、存状态并持久化，说明写明只记录、不执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-capabilities.ts#L22-L49",
+          "locator": "packages/coding-agent/src/features/step-capabilities.ts：createStepCapabilitiesExtension",
+          "lines": "L22-L49",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认扩展",
+          "note": "能力扩展无条件挂载计划、任务、子代理、workflow 扩展。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/system-prompt.ts#L195-L213",
+          "locator": "packages/coding-agent/src/step/system-prompt.ts：Plan mode 与任务说明段",
+          "lines": "L195-L213",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认系统提示",
+          "note": "计划模式只由用户以 /plan 或 --plan 开启，模型不能自行进入；任务工具只作进度跟踪。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/system-prompt.ts#L319",
+          "locator": "packages/coding-agent/src/step/system-prompt.ts：工作步骤第 2 条",
+          "lines": "L319",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认系统提示",
+          "note": "多步工作要求用任务工具记进度，待办表不是计划提案。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 scope_rule 的反序判定：可执行流程约束只出现在用户命令进入的计划模式（且只限定出计划阶段的写入范围），默认路径不命中；结构化任务表命中。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_end_signal：主循环在回复没有工具调用时结束；目标续跑里模型调用 update_goal 标 complete 后框架停止续发（create_goal 默认注册，说明限定“只在用户或系统明确要求时用”，按总则 R3 第一档算默认）。user_interrupt：交互界面 Esc（app.interrupt）中止当前回合，/goal pause 与 /goal clear 中断续跑。budget：子代理后台通道每回合墙钟上限默认 3600 秒、到点该回合失败；workflow 每个代理节点默认 30 分钟超时；workflow iterate() 默认最多 20 轮（另在达到规格覆盖或连续 3 轮停滞时停）；范围都是子代理或工作流节点，口径同 F12。verification_condition：workflow 脚本里 agent(..., {schema}) 的结果不合结构时，框架把校验错误带进重试提示重跑，默认最多 3 次，查的是结构；要模型写脚本时传 schema 才启用，按总则 R3 第一档算默认。主循环本身没有回合数上限，也没有默认 Token 预算；create_goal 与 workflow 的 token_budget/budget 参数默认不设，不计入。可选：print/json 模式下 --completion-check git-committed 在模型结束后检查 Git 提交与工作区，不满足就补发提示，默认 2 次追加；--completion-review 追加一次自查提示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/agent-core/src/agent-loop.ts#L264-L332",
+          "locator": "packages/agent-core/src/agent-loop.ts：runLoop 结束判定",
+          "lines": "L264-L332",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "错误或中止立即结束；无工具调用、无排队消息时发 agent_end 结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/keybindings.ts#L97",
+          "locator": "packages/coding-agent/src/core/keybindings.ts：app.interrupt",
+          "lines": "L97",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互界面",
+          "note": "默认 Esc 键取消或中止当前运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts#L1181-L1217",
+          "locator": "packages/coding-agent/src/features/step-schedule.ts：create_goal / update_goal 注册",
+          "lines": "L1181-L1217",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具（目标续跑）",
+          "note": "模型可建目标，并用 update_goal 标 complete 或 blocked；框架据此停止续发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts#L319-L326",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：subagent 参数 timeout_seconds",
+          "lines": "L319-L326",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理后台通道",
+          "note": "后台通道每回合墙钟上限，默认 3600 秒，到点该回合失败。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts#L58-L62",
+          "locator": "packages/coding-agent/src/features/workflow/runtime.ts：DEFAULT_MAX_ITERATIONS / DEFAULT_STAGNATION_LIMIT / DEFAULT_AGENT_TIMEOUT_MS",
+          "lines": "L58-L62",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "iterate 默认最多 20 轮、停滞 3 轮即停；每个代理节点默认 30 分钟超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts#L464-L486",
+          "locator": "packages/coding-agent/src/features/workflow/runtime.ts：agent 调用的 schema 重试循环",
+          "lines": "L464-L486",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "上次输出未通过 schema 校验时，带着校验错误重发给代理重做。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts#L1153-L1156",
+          "locator": "packages/coding-agent/src/features/workflow/runtime.ts：clampRetries",
+          "lines": "L1153-L1156",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "schema 重试默认 3 次，上限 3。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/completion-check.md#L1-L5",
+          "locator": "docs/completion-check.md：Print-mode completion checks and task self-review",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径（print/json）",
+          "note": "完成检查与自查默认关闭，只在 print/json 模式加参数启用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "verification_condition 只由 workflow 的 schema 校验撑起，而 workflow 是否算默认取决于对软闸的判定（总则 R3），另一位编码者若把 workflow 记成可选，这一项和 budget 里的 workflow 两条都会掉。目标续跑的 token_budget 是 create_goal 的可选参数，默认不设，我没把它计入 budget；“模型可自选的工具参数里带一个阈值、默认为空”算不算默认上限，码本没写清。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：retry.enabled 默认开，瞬时错误最多 3 次指数退避（2s 起），429 另有 3 次独立预算；上下文溢出不走重试，先压缩再续（压缩记 F14）；流中断后重试时 step-stream-recovery 往下一次请求里加一条恢复说明；workflow 节点遇限流也自行重发。model_self_repair：工具报错、找不到工具、参数校验失败、被策略拦下都作为错误工具结果交回模型；空回合由 incomplete-turn 恢复注入提示让模型补做，超过次数就结束。framework_input_repair：执行前按工具输入模式做 Value.Convert 和类型转换（字符串数字转数字、可选 null 规范化等），转换后照常执行。escalate_to_human：目标续跑里，回合以错误结束（重试用完）时框架把目标置为 blocked 或 usage_limited、停止续发并提示用户，用户 /goal resume 后从原目标接着走；目标续跑经默认注册的 create_goal 启动，按总则 R3 第一档计入。认证失效只抛错提示运行 /login，不暂停原请求，不算。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts#L4304-L4350",
+          "locator": "packages/coding-agent/src/core/agent-session.ts：_prepareRetry",
+          "lines": "L4304-L4350",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "可重试错误按指数退避重发，限流与其他错误分开计数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/settings-manager.ts#L990-L1012",
+          "locator": "packages/coding-agent/src/core/settings-manager.ts：getRetryEnabled / getRetrySettings",
+          "lines": "L990-L1012",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "重试默认开启，maxRetries 3，baseDelayMs 2000。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/agent-core/src/agent-loop.ts#L743-L756",
+          "locator": "packages/agent-core/src/agent-loop.ts：prepareToolCall",
+          "lines": "L743-L756",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "找不到工具返回错误结果给模型；参数先经 validateToolArguments 转换校验。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/utils/validation.ts#L317-L345",
+          "locator": "packages/providers/src/utils/validation.ts：validateToolArguments",
+          "lines": "L317-L345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "按工具输入模式做 null 规范化、Value.Convert 和逐字段类型转换，通过后照常执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts#L1531-L1584",
+          "locator": "packages/coding-agent/src/core/agent-session.ts：_classifyAssistantTurn",
+          "lines": "L1531-L1584",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "空回合等不完整回合按次数注入恢复提示，超过上限记为运行失败。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts#L782-L803",
+          "locator": "packages/coding-agent/src/features/step-schedule.ts：onAgentSettled 续跑判定",
+          "lines": "L782-L803",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "回合以错误结束时把目标置为 blocked 或 usage_limited，停止续发；中止则置为 paused。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/goal-lifecycle.md#L7-L13",
+          "locator": "docs/goal-lifecycle.md：User controls",
+          "lines": "L7-L13",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "/goal resume 重新激活可恢复的目标。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-stream-recovery.ts#L5-L38",
+          "locator": "packages/coding-agent/src/features/step-stream-recovery.ts：registerStepStreamRecovery",
+          "lines": "L5-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认扩展",
+          "note": "流中断的可重试错误后，下一次请求附加恢复说明，要求更小的回复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "escalate_to_human 只来自目标续跑：框架按“回合以错误结束”这条自己的规则把目标置为受阻，等用户 /goal resume。它是否算“请用户做一个决定、答复后从原处接着走”，以及目标续跑经 create_goal（说明限定只在用户要求时用）是否按第一档算默认，都有判断空间。workflow 脚本可自行 try/catch 节点失败，但那是模型现写脚本里的分支，不是框架事先写好的失败分支，没记 workflow_branch。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "CLI 主程序在同一进程里创建代理会话运行时（createStepCode），交互模式 InteractiveMode 直接拿这个运行时宿主调用。--mode rpc 与 SDK stdio 是另外的入口，不是所选入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/main.ts#L265-L268",
+          "locator": "apps/cli/src/main.ts：runtimeHostFactory",
+          "lines": "L265-L268",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "运行时宿主在 CLI 进程内创建。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/main.ts#L885-L900",
+          "locator": "apps/cli/src/main.ts：dispatchStepAppMode",
+          "lines": "L885-L900",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "interactive 分支用同一个运行时宿主构造 InteractiveMode。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "read_file/write_file/edit_file 等文件工具在主进程里直接调文件系统接口；run_command 每条命令起 shell 子进程。预装插件 steppage 贡献的 steppage-mcp 服务按 MCP 标准输入输出方式由核心拉起（需要 Node.js 20+），也是子进程。子代理和 workflow 节点以 step --mode rpc 子进程运行，那是代理而非工具的位置，写在这里备查。可选：容器或微虚拟机隔离要另装扩展（文档示例 gondolin）或把整个程序放进容器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/tools/read.ts#L58",
+          "locator": "packages/coding-agent/src/core/tools/read.ts：默认 readFile 操作",
+          "lines": "L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件工具",
+          "note": "读文件直接用 fs/promises，在主进程执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/tools/bash.ts#L133",
+          "locator": "packages/coding-agent/src/core/tools/bash.ts：spawnShellChild",
+          "lines": "L133",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令工具",
+          "note": "命令经 shell 子进程执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/tool-profile.ts#L1621-L1623",
+          "locator": "packages/coding-agent/src/step/tool-profile.ts：Step 工具档包装原生 read/write/edit",
+          "lines": "L1621-L1623",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具档",
+          "note": "Step 的文件工具包装同一套原生工具定义。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/containerization.md#L1-L15",
+          "locator": "packages/coding-agent/docs/containerization.md：Choose a pattern",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选隔离",
+          "note": "默认不隔离；容器或微虚拟机需另装扩展或自行把程序放进容器。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "steppage-mcp 是否真在默认安装后运行取决于安装时 Node.js 是否就绪，未核实；即使不算它，run_command 已足以记 subprocess。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话由 coding-agent 核心层的 SessionManager 以 JSONL 写在本机会话目录，按工作目录分组；恢复（-c、-r、--session）由同一核心读回并重建上下文，界面层只显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/session-manager.ts#L899-L920",
+          "locator": "packages/coding-agent/src/core/session-manager.ts：新会话初始化与文件命名",
+          "lines": "L899-L920",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "核心层分配会话编号并建以时间戳和编号命名的 JSONL 文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md#L5-L17",
+          "locator": "packages/coding-agent/docs/sessions.md：Session Storage",
+          "lines": "L5-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话自动存为本机 JSONL，按工作目录组织，可继续、选择或分叉。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个会话分配编号，历史存成以编号命名的独立文件；/new、/resume、/fork 在同一进程里换会话，不换进程，也不为主会话分配专用目录。子代理可选的 git 工作树隔离只针对子代理，不是主会话的默认隔离。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/session-manager.ts#L899-L920",
+          "locator": "packages/coding-agent/src/core/session-manager.ts：newSession",
+          "lines": "L899-L920",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话管理",
+          "note": "会话按编号分开存放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/slash-commands.ts#L45-L74",
+          "locator": "packages/coding-agent/src/core/slash-commands.ts：fork / clone / new / resume",
+          "lines": "L45-L74",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话命令",
+          "note": "新开、分叉、恢复会话都是同一进程内的命令。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "providers 包随默认安装附带 openai-completions、openai-responses、anthropic-messages（另有 azure-openai-responses）几种流式接口实现，用户在 models.json 或 config.toml 里添加一条提供方配置就能启用，按能力计入。钉住环境只走内置 Step 提供方，用 openai-completions 协议。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/step-provider/index.ts#L93",
+          "locator": "packages/providers/src/step-provider/index.ts：STEP_MODEL_API",
+          "lines": "L93",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境",
+          "note": "Step 提供方用 openai-completions 协议。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/models.md#L121-L127",
+          "locator": "packages/coding-agent/docs/models.md：Supported APIs",
+          "lines": "L121-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "添加提供方",
+          "note": "models.json 可用 openai-completions、openai-responses、anthropic-messages 三种接口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/compat.ts#L160-L164",
+          "locator": "packages/providers/src/compat.ts：BUILTIN_APIS",
+          "lines": "L160-L164",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "适配实现",
+          "note": "内置注册 anthropic-messages、openai-completions、openai-responses 三种接口实现。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "CLI 的 allowedAuthProviders 只限定登录界面可选的提供方（Step 与 config.toml 声明的提供方），不影响 models.json 添加提供方；未逐行核实 models.json 在 Step 构建里的加载路径，只依据随包文档。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "native_structured：工具定义放进请求 tools 字段，从流里的 tool_calls 取结构化调用。protocol_translation：MCP 服务的工具包装成模型可调用的函数，用户在 config.toml 的 [mcp_servers] 添加一条就能用，预装插件 steppage 也贡献一个 MCP 服务。script_dispatch：workflow 工具执行模型写的脚本，脚本里 agent() 经 runStepSubagentProcess 派生子代理，和 subagent 工具走同一执行器（workflow 按软闸算默认，见 F01）。未见从普通文本里解析工具调用的路径。解析失败与出错：参数不合模式时报错结果交回模型；回复因输出上限被截断时，其中的工具调用一律不执行并要求重发。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/api/openai-completions.ts#L835",
+          "locator": "packages/providers/src/api/openai-completions.ts：params.tools = convertTools",
+          "lines": "L835",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住协议",
+          "note": "工具定义以原生 tools 字段发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/api/openai-completions.ts#L620-L621",
+          "locator": "packages/providers/src/api/openai-completions.ts：delta.tool_calls 解析",
+          "lines": "L620-L621",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住协议",
+          "note": "从流中的结构化 tool_calls 读调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/mcp.ts#L211-L220",
+          "locator": "packages/coding-agent/src/step/mcp.ts：connectStepMcpServer 后 registerTools(remoteTools)",
+          "lines": "L211-L220",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP",
+          "note": "MCP 服务的工具包装后注册为模型工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/agent-runner.ts#L3-L50",
+          "locator": "packages/coding-agent/src/features/workflow/agent-runner.ts：runStepSubagentProcess",
+          "lines": "L3-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "脚本里的 agent() 用和 subagent 工具相同的子代理执行器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/agent-core/src/agent-loop.ts#L505-L516",
+          "locator": "packages/agent-core/src/agent-loop.ts：failToolCallsFromTruncatedMessage",
+          "lines": "L505-L516",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "截断回复里的工具调用不执行，以错误结果要求重发。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用钉住的 step-5-preview；subagent 工具没有型号参数，内置 general/explore/review/planner 都不带型号，子代理进程继承父会话型号。workflow 脚本里 agent() 的 options 有 model 和 effort，主模型写脚本时可为每个节点指定型号或推理强度，框架照传给子进程（--model / --thinking），按 workflow 软闸算默认。Mini 档下是否有第二个可用型号、step-5-preview 是否支持调推理强度都由服务端的型号列表决定，查不到，按总则 R2 计入、confidence 不高于 medium。可选：用户自写的代理定义文件可带 model 字段；/model、/effort 用户切换。辅助调用：上下文压缩摘要用当前会话型号；search_web 调托管搜索服务，型号客户端无从选择，不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/types.ts#L40-L51",
+          "locator": "packages/coding-agent/src/features/workflow/types.ts：WorkflowAgentOptions",
+          "lines": "L40-L51",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "agent() 选项含 model 与 effort。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts#L245-L248",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：createSubagentRpcSession",
+          "lines": "L245-L248",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "子进程按代理定义或调用传入的型号与推理强度加 --model / --thinking。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent-agents.ts#L56-L87",
+          "locator": "packages/coding-agent/src/features/step-subagent-agents.ts：BUILTIN_AGENTS",
+          "lines": "L56-L87",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置子代理",
+          "note": "四个内置子代理都不指定型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/execute.ts#L569",
+          "locator": "packages/coding-agent/src/features/subagent/execute.ts：task.model 回退到 ctx.model",
+          "lines": "L569",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "未指定型号时子代理用父会话的提供方和型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts#L3250",
+          "locator": "packages/coding-agent/src/core/agent-session.ts：手动压缩取 this.model",
+          "lines": "L3250",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "压缩摘要请求用当前会话型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对清单：标题生成——无（未找到标题生成调用）；上下文压缩或摘要——用主型号（自动与手动压缩都取 this.model）；动作审核分类——无（危险命令判定是 shell-analysis 静态分析，不调模型）；联网搜索与网页抓取——search_web 调固定的托管搜索服务，不计入，没有网页抓取工具；媒体理解——图片随 read_file 交给主型号，无单独调用；生成类工具——无。model_selected_delegation 只来自 workflow，若对软闸判定不同，会退成 single_fixed。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "time",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "time",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：每次请求由客户端算 max_tokens＝min(型号 maxTokens, 上下文窗口−已用输入−4096)，Step 型号的 maxTokens 默认取上下文窗口（服务端 max_input_tokens，缺省 256000）；回复因上限截断时，其中的工具调用不执行，以错误结果要求模型完整重发，属截断专门处理。time：子代理后台通道每回合墙钟上限默认 3600 秒（60–7200 可调），到点回合失败；workflow 节点默认 30 分钟超时，到点中止节点；范围是子代理和 workflow 节点。call_count：workflow iterate() HoH 循环默认最多 20 轮，到上限以 max_iterations 停下；范围是 workflow。主循环没有回合数、Token、金额上限。可选：create_goal 的 token_budget、workflow 的 budget 参数和用户在消息里写的 +500k 目标，默认都不设；目标预算到点置为 budget_limited 停止续发。不计入：前台子代理 30 分钟无输出看门狗（属空闲超时）、命令 120 秒默认超时、HTTP 空闲超时、重试次数、空回合恢复次数、workflow 并发与 1000 个代理总数上限。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/api/simple-options.ts#L15-L39",
+          "locator": "packages/providers/src/api/simple-options.ts：clampMaxTokensToContext / buildBaseOptions",
+          "lines": "L15-L39",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "每次请求的输出上限由客户端按上下文窗口与已用输入算出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/providers/src/step-provider/index.ts#L105-L139",
+          "locator": "packages/providers/src/step-provider/index.ts：STEP_MODEL_DEFAULTS / stepModelConfig",
+          "lines": "L105-L139",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境",
+          "note": "Step 型号 maxTokens 默认等于上下文窗口，窗口缺省 256000。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/agent-core/src/agent-loop.ts#L280-L289",
+          "locator": "packages/agent-core/src/agent-loop.ts：length 停止时 failToolCallsFromTruncatedMessage",
+          "lines": "L280-L289",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链",
+          "note": "因输出上限截断的回复，其工具调用全部按失败交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/settings-manager.ts#L53-L55",
+          "locator": "packages/coding-agent/src/step/settings-manager.ts：SUBAGENT_BACKGROUND_TIMEOUT_*",
+          "lines": "L53-L55",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理后台通道",
+          "note": "后台通道每回合时限默认 3600 秒，范围 60–7200。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts#L649-L668",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：resolveBackgroundTimeoutMs",
+          "lines": "L649-L668",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理后台通道",
+          "note": "调用值、配置值都没有时取 3600 秒。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts#L58-L62",
+          "locator": "packages/coding-agent/src/features/workflow/runtime.ts：默认常量",
+          "lines": "L58-L62",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "iterate 默认 20 轮；节点默认 30 分钟超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts#L838-L899",
+          "locator": "packages/coding-agent/src/features/workflow/runtime.ts：iterate 循环",
+          "lines": "L838-L899",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "到 maxIterations 即以 max_iterations 停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/budget.ts#L26-L40",
+          "locator": "packages/coding-agent/src/features/workflow/budget.ts：WorkflowBudget 构造",
+          "lines": "L26-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "Token 预算默认为空（不设上限）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "time 与 call_count 都只来自子代理后台通道和 workflow，两者是否算默认取决于对 run_in_background 参数（模型可选，交互模式默认允许）和 workflow 软闸的判定。output_limit 的数值由服务端型号元数据间接决定，但上限是客户端按窗口自己算的，且截断有专门处理，按 output_limit 的判定照记。iterate 的“轮”是规划—开发—验收一整轮，我按“对话轮数或代理步数”归 call_count，码本对这种循环轮数没有明说。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "explicit_state_projection",
+      "facets": {
+        "layers": [
+          "sequential_messages",
+          "explicit_state_projection"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；默认 compaction.enabled=true 且未设 contextProjection 时取 clm-v1（CLM）。每次请求前 transformContext 从运行中维护的 agent.state.messages 出发，经 LiveContextManager.project/prepare 按当前分支上最近一次已接受的 CLM 修订（经校验器校验的工作视图）替换其覆盖的历史，再接上之后新增的消息，以这份工作视图为请求主体；尚无已接受修订时视图与原消息相同。另有每轮只附在请求上的任务快照（不入记录）。其他环境：--context-projection off 或 compaction.enabled=false 时退回纯顺序消息（可选：lightweight-v1 确定性投影）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/settings-manager.ts",
+          "locator": "SettingsManager.getContextProjectionMode",
+          "lines": "L935-L945",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上下文投影模式",
+          "note": "未显式设置时，自动压缩开启即返回 clm-v1。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts",
+          "locator": "AgentSession._installLiveContext（transformContext 包装）",
+          "lines": "L1131-L1160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每次请求的上下文构造",
+          "note": "每次请求前把原消息列表交给 LiveContextManager.project/prepare，得到工作视图后再发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/compaction/live-context/manager.ts",
+          "locator": "LiveContextManager.map / project / prepare",
+          "lines": "L299-L380",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每次请求的上下文构造",
+          "note": "从分支上最近的 CLM 修订或压缩条目取已校验的视图替换前缀，后接新消息；并把视图写成 LIVE_CONTEXT.md 镜像。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/context-management.md",
+          "locator": "Model-managed working context（开头与 Explicit and ordinary context edits）",
+          "lines": "L1-L7",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上下文投影模式",
+          "note": "文档说明 CLM 为默认，模型编辑一份经校验的对话工作视图，规范历史保持不变。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/14671f328f5688a0808f5d2b50ef92f06a01dda9/packages/coding-agent/src/core/settings-manager.ts",
+          "locator": "SettingsManager.getContextProjectionMode（内部开发线）",
+          "lines": "L943-L947",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上下文投影模式",
+          "note": "内部开发线上默认同为 clm-v1。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "判 explicit_state_projection 的依据是 scope_rule“默认在消息之上再叠一层经校验的工作视图、并以它为请求主体”的字面：CLM 的视图经原子校验器接受后才生效，请求按它拼出。疑问：CLM 视图的内容仍是（被改写过的）对话消息，而不是任务状态、事实这类结构化对象；未触发维护前视图等于原消息。若码本只想把结构化状态对象算作投影，本项应改为 sequential_messages。map() 每轮还会从会话分支上按条目类型（CLM 自定义条目、reset、compaction）找起点，但只用来选定替换用的修订，不按类型逐条解释，故 layers 未记 typed_event_rebuild。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；truncation：框架在工具结果进入历史前统一限 2000 行/50 KiB，超出部分整份另存 session 目录下 tool-output 文件、结果里留前缀和 Full output 路径（内置、MCP、扩展工具都经过）；读 CLM 镜像文件时整读改给有界索引，也归此项。summarization：默认 CLM 在达到 contextWindow×0.9 阈值时先让模型改写旧的纯文本正文（经校验后替换），不成功再退回原生压缩摘要；提供方报上下文溢出时直接走原生压缩恢复。可选：/compact、/clm-compact 手动压缩；/tree 切分支时的分支摘要；lightweight-v1 确定性投影。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/tools/tool-output.ts",
+          "locator": "boundToolResultContent",
+          "lines": "L37-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所有工具结果",
+          "note": "超过行数或字节上限时截取前缀并把全文另存文件、留路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts",
+          "locator": "AgentSession._boundToolContent",
+          "lines": "L658-L664",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所有工具结果",
+          "note": "会话层统一调用上述截断，输出目录为会话目录下 tool-output。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/tool-output-retention.md",
+          "locator": "Tool output retention",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所有工具结果",
+          "note": "文档写明每个最终工具结果限 2000 行/50 KiB，超限保留前缀并给出全文路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts",
+          "locator": "AgentSession._runAutoCompaction",
+          "lines": "L3594-L3640",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "阈值与溢出压缩",
+          "note": "threshold 与 overflow 两种原因触发自动压缩，先尝试 CLM 再做原生摘要。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/compaction.md",
+          "locator": "Overview",
+          "lines": "L14-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "阈值与溢出压缩",
+          "note": "CLM 为默认压缩模式，无有效编辑时退回原生摘要压缩；溢出直接走原生恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "CLM 维护由模型改写旧正文、也可整组删去旧工具调用，归 summarization（调模型改写替换原文）；未单列 tool_result_replacement，因为删组和改写都是模型决定的，没有框架按规则把旧工具结果换成占位的流程。读 LIVE_CONTEXT.md 整读时返回索引，比照“读文件过大改给提纲”归 truncation。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；user_specified：启动参数 @file 把文件内容并进首条消息，交互界面可粘贴剪贴板图片作附件（输入框 @ 只做路径模糊补全）。keyword：Step 工具档默认注册 search_files（正则搜内容，底层为内置 grep 工具）和 find_files。未见语义检索或代码结构查询工具。网页：默认注册 search_web 网页搜索，不计。技能目录为说明常驻、正文按需读取的途径，写此不计。AGENTS.md/CLAUDE.md 自动读入在 F16、F30 计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/tool-profile.ts",
+          "locator": "createStepToolProfile：search_files 定义与默认工具清单",
+          "lines": "L1672-L1683",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "search_files 为按正则搜索文件内容的内置工具，列在默认工具档中。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/tool-profile.ts",
+          "locator": "createStepToolProfile：search_files 定义与默认工具清单",
+          "lines": "L1830-L1841",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "search_files 为按正则搜索文件内容的内置工具，列在默认工具档中。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/cli/file-processor.ts",
+          "locator": "processFileArguments",
+          "lines": "L1-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户指定材料",
+          "note": "把 @file 参数读成文本内容和图片附件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/ui/runtime/input-dispatch.ts",
+          "locator": "clipboardPaste",
+          "lines": "L77",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户指定材料",
+          "note": "交互界面从剪贴板粘贴图片作附件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/usage.md",
+          "locator": "File reference / @files",
+          "lines": "L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户指定材料",
+          "note": "文档说明 @ 引用文件并纳入消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/usage.md",
+          "locator": "File reference / @files",
+          "lines": "L290-L295",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户指定材料",
+          "note": "文档说明 @ 引用文件并纳入消息。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "semantic_retrieval、structural_index 判无：默认工具档只有 list_directory、find_files、search_files、search_web、read_file、write_file、edit_file、run_command、find_tools，扩展注册的工具名里也没有检索类；agent-core/src/search 与 session-index 是会话列表全文搜索，CLI 交互和 print 模式都不打开，也不是模型工具。find_tools 搜的是工具定义，不是材料，未计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；每次会话开始从全局 agent 目录和当前目录及各级上级目录读入 AGENTS.override.md / AGENTS.md / CLAUDE.md，放入系统提示；上下文文件不受项目信任门控。没有记忆工具或自动写记忆的流程。定时任务持久存储（.stepcode/cron）属调度，不算记忆；网页搜索不算。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/resource-loader.ts",
+          "locator": "loadContextFileFromDir / loadProjectContextFiles",
+          "lines": "L70-L80",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "新会话读入的说明文件",
+          "note": "按候选文件名从全局目录和各级上级目录读入说明文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/resource-loader.ts",
+          "locator": "loadContextFileFromDir / loadProjectContextFiles",
+          "lines": "L118-L155",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "新会话读入的说明文件",
+          "note": "按候选文件名从全局目录和各级上级目录读入说明文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/security.md",
+          "locator": "Project Trust",
+          "lines": "L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "新会话读入的说明文件",
+          "note": "上下文文件不论是否信任项目都会加载。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/14671f328f5688a0808f5d2b50ef92f06a01dda9/packages/coding-agent/src/core/resource-loader.ts",
+          "locator": "loadProjectContextFiles（内部开发线）",
+          "lines": "L153",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "新会话读入的说明文件",
+          "note": "内部开发线上同一逻辑。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auto_summary、structured_records、retrieval_store 判无：注册工具全表（task_*、create_goal/get_goal/update_goal、cron_*、exit_plan_mode、subagent、agent_send、workflow 等）里没有记忆工具；压缩摘要只留在本会话；任务与目标快照按会话分支恢复，新会话不带入；session-index 只供会话列表/搜索，CLI 不打开、模型不可调。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；会话默认写 ~/.stepcode/agent/sessions 下的树形 JSONL，除消息外有 compaction、branch_summary、model_change、thinking_level_change、label 和扩展 custom 条目（CLM 修订、目标、任务、计划模式快照），属 event_log。external_reference：超限工具输出存会话目录 tool-output（7 天后可清理，跨进程保留），CLM 每次接受编辑前的视图存档在 live-context/archive；子代理结果只带子会话 sessionFile 路径。workflow 运行另写 .stepcode/workflows/runs/<runId> 下的 journal.jsonl、progress.json 等。任务清单变更快照只是子对象日志，未单计 state_snapshot。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/session-format.md",
+          "locator": "Entry Types",
+          "lines": "L255-L300",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "会话文件除消息条目外还有模型切换、思考级别切换、压缩、分支摘要等条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md",
+          "locator": "Session Storage / Session Format",
+          "lines": "L5-L16",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "会话自动保存为 JSONL，含消息、模型切换、压缩、分支摘要和扩展条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md",
+          "locator": "Session Storage / Session Format",
+          "lines": "L143",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "会话自动保存为 JSONL，含消息、模型切换、压缩、分支摘要和扩展条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/tool-output-retention.md",
+          "locator": "Tool output retention",
+          "lines": "L10-L26",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限工具输出",
+          "note": "超限结果全文另存 tool-output 目录，结果里留路径；超过七天的文件可被清理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/context-management.md",
+          "locator": "Native compaction and recovery",
+          "lines": "L291-L297",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLM 存档",
+          "note": "每次接受编辑前把旧视图存档在会话 live-context 目录，不受七天清理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "state_snapshot 判无：没有找到工作区文件快照；目标、任务、计划模式、CLM 修订的状态都作为 custom 条目写在同一份会话 JSONL 里，按“分开存放的几份记录各自判”归入 event_log 那份记录，不另记。CLM 存档目录由恢复流程读不读没有查到（恢复用的是 JSONL 里的修订条目），只记为 external_reference。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；step -c / -r / --session 与会话内 /resume 载入会话 JSONL，按当前分支重建消息列表放回 agent 状态，再等下一条用户输入；有进行中的目标时恢复后立即发起一次续跑（新的模型调用）。中断时未完成的工具调用不接续。并存机制：workflow 工具的 resumeFromRunId 按 journal 重放已完成的子代理调用（模型调用工具时使用，不是会话恢复入口）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md",
+          "locator": "Session Storage",
+          "lines": "L9-L16",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复入口",
+          "note": "step -c 继续最近会话，-r 选择旧会话，--session 指定会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/sdk.ts",
+          "locator": "createAgentSession：Restore messages if session has existing data",
+          "lines": "L226",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "已有会话时 buildSessionContext() 的消息直接放回 agent.state.messages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/sdk.ts",
+          "locator": "createAgentSession：Restore messages if session has existing data",
+          "lines": "L463-L466",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "已有会话时 buildSessionContext() 的消息直接放回 agent.state.messages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "goal 扩展 session_start 与 onSessionReady",
+          "lines": "L812-L826",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "恢复后读回目标快照，目标进行中则请求一次立即续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "goal 扩展 session_start 与 onSessionReady",
+          "lines": "L1103-L1124",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "恢复后读回目标快照，目标进行中则请求一次立即续跑。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workflow 的 resumeFromRunId 重放接近 workflow_replay，但它是模型调用 workflow 工具时的参数，不是所选入口的默认会话恢复入口，按 R9 写 value_note。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "task_plan"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；恢复时读回当前分支的消息（含工具调用与结果、压缩摘要、CLM 已接受修订）；step-tasks 扩展从分支上最近的任务快照重建待办清单；goal 扩展读回目标快照，进行中的目标恢复后自动续跑。计划模式状态、ultraloop 会话模式也随会话读回。subagent_links 不计：后台子代理通道只在进程内，退出、/resume、/new 时一律停止，不持久化也不恢复；子会话文件只留路径。外部副作用不在恢复范围。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/sdk.ts",
+          "locator": "createAgentSession：Restore messages",
+          "lines": "L226",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "会话已有数据时把重建的消息放回上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/sdk.ts",
+          "locator": "createAgentSession：Restore messages",
+          "lines": "L463-L466",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "会话已有数据时把重建的消息放回上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-tasks.ts",
+          "locator": "restoreTasks",
+          "lines": "L456-L482",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "任务清单恢复",
+          "note": "从会话条目中的 step-tasks 快照重建任务清单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "session_start 目标恢复",
+          "lines": "L1103-L1124",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标恢复",
+          "note": "从分支读回 step-goal 快照并调用 onSessionReady 续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "session_shutdown 处理",
+          "lines": "L858-L868",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理通道",
+          "note": "通道属于本会话运行时，退出与切换会话时停止，不带入下一会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/orchestration-lifecycle.md",
+          "locator": "Background subagent lanes",
+          "lines": "L261",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理通道",
+          "note": "文档写明后台通道不持久化、不恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "subagent 工具的模型可见参数里没有按旧编号续接子会话的字段（只有 agent/task/tasks/chain/cwd/run_in_background 等），agent_send 只认本进程内的通道，故判无 subagent_links。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；session_branch：/tree 在同一会话文件里从任一点另起分支、原路线保留可切回；/fork 从旧用户消息、/clone 从当前位置另建会话文件，原会话仍在列表里。idempotency_key：workflow 工具带 resumeFromRunId 重跑时，按提示与选项算出的 callHash 查 journal.jsonl，已完成且未受环境变化影响的子代理调用直接取旧结果、不再执行；范围仅限 workflow 的 agent() 调用（工具默认注册，用法上的 ultraloop 同意是软闸）。没有文件快照或撤销命令；工作区是 Git 仓库不算。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md",
+          "locator": "Branching with /tree；/tree, /fork, and /clone",
+          "lines": "L69-L71",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话分支",
+          "note": "/tree 在同一文件内切换分支，/fork、/clone 另建会话文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/sessions.md",
+          "locator": "Branching with /tree；/tree, /fork, and /clone",
+          "lines": "L118-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话分支",
+          "note": "/tree 在同一文件内切换分支，/fork、/clone 另建会话文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts",
+          "locator": "WorkflowRuntime.runAgent / takeCached",
+          "lines": "L376-L412",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 重跑",
+          "note": "按 callHash 从 journal 取已完成调用的结果并记为 cached，不再执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/runtime.ts",
+          "locator": "WorkflowRuntime.runAgent / takeCached",
+          "lines": "L792-L813",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 重跑",
+          "note": "按 callHash 从 journal 取已完成调用的结果并记为 cached，不再执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/step-workflow.ts",
+          "locator": "workflow 工具说明 Resume",
+          "lines": "L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 重跑",
+          "note": "resumeFromRunId 重放未改动的已完成调用，改动、新增和失败的调用实时执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workspace_snapshot、compensation 判无：两个提交的命令表（core/slash-commands.ts 与扩展命令 connect/cron/goal/init/llama/permissions/plan/plugin/todos/ultracode/ultraloop/workflows，及 Step 命令 usage/mcp/clear/theme/status/btw/feedback）都没有撤销或回退文件的命令，工具目录里也没有备份逻辑。idempotency_key 的入口是模型调用 workflow 工具，按 R3 第一档计入；系统提示要求 workflow 需用户显式同意，但代码只记录不拦。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；可选择的维度：三档权限 Ask（读类工具放行、写/执行类询问）/ Approve for Me / Full Access（/permissions、Shift+Tab 或 config.toml [tools.approval] preset）；--tool-override <tool=allow|confirm|deny> 按工具名定效果；--tools 白名单；MCP 服务的 disabled_tools。危险命令规则（rm -rf、destructive-git、mkfs 等）写死在代码里，用户不能增改，只影响默认效果。没有路径或网络规则。默认 approve-for-me（有界面时）：改文件、运行普通构建脚本、写工作区外、命令联网都直接放行；只有命中内置危险规则或解析不全的命令逐次询问。其他环境：无界面运行不沿用该默认，降为 confirm 且无人批准时拒绝。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "STEP_PERMISSION_PRESETS / READ_ONLY_TOOLS / WRITE_OR_EXECUTE_TOOLS",
+          "lines": "L46-L99",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限档位",
+          "note": "三档按工具类别（只读与写/执行）决定放行或询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "decideStepToolCall",
+          "lines": "L411-L505",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "按工具覆盖、内置危险规则、解析不全依次判断；auto 模式下其余调用一律放行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/cli/args.ts",
+          "locator": "--tool-override / --tools 解析",
+          "lines": "L313-L333",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "按工具名的规则",
+          "note": "用户可按工具名指定 allow/confirm/deny，或给出工具白名单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/cli/args.ts",
+          "locator": "--tool-override / --tools 解析",
+          "lines": "L430-L431",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "按工具名的规则",
+          "note": "用户可按工具名指定 allow/confirm/deny，或给出工具白名单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/command-policy.ts",
+          "locator": "COMMAND_APPROVAL_RULES",
+          "lines": "L93-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置危险命令规则",
+          "note": "危险命令规则为写死名单。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/security.md",
+          "locator": "No Built-in Sandbox",
+          "lines": "L31-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "内置工具以进程权限读写文件、运行命令，没有内置沙箱。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/14671f328f5688a0808f5d2b50ef92f06a01dda9/packages/coding-agent/src/step/permissions.ts",
+          "locator": "decideStepToolCall（内部开发线）",
+          "lines": "L450-L492",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "内部开发线上判定顺序相同。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "command_rule 未计：命令匹配规则只有内置 COMMAND_APPROVAL_RULES，文档“Rules and extension points”只对开发者说明，配置文件格式里没有用户命令规则项。file_path 未计：计划模式只限制写固定的计划文件，属写死名单。default_command 取“项目构建脚本”这类解析完整、不命中危险规则的命令，结果为 allow；命中危险规则的命令为 review。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；默认 approve-for-me 下，命中内置危险规则或解析不全的命令在 tool_call 钩子里、执行前弹出确认，一次批准只放行这一次调用（同一批调用可能分别询问）；then_run 合并在改文件调用里的命令一并判断。确认可经 /connect 接上的飞书镜像远程作答，批准者仍是用户。可选：Ask 档对所有写/执行类调用逐次询问；/plan 进入计划模式后 exit_plan_mode 提交方案等用户批准（任务层），模型不能自行进入计划模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "StepPermissionController.handleToolCall",
+          "lines": "L618-L655",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "非放行的调用在执行前经 ui.confirm 等用户批准，拒绝则阻断这次调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/command-permissions.md",
+          "locator": "Command permissions",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "危险或解析不全的命令在 Ask / Approve for Me 下逐次确认，用户批准只作用于该次调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/plan-approval.md",
+          "locator": "Mode announcements",
+          "lines": "L57-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式",
+          "note": "只有用户能用 /plan 或 --plan 进入计划模式，没有模型可调的进入工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "项目本地子代理的 confirmProjectAgents 确认属信任一类，且环境前提没有项目资源，未计。clarify_user / 问卷属模型提问（F36）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；application_check：权限控制器经 tool_call 钩子在执行前按档位、工具覆盖、内置危险规则判断并询问或拒绝。runtime_sandbox：workflow 工具默认注册，模型写的编排脚本在 QuickJS 编译成 WebAssembly 的虚拟机里跑，没有 process、require、fetch，只约束脚本本身，子代理照常用工具。没有操作系统隔离或容器（文档明说无内置沙箱；可选：Gondolin 微虚拟机、容器按 containerization 文档另配）。prompt_only=present，部分兜底：workflow 的 ultraloop 同意是软闸，未同意只记日志不拦；计划模式拦改文件但 run_command 照常、只靠提示要求只读；内置子代理 review、planner 标为只读却有 run_command。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "StepPermissionController.handleToolCall",
+          "lines": "L618-L655",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "执行前按策略判定，阻断或等用户确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/registration-gate.ts",
+          "locator": "resolveWorkflowRegistration",
+          "lines": "L17-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "workflow 默认注册，沙箱为 QuickJS/WASM；使用同意只是按轮/会话的软约束。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/development.md",
+          "locator": "workflow guest scripts",
+          "lines": "L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具",
+          "note": "脚本无法访问 process、require、fetch，有内存与超时上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/ultraloop-opt-in.ts",
+          "locator": "模块注释",
+          "lines": "L18-L21",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 同意",
+          "note": "未同意的 workflow 调用只记录、不拦截。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/plan-approval.md",
+          "locator": "Plan approval handoff",
+          "lines": "L32-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式",
+          "note": "计划模式拦计划文件外的改动，run_command 保持原权限、只靠提示要求只读。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent-agents.ts",
+          "locator": "BUILTIN_AGENTS",
+          "lines": "L55-L88",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置子代理",
+          "note": "review、planner 描述为只读但工具里有 run_command，explore 只有只读工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/security.md",
+          "locator": "No Built-in Sandbox",
+          "lines": "L31-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "没有内置沙箱，工具以用户进程权限运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认 approve-for-me（危险命令确认有代码检查）；可切换内置模式 Ask、Full Access（代码）、计划模式（改文件有代码，run_command 只靠提示：部分兜底）、ultracode/ultraloop（workflow 同意是软闸：只靠提示）；内置子代理 explore（工具白名单有代码）、review/planner（只读靠提示，run_command 不受只读检查：部分兜底）、general（无限制）；文档列出的限制设置（tool-override、--tools、disabled_tools）都有代码。runtime_sandbox 的计入依据：workflow 工具默认在模型工具清单里，按 R3 第一档算默认会发生。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：配置钉 0.1.7（构建提交不可考），按替身快照公开 main 29eb460 编码，内部开发线 14671f3 交叉核对；审计靠普通会话 JSONL，没有专门审计日志。助手消息里同一条记录存模型的文字与思考块和 toolCall（id、工具名、参数）；工具结果消息带 toolCallId、内容和 isError，可按调用编号对上。approval 不计：批准决定不落盘，用户拒绝只留下 Tool call denied 的错误结果；workflow 的未同意调用另记 custom 条目（按 toolCallId 可对），那是使用同意记录不是审批。identity 不计：会话头只有会话编号、时间、cwd，没有账户；遥测设备编号不在会话记录里。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/session-format.md",
+          "locator": "Content Blocks / SessionMessageEntry",
+          "lines": "L45-L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "助手消息含 text、thinking、toolCall 块，工具结果消息带 toolCallId 与 isError。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/session-format.md",
+          "locator": "Content Blocks / SessionMessageEntry",
+          "lines": "L277-L285",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "助手消息含 text、thinking、toolCall 块，工具结果消息带 toolCallId 与 isError。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "StepPermissionController.handleToolCall",
+          "lines": "L647-L655",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批记录",
+          "note": "批准直接放行、拒绝只返回阻断原因，未写会话条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/session-format.md",
+          "locator": "SessionHeader",
+          "lines": "L257-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "身份",
+          "note": "会话头只有 id、timestamp、cwd 等，没有账户字段。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "approval 判无的依据：permissions.ts、features/step.ts、agent-session.ts 里都没有把批准写进会话的 appendEntry/appendCustomEntry 调用，只在拒绝时出现错误结果。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 默认注册的 subagent 工具让主代理派出带独立会话、能多步调用工具的子代理进程（内置 general、explore、review、planner），框架跟踪其运行（前台结果或后台通道 lane_id、agent_send status）；workflow 工具默认注册，运行时按脚本派出多个代理。工具说明要求只在用户要求委派时使用，代码不拦（总则 R3 第一档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-capabilities.ts",
+          "locator": "packages/coding-agent/src/features/step-capabilities.ts：createStepCapabilitiesExtension",
+          "lines": "L17-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册的扩展",
+          "note": "subagent 与 workflow 扩展在能力扩展里无条件挂载（workflow 只能用 STEP_DISABLE_WORKFLOW=1 关）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：pi.registerTool(name: \"subagent\")",
+          "lines": "L872-L933",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "subagent 工具默认注册；不带 run_in_background 时前台阻塞返回结果，带上时开后台通道、立即返回 lane_id，结束时发一条 agent-notification。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：buildSubagentChildEnv / createSubagentRpcSession",
+          "lines": "L196-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理进程",
+          "note": "每个子代理是一个 --mode rpc --session-id 的子进程，有自己的会话；子进程一律关掉 workflow、cron、goal 并带子代理标记，不能再派生。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/step-workflow.ts",
+          "locator": "packages/coding-agent/src/features/workflow/step-workflow.ts：pi.registerTool(name: \"workflow\")",
+          "lines": "L144-L192",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流工具",
+          "note": "workflow 工具默认注册：运行沙箱里的 JS 脚本，脚本经 agent()/parallel()/pipeline() 派出多个代理；可传 inline script、scriptPath 或已保存的 name；说明里写着要用户同意。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "配置记录 subagents_enabled=true，与代码一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 main_agent：主代理调用 subagent 工具（single/parallel/chain 三种模式）派出子代理；说明里写着只在用户明确要求委派时才派，代码不拦。workflow：主代理调用 workflow 工具后，由 QuickJS 沙箱里的脚本按 agent()/parallel()/pipeline() 决定派出时机和数量（脚本可当场写，也可是 .stepcode/workflows/saved 或用户目录里保存的脚本）；需 ultracode 同意的说法是软闸，未同意只记日志、不拦截。定时任务（cron）到点只往主会话投一条提示、goal 续跑也只给主会话发提示，由主代理再决定是否委派，不记 event_scheduling；子代理进程里 cron、goal、workflow 都被关掉。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：pi.registerTool(name: \"subagent\")",
+          "lines": "L872-L933",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "subagent 工具默认注册；不带 run_in_background 时前台阻塞返回结果，带上时开后台通道、立即返回 lane_id，结束时发一条 agent-notification。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/step-workflow.ts",
+          "locator": "packages/coding-agent/src/features/workflow/step-workflow.ts：pi.registerTool(name: \"workflow\")",
+          "lines": "L144-L192",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流工具",
+          "note": "workflow 工具默认注册：运行沙箱里的 JS 脚本，脚本经 agent()/parallel()/pipeline() 派出多个代理；可传 inline script、scriptPath 或已保存的 name；说明里写着要用户同意。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/ultraloop-opt-in.ts",
+          "locator": "packages/coding-agent/src/features/workflow/ultraloop-opt-in.ts：文件头注释",
+          "lines": "L1-L21",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流同意闸",
+          "note": "ultraloop/ultracode 同意只是软闸：未同意的 workflow 调用只记日志、不拦截。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/agent-runner.ts",
+          "locator": "packages/coding-agent/src/features/workflow/agent-runner.ts：workflow 代理运行器",
+          "lines": "L41-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流派生",
+          "note": "工作流里每个 agent() 调用经 runStepSubagentProcess 起一个子代理进程，并传入 abort 信号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-cron.ts",
+          "locator": "packages/coding-agent/src/features/step-cron.ts：到期任务投递 / cron_create",
+          "lines": "L841-L876",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时触发",
+          "note": "到期任务以 triggerTurn 往当前会话发一条提示，不直接起子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "查过全部 runStepSubagentProcess/createSubagentRpcSession 调用方：只有 subagent 工具（features/subagent/execute.ts）和 workflow 代理运行器；core/child-session.ts 也只认 subagent-、workflow- 两种子会话前缀。命令清单（connect、cron、goal、init、llama、permissions、plan、plugin、todos、ultracode/ultraloop、workflows）里没有直接起子代理的命令，/workflows 只列出已保存的工作流和运行记录，故不记 user；回合结束回调（agent_settled）里只有 goal/cron 发提示和自动续跑，没有起辅助代理，故不记 framework_internal。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 independent_context：每个子代理是单独的 rpc 子进程和单独会话，只收到任务文字和代理定义的系统提示（chain 模式把上一步输出填进 {previous}）。messages：模型可选的 run_in_background 开出的后台通道里，agent_send action=reply 把新提示送进同一子代理的原有对话继续做（interrupt=true 时插入当前回合），子代理空闲过期后按同一会话 id 从磁盘恢复。shared_files：子代理默认在父代理的 cwd 里运行，说明写明在同一工作区并要求分配不重叠的写入范围；工作树隔离只是嵌入方内部参数，不在模型可见的参数里。权限：子进程继承同一份环境与设置（默认 approve-for-me），工具范围按代理定义收窄；子进程里会阻塞的确认对话框由父进程自动取消，相当于拒绝。task_* 任务表按会话保存，子代理有自己的会话，不与父代理共享，不记 shared_state。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/tool-description.ts",
+          "locator": "packages/coding-agent/src/features/subagent/tool-description.ts：buildSubagentToolDescription",
+          "lines": "L21-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派工具说明",
+          "note": "说明写明子代理上下文隔离、无本对话记忆、任务说明要自足；子代理在父代理的工作区里工作；子代理不能再派子代理；无等待工具，后台通道结束时唤醒父代理；只在用户或 AGENTS.md/技能要求时才派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：buildSubagentChildEnv / createSubagentRpcSession",
+          "lines": "L196-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理进程",
+          "note": "每个子代理是一个 --mode rpc --session-id 的子进程，有自己的会话；子进程一律关掉 workflow、cron、goal 并带子代理标记，不能再派生。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：AgentSendSchema",
+          "lines": "L601-L622",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台通道消息",
+          "note": "agent_send 的 reply 把提示送进单代理通道正在进行的对话，可选立即插入或排到当前回合之后。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/execute.ts",
+          "locator": "packages/coding-agent/src/features/subagent/execute.ts：子代理 cwd 与会话 id",
+          "lines": "L501-L576",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作目录",
+          "note": "子代理 cwd 取 ctx.cwd 加可选相对 cwd；isolateWorkspace 才分配工作树；只把 task 文字交给子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：StepSubagentRuntimeParams",
+          "lines": "L332-L338",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作树隔离",
+          "note": "isolateWorkspace 等是嵌入方内部控制，注释写明不在模型可见的参数里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：onUiRequest 自动取消",
+          "lines": "L440-L448",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限继承",
+          "note": "子进程发出的 select/confirm/input/editor 对话框被父进程自动回 cancelled。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-tasks.ts",
+          "locator": "packages/coding-agent/src/features/step-tasks.ts：文件头注释",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "任务表范围",
+          "note": "任务表在进程内存里，每次改动以会话条目落盘，随所在会话恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shared_state 判过：任务表按会话保存；workflow 的 journal（.stepcode/workflows/runs）只供框架恢复用，代理之间经脚本返回值传结果，不读写共享结构，故不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 synchronous_return：subagent 默认前台，阻塞到子代理结束，最终回复作为工具结果返回；workflow 工具也在一次调用内等脚本跑完。async_wait：模型可选 run_in_background=true，立即返回 lane_id，通道结束时框架往主会话发一条 agent-notification 唤醒（subscribe=progress 时附进度），也可 agent_send status 查询；print/json 模式下自动改回前台。cancel_propagation：前台子代理随工具调用的 abort 信号收到 abort；会话替换（/new、/resume、/fork、reload）先 abort 当前运行，再经 session_shutdown 停掉全部后台通道及其子进程。后台通道不随用户打断当前回合而停（它有自己的控制器），需 agent_send stop 或会话结束；子代理不能再派生，只有一层。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：pi.registerTool(name: \"subagent\")",
+          "lines": "L872-L933",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "subagent 工具默认注册；不带 run_in_background 时前台阻塞返回结果，带上时开后台通道、立即返回 lane_id，结束时发一条 agent-notification。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/tool-description.ts",
+          "locator": "packages/coding-agent/src/features/subagent/tool-description.ts：buildSubagentToolDescription",
+          "lines": "L21-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派工具说明",
+          "note": "说明写明子代理上下文隔离、无本对话记忆、任务说明要自足；子代理在父代理的工作区里工作；子代理不能再派子代理；无等待工具，后台通道结束时唤醒父代理；只在用户或 AGENTS.md/技能要求时才派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：runTurn 的 onAbort",
+          "lines": "L560-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消处理",
+          "note": "父端 signal abort 时向子进程发 abort 命令，回合以 aborted 结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：session_shutdown 处理",
+          "lines": "L858-L868",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话结束",
+          "note": "退出、信号、/new、/resume、/fork、reload 都经 session_shutdown 停掉后台通道。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/lane-lifecycle.ts",
+          "locator": "packages/coding-agent/src/features/subagent/lane-lifecycle.ts：shutdown",
+          "lines": "L647-L687",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台通道",
+          "note": "shutdown 对运行中的通道 controller.abort() 并 stop 每个子会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session-runtime.ts",
+          "locator": "packages/coding-agent/src/core/agent-session-runtime.ts：teardownCurrent",
+          "lines": "L253-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话替换",
+          "note": "替换会话前先 session.abort()，再发 session_shutdown。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：backgroundUnavailableReason",
+          "lines": "L625-L647",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台参数",
+          "note": "print/json 模式或关掉后台设置时，run_in_background 改回前台。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式（默认委派路径＝前台）：用户打断当前回合（Esc 中止主代理运行）——连带，工具 signal 触发子进程 abort；取消等待中的调用——默认路径上没有单独取消某个工具调用的操作，等同打断回合，连带；取消父运行（/new、/resume、/fork 等不退出程序的会话替换）——连带，teardownCurrent 先 abort 再关通道。故记 all_ways。shared_board 判过：无框架维护的共享任务表（task_* 按会话）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 internal_code：读写编辑、运行命令等内置工具和 Step 内联扩展（subagent、workflow、cron、goal、clarify_user、task_* 等，编译进核心、经同一注册函数）。plugin_api：用户把 TS 扩展放进 ~/.stepcode/agent/extensions（项目 .stepcode/extensions 需信任）或经 step install 装包，用 pi.registerTool 注册工具。external_protocol_service：MCP 客户端，config.toml 加一条服务或经插件声明 mcpServers，工具直接注册进工具清单；预装插件 steppage 经 MCP 提供 page_deploy（安装时准备，要 Node.js 20+）。embedder_declared：step --sdk-stdio 宿主接受查询里的 sdkTools，调用交回宿主执行（要加参数，不进 via_default_entry）。可选：SDK 文档里的 createAgentSession customTools 属于私有包 @step-harness/coding-agent（package.json private:true），不按官方构件库记。user_script 判过：没有把脚本注册成独立工具或按发现命令注册工具的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：Extensions / Extension Locations",
+          "lines": "L3-L135",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件接口",
+          "note": "扩展是 TS 模块，可 pi.registerTool 注册模型可调用工具；从 ~/.stepcode/agent/extensions 等位置自动发现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/mcp.ts",
+          "locator": "packages/coding-agent/src/step/mcp.ts：createStepMcpExtension",
+          "lines": "L120-L230",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 客户端",
+          "note": "会话开始时确保预装插件就位、连接 MCP 服务，并把远程工具 registerTools 进工具清单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/plugins.ts",
+          "locator": "packages/coding-agent/src/step/plugins.ts：PREINSTALLED_BUILTIN_PLUGINS",
+          "lines": "L42-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "预装插件",
+          "note": "预装内置插件 steppage。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/step-integration.md",
+          "locator": "packages/coding-agent/docs/step-integration.md：Ownership（step --sdk-stdio）",
+          "lines": "L28-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入接口",
+          "note": "--sdk-stdio 宿主可为查询声明 SDK 工具与生命周期钩子，执行仍在共享代理循环里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/stdio-host.ts",
+          "locator": "packages/coding-agent/src/step/stdio-host.ts：sdkTools 安装",
+          "lines": "L700-L712",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入方工具",
+          "note": "查询的 sdkTools 被包装成工具加入会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/package.json",
+          "locator": "packages/coding-agent/package.json：private",
+          "lines": "L2-L4",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "构件库",
+          "note": "@step-harness/coding-agent 标为 private，未公开发布。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default：internal_code 确定；external_protocol_service 依据预装 steppage 插件的 MCP 服务，前提是安装时 Node.js 20+ 与准备脚本成功，环境前提没钉 Node 版本。Step 内联扩展按总则 R2 写在核心代码里，记 internal_code、不记 plugin_api 在用；内置 llama.cpp 扩展为隐藏扩展，未见注册模型工具。SDK 文档（docs/sdk.md L65-L71）写 npm install @step-harness/coding-agent，与包标 private 相反，按实现不记 library 路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "external_protocol_service"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "workflow_definition",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 project_rules：每个会话自动读入 AGENTS.override.md、AGENTS.md、CLAUDE.md（上下文文件不论信任都加载）。skill_directory：~/.stepcode/agent/skills、~/.stepcode/skills、~/.agents/skills、~/.claude/skills 等目录的 SKILL.md 按描述按需装载，可 /skill:name 调用。role_template：用户目录 agents/*.md（frontmatter name、description、tools、model 加提示正文）可按名派给子代理，项目 .stepcode/agents 要 agentScope=both 并确认。workflow_definition：.stepcode/workflows/saved/<name>.js 或用户目录 workflows/saved 下保存的脚本，按名经 workflow 工具运行，由运行时推进并派出代理。prompt_template：~/.stepcode/agent/prompts/*.md 变成 /模板名 斜杠命令，展开为一条提示；插件的 commands 目录同理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/resource-loader.ts",
+          "locator": "packages/coding-agent/src/core/resource-loader.ts：上下文文件候选",
+          "lines": "L71",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目规则",
+          "note": "候选文件名 AGENTS.override.md、AGENTS.md、CLAUDE.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/skills.md",
+          "locator": "packages/coding-agent/docs/skills.md：Locations",
+          "lines": "L20-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能目录",
+          "note": "列出技能目录与发现规则。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent-agents.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent-agents.ts：parseAgentFile / discoverStepAgents",
+          "lines": "L140-L176",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "角色模板",
+          "note": "从用户目录 agents 与项目 .stepcode/agents 读取带 name/description/tools/model 的代理定义。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/workflow/step-workflow.ts",
+          "locator": "packages/coding-agent/src/features/workflow/step-workflow.ts：resolveWorkflowSource（saved 名称）",
+          "lines": "L74-L123",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流定义",
+          "note": "按名从项目 .stepcode/workflows/saved 或用户目录 workflows/saved 读取 .js 脚本。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/prompt-templates.md",
+          "locator": "packages/coding-agent/docs/prompt-templates.md：Locations",
+          "lines": "L7-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提示模板",
+          "note": "提示模板目录与按名调用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "环境前提里仓库没有 .stepcode/、.agents/skills、.claude/skills，项目层的这些位置当前为空，但用户目录同类位置写一个文件即可用，按总则 R2 记开放。executable_items 只记 workflow_definition（脚本在 QuickJS 沙箱里由框架执行）；查过 core/prompt-templates.ts 与 core/skills.ts，没有展开时执行嵌入命令的逻辑。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "workflow_definition"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 经扩展 pi.on 订阅：input（可拦截、改写、接管）；model_call（context 改消息、before_provider_headers/before_provider_request 改请求、after_provider_response）；tool_before_after（tool_call 可阻断并改参数、tool_result 可改结果、tool_execution_*）；end（agent_end、agent_settled、turn_end，只能观察）；context_compaction（session_before_compact 可取消或自定义摘要、session_compact、session_compact_failed）；session_start（session_start、resources_discover 可在每次会话开始注入技能和提示路径，session_before_switch/fork 可取消）。--sdk-stdio 宿主另有 UserPromptSubmit、PreToolUse、PostToolUse、Stop 四种钩子，Stop 只回送 systemMessage。没有会话写盘的专门事件，不记 save。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：Lifecycle Overview",
+          "lines": "L275-L350",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "事件点",
+          "note": "列出 input、context、before_provider_request、tool_call、tool_result、agent_end、session_before_compact、session_start 等事件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：resources_discover / session_before_switch",
+          "lines": "L370-L434",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话开始",
+          "note": "resources_discover 在 session_start 后触发、可返回技能和提示路径；session_before_switch 可取消。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：agent_start / agent_end / agent_settled",
+          "lines": "L567-L582",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "结束",
+          "note": "只给出事件对象，无返回值约定。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：tool_call / input",
+          "lines": "L782-L935",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具前后/输入",
+          "note": "tool_call 可阻断并改参数；input 可拦截、改写或接管。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/stdio-host.ts",
+          "locator": "packages/coding-agent/src/step/stdio-host.ts：#runTurn 钩子",
+          "lines": "L600-L630",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 钩子",
+          "note": "UserPromptSubmit 可阻断；Stop 钩子只取 systemMessage 作通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step.ts",
+          "locator": "packages/coding-agent/src/features/step.ts：默认 Step 扩展的处理器",
+          "lines": "L115-L410",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "session_start、input、tool_call（权限控制）、agent_end、before_provider_headers 处理器默认注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/ui/runtime/lark-connection.ts",
+          "locator": "apps/cli/src/ui/runtime/lark-connection.ts：session_before_compact 处理器",
+          "lines": "L332-L340",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "默认挂载的 connect-lark 扩展订阅压缩前后事件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default 记的是默认挂载的 Step 内联扩展已注册、默认会触发的处理器：input（step.ts L140、step-schedule.ts L1163）、model_call（step-plan.ts L804、step-tasks.ts L287 的 context，step.ts L407）、tool_before_after（step.ts L361 权限、ultraloop-opt-in.ts L224）、end（step.ts L396、step-schedule.ts L1143）、context_compaction（lark-connection.ts L332，未连接时为空操作）、session_start（step.ts L115、mcp.ts L128）。这些扩展编译在核心里，按 F31 的事件点口径照记；若码本只认用户或独立扩展的处理器，in_use 应为 []。session_start 不进 observe_only 依据 resources_discover 与 session_before_switch 的返回值；session_start 事件本身只能观察。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "end"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 cli_subprocess：-p/--print 非交互模式、--mode json 事件流、--mode rpc 的 JSON 行协议，以及 --sdk-stdio 的长度前缀帧协议（Step Agent SDK 宿主，带 sdk-tools、权限回调、钩子、会话）；标准输入不是终端时同一命令自动进入 print 模式，并把管道输入并入提示，故进 via_default_entry。没有 HTTP 服务模式，也没有编辑器代理协议或 MCP 服务端。可选：SDK 文档描述的进程内 createAgentSession 所在包 @step-harness/coding-agent 标为 private，按总则 R5 不记 library。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/main.ts",
+          "locator": "packages/coding-agent/src/main.ts：resolveAppMode",
+          "lines": "L149-L164",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "sdk-stdio、rpc、json 各成模式；print 或 stdin/stdout 不是终端时进入 print。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/cli/args.ts",
+          "locator": "packages/coding-agent/src/cli/args.ts：帮助文本",
+          "lines": "L686-L693",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令行入口",
+          "note": "--mode text/json/rpc、--sdk-stdio、--print。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/rpc.md",
+          "locator": "packages/coding-agent/docs/rpc.md：RPC Mode",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "RPC",
+          "note": "stdin/stdout 上的 JSON 协议，用于把代理嵌入其他程序。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/usage.md",
+          "locator": "packages/coding-agent/docs/usage.md：模式表与管道输入",
+          "lines": "L170-L178",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "print 模式读取管道输入并入初始提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/package.json",
+          "locator": "packages/coding-agent/package.json：private",
+          "lines": "L2-L4",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "构件库",
+          "note": "包标为 private。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "library 判过：docs/sdk.md L65-L71 写 npm install @step-harness/coding-agent，但仓库内全部包都是 private:true，配置记录也写 npm 上没有对应包；按实现和 library 判定里“标为私有的内部包不记”处理，没写进 unresolved。若主控认为文档的公开说法足以算公开发布，应改为 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "cli_subprocess"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 user_interaction：终端界面输入；/connect 接上飞书后，人在飞书里发的消息也进同一会话（要用户先下命令）。api：F32 的 print/json/rpc/--sdk-stdio，管道输入直接进入 print，故进 via_default_entry。schedule：cron_create（模型可调）与 /cron 建五字段定时任务，到点在空闲时往会话发一轮；durable=true 写入 .stepcode/cron/tasks.json（要项目受信，本前提下无需信任资源即视为受信）。external_event 判过：没有网络回调接收端或文件监视把外部事件转成新任务；飞书卡片回调只用于远程审批。goal 续跑、后台通道完成通知属内部续办。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-cron.ts",
+          "locator": "packages/coding-agent/src/features/step-cron.ts：cron 工具与 /cron 注册",
+          "lines": "L841-L959",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "注册 cron_create/cron_list/cron_delete 与 /cron，到期任务以 triggerTurn 发起一轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/main.ts",
+          "locator": "packages/coding-agent/src/main.ts：resolveAppMode",
+          "lines": "L149-L164",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API",
+          "note": "非交互模式入口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/ui/runtime/lark-connection.ts",
+          "locator": "apps/cli/src/ui/runtime/lark-connection.ts：/connect 与远程审批",
+          "lines": "L240-L270",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "聊天通道",
+          "note": "/connect 由用户发起，连上后接收飞书消息并处理卡片审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/apps/cli/src/bootstrap/extensions.ts",
+          "locator": "apps/cli/src/bootstrap/extensions.ts：createStepExtensionFactories",
+          "lines": "L43-L72",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认扩展",
+          "note": "cron、goal、connect-lark 扩展无条件挂载。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "F32 的 via_default_entry 含 cli_subprocess，按本字段口径 api 进 via_default_entry。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 step 在当前终端里作为前台进程运行，没有自拉起的守护进程或系统服务注册；子代理子进程登记在进程退出清理表里，退出（Ctrl+C、SIGHUP、SIGTERM）时经 session_shutdown 停掉后台通道并杀掉子进程。持久 cron 任务存盘，但只在某个 step 进程运行时才会被拾取触发。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/subagent/rpc-adapter.ts",
+          "locator": "packages/coding-agent/src/features/subagent/rpc-adapter.ts：trackDetachedChildPid 登记",
+          "lines": "L264-L268",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子进程",
+          "note": "子代理进程登记到宿主的进程退出清扫，信号或紧急退出也会杀掉。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-subagent.ts",
+          "locator": "packages/coding-agent/src/features/step-subagent.ts：session_shutdown 处理",
+          "lines": "L858-L868",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "退出",
+          "note": "退出时提示正在停止后台代理并关掉通道。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/extensions.md",
+          "locator": "packages/coding-agent/docs/extensions.md：Lifecycle Overview（exit）",
+          "lines": "L340-L350",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "退出",
+          "note": "Ctrl+C、Ctrl+D、SIGHUP、SIGTERM 触发 session_shutdown。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "查过 packages/coding-agent/src 与 apps/cli/src 里的 detached:true、launchctl、systemctl：只有 StepPage 准备脚本、打开浏览器和 shell 工具用 detached，没有常驻核心进程。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 最强一层为持久：create_goal（默认工具，模型可直接调用）存下的目标写进会话条目，重新打开该会话时 onSessionReady 对仍为 active 的目标立刻请求续跑，不需要用户再发消息；cron_create 带 durable=true（模型可选参数）的任务写入 .stepcode/cron/tasks.json，进程重启后重新载入，循环任务按下一次时间继续触发，错过的一次性任务汇成一条错过通知送进会话。交互层：运行中提交的消息经 steer/followUp 排在进程内存里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "packages/coding-agent/src/features/step-schedule.ts：GoalRuntime.onSessionReady",
+          "lines": "L814-L827",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标",
+          "note": "会话就绪时 active 目标直接请求一次续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "packages/coding-agent/src/features/step-schedule.ts：session_start 恢复目标",
+          "lines": "L1103-L1124",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标",
+          "note": "从会话条目 step-goal 恢复目标快照后调用 onSessionReady。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-cron.ts",
+          "locator": "packages/coding-agent/src/features/step-cron.ts：loadDurable",
+          "lines": "L514-L558",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "启动时载入持久任务：循环任务推算下次触发，错过的一次性任务进 pendingMissed 并送通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/core/agent-session.ts",
+          "locator": "packages/coding-agent/src/core/agent-session.ts：steer / followUp",
+          "lines": "L2642-L2716",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互队列",
+          "note": "运行中提交的消息交给 agent.steer/followUp 排队，在内存里。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "持久 cron 需 isProjectTrusted()；core/project-trust.ts L98-L105 显示目录里没有需信任的项目资源时直接视为受信，与环境前提一致。interactive_queue 未见写盘恢复，记 in_memory。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "版本：所选 0.1.7 无公开构建提交，按配置记录以公开 main 快照 29eb460 编码、内部开发线 14671f3 交叉核对（总则 R10）。 blocking_approval：approve-for-me 默认下危险命令和检测为可能不安全的操作停下等用户确认；clarify_user 工具停下等用户回答。resumable_todo：目标被模型用 update_goal 标为 blocked、或因用量/预算上限转为 usage_limited/budget_limited、或用户暂停时，保存在会话条目里，重启后恢复，等用户 /goal resume 或调预算后才继续。message_notification 判过：默认只有 OSC 9;4 进度指示（只在 Otty、Ghostty 默认开），不算通知；飞书推送和远程审批要用户 /connect（可选：）。structured_handoff 判过：plan 交接要 /plan 进入（可选：），print 模式完成检查要加参数。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/step/permissions.ts",
+          "locator": "packages/coding-agent/src/step/permissions.ts：默认权限",
+          "lines": "L278-L289",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限审批",
+          "note": "默认 approve-for-me，危险命令仍需确认，无界面运行拒绝该默认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-questionnaire.ts",
+          "locator": "packages/coding-agent/src/features/step-questionnaire.ts：clarify_user",
+          "lines": "L561-L571",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提问",
+          "note": "默认注册的提问工具，在真正需要用户决定时阻塞提问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/src/features/step-schedule.ts",
+          "locator": "packages/coding-agent/src/features/step-schedule.ts：update_goal 与目标状态",
+          "lines": "L1208-L1216",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "待办",
+          "note": "模型只能把目标标为 complete 或 blocked；暂停、恢复、预算由用户或系统控制。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/docs/goal-lifecycle.md",
+          "locator": "docs/goal-lifecycle.md：User controls / Budget recovery",
+          "lines": "L1-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "待办",
+          "note": "/goal resume 重新激活可恢复的目标；预算受限的目标要用户调整后 /goal resume。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/stepfun-ai/Step-Code/blob/29eb460780489801ce8afc8bffc1a2efae7cbded/packages/coding-agent/docs/settings.md",
+          "locator": "packages/coding-agent/docs/settings.md：terminal.showTerminalProgress",
+          "lines": "L209",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知",
+          "note": "OSC 9;4 只是忙碌指示。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "resumable_todo 的口径：blocked/paused/usage_limited/budget_limited 目标不会自己继续（input 处理器提示用户 /goal resume），属于等人决定是否恢复，按判定记入；active 目标由代理自己推进，不记。block_kind 记 permission 与 question；到达目标预算上限时只转状态、不弹提问，不另记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

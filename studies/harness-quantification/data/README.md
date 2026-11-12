@@ -21,7 +21,7 @@
 
 码本按前两次试编码修订之后，换一批没参与修订的配置来检验，范围写在 `rounds/pilot-2.json`（角色 `holdout`）：A04 Qwen Code、A12 Goose、A13 Crush、A14 Mistral Vibe、A15 OpenHands、A16 Grok Build、B06 Zed、B10 Factory Droid、C01 Hermes Agent、D03 mini-SWE-agent。挑选时避开和第一轮同源的工具，覆盖终端、编辑器、常驻助理、研究用循环四类形态和一个闭源产品。
 
-正式编码按批进行，每批一条轮次记录。第一批写在 `rounds/batch-1.json`，是第一轮那十个配置，按 `fields-0.5` 重新编码；它们的配置记录的 `round` 随之写 `batch-1`，`rounds/pilot-1.json` 留作前两次试编码的范围记录。这十个配置参与过码本修订，这一批的一致率不能当作码本在新配置上的检验。
+正式编码按批进行，每批一条轮次记录。第一批写在 `rounds/batch-1.json`，是第一轮那十个配置，按 `fields-0.5` 重新编码；它们的配置记录的 `round` 随之写 `batch-1`，`rounds/pilot-1.json` 留作前两次试编码的范围记录。这十个配置参与过码本修订，这一批的一致率不能当作码本在新配置上的检验。第一批的做法、一致率和交叉核对见 [`../batches/batch-1.md`](../batches/batch-1.md)。
 
 ## 为什么用 JSON
 

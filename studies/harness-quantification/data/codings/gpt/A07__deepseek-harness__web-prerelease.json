@@ -1,0 +1,2750 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.5",
+  "synthetic": false,
+  "round": "batch-1",
+  "config_id": "A07__deepseek-harness__web-prerelease",
+  "coder": {
+    "id": "gpt",
+    "model": "gpt-6-1-sol",
+    "prompt_version": "coding-card-v7",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环执行模型提出的工具调用并把结果交回模型；默认 workflow 工具可把模型现写的脚本交给运行时逐阶段推进，作为嵌套的显式工作流。工具提示要求用户明确请求工作流，但注册和执行路径不检查该请求。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › Agent.turn / Agent.step",
+          "lines": "L584-L597",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "无工具调用时结束，否则执行工具并继续模型循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L86-L111",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "默认 standard 挂载工作流执行器与工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/runtime.ts",
+          "locator": "packages/workflow/workflow-ptc/src/runtime.ts › Workflow runtime.pipeline",
+          "lines": "L310-L337",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "pipeline 按脚本给出的阶段依次执行，普通阶段错误跳过后续阶段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/README.md",
+          "locator": "packages/workflow/tool-workflow/README.md › Calling the tool / What to expect during a run",
+          "lines": "L28-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "模型提交脚本，父回合等待脚本和子代理完成。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/src/index.ts",
+          "locator": "packages/workflow/tool-workflow/src/index.ts › apply / workflow.execute",
+          "lines": "L409-L442",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口",
+          "note": "执行入口只校验调用 Agent 及后台开关，不校验是否有用户显式工作流命令。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "入口核对：README Run 的 npm/source 两条快速开始均启动 Web；apps/cli/src/args.ts 的 profile、headless、tui 示例不改变 Web 内任务推进，plugin/配置导出/help/version 不调用任务模型，--patch/更换 profile 属改设置或其他入口。Web startup.ts L64-L70 的 host、port、no-open、public-url、trusted-host、TLS 参数只改服务呈现。命令注册处已逐个核对：/goal 续跑的每轮仍由模型推进；/compact 是附带摘要；/feedback 提交反馈；/plan 进入或退出提示约束的模型循环；/permission 切换权限预设；/export 导出会话；前端 /file 选择附件，后四者均不另设任务推进器。Web 的普通/计划模式都沿同一循环，preset 切换需显式选择。schedule 只发起任务，不算任务内事件调度。模型现写 workflow 的 pipeline 才计 secondary_modes。 环境前提写 macOS 或 Linux，本次按 R1 取列在前面的 macOS。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "executable_flow_constraint",
+      "unknown_reason": null,
+      "value_note": "默认 workflow 工具可接受模型现写的独立脚本，并由运行时依次推进 pipeline 阶段，因此按可执行流程约束优先；普通交互路径同时提供带状态的 todo_write，待办自身不强制执行顺序。可选：用户切换计划模式后先审阅计划。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L106-L117",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "工作流与结构化待办均在默认预设中注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/runtime.ts",
+          "locator": "packages/workflow/workflow-ptc/src/runtime.ts › Workflow runtime.pipeline",
+          "lines": "L310-L337",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "框架依序 await 每个脚本阶段，阶段失败不再执行该项后续阶段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/todo/tool-todo/src/index.ts",
+          "locator": "packages/todo/tool-todo/src/index.ts › apply / todos projection / todo_write",
+          "lines": "L118-L154",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "待办独立保存条目及 pending/in_progress/completed 状态。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "依 F02 的优先顺序取可执行流程。口径疑问：模型现写的独立编排脚本是否属于“计划条目”；本次按其独立于普通回复、运行时确实执行阶段顺序判入，而非把 todo 的状态校验误当执行约束。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "无工具调用或结束工具信号结束回合；默认目标工具允许根代理在有用户消息的回合建立目标，自动续跑默认最多 256 轮，标为完成停止续跑；用户可取消当前回合。结构化子代理缺失有效结果只被改判 error，没有强制续做，不计验证条件；输出截断另记 F12。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › Agent.turn / Agent.step",
+          "lines": "L584-L597",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "模型无工具调用及 concludeTurn 结束当前回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/tool-goal/src/index.ts",
+          "locator": "packages/goal/tool-goal/src/index.ts › apply / create_goal",
+          "lines": "L207-L229",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "默认模型工具 create_goal 建立续跑目标。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/tool-goal/src/authority.ts",
+          "locator": "packages/goal/tool-goal/src/authority.ts › hasDirectHumanInput / requireDirectHuman",
+          "lines": "L74-L102",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "只检查根代理本轮有用户消息，不检查显式目标命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal/src/index.ts",
+          "locator": "packages/goal/goal/src/index.ts › Goal.Config.defaultMaxGoalRounds",
+          "lines": "L235-L251",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "目标默认上限 256 轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal-round-driver/src/index.ts",
+          "locator": "packages/goal/goal-round-driver/src/index.ts › drive / round-limit",
+          "lines": "L172-L187",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "续跑到轮数上限转 blocked 并不再发下一轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/commands.ts",
+          "locator": "packages/api/session-controller/src/commands.ts › cancel",
+          "lines": "L464-L476",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "用户取消调用 Agent.cancel。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/src/activation.ts",
+          "locator": "packages/subagent/subagent/src/activation.ts › captureLocalResult",
+          "lines": "L156-L167",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "结构化子代理无捕获结果时把 completed 改判 error，而非阻止结束后续做。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "主循环、子代理 structured.ts/activation.ts、默认 turn-stopping 的 workspace-changes 均已核：structured_output 校验只约束结束工具本身；未交结构化结果也会结束并返回 error。workspace-changes 只记录差异，不以验收决定续做。goal 仅凭模型标记 complete/blocked，不做独立目标验收。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认提供方可重试错误最多自动重试五次；工具异常、未知工具及参数校验错误交回模型，重复工具调用在第 3、5、8 次注入纠正提示让模型自修。模型自己带 sandbox_permissions 请求提权属于审批路径；出错后显示错误并结束回合不计升级人工。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L99-L100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "默认挂载 llm-retry。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/config.ts",
+          "locator": "packages/llm/llm-deepseek/src/config.ts › deepSeekConfigFields / retryPolicy / maxTokens",
+          "lines": "L52-L55",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "提供方默认 normal 重试策略最多重试五次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-retry/src/index.ts",
+          "locator": "packages/llm/llm-retry/src/index.ts › recover / backoff",
+          "lines": "L215-L237",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "按重试次数和退避规则重发请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/tools/src/pipeline.ts",
+          "locator": "packages/core/tools/src/pipeline.ts › ToolExecutionPipeline.dispatchToolBody",
+          "lines": "L270-L281",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "工具执行异常转为错误结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/tools/src/schema.ts",
+          "locator": "packages/core/tools/src/schema.ts › defineTool.execute / validateArgs",
+          "lines": "L598-L601",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "参数不合模式时拒绝执行并报 ToolArgsError。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/tool-fs/src/sandbox.ts",
+          "locator": "packages/fs/tool-fs/src/sandbox.ts › FsSandboxController.resolvePolicy",
+          "lines": "L88-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认主执行链",
+          "note": "提权审批由模型调用的参数触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L432-L452",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "默认启用图像超限恢复以及重复调用提醒，阈值 3/5/8。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/guard/repeat-tool-reminder/src/index.ts",
+          "locator": "packages/guard/repeat-tool-reminder/src/index.ts › apply / observe / tools/post-execute",
+          "lines": "L190-L230",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "按重复次数把纠正消息注入 additionalContexts，不否决执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-basic/src/index.ts",
+          "locator": "packages/compaction/compaction-basic/src/index.ts › BasicCompaction agent/request-error listener",
+          "lines": "L213-L256",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "请求上下文超限时自动压缩后重发，不依赖模型自行改写。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核对认证、权限、Git 与请求过大：API-key 提供方缺凭据抛 MISSING_CREDENTIAL（llm-deepseek-api-key/src/index.ts L40-L50），主循环请求重试未获 retry 则结束并报错（agent.ts L548-L563），没有等待补钥后原请求续行；工具权限拒绝、Git 命令失败交模型。工作区差异记录失败只告警；workflow pipeline 普通阶段失败跳过该项剩余阶段、返回 null，没有另一个处理节点，不记 workflow_branch。batch.ts L98-L105 保留坏 JSON，schema.ts L598-L601 拒绝错误类型，不自动修正后执行。goal 模型自报 blocked 不计升级人工；重试与压缩不计输入修正。 可选：未连接的 MCP 桥在 tools.ts L282-L287 把非对象参数替成 {} 后调用服务；因默认未配置任何 MCP 工具，不计入本配置主链的 framework_input_repair。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "浏览器通过 HTTP POST 的 Remote 调用及 WebSocket 流连接本机 Host；模型循环由 Host 的 session controller 创建，前端不直接运行核心。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/README.md",
+          "locator": "README.md › Run",
+          "lines": "L19-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "默认命令启动 127.0.0.1:3080 Web 服务并打开浏览器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/connection/README.md",
+          "locator": "packages/client/connection/README.md › Use this package",
+          "lines": "L28-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "浏览器的 Remote unary 调用经 HTTP POST，流经 Gateway WebSocket。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/agent.ts",
+          "locator": "packages/api/session-controller/src/agent.ts › ApiSessionAgentController.createMinted / createAgent / resume",
+          "lines": "L443-L461",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "Host 控制器在核心进程中通过 ctx.agents.create 创建会话 Agent。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "文件读写沿核心进程内的本地文件系统实现；bash 命令和 workflow 的受限 Node 执行器在本机子进程运行，系统沙箱包装不另算容器。可选：新增 MCP 服务配置后，工具还可由外部进程或服务执行；默认没有此类服务器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L522-L525",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "默认使用 fs-sandbox 文件系统后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/fs-sandbox/src/index.ts",
+          "locator": "packages/fs/fs-sandbox/src/index.ts › SandboxedFileSystem / writeText",
+          "lines": "L1-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "沙箱文件系统继承 LocalFileSystem，直接进行本机 open/rename 等操作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/shell/tool-bash/src/index.ts",
+          "locator": "packages/shell/tool-bash/src/index.ts › apply / bash.execute",
+          "lines": "L478-L527",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "bash 工具把执行规格交给 ctx.shell.execute。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/shell/bash-sandbox/src/index.ts",
+          "locator": "packages/shell/bash-sandbox/src/index.ts › SandboxBashExecutor.execute",
+          "lines": "L92-L114",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "沙箱后端构造受限 argv 后调用本地执行器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/README.md",
+          "locator": "packages/workflow/workflow-ptc/README.md › Summary / File policy and cancellation",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "默认脚本工作流在新建 Node 进程中执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/mcp-memory.md",
+          "locator": "docs/user/guide/mcp-memory.md › What DSH does / Enable one",
+          "lines": "L23-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "没有配置时默认组合中不连接任何记忆 MCP 服务。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "运行核心持有 Session 并创建持久日志；恢复时核心获取写入权、读回事件与头部来重建 Session，浏览器只调用 Host 取状态。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L138-L141",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "默认挂载本机 JSONL 会话持久化后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts › AgentLoop.createAgent / resumeWith",
+          "lines": "L717-L742",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "核心创建 Session 并关联其持久化存储。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts › AgentLoop.createAgent / resumeWith",
+          "lines": "L786-L809",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "恢复时打开持久句柄、读回日志并准备 Session。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/agent.ts",
+          "locator": "packages/api/session-controller/src/agent.ts › ApiSessionAgentController.createMinted / createAgent / resume",
+          "lines": "L294-L328",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "Web Host 恢复会话时调用核心 agents.resume。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "存储后端作为同进程插件挂载，不是独立状态服务；默认未启用的 SQLite 全文检索也不是权威消息库。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个 Web 会话分配 session-UUID，状态及日志按该编号分开；新会话可在同一个 Host 进程和同一项目目录中创建，默认不分配专属工作目录、文件系统视图或容器。可选：工作树属额外实验配置，不计默认隔离。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/agent.ts",
+          "locator": "packages/api/session-controller/src/agent.ts › ApiSessionAgentController.createMinted / createAgent / resume",
+          "lines": "L443-L461",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "新会话生成 UUID，按给定 cwd 在同一核心服务创建 Agent。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-persistence-jsonl/README.md",
+          "locator": "packages/session/session-persistence-jsonl/README.md › On-disk layout",
+          "lines": "L55-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "日志按项目目录及编码后的 session id 分目录保存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L517-L525",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web 默认 standard，本机 macOS",
+          "note": "核心循环与本地文件系统服务共享宿主组合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/util/official-bundles/src/bundles.ts",
+          "locator": "packages/util/official-bundles/src/bundles.ts › OPTIONAL_BUNDLES",
+          "lines": "L55-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口",
+          "note": "工作树与自动审核均列为额外可选实验包。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "逐项核对 logical_id 有；process 无（createAgent 直接 ctx.agents.create 而非另起核心）；working_directory 无（原 cwd，mkdir 只确保项目目录存在）；filesystem/container 无（默认 fs-sandbox 为同一本地文件系统路径检查，非会话私有视图）。日志目录不当作执行工作目录。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "默认组合同时附带 DeepSeek Messages 适配器与 pi-ai 多协议适配器；后者只需添加一条带定义的提供方配置即可供主循环使用，能转换 Messages、Completions、Responses 等协议。钉住环境实际只用 deepseek-official 的 Messages API，转换在核心进程内完成。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L128-L136",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "pi-ai 默认随组合挂载，添加 provider profiles 后注册路由。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L527-L535",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "同时挂载直接 DeepSeek 提供方。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-pi-ai/src/catalog.ts",
+          "locator": "packages/llm/llm-pi-ai/src/catalog.ts › protocol compat gates",
+          "lines": "L335-L344",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "适配层支持 Completions、Responses 与 Anthropic Messages 等不同协议。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-pi-ai/src/adapter.ts",
+          "locator": "packages/llm/llm-pi-ai/src/adapter.ts › stream / toPiContext / streamSimple",
+          "lines": "L447-L465",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "内部请求转换成 pi-ai context 后交给对应型号协议实现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/README.md",
+          "locator": "packages/bundle/web-app/README.md › Starting the Web GUI",
+          "lines": "L41-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "所选 Web 默认型号和实际 Messages 接口。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按 F09 的能力例外收默认附带但尚未配置的协议，不按只有一家凭据误判 vendor_sdk。联网搜索另走工具内部专用 Messages 客户端，不参与本字段协议数。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认模型从 Messages tool_use/input_json_delta 发出结构化调用；默认 workflow 接受模型现写脚本，经 agent() 分派到真实子代理执行器。MCP 客户端随 CLI 安装，新增一条自带服务定义的配置即可桥接外部工具协议；默认没有连接的 MCP 服务，坏 JSON 保留并由工具校验报错。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/serialize.ts",
+          "locator": "packages/llm/llm-deepseek/src/serialize.ts › serialize: tools / max_tokens",
+          "lines": "L160-L166",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "工具定义以原生 input_schema 提交。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/translate.ts",
+          "locator": "packages/llm/llm-deepseek/src/translate.ts › startBlock / deltaChunk",
+          "lines": "L45-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "原生 tool_use 转成工具调用块。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/translate.ts",
+          "locator": "packages/llm/llm-deepseek/src/translate.ts › startBlock / deltaChunk",
+          "lines": "L82-L85",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "结构化工具参数增量直接形成调用参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/package.json",
+          "locator": "apps/cli/package.json › dependencies.@deepseek-ai/dsh-mcp-client",
+          "lines": "L50-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "MCP 客户端属于随安装附带的依赖。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/mcp-memory.md",
+          "locator": "docs/user/guide/mcp-memory.md › What DSH does / Enable one",
+          "lines": "L9-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "添加服务定义后发现并包装 MCP 工具，默认无已配置服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/mcp/mcp-client/src/tools.ts",
+          "locator": "packages/mcp/mcp-client/src/tools.ts › syncTools / client.callTool",
+          "lines": "L124-L144",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "包装外部工具清单，工具调用转成 client.callTool。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/src/index.ts",
+          "locator": "packages/workflow/tool-workflow/src/index.ts › apply / workflow.execute",
+          "lines": "L325-L339",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "默认注册 workflow 的 JavaScript 脚本参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/host.ts",
+          "locator": "packages/workflow/workflow-ptc/src/host.ts › startChild",
+          "lines": "L200-L219",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "脚本的 agent 调用派发到 ctx.subagents.startActivation。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/tools/src/batch.ts",
+          "locator": "packages/core/tools/src/batch.ts › parseArguments",
+          "lines": "L98-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "参数解析失败保留原字符串，交由工具诊断。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "MCP 新增整条服务定义按 R2 算添加内容；--patch 只是示例加载方式，文档也允许把 insert 放进默认用户 patch，不要求开一个既有开关。未把内置 Messages 格式转换重复记为 protocol_translation；未发现从普通回复文本抽取调用的默认路径。workflow 的“仅用户请求时用”是提示限定，execute 只校验调用 Agent，不检验请求措辞。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "普通子代理默认继承主型号，但主模型可通过默认 subagent 工具改变其推理强度；跨型号授权开关默认关闭，仅限父路由。脚本 workflow 的 agent() 另可把模型自选的 provider/model 直接传给子代理，故仍记模型自选型号；辅助联网搜索固定用 deepseek-v4-flash，和主型号 deepseek-flash 名称不同，未有同底层型号证明，按辅助角色分配计；可选：设置 allowedModels 后普通 subagent 可跨型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L92-L111",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "默认 subagent 暴露 modelSelection 与 modelDiscovery，并挂载 workflow。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent/src/model-selection-settings.ts",
+          "locator": "packages/subagent/tool-subagent/src/model-selection-settings.ts › SubagentModelSelectionConfig.Config / agent/created",
+          "lines": "L25-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "会话跨型号授权默认 enabled=false、allowedModels=[]。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent/src/model-selection.ts",
+          "locator": "packages/subagent/tool-subagent/src/model-selection.ts › requestedAgentOptions / assertAllowedModelSelection",
+          "lines": "L99-L126",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "模型可提供 reasoning_effort 并传入子代理选项。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent/src/model-selection.ts",
+          "locator": "packages/subagent/tool-subagent/src/model-selection.ts › requestedAgentOptions / assertAllowedModelSelection",
+          "lines": "L139-L158",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "未记录授权策略时显式选择限于父代理路由。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/model-info.ts",
+          "locator": "packages/llm/llm-deepseek/src/model-info.ts › reasoning.efforts / defaultEffort",
+          "lines": "L82-L98",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "默认提供方允许多档推理强度，默认 high。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/host.ts",
+          "locator": "packages/workflow/workflow-ptc/src/host.ts › startChild",
+          "lines": "L200-L219",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "工作流透传模型选择的子代理 provider/model。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-title-llm/src/index.ts",
+          "locator": "packages/session/session-title-llm/src/index.ts › resolveRoute",
+          "lines": "L183-L195",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "标题未另配型号时使用主会话捕获的路由。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-basic/src/summarizer.ts",
+          "locator": "packages/compaction/compaction-basic/src/summarizer.ts › summarizeWithLlm",
+          "lines": "L127-L137",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "摘要未另配型号时使用最新会话路由。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/web/web-search-deepseek/src/provider.ts",
+          "locator": "packages/web/web-search-deepseek/src/provider.ts › DEEPSEEK_DEFAULT_MODEL",
+          "lines": "L26-L43",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "辅助搜索默认固定型号 deepseek-v4-flash。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › insert: default core plugin rows",
+          "lines": "L90-L94",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "主循环默认型号为 deepseek-flash。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/util/official-bundles/src/bundles.ts",
+          "locator": "packages/util/official-bundles/src/bundles.ts › OPTIONAL_BUNDLES",
+          "lines": "L55-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口",
+          "note": "自动动作审核是可选实验包，不在默认辅助分配中。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "辅助清单逐项核对：标题有，同主会话路由，固定选最低支持推理强度（session-title-first-prompt-llm/src/index.ts L74-L76）；摘要有，继承最新路由，默认未覆盖 summarizationProvider/Model；动作审核分类无（默认 user-approval/permission 为用户审批，实验自动审核未挂载）；联网搜索有，web-search-deepseek 为固定独立型号，匿名网页抓取无模型（base L467-L484）；媒体理解没有独立辅助分配，read_image/附件交同一主请求；生成类模型工具无（核 standard 全部工具）。没有发现辅助路由按请求特征换号或失败换号；默认 Web 中无自己多步调工具的后台辅助审阅代理。配置记录的 modelSelection:true 只表示工具参数开放，不意味着默认开启会话跨型号授权。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "DeepSeek 适配器本地默认给单次输出 256000 Token 上限，服务端型号列表可把它调低，截断会结束本轮；模型可用默认工具建立的目标续跑最多自动续跑 256 轮，到顶转 blocked，停止后续轮次。无默认任务累计 Token、总时长或金额上限；回合数展示不当作阈值提醒。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/defaults.ts",
+          "locator": "packages/llm/llm-deepseek/src/defaults.ts › DEFAULT_MAX_TOKENS",
+          "lines": "L5-L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "本地默认输出上限 256000 Token。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/config.ts",
+          "locator": "packages/llm/llm-deepseek/src/config.ts › deepSeekConfigFields / retryPolicy / maxTokens",
+          "lines": "L92-L99",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "maxTokens 的默认值在提供方配置模式中生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/serialize.ts",
+          "locator": "packages/llm/llm-deepseek/src/serialize.ts › serialize: tools / max_tokens",
+          "lines": "L151-L155",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "请求确实携带 max_tokens。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm-deepseek/src/listed-catalog.ts",
+          "locator": "packages/llm/llm-deepseek/src/listed-catalog.ts › listed / routeMaxTokens",
+          "lines": "L59-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "服务端声明输出能力时与本地上限取较小值。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › Agent.turn / Agent.step",
+          "lines": "L584-L587",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "输出截断直接返回 max-tokens。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/tool-goal/src/authority.ts",
+          "locator": "packages/goal/tool-goal/src/authority.ts › hasDirectHumanInput / requireDirectHuman",
+          "lines": "L74-L102",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "模型在根代理有用户消息的回合可建立目标，不须显式命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal/src/index.ts",
+          "locator": "packages/goal/goal/src/index.ts › Goal.Config.defaultMaxGoalRounds",
+          "lines": "L235-L251",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "目标默认上限 256 轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal-round-driver/src/index.ts",
+          "locator": "packages/goal/goal-round-driver/src/index.ts › drive / round-limit",
+          "lines": "L172-L187",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "轮数耗尽后停止排下一轮并转 blocked。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal-round-driver/src/prompt.ts",
+          "locator": "packages/goal/goal-round-driver/src/prompt.ts › renderGoalRoundPrompt",
+          "lines": "L12-L24",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "每轮显示轮次，没有到达预警阈值才触发的提醒机制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/README.md",
+          "locator": "packages/workflow/workflow-ptc/README.md › Summary / File policy and cancellation",
+          "lines": "L57-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口与其派生任务",
+          "note": "工作流没有整体 deadline，只有初始同步切片及调用方取消。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/guard/timeout-policy/src/index.ts",
+          "locator": "packages/guard/timeout-policy/src/index.ts › apply / timeoutMs",
+          "lines": "L55-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认入口",
+          "note": "全局工具期限只作用于工具自身声明的 timeoutMs；未声明则无默认 deadline。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "逐维核对设置模式及主链：agent-loop 的 maxParallelToolCalls 是并发上限，不是任务调用预算；subagent 的 maxDepth/maxActiveSubagents 与 workflow 的 maxTotalAgents/maxItemsPerCall 是派生数量/深度，不计 call_count；workflow syncTimeoutMs 仅脚本初始同步切片，不是代理任务总时长。bash、HTTP、标题及摘要请求的超时不计 time；辅助标题/搜索输出限制不扩大主执行链字段范围。total_tokens：计数与压缩阈值没有累计任务硬限；money：仅计费统计，没有默认费用阈值。soft_notice 逐项为无：输出到顶即截断；目标 prompt 的 Round 显示只是计数，不是阈值通知，driver 上限分支直接停止。背景 workflow 同样无整体 deadline，未发现默认后台辅助代理预算。实际线上型号列表未包含在快照，具体输出上限可能低于本地 256000，但客户端上界本身可确认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages",
+          "typed_event_rebuild"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次请求读取 deriveMessages 的缓存消息列表，只对新增节点追加、发生替换或投影时重建；独立 image/offload 事件的增量解释另记在 layers。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › buildRequest / runStep",
+          "lines": "L724-L742",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "buildRequest 直接把 session.deriveMessages() 放入请求。",
+          "content_sha256": "ad9ee0778c0a93dec40363f88b53f442add9b033837b9ff049675a1ada3df61f"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/session/src/index.ts",
+          "locator": "packages/core/session/src/index.ts › Session.deriveMessages",
+          "lines": "L981-L1019",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "消息列表跨轮缓存，尾增量追加，内容代际变化才重建。",
+          "content_sha256": "343eeb693620bf3de6d21fcecb685fb7288b623c0bd4f655f29a23e92ce2f634"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/session/src/surface.ts",
+          "locator": "packages/core/session/src/surface.ts › SessionSurface._processDelta",
+          "lines": "L673-L695",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "surface 增量解释新到事件，保留已折叠结果。",
+          "content_sha256": "5b5394dc02584cb3549330b358fbe5919d05f8a6920d90f6819bb7e3b4783154"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-image-offload/README.md",
+          "locator": "packages/compaction/compaction-image-offload/README.md › What you can observe / Understand the implementation",
+          "lines": "L36-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "独立 image/offload 决定哪些既有图片不再进入请求，注册消息投影解释它。",
+          "content_sha256": "0ac137e2bbd1fc2fdab264d42bfae570431f77fe740304820d97c89869500ef9"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按 F13 的缓存列表及增量转换条款判；surface 是消息索引与内容投影，不是独立的任务工作状态视图，故不记 explicit_state_projection。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "自动压缩在窗口压力或确证溢出后触发，先截短长工具结果，再用模型摘要替换旧片段并保留最近历史；统一 spill 层保留首尾、全文另存，图片超预算时也可卸载为文字路径。可选：/compact 可手动触发。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L69-L85",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "standard 挂载自动压缩及长结果裁剪，阈值 8192 字符。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-tool-result-pruner/src/index.ts",
+          "locator": "packages/compaction/compaction-tool-result-pruner/src/index.ts › ToolResultPruner.pruneContent",
+          "lines": "L83-L121",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "无模型调用地保留头尾、删去中间文字。",
+          "content_sha256": "2890f336ca42f9d8259794eebbc4a9423f69a7394c41796b9981216ed29ed536"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-basic/README.md",
+          "locator": "packages/compaction/compaction-basic/README.md › Tuning when condensation starts / What happens when condensation runs",
+          "lines": "L62-L98",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "自动阈值、溢出恢复、模型摘要及保留最近历史的流程。",
+          "content_sha256": "c89320abc365da40a4779af0811b24cd27e527ec93251cddbcc2fb38ccdef0d7"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-basic/src/region.ts",
+          "locator": "packages/compaction/compaction-basic/src/region.ts › commitCompactionBody",
+          "lines": "L491-L508",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "记录摘要，并用摘要消息替换旧范围。",
+          "content_sha256": "295b53cc9e924f7cb2e843e0d0d296e89ead73da2aab9790282db30736e2e063"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/spill/spill-policy/README.md",
+          "locator": "packages/spill/spill-policy/README.md › What the model sees / Which results are affected",
+          "lines": "L47-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "统一工具结果层按预算截短首尾、另存全文，notice-only 是同一保留算法的退化。",
+          "content_sha256": "852036537c2f20418ded6859e191e550549d1095e98fef426b41ff5daa0c4cb8"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › session-persistence-jsonl / sandbox-policy / permission / spill-policy",
+          "lines": "L411-L435",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认挂载 spill-policy（12500 token）与图片卸载。",
+          "content_sha256": "b65a86e55f02d863286bb6faac8ae292c18fffca3c8aa4491b600fa4dd6b48d0"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "首尾截短并留全文路径按 R8/F14 只计 truncation；pruner 的 replace 是存储操作，内容仍为原结果头尾，不因此计 tool_result_replacement。未见按相关性自动选择旧材料的默认路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "Web 可提交文件、图片附件；默认 glob/grep 工具按路径或正则取回项目材料。网页搜索和抓取、技能目录按需读取不计；代理经 bash 自行执行的检索也不另计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L27-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认挂载文件工具及搜索工具。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/tool-fs-search/README.md",
+          "locator": "packages/fs/tool-fs-search/README.md › The tools",
+          "lines": "L28-L53",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "grep 是模型可直接调用的 ripgrep 正则内容搜索。",
+          "content_sha256": "34e1bb43951063087c0427328a243ffbf2775b5e9a4c72e3ba5b15f533808cf2"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/file-upload/README.md",
+          "locator": "packages/client/file-upload/README.md › Understand the implementation / prompt admission",
+          "lines": "L45-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "上传收据在 prompt admission 时解析为附件内容。",
+          "content_sha256": "fddb0dcf700c6d4b09f3a914400eafb77a69e3a0bc77663c1c72e13fe7402154"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/ui-attachment/README.md",
+          "locator": "packages/client/ui-attachment/README.md › Use this package / Draft attachments",
+          "lines": "L28-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "Web 支持文件与图片草稿、消息附件。",
+          "content_sha256": "b7b6a1374d8782eae269e0537a052f6ddd53df38e8016c868a6cfacfe129f5a8"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/cordis.patch.yml",
+          "locator": "packages/bundle/web-app/cordis.patch.yml › file-upload / ui-approval / ui-attachment",
+          "lines": "L338-L342",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "Web 默认挂载附件与拖拽界面。",
+          "content_sha256": "11c444b94936f8c645f49740b692fc8545898591f78af893d2cb1b7fed4c701c"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "路径模糊补全索引并非符号/定义引用结构查询，不计 structural_index；默认工具表未提供项目语义检索。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个新会话首请求自动带入全局及项目 AGENTS/CLAUDE 说明文件，深入目录后更新。可选：记忆 MCP 示例须另装服务器并加 overlay；定时任务属调度，同一会话摘要属 F14，均不当跨会话记忆。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L15-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "standard 默认加载 agent-instructions。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/context/agent-instructions/README.md",
+          "locator": "packages/context/agent-instructions/README.md › What the agent gets / Main flow",
+          "lines": "L28-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "新会话自动加载用户全局链及项目说明链。",
+          "content_sha256": "e084b89a94b63d4e4deb455feb5ca7f101326086409d3aa4513e445b18b8ae9a"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/context/agent-instructions/README.md",
+          "locator": "packages/context/agent-instructions/README.md › What the agent gets / Main flow",
+          "lines": "L90-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "说明文件注入为持久 user/message，按新会话基线与目录触及刷新。",
+          "content_sha256": "e084b89a94b63d4e4deb455feb5ca7f101326086409d3aa4513e445b18b8ae9a"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/mcp-memory.md",
+          "locator": "docs/user/guide/mcp-memory.md › What DSH does / Enable one",
+          "lines": "L5-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "跨会话记忆服务器是默认关闭、需额外配置的第三方示例。",
+          "content_sha256": "cc7a1215afb0b13d28fe21dda8913ad15ae7ddb37e71e1f690e05d729696d7f4"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核对 standard 工具表、agent-instructions、默认不开放全文会话检索的 base 配置（L149-L168）及记忆文档；未见默认自动生成供新会话读取的摘要、结构化记忆或检索库。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认保存逐事件的压缩 JSONL，含消息、请求配置、审批与压缩记录；附件字节和超长结果全文在日志外留引用。检查点策略负责刷盘，列表投影缓存与临时改动对比不当执行状态快照。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › session-persistence-jsonl / sandbox-policy / permission / spill-policy",
+          "lines": "L138-L147",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认配置会话持久化和独立附件存储。",
+          "content_sha256": "b65a86e55f02d863286bb6faac8ae292c18fffca3c8aa4491b600fa4dd6b48d0"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-persistence-jsonl/README.md",
+          "locator": "packages/session/session-persistence-jsonl/README.md › On-disk layout / Durability and crash semantics",
+          "lines": "L45-L77",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "每会话目录以 zstd 编码逐事件持久化。",
+          "content_sha256": "85392cc2c4655582e2d29b7e848d08bf8681bd0cc36c6a30eacfba963821581e"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/interaction/user-approval/README.md",
+          "locator": "packages/interaction/user-approval/README.md › Audit",
+          "lines": "L88-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "审批请求和决定是独立日志事件。",
+          "content_sha256": "9821c759daecc354f205cec4bfa10cda68253474cf914dc8d237a8fa76ff00ef"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/attachment/attachment-local/README.md",
+          "locator": "packages/attachment/attachment-local/README.md › Where your images are stored and how long they last / What happens when you attach an image",
+          "lines": "L53-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "附件长期保留且能在重启后使用。",
+          "content_sha256": "b8f5b58856486af3b99221b985573a03045e054a043671be07a94f2126eda3fc"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/spill/spill-local/README.md",
+          "locator": "packages/spill/spill-local/README.md › Where files land / Startup cleanup",
+          "lines": "L48-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "结果全文另存，以路径引用，跨进程按年龄清理。",
+          "content_sha256": "8639a233ac35352fae6a423132200ddd7916b15e71327915df7ef63e0594fde3"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/deliverables/workspace-changes/README.md",
+          "locator": "packages/deliverables/workspace-changes/README.md › Use this package / temporary snapshots and summary/diff",
+          "lines": "L44-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "改动快照在会话释放后删除，仅用于对比，重启后没有旧卡片。",
+          "content_sha256": "daa1909d56e92f454c751aa4b61b9a8d60ab7da78e4de05af219a5f85553bf20"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "同一主记录含控制事件，因此不再记 messages。todo/goal 等单对象日志不另记 state_snapshot；session-projection-cache 只是列表派生缓存。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "Web 对冷会话继续发消息会按保存的预设恢复代理；恢复读取日志，对中断工具补合成错误并关闭旧步骤/回合，再由下一次模型请求决定动作。检查点刷盘不表示继续未完成调用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/README.md",
+          "locator": "packages/api/session-controller/README.md › Use this package / cold activation, principal, and fork policies",
+          "lines": "L30-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "Web 提示提交可恢复冷普通会话，读取持久历史。",
+          "content_sha256": "74f3aed90b5b4899889d49c57a3fe00ac74aee00ebf893f513f5f8f665a36dc4"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts › AgentLoop.resumeWith",
+          "lines": "L787-L825",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "resume 读事件、补 interruptedTurnClosers，种子重建 Session 再初始化代理。",
+          "content_sha256": "8c2f579b21e482ecbca023341a79fdbc083124a3d8e1160bfd2f00136214a3c9"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/README.md",
+          "locator": "packages/core/agent-loop/README.md › Failure and cancellation",
+          "lines": "L128-L130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "没有结果的调用补 TOOL_OUTCOME_UNKNOWN 或 TOOL_NOT_STARTED，不自动重试不确定副作用。",
+          "content_sha256": "22cb7970e85d04d3658e03edcca1357f074f3a608bde3aa097f1609675c5c76d"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "R9 取 Web 普通会话实际恢复路径；workflow 工具的运行历史不构成默认恢复入口的确定性重放。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "恢复原消息及已存工具结果；todo 投影重建可继续更新，父会话能按原编号继续本地子代理。持续目标的内容和计数读回但自动续跑被解除，需用户恢复；工作区文件与外部副作用不随会话恢复回退。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts › AgentLoop.resumeWith",
+          "lines": "L799-L809",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "全部持久事件用作恢复种子。",
+          "content_sha256": "8c2f579b21e482ecbca023341a79fdbc083124a3d8e1160bfd2f00136214a3c9"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/session/src/index.ts",
+          "locator": "packages/core/session/src/index.ts › Session.deriveMessages",
+          "lines": "L981-L1019",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "已存消息和工具结果重新导出为模型上下文。",
+          "content_sha256": "343eeb693620bf3de6d21fcecb685fb7288b623c0bd4f655f29a23e92ce2f634"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/todo/tool-todo/README.md",
+          "locator": "packages/todo/tool-todo/README.md › Design philosophy / Whole-list replace, log-backed state",
+          "lines": "L70-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "todo/write 日志支持恢复重建。",
+          "content_sha256": "22307348c3641288bc70c0032b4b0409f802bf004f8686e59f9f886ee957f90d"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal/README.md",
+          "locator": "packages/goal/goal/README.md › What survives and what does not",
+          "lines": "L70-L82",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "目标状态和计数持久，自动续跑开关不持久。",
+          "content_sha256": "9ee42f6d0b3d196764a391923a4105801f3a014e24117b431c32700134917548"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent-control/README.md",
+          "locator": "packages/subagent/tool-subagent-control/README.md › send_message / list_agents",
+          "lines": "L43-L55",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "send_message 按 agent_id 续跑原本地子代理。",
+          "content_sha256": "01b3bc3c03b7437c020aacb0f74696a0cb5aba242c12c25750b655f6ecec448f"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md › Restoring child composition / Ownership and invariants / continuation lifecycle",
+          "lines": "L61-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "本地子代理支持 cold resume，依赖默认已挂载的 persistence 和 session query。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md › Restoring child composition / Ownership and invariants / continuation lifecycle",
+          "lines": "L123-L137",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "父目录事实及子描述符持久，cold resume 重建子代理组合。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "检查恢复种子、收件箱/型号投影、todo、goal、plan-mode、sandbox/approval 策略、subagent catalog/descriptor 与工作区改动模块；收件箱/模式是额外恢复状态但无对应 F19 词项，不强塞 task_plan。task_plan 由 todo 独立成立，不能把已解除续跑的 goal 说成自动继续。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "Web 可在已完成回合处分叉，保留原会话，生成可独立继续的事件前缀副本。改动记录器虽抓文件快照，但只供差异展示、会话结束删除，没有文件恢复入口；请求 requestId 去重仅防用户提示重复提交。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/README.md",
+          "locator": "packages/api/session-controller/README.md › Use this package / cold activation, principal, and fork policies",
+          "lines": "L65-L67",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "会话 fork 复制到所选边界、建立独立会话；聊天动作选择完成回合。",
+          "content_sha256": "74f3aed90b5b4899889d49c57a3fe00ac74aee00ebf893f513f5f8f665a36dc4"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/index.ts",
+          "locator": "packages/api/session-controller/src/index.ts › SessionController.fork",
+          "lines": "L441-L455",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "Web 提供正式 fork Remote 入口。",
+          "content_sha256": "5c6590ca7922fc76ce316a800b91c88560a706f76126422d9e0c3eeb5e4898fd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/deliverables/workspace-changes/README.md",
+          "locator": "packages/deliverables/workspace-changes/README.md › Use this package / temporary snapshots and summary/diff",
+          "lines": "L44-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "快照和文件副本只支持 summary/diff，重启不可用。",
+          "content_sha256": "daa1909d56e92f454c751aa4b61b9a8d60ab7da78e4de05af219a5f85553bf20"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/README.md",
+          "locator": "packages/core/agent-loop/README.md › Failure and cancellation",
+          "lines": "L128-L130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "中断恢复只补结果修复历史，不自动重放调用。",
+          "content_sha256": "22cb7970e85d04d3658e03edcca1357f074f3a608bde3aa097f1609675c5c76d"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/README.md",
+          "locator": "packages/api/session-controller/README.md › Use this package / cold activation, principal, and fork policies",
+          "lines": "L36-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "requestId 防止重复插入用户消息。",
+          "content_sha256": "74f3aed90b5b4899889d49c57a3fe00ac74aee00ebf893f513f5f8f665a36dc4"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核查 session fork/API 命令、ui-conversation 分叉入口、tool-fs、workspace-changes、agent-loop 修复、tools 执行和 workflow 运行记录；未发现工作区快照恢复、外部副作用补偿或持久工具调用去重路径。临时 diff 数据不是 F17 持久快照，也不是 F20 workspace_snapshot。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "file_path"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "review",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "用户可按工具启停（如独立关闭 web_search/web_fetch），沙箱模式及 additionalWritableRoots 限定写入范围；未见可配置命令匹配或联网目标规则。默认改工作区文件、执行普通命令、命令联网均放行；写普通工作区外路径先拒绝，可逐次申请更宽模式（临时目录例外）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/web/tool-web/README.md",
+          "locator": "packages/web/tool-web/README.md › When to choose it / configuration search and fetch",
+          "lines": "L30-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "配置可分别移除两种 Web 工具，属于按工具类别拒绝。",
+          "content_sha256": "b5499fcbee5662394bb687b736c1160262e548e2ef7f9144b0172a5c533ffb38"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/sandbox/sandbox-policy/README.md",
+          "locator": "packages/sandbox/sandbox-policy/README.md › Use this package / Configuration / Switching a session’s mode",
+          "lines": "L45-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "用户配置模式、工作区根和额外可写目录。",
+          "content_sha256": "808b0c28b4ad6ef7d0f185db22a787b26c431da7351fe85880fba70c8554c3bc"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml › session-persistence-jsonl / sandbox-policy / permission / spill-policy",
+          "lines": "L240-L276",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认 workspace-write + ask，非 Windows 启用 bash 沙箱。",
+          "content_sha256": "b65a86e55f02d863286bb6faac8ae292c18fffca3c8aa4491b600fa4dd6b48d0"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/shell/bash-sandbox/README.md",
+          "locator": "packages/shell/bash-sandbox/README.md › Modes and file effects",
+          "lines": "L28-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "文件效果受限，网络不受限，工作区与临时区可写。",
+          "content_sha256": "c8fc10cc51109950786003d61b4f6445594f8a3c8b2a09653ef451c8dc4ec867"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/fs-sandbox/README.md",
+          "locator": "packages/fs/fs-sandbox/README.md › How the fence behaves / Observable success and failures",
+          "lines": "L46-L52",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认工作区写入直接放行，外部路径拒绝后可获批单次加宽。",
+          "content_sha256": "f4f896f7ba6434943f6df05649240d14f33c63d2bb6943bfc38364100fa2d49b"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/tool-fs/README.md",
+          "locator": "packages/fs/tool-fs/README.md › Policy and sandbox behavior",
+          "lines": "L76-L80",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "省略或沿用模式不请求审批，扩权才询问。",
+          "content_sha256": "96224e904f02ca2ab9805b9acbc5abae490fc310242d8e5f25f63567e0539ba4"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按 R1 选前列 macOS；检查 sandbox-policy、permission-presets、tool-bash、tool-fs 及 tool-web/web-fetch-http 配置和网络行为。没有用户可配的命令前缀/域名授权表；HTTP 同源跳转和协议检查是写死规则，不增加 network_target。additionalWritableRoots 是用户可配路径而非仅模型参数。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认沙箱内运行不询问；模型可在同轮提出更宽模式重试，批准仅覆盖这次 bash/文件调用，plugin_manager 也逐次获批后才操作。可选：/plan 的计划审核不改变工具权限；自动审核插件默认未加载。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/shell/tool-bash/src/index.ts",
+          "locator": "packages/shell/tool-bash/src/index.ts › approveBashEscalation",
+          "lines": "L214-L247",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "approveBashEscalation 在执行前按 callId 请求单次批准。",
+          "content_sha256": "de24abe9436d4ee4c9d9773538da58621d1d028abac78a53ad3b9e47a5fca7fd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/tool-fs/README.md",
+          "locator": "packages/fs/tool-fs/README.md › Policy and sandbox behavior",
+          "lines": "L76-L80",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "文件写入的扩权需批准，其余默认不询问。",
+          "content_sha256": "96224e904f02ca2ab9805b9acbc5abae490fc310242d8e5f25f63567e0539ba4"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/boot/plugin-manager/src/tools.ts",
+          "locator": "packages/boot/plugin-manager/src/tools.ts › plugin_manager.execute",
+          "lines": "L104-L113",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "每次 plugin_manager 先申请单次全权限再执行 action。",
+          "content_sha256": "067d6e2d9f226c09fe70937d0c45343e606339d709594812a01d1d21c3bc967c"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/ui-approval/README.md",
+          "locator": "packages/client/ui-approval/README.md › Summary / tool approval scope",
+          "lines": "L9-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "浏览器显示待批动作，用户批准/拒绝，工具批准只限一次。",
+          "content_sha256": "ec5aaab35ccc46f72916a3e297c5a2f280d0315562e6273ce6fe454be5f1efdb"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/cordis.patch.yml",
+          "locator": "packages/bundle/web-app/cordis.patch.yml › file-upload / ui-approval / ui-attachment",
+          "lines": "L325-L326",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认 Web 挂载审批界面。",
+          "content_sha256": "11c444b94936f8c645f49740b692fc8545898591f78af893d2cb1b7fed4c701c"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/util/official-bundles/src/bundles.ts",
+          "locator": "packages/util/official-bundles/src/bundles.ts › OPTIONAL_BUNDLES",
+          "lines": "L55-L71",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "auto-review 在默认不选中的可选包列表。",
+          "content_sha256": "f756990817b152b67af8df317e53859706d05217c8daee3523148a05dbfe1da8"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核查 bash、fs 扩权，plugin_manager，一般 tools pipeline，web-fetch-http 跳转，以及 workflow/PTC 内层调用：均未见执行中针对单个网络或文件效果再请求批准；拒绝后由另一次工具调用重试，不计 specific_operation。子代理启动没有批一次后改变后续放行方式的默认审批，不计 whole_task。/plan 需用户命令进入，按 R3 作为可选路径不计 ui_layers；Auto review 默认不装，批准者只记 user。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "os_isolation"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "文件工具执行前校验规范化路径，敏感工具在批准前暂停；macOS 命令和 workflow Node 进程由 Seatbelt 限制文件写入。计划模式的“不修改文件”仍只靠提示落实，工具保持可调用；Node VM 能直接访问 Node API，不当受限语言运行时。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/fs/fs-sandbox/src/index.ts",
+          "locator": "packages/fs/fs-sandbox/src/index.ts › SandboxFilesystem.checkedTarget",
+          "lines": "L145-L177",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "在文件副作用前按规范化路径检查写入范围并拒绝。",
+          "content_sha256": "3af3861f917de49860a6336595d4b921fea5d1284d33bf2a01c025f47abbfa4e"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/boot/plugin-manager/src/tools.ts",
+          "locator": "packages/boot/plugin-manager/src/tools.ts › plugin_manager.execute",
+          "lines": "L104-L113",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "应用层审批先于插件管理副作用。",
+          "content_sha256": "067d6e2d9f226c09fe70937d0c45343e606339d709594812a01d1d21c3bc967c"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/sandbox/sandbox-local/README.md",
+          "locator": "packages/sandbox/sandbox-local/README.md › Runner selection / Platform profiles",
+          "lines": "L71-L81",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "macOS 选 Seatbelt，规则禁止写入并给出允许目录。",
+          "content_sha256": "1e2e7817292be6289940b4eb2f4231a38a090c7532061f0c6e8395872f7d73f8"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/README.md",
+          "locator": "packages/workflow/workflow-ptc/README.md › File policy and cancellation",
+          "lines": "L57-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "默认 workflow 使用捕获的文件沙箱，VM 不是安全边界。",
+          "content_sha256": "f5ac2d15de71f9b954e2250887e749a286707a8c5619c878b0be12a7b57ef6d3"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/ptc-runtime/ptc-runtime-node/README.md",
+          "locator": "packages/ptc-runtime/ptc-runtime-node/README.md › Execution and results",
+          "lines": "L64-L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "Node 文件、网络及子进程仍为 Node 能力，靠 OS 沙箱约束。",
+          "content_sha256": "f9b78af8e30920e4788ba5428d0b998c5442333c20c1feb4357b720bda8904d9"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/plan/plan-mode/README.md",
+          "locator": "packages/plan/plan-mode/README.md › When to choose it",
+          "lines": "L28-L32",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "用户可切的计划模式不限制工具，全部仍可调用。",
+          "content_sha256": "5d2f23762360ae2651f9f45a0d2444d8fef3f0794f25a32ba2830a774db2fd83"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml › preset-standard.config.plugins",
+          "lines": "L57-L62",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "计划模式提示禁止改写，但保留同一工具目录。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 清单：默认 workspace-write 有文件检查和进程沙箱；可切 read-only/full-access 由策略执行，/plan 则明确只靠提示，故 present；默认 spawn/fork 继承权限与工具限制（subagent 文档）；文档列出的额外目录配置由路径检查执行。已确认一项提示限制即可取 present。没有容器运行路径；PTC/workflow 的 VM 文档明确保留 Node 能力，不记 runtime_sandbox。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "普通会话事件日志以回合/步骤及 callId 关联用户输入、模型消息、工具参数和结果；approval/asked 的 callId 经请求 id 关联 approval/decided，批准和拒绝均落盘。没有另列的完整人类身份审计账本，本机 owner 缺省身份及代理编号不计 identity。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/tools/src/batch.ts",
+          "locator": "packages/core/tools/src/batch.ts › BatchSettlement.start / BatchSettlement.commit",
+          "lines": "L243-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "工具调用记录完整参数，结果按同 callId/sourceEventSeqs 关联并含错误和元数据。",
+          "content_sha256": "5451e17f844cea8a56b8bf6dfadbf357d3081c4796d0b1046b761a82e4d8e355"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › buildRequest / runStep",
+          "lines": "L464-L479",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "先记录本步骤用户消息再构造请求。",
+          "content_sha256": "ad9ee0778c0a93dec40363f88b53f442add9b033837b9ff049675a1ada3df61f"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts › buildRequest / runStep",
+          "lines": "L569-L582",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "模型消息及当步 turn/step、调用信息写入同一事件日志。",
+          "content_sha256": "ad9ee0778c0a93dec40363f88b53f442add9b033837b9ff049675a1ada3df61f"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/interaction/user-approval/src/index.ts",
+          "locator": "packages/interaction/user-approval/src/index.ts › ApprovalService.request",
+          "lines": "L242-L260",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "审批先写带 callId 的 asked，再写同请求 id 的所有 outcome。",
+          "content_sha256": "afa2f16553b8dcf5ea74f4bf09555cc8aa633d8203146d3e369210a5ef043cff"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/shell/tool-bash/src/index.ts",
+          "locator": "packages/shell/tool-bash/src/index.ts › approveBashEscalation",
+          "lines": "L238-L245",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "扩权审批显式传入原工具 callId。",
+          "content_sha256": "de24abe9436d4ee4c9d9773538da58621d1d028abac78a53ad3b9e47a5fca7fd"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-persistence-jsonl/README.md",
+          "locator": "packages/session/session-persistence-jsonl/README.md › On-disk layout / Durability and crash semantics",
+          "lines": "L55-L77",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "事件记录默认持久化。",
+          "content_sha256": "85392cc2c4655582e2d29b7e848d08bf8681bd0cc36c6a30eacfba963821581e"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/README.md",
+          "locator": "packages/api/session-controller/README.md › Use this package / cold activation, principal, and fork policies",
+          "lines": "L38-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Web standard 默认配置",
+          "note": "用户输入仅非 owner Remote principal 才附主体，本机 owner 为缺省。",
+          "content_sha256": "74f3aed90b5b4899889d49c57a3fe00ac74aee00ebf893f513f5f8f665a36dc4"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查会话持久化、工具结果 meta、approval 服务及本机 Web principal：批准/拒绝都有独立事件，不是仅被拒错误；无须把每条 sandbox mode 当成审批证据。F24 identity 按固定本机 owner 配置排除，非 owner 授权部署属于其他环境，不从产品具备 principal 类型推成本配置有可区分人的日志。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "standard 默认开放独立上下文的本机子代理及脚本编排；宿主定时器也能直接创建独立会话运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml",
+          "lines": "L86-L111",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "standard 挂载 spawn、fork、子代理控制与 workflow 工具。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md",
+          "lines": "L45-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "管理子代理编号、运行容量、续派、完成通知和释放。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/schedule/schedule/src/runtime.ts",
+          "locator": "packages/schedule/schedule/src/runtime.ts",
+          "lines": "L425-L478",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "定时投递可创建并激活新会话的 Agent。",
+          "content_sha256": "2f0ffbdb39a06615aff415b5855e136ba09c10aa2da3de86a10ece470dfeae09",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "workflow",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户可在 Automation 的 Run now 直接启动新目标会话；主代理经 subagent 创建，workflow 运行模型脚本创建子代理，定时器到期也可直接创建目标会话。workflow 提示限用户明确要求，但执行未以此作代码门控。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml",
+          "lines": "L86-L111",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "standard 挂载 spawn、fork、子代理控制与 workflow 工具。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent/src/index.ts",
+          "locator": "packages/subagent/tool-subagent/src/index.ts",
+          "lines": "L268-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "委派工具以 exec.agent 为 parent 调用 startActivation。",
+          "content_sha256": "2590fe35be4f39bd7654e61f6d459522b806a08fafedc84b0a954f1e40e6795a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/host.ts",
+          "locator": "packages/workflow/workflow-ptc/src/host.ts",
+          "lines": "L178-L220",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "脚本绑定 startChild 直接调用 startActivation。",
+          "content_sha256": "7a4a69551f422286558fbd48066c7b35009b88332b4a988d63e2a20a399b024f",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/schedule/schedule/src/runtime.ts",
+          "locator": "packages/schedule/schedule/src/runtime.ts",
+          "lines": "L425-L478",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "定时运行时直接创建目标 Agent，非主代理再决定创建。",
+          "content_sha256": "2f0ffbdb39a06615aff415b5855e136ba09c10aa2da3de86a10ece470dfeae09",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/schedule.md",
+          "locator": "docs/user/guide/schedule.md",
+          "lines": "L45-L55",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / Automation 人工立即运行",
+          "note": "Automation 允许用户 Run now 并通过历史与链接管理目标会话。",
+          "content_sha256": "87f4318d4ed6dc9bcf1583f8dce1c40b0dd4e3cc5acc2dbee8389743cc3ced3a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/schedule/schedule/src/runtime.ts",
+          "locator": "packages/schedule/schedule/src/runtime.ts",
+          "lines": "L134-L168",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / Automation 人工立即运行",
+          "note": "人工 Run now 直接 resolveTarget 并投递；新目标创建复用同一 createAgent 路径。",
+          "content_sha256": "2f0ffbdb39a06615aff415b5855e136ba09c10aa2da3de86a10ece470dfeae09",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "用户路径核对命令清单后，还核对 Automation 页面 Run now：直接调用 Schedule.runNow，由 resolveTarget 创建新目标 Agent，保留投递记录与会话链接，不经主代理决定，按 user 记；普通 UI 新建/分叉互不关联会话仍不算。goal-round-driver 续办同一代理，标题生成单次 LLM 调用不算 framework_internal；auto-review 是默认未启用包。配置小卡将 schedule 概括为向目标会话投递，但钉住源码还支持创建新目标，按源码计 event_scheduling；同一个目标创建器的人工立即运行与时钟到期是两条触发路径，分别按实际请求方编码。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认 subagent 只带任务说明，子代理执行中保持各自上下文；send_message 可给仍在运行或已空闲的本地子代理续发消息。默认 cwd 捕获父代理目录并共用文件区与权限根；fork 可复制父代理已完成回合，定时新会话独立运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent-spawn-in-process/src/index.ts",
+          "locator": "packages/subagent/subagent-spawn-in-process/src/index.ts",
+          "lines": "L38-L53",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "spawn 不带父历史种子。",
+          "content_sha256": "6bb457b871c8a8a3c638affff51665cba08eaf4f3c9e9738d6137d951b8c4ec0",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md",
+          "lines": "L28-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认继承父当前目录、来源和权限根。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md",
+          "lines": "L61-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "本地子代理保持会话并可用消息续派。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent-fork-in-process/src/index.ts",
+          "locator": "packages/subagent/subagent-fork-in-process/src/index.ts",
+          "lines": "L38-L77",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "fork 复制已完成回合的历史前缀。",
+          "content_sha256": "1bc4ff5ff22c20937b6224ffe208a3c37b18c2b741ed77330c27432ce23cf30e",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "shared_state 核查 subagent manager/catalog、workflow records 与 goal/todo 的会话归属：catalog 是框架管理成员记录，workflow 是进度投影，goal/todo 归各自会话，未见多个代理共同读写的任务黑板。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "普通 subagent 即时返回编号并由完成通知异步交回；workflow 默认前台等待脚本最终结果，也允许模型用参数转后台。普通已发布委派不再受启动调用信号取消；前台 workflow 的取消会自动停止其子代理，定时独立运行无调用方。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/tool-subagent/src/index.ts",
+          "locator": "packages/subagent/tool-subagent/src/index.ts",
+          "lines": "L324-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "普通委派返回子代理编号。",
+          "content_sha256": "2590fe35be4f39bd7654e61f6d459522b806a08fafedc84b0a954f1e40e6795a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/README.md",
+          "locator": "packages/subagent/subagent/README.md",
+          "lines": "L61-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "启动信号只管发布前；发布后 dispose 才取消并等待后代。",
+          "content_sha256": "8e670e40d4b7e9c1cb1bb603a6a43750e61bbf2a0a000bd8ed92adb0b95eb8ab",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/README.md",
+          "locator": "packages/workflow/tool-workflow/README.md",
+          "lines": "L30-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "前台等待、后台参数和取消桥接。",
+          "content_sha256": "5f83153bbd4b329bcf91d97efd560f30df80f6f9967c87e347787dc3dd2644d5",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/workflow-ptc/src/host.ts",
+          "locator": "packages/workflow/workflow-ptc/src/host.ts",
+          "lines": "L148-L165",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "workflow 取消时 dispose 已发布子代理。",
+          "content_sha256": "7a4a69551f422286558fbd48066c7b35009b88332b4a988d63e2a20a399b024f",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/subagent/subagent/src/manager.ts",
+          "locator": "packages/subagent/subagent/src/manager.ts",
+          "lines": "L1112-L1174",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "dispose 递归停止拥有的后代并等待清理。",
+          "content_sha256": "1e1844c145d6f985d594d348ed5f89a6d8e3283bab519ef88263f3d2d2a9fe07",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/commands.ts",
+          "locator": "packages/api/session-controller/src/commands.ts",
+          "lines": "L459-L477",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 中断当前回合只调用父 Agent.cancel。",
+          "content_sha256": "7693776e7f12dace951d0ba88a29a0ee4243099f91a13e218ce2ac2f3a2665b0",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts",
+          "lines": "L505-L525",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Agent 释放先取消并等待主循环，再释放 scope。",
+          "content_sha256": "8c2f579b21e482ecbca023341a79fdbc083124a3d8e1160bfd2f00136214a3c9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/src/index.ts",
+          "locator": "packages/workflow/tool-workflow/src/index.ts",
+          "lines": "L447-L469",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "前台调用的 signal 桥接 run.cancel，结果后释放 run。",
+          "content_sha256": "2657ec35455d78b524f7e040a426baff5bc34ea4946b58bf7552c767b196cbb2",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "普通默认 spawn 发布后不传播启动 signal；两个取消子维度依字段规则改取前台 workflow 路径。用户打断回合：Web cancel 调 agent.cancel，其 signal 桥接 run.cancel，连带；取消等待中的调用：exec.signal 的同一桥接，连带；取消父运行/释放会话：Agent teardown 先 cancel 再等 idle，同样取消前台 workflow，连带。Web 没有另一个独立终止整个父运行的接口，断开 UI 观察不取消执行，不算一种取消方式。按该路径记 all_ways，后台 workflow 不受工具 signal 取消另行说明。manager dispose 递归清理已拥有的后代，故 whole_tree；普通委派工具深度默认 1，但 workflow 的 startChild 不传 maxDepth，可由后续 workflow 派生更深层。没有 shared_board，workflow UI 仅展示成员生命周期投影。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "whole_tree",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具以独立 Cordis 插件包注册；添加一条 MCP 服务配置即可装入外部工具。公开构件库的会话 setup 支持会话级工具声明；该嵌入路径不由 dsh web 直接开放。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/tools/README.md",
+          "locator": "packages/core/tools/README.md",
+          "lines": "L28-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版公开工具构件库",
+          "note": "公开工具注册接口和执行回调。",
+          "content_sha256": "3406d46e264e5c44ddff8c4aface10a3a1472089f870a6782fd03bd6296e5de9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/cordis-tutorial/07-into-the-harness.md",
+          "locator": "docs/cordis-tutorial/07-into-the-harness.md",
+          "lines": "L15-L51",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "插件通过 ctx.tools.register 注册工具，并随插件卸载撤销。",
+          "content_sha256": "6af688d66ce56b053e4b634cfdd19a1b38a66ff08215f32749b5d9119a2be568",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/presets/standard.patch.yml",
+          "locator": "packages/bundle/web-app/presets/standard.patch.yml",
+          "lines": "L21-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认工具与技能以可独立组合的包挂载。",
+          "content_sha256": "3006cc3780cddaa7fb0089e5854e6bbef4409cf1d425930fd835226b95660afd",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/mcp/mcp-client/README.md",
+          "locator": "packages/mcp/mcp-client/README.md",
+          "lines": "L28-L52",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "每个外部服务添加一个条目即可注册工具。",
+          "content_sha256": "92d8f0fc08518fbfd30550be89e87490db9fb5906493fb6a86c86bf7c8e3291b",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/README.md",
+          "locator": "packages/core/agent-loop/README.md",
+          "lines": "L59-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版官方构件库",
+          "note": "公开 create 的 setup 获得单个代理的上下文以注册内容。",
+          "content_sha256": "22cb7970e85d04d3658e03edcca1357f074f3a608bde3aa097f1609675c5c76d",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 R2/R8，默认 fs/bash/subagent 等各自是独立可停用的插件包，此装载路径只计 plugin_api，不同时计 internal_code。核心 tools registry 本身不硬编码工具。查过 config-catalog、tool-catalog、插件教程与 MCP、SDK/ACP 文档：未见用户脚本自动发现并注册独立工具；技能脚本经 shell 执行不算 user_script。setup 的 agentCtx 配合公开 tools 注册接口按会话嵌入声明计 embedder_declared，插件作用域注册按 plugin_api；未见默认 Web 前端以嵌入接口提供工具。默认没有预置 MCP 服务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "plugin_api"
+        ],
+        "via_default_entry": [
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "规则文件按会话自动装载，技能从约定目录发现并按需读入；用户 /name 显式调用技能则走另一条单条提示注入路径。可选：模型临时提交 workflow 脚本可编排子代理，但没有按名装载已保存工作流文件的默认机制；新增代理预设需要插件 bundle。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/context/agent-instructions/README.md",
+          "locator": "packages/context/agent-instructions/README.md",
+          "lines": "L28-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "每会话装载用户与项目说明文件。",
+          "content_sha256": "e084b89a94b63d4e4deb455feb5ca7f101326086409d3aa4513e445b18b8ae9a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/skill/skill-filesystem/README.md",
+          "locator": "packages/skill/skill-filesystem/README.md",
+          "lines": "L28-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "扫描技能说明文件并按需加载正文。",
+          "content_sha256": "f73e09f41d99ca7684bcb96d20f26c5d177331a68c23392b7c36d8182f6bd608",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/skill/tool-skill/README.md",
+          "locator": "packages/skill/tool-skill/README.md",
+          "lines": "L52-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "工具按需加载和用户 /name 直接注入是两种路径。",
+          "content_sha256": "b04159a645f4acb7a708e3deebba63888030e6b463361bcd931729c7c938b8a9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/preset/agent-preset-registry/README.md",
+          "locator": "packages/preset/agent-preset-registry/README.md",
+          "lines": "L46-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "不扫描角色文件；新增预设或覆盖要求 bundle patch。",
+          "content_sha256": "aae5a92fb089b19a62de245d5d131fa62affe9e45b01451e3c749f702280abb6",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/workflow/tool-workflow/README.md",
+          "locator": "packages/workflow/tool-workflow/README.md",
+          "lines": "L28-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "workflow 接收临时 script/meta，而非按名读取工作流文件。",
+          "content_sha256": "5f83153bbd4b329bcf91d97efd560f30df80f6f9967c87e347787dc3dd2644d5",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 R8 将同一技能文件的按需工具装载记 skill_directory，用户按名直接展开路径另记 prompt_template。executable_items 逐项核对：project_rules 的 files/render 只读取并渲染说明；skill-filesystem 的 frontmatter/body 解析不执行技能附带脚本/钩子，tool-skill 只 renderSkillContent；prompt_template 的显式调用同样只注入文本。role_template 核对 preset registry，新增要求插件 bundle，按字段明确排除；workflow_definition 核对 workflow/tool-workflow、engine 的 start 参数和配置目录，只有临时脚本，没有文件按名装载器。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "save",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "Cordis 原生事件开放输入、模型、工具、写盘、结束、压缩修复与会话开始阶段；Web 可通过新增插件注册这些处理器。save 指 session/flush 持久化屏障，无改写/否决返回值，记为仅观察；其余阶段至少存在一条可注入、替换或阻断当前流程的接口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/core.md",
+          "locator": "docs/subsystems/core.md",
+          "lines": "L1035-L1052",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "agent/pre-step waterfall 返回接纳或拒绝及消息批次。",
+          "content_sha256": "4064aefd3c20917b73c81af06cb485b2043e27c93e442baaf461efc198505274",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/llm/llm/src/index.ts",
+          "locator": "packages/llm/llm/src/index.ts",
+          "lines": "L62-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "llm/stream 可替换响应流。",
+          "content_sha256": "92085d8eefac7990f8f8763b6470cba220c52ee30fc68344aae670904337271c",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/tools.md",
+          "locator": "docs/subsystems/tools.md",
+          "lines": "L769-L837",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "tools/execute、post-execute、pre-execute 是可改写的 waterfall。",
+          "content_sha256": "c9457c7d76771f8d57e00a63a8cd943cd2a3623c0723a5703627fc037d6e3685",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/session.md",
+          "locator": "docs/subsystems/session.md",
+          "lines": "L1407-L1421",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "session/flush 是无 waterfall 否决的并行写盘屏障。",
+          "content_sha256": "3a56982c7af2cd34e1359cda98562d330ae17c53eb8ab1b7065869373ace9173",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/core.md",
+          "locator": "docs/subsystems/core.md",
+          "lines": "L1113-L1135",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "turn-stopping 后重读 steering，可使当前回合继续。",
+          "content_sha256": "4064aefd3c20917b73c81af06cb485b2043e27c93e442baaf461efc198505274",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/subsystems/compaction.md",
+          "locator": "docs/subsystems/compaction.md",
+          "lines": "L256-L278",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "compaction/summary-error 可修复并返回重试。",
+          "content_sha256": "eeda604d2e3da90ada52ef143cf7807f2f9969174379e5e2182442f763cf16e8",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts",
+          "lines": "L629-L654",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版原生插件 API",
+          "note": "agent/created 串行监听器失败会回滚初始化，能阻止会话开始。",
+          "content_sha256": "8c2f579b21e482ecbca023341a79fdbc083124a3d8e1160bfd2f00136214a3c9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-checkpoint-policy/src/index.ts",
+          "locator": "packages/session/session-checkpoint-policy/src/index.ts",
+          "lines": "L63-L82",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 checkpoint 插件已订阅模型、工具、输入阶段。",
+          "content_sha256": "2b93aae29cfb0b5757656f4e2e54c21d2ab5c11c1bccaed014735ecb9685fe35",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/session/session-persistence-jsonl/src/storage.ts",
+          "locator": "packages/session/session-persistence-jsonl/src/storage.ts",
+          "lines": "L549-L559",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 JSONL 后端已订阅 session/flush。",
+          "content_sha256": "57d5fa1d7efd17789d6a223f6aa5e06b79092665bea13f8a23d3bab644d066c3",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/deliverables/workspace-changes/src/index.ts",
+          "locator": "packages/deliverables/workspace-changes/src/index.ts",
+          "lines": "L145-L157",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 改动汇总已订阅 turn-stopping。",
+          "content_sha256": "fb0c99d05cbf41a12aa15de448f3b1873968168d0a4ad2b29f4717e4c5a3340a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/compaction/compaction-image-offload/src/index.ts",
+          "locator": "packages/compaction/compaction-image-offload/src/index.ts",
+          "lines": "L25-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 image-offload 已订阅压缩失败修复事件。",
+          "content_sha256": "86afdc7d1843fed07423c9d535ea8a55cdb18fddfc6798d3a132f1a1e5d0dbcf",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal-round-driver/src/index.ts",
+          "locator": "packages/goal/goal-round-driver/src/index.ts",
+          "lines": "L267-L274",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 goal driver 已订阅 agent/created。",
+          "content_sha256": "174b258ea900f071653ec78b337428973b51c5e6a7436c25dd7ec08d210d352a",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "逐项核对输入 pre-step、模型 llm/stream、工具 pre/post-execute、保存 session/flush、结束 turn-stopping、压缩 summary-error、开始 agent/created：上列源码分别给出有效订阅或返回值。save 无 veto，抛错的一般传播不视为干预；session_start 的异常有专门回滚分支，结束边界重读 steering 是文档专门规定的当前流程注入，区别于普通通知回调另发新任务。默认加载依 base 的 checkpoint/JSONL/image-offload/goal driver 和 Web 的 workspace-changes；仅确认这些默认内容，不借可选 hooks-codex/claude-code 桥的默认性。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "save",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "save",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "save"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "library",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "同一发行版提供 headless 一次性 CLI、SDK JSON-RPC stdio 及 ACP stdio；官方公开 agent-loop 构件库也能在调用方进程创建/恢复代理。Web 浏览器内部接口不按服务 API 计入，所选入口不直接开放这些程序化入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/README.md",
+          "locator": "apps/cli/README.md",
+          "lines": "L5-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版全部官方入口",
+          "note": "同一个 dsh 包提供 headless、sdk、acp 档案。",
+          "content_sha256": "f80e7498e2718eb5ff85fd43d2e6d389ecceff24c4378651d0d89f3843c7a29e",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/sdk/protocol/README.md",
+          "locator": "packages/sdk/protocol/README.md",
+          "lines": "L28-L49",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版 SDK 档案",
+          "note": "SDK 是有线协议文档的标准输入输出 JSON-RPC，按 CLI 子进程记。",
+          "content_sha256": "d05b3dd87f9bf19dfaf4c1fd823724bced36e054f76ee04560033f4f42e219f7",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/README.md",
+          "locator": "packages/core/agent-loop/README.md",
+          "lines": "L59-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版构件库",
+          "note": "明确公开 ctx.agents API 和 create setup 入口。",
+          "content_sha256": "22cb7970e85d04d3658e03edcca1357f074f3a608bde3aa097f1609675c5c76d",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/package.json",
+          "locator": "packages/core/agent-loop/package.json",
+          "lines": "L2-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版构件库",
+          "note": "agent-loop 包 public 发布并导出入口。",
+          "content_sha256": "71c3378374df16c522985faf102a4182e1f6e9661dd575421529901353a5f06d",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/connection/README.md",
+          "locator": "packages/client/connection/README.md",
+          "lines": "L29-L43",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 的浏览器认证使用启动令牌与严格 Cookie。",
+          "content_sha256": "c84b049e4d7bd8957e9edfb7e30aace595ac6e62b470efda629d56b701ca6337",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "via_default_entry 核对：cli_subprocess 需换为 headless/sdk 档案；public_protocol 需换 acp 档案；library 需导入公开构件包搭建宿主，并非 dsh web 直接入口。needs_official_package 逐项：headless/sdk/acp 同属 @deepseek-ai/dsh，无须另包；进程内构件库有单独 public 包，记 library；Python/TS 客户端只是已公开 stdio 协议的封装，按协议边界不再重复记 library。发布清单和 CLI 文档未见宿主扩展 API；Web /api 是浏览器认证内部接口，不算对外 service_api。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "Web 用户输入与宿主原生定时器直接开放；同发行版其他档案/构件库支持程序提交任务。GitHub webhook 有官方配置指南，需额外插件、密钥和 overlay，因此只计发行版能力，不计 Web 入口直接开放。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/index.md",
+          "locator": "docs/user/guide/index.md",
+          "lines": "L5-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 完成模型配置并选择工作区后可交互提交任务。",
+          "content_sha256": "a22e25ad4bb6a1b249b9e2f1df0dd408f22cebd8a110067fddad82870c2b96e9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/README.md",
+          "locator": "apps/cli/README.md",
+          "lines": "L7-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版全部官方入口",
+          "note": "发行版有 headless、SDK 和 ACP 入口。",
+          "content_sha256": "f80e7498e2718eb5ff85fd43d2e6d389ecceff24c4378651d0d89f3843c7a29e",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/schedule/schedule/README.md",
+          "locator": "packages/schedule/schedule/README.md",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "内置原生定时器可创建任务并在到期投递。",
+          "content_sha256": "a18a1b404370946c9032eed0715f51917a004118b99656cdd056d719b245dccd",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/docs/user/guide/github-review.md",
+          "locator": "docs/user/guide/github-review.md",
+          "lines": "L5-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同发行版可选官方插件入口",
+          "note": "官方 webhook 方案收到 GitHub ready-for-review 事件后自动创建根会话。",
+          "content_sha256": "ddd0d97be58ae9df110412bef48bc46a058821f8b8c02d2739d23abf16062c43",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "via_default_entry 四项逐一核对：user_interaction 是 Web composer；schedule 在 Web 宿主与 standard 默认工具中挂载（standard L38-L39、Web patch L131-L136），添加任务是添加内容；api 照 F32 的空直接入口集合不计；external_event 需安装并挂载 webhook 包、配置凭据，不直接开放。后台 job/子代理完成通知与 goal 后续回合是内部续办，不算新的外部任务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "dsh web 在启动终端的 Node 进程内挂载执行核心和 HTTP 服务，由前台进程保持存活并在 SIGINT/SIGTERM 时释放。关闭浏览器只断开显示/订阅，Host 保留运行中的 Agent，任务可以继续；关闭启动进程则停止。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/apps/cli/src/profile-boot.ts",
+          "locator": "apps/cli/src/profile-boot.ts",
+          "lines": "L271-L308",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "runProfile 直接挂载上下文并为本进程安装退出信号处理。",
+          "content_sha256": "f1bb748385b7d1dff8d42432aec248fbb771b2c8c94c6e731c9452699935dc44",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/web-app/src/index.ts",
+          "locator": "packages/bundle/web-app/src/index.ts",
+          "lines": "L225-L238",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "启动同一 Host 后只是打开系统浏览器到认证 URL。",
+          "content_sha256": "3f0afba1922c1dc25fbb5528a29e83639956846f8b9f054b90fd4f7a6b37ab51",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/web/controller.ts",
+          "locator": "packages/api/session-controller/src/web/controller.ts",
+          "lines": "L59-L76",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "观察订阅释放后，激活仍在独立持有的 lease 上继续。",
+          "content_sha256": "b290b7e2965cf7fad0adc9ecafe561235942811ece1b0c17d6ecf99b5fa23738",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/agent.ts",
+          "locator": "packages/api/session-controller/src/agent.ts",
+          "lines": "L318-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 恢复的 Agent 生命周期归宿主上下文所有。",
+          "content_sha256": "3c7c3d82d1a72aa61a4b6ba807ef7734cefe140941fc82701a68d46ee47fbc51",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "F34 判谁维持核心进程：没有默认脱离终端的 spawn/detach，也无注册系统服务路径，故前台；这里 UI 是浏览器，关闭它不会关闭 CLI Host。按代码分别判断生命周期与 UI 退出，不从“有 HTTP 服务”推为 local_service。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是宿主定时任务：定义与投递状态持久保存，重启后继续触发并合并错过的重复任务。交互输入虽有持久 inbox 记录，Web 普通恢复只重建空闲 Agent，没有唤醒待处理输入的路径；需新输入触发，按执行语义记 in_memory。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/schedule/schedule/README.md",
+          "locator": "packages/schedule/schedule/README.md",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "定时任务明确跨重启继续触发。",
+          "content_sha256": "a18a1b404370946c9032eed0715f51917a004118b99656cdd056d719b245dccd",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml",
+          "lines": "L175-L190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 storage-domain 走 JSON 磁盘后端。",
+          "content_sha256": "b65a86e55f02d863286bb6faac8ae292c18fffca3c8aa4491b600fa4dd6b48d0",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/README.md",
+          "locator": "packages/core/agent-loop/README.md",
+          "lines": "L59-L71",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "交互 inbox 的每次变更均进入可重放会话事件。",
+          "content_sha256": "22cb7970e85d04d3658e03edcca1357f074f3a608bde3aa097f1609675c5c76d",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/api/session-controller/src/agent.ts",
+          "locator": "packages/api/session-controller/src/agent.ts",
+          "lines": "L308-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 恢复仅调用 agents.resume 与 preset setup，不追加消息。",
+          "content_sha256": "3c7c3d82d1a72aa61a4b6ba807ef7734cefe140941fc82701a68d46ee47fbc51",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/index.ts",
+          "locator": "packages/core/agent-loop/src/index.ts",
+          "lines": "L787-L826",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "恢复读取持久历史、补中断关闭事件再初始化，不重新提交未完成回合。",
+          "content_sha256": "8c2f579b21e482ecbca023341a79fdbc083124a3d8e1160bfd2f00136214a3c9",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/core/agent-loop/src/agent.ts",
+          "locator": "packages/core/agent-loop/src/agent.ts",
+          "lines": "L199-L217",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "初始化 maintenance 没有新的 wakeRequested 时，即使 inbox 有待办仍保持空闲。",
+          "content_sha256": "ad9ee0778c0a93dec40363f88b53f442add9b033837b9ff049675a1ada3df61f",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "三层核对：Schedule 跨进程继续触发满足 persistent；goal 虽存盘但恢复后 disarmed，需人工授权恢复，不据此记持久执行；交互队列的 inbox projection 会恢复文字，但 Web composeAgent 只挂载预设，初始化 maintenance 的 wakeRequested 默认为 false，未见恢复后自动 wake，因此按码本“丢的是执行，不是文字”记 in_memory。未承诺未刷盘瞬间绝不丢失或 exactly-once。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认沙箱扩权等权限请求及 ask_user_question 会阻塞等人回答；持久目标在暂停、阻塞、达到轮数上限或恢复后等人决定继续，构成可恢复待办。可选：定时问答的 timed 模式需改设置；默认仍为 blocking。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/bundle/base/cordis.patch.yml",
+          "locator": "packages/bundle/base/cordis.patch.yml",
+          "lines": "L239-L273",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "默认 workspace-write 与 ask 审批策略。",
+          "content_sha256": "b65a86e55f02d863286bb6faac8ae292c18fffca3c8aa4491b600fa4dd6b48d0",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/interaction/user-approval/README.md",
+          "locator": "packages/interaction/user-approval/README.md",
+          "lines": "L26-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "敏感工具动作暂停等待审批，未回答不能放行。",
+          "content_sha256": "9821c759daecc354f205cec4bfa10cda68253474cf914dc8d237a8fa76ff00ef",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/interaction/tool-ask-user/README.md",
+          "locator": "packages/interaction/tool-ask-user/README.md",
+          "lines": "L26-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "发行预设默认阻塞问答，timed 模式需改配置。",
+          "content_sha256": "0c14a9fdaa99cc1ca1299e43743b68ec53f65e1692404c17276d78e989f248c2",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal/README.md",
+          "locator": "packages/goal/goal/README.md",
+          "lines": "L54-L68",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "目标的 paused/blocked 状态持久保留并可恢复。",
+          "content_sha256": "9ee42f6d0b3d196764a391923a4105801f3a014e24117b431c32700134917548",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/goal/goal-round-driver/README.md",
+          "locator": "packages/goal/goal-round-driver/README.md",
+          "lines": "L49-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "轮数上限记录 blocker，恢复后的目标需人工授权续跑。",
+          "content_sha256": "0ce10ba494b0992f2fd5e21456a1e2f96858fc55a79d78e14c2c963b82f6d905",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/deepseek-ai/deepseek-harness/blob/66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db/packages/client/ui-goal/README.md",
+          "locator": "packages/client/ui-goal/README.md",
+          "lines": "L26-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "dsh web / standard 默认配置",
+          "note": "Web 目标卡提供暂停、恢复、编辑与清除，供人处理。",
+          "content_sha256": "2d072f040c9c5fa0ad7566b1f3f31d161608074d5f26cd0a1332b2173a29088b",
+          "version": "dsh-v0.2.2-rc.1 / 66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "block_kind 逐项：permission 由审批服务及默认 ask 策略证实；question 由 blocking ask_user_question 证实。通知核对默认 Web/base 插件表、client 源码与设置目录，未发现系统通知/声音/外部推送，界面内完成状态不计 message_notification。待办核对 todo（代理自用清单不算）、goal（暂停/阻塞/恢复须人决定，计入）。结构化交接核对 present 与 workspace-changes：前者仅路径/描述清单，后者仅改动摘要，按普通产出展示排除；goal 同一机制优先计 resumable_todo，不重复记 structured_handoff。各工具上限与 workflow 失败返回为模型可见错误，并未据此一律记阻塞；goal round-limit 是持久 blocker，计可恢复待办。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}
