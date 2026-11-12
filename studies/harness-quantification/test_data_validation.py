@@ -74,7 +74,7 @@ FACETED_FIELDS = ["F01", "F11", "F12", "F13", "F21", "F22", "F23", "F27", "F28",
 
 
 class DefinitionsAndFacets(Base):
-    """fields-0.6: every field carries an adopted definition; general rules and facets are shape-checked."""
+    """fields-0.7: every field carries an adopted definition; general rules and facets are shape-checked."""
 
     def schema_with(self, mutate):
         schema = copy.deepcopy(self.real.schema)
@@ -90,7 +90,7 @@ class DefinitionsAndFacets(Base):
         return {**self.coding()["fields"][fid]["facets"], **changes}
 
     def test_real_definitions_are_well_formed(self):
-        self.assertEqual(self.real.schema["schema_version"], "fields-0.6")
+        self.assertEqual(self.real.schema["schema_version"], "fields-0.7")
         self.assertEqual(vd.check_definitions(self.real.schema), [])
 
     def test_every_field_is_defined_and_no_draft_remains(self):

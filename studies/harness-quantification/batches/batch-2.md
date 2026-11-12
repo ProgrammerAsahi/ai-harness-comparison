@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-编码文件在 `data/codings/` 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。第一批的记录见 [`batch-1.md`](batch-1.md)，三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
+编码文件在 [`batch-2/`](batch-2/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。第一批的记录见 [`batch-1.md`](batch-1.md)，三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
 
 ## 怎样做的
 
@@ -141,7 +141,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码者和读者提出的口径疑问
 
-下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里“归法不同”的条目。`gpt` 一侧的备注由 Claude Sonnet 5.5 通读后摘出，其中编码者明写有疑问的是少数，多数是几个配置上做法不一致、由摘录者归纳的。这里不作裁决；编码期间提出的问题一律没有答复，免得两位编码者不再独立。
+下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里“归法不同”的条目。`gpt` 一侧的备注由 Claude Sonnet 5.5 通读后摘出，其中编码者明写有疑问的是少数，多数是几个配置上做法不一致、由摘录者归纳的。这里不作裁决；编码期间提出的问题一律没有答复，免得两位编码者不再独立。其中总则 R2、R3、R8 和 F02、F20、F23、F30 的五条，负责人 2026-11-12 定了口径，写进了 `fields-0.7`；其余留给以后的修订。
 
 | 字段 | 疑问 |
 |---|---|
@@ -187,7 +187,7 @@ python3 studies/harness-quantification/compare_codings.py
 | 配置 | 指出了什么 | 核对结果 |
 |---|---|---|
 | A04 Qwen Code | 记录把 Workflow 工具写在“默认关闭”里；`gpt` 和读者认为模型调用随包的 review 技能后它就可用，`opus` 没追到设置加载时会不会把它关掉 | 记录不全，已补。由 Claude Sonnet 5.5 对照快照追查，Claude Fable 5.2 复看所引各行：设置表里标的默认值 `false` 不会并入实际设置，核心拿到的是未定义；启动时不注册 Workflow，但默认设置下模型调用 review 技能后会为本会话注册。记录新增一条说明和两张证据小卡，版本和提交不变 |
-| A13 Crush | 环境前提的账户一栏写按 OAuth 设备码流程登录，凭据一栏又写“或 API 密钥二选一”。F04 的“交给人处理”只在 OAuth 登录下成立（令牌被吊销时等用户重新登录，之后重发原请求） | 记录两栏说法不一。选哪种登录属于研究方选定的环境，留给负责人定，记录暂不改 |
+| A13 Crush | 环境前提的账户一栏写按 OAuth 设备码流程登录，凭据一栏又写“或 API 密钥二选一”。F04 的“交给人处理”只在 OAuth 登录下成立（令牌被吊销时等用户重新登录，之后重发原请求） | 记录两栏说法不一。选哪种登录属于研究方选定的环境；负责人 2026-11-12 定钉 OAuth，凭据一栏已据此改写（这一批的编码没有重做） |
 | A15 OpenHands | 用户用斜杠命令切出的规划子会话，记录没有提；随包的公共技能包不在快照里，两位编码者都没能逐条看技能说明和自动化界面 | 规划子会话是用户发起的路径，不属于记录要列的默认机制，不补；技能包是快照的缺口，下次取快照时补上，这一批有 2 条“材料不足”出在这里 |
 | A16 Grok Build | 快照（1.0.45）和当前文档对定时任务是否另起子代理、回退是否恢复文件说法不同 | 记录已写明快照比钉住的版本早，公开仓库里没有更新的源码，这层差距补不了 |
 | B10 Factory Droid | 读者认为交互界面会自行拉起守护进程（影响 F05），记录没有提 | 抽查看过：依据只有两句修复说明，没有一处写明默认入口会这样做，不补 |
@@ -202,7 +202,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码文件在哪里
 
-- 这一批：`data/codings/` 下的 `opus/`、`gpt/` 各 11 份，按 `fields-0.6` 填写并通过了 `validate_data.py`。
+- 这一批：[`batch-2/`](batch-2/) 下的 `opus/`、`gpt/` 各 11 份，连同当时的码本 `batch-2/fields-0.6.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.6` 填写并通过了 `validate_data.py`；码本小修订为 `fields-0.7` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.7.md`。
 - 交叉核对：[`batch-2/crosscheck-card.md`](batch-2/crosscheck-card.md) 是读者拿到的任务卡，[`batch-2/crosscheck.json`](batch-2/crosscheck.json) 是 75 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者；[`batch-2/spotcheck.json`](batch-2/spotcheck.json) 是对其中 30 条“一方没提”的抽查结果。
 - 第一批：[`batch-1/`](batch-1/)，连同当时的码本 `fields-0.5`。OpenClaw 在第一批的两份编码也在那里，没有被这一批覆盖。
 - 三轮试编码：[`../pilot/`](../pilot/) 下各轮连同当时的码本，只作历史记录，不参加现在的校验和对比。
