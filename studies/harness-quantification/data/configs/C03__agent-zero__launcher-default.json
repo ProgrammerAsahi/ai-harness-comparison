@@ -1,0 +1,511 @@
+{
+  "schema_version": "config-0.1",
+  "synthetic": false,
+  "config_id": "C03__agent-zero__launcher-default",
+  "round": "batch-3",
+  "tool_id": "C03",
+  "product": "Agent Zero",
+  "view": "configured",
+  "version_or_commit": "v2.15；提交 ba9b67df0f54ac78106ae85c552ef5d2458f7c9a",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "A0 Launcher（官方桌面启动器 v1.9）创建并运行本地 Docker 实例，镜像 agent0ai/agent-zero:latest，保持默认版本和持久工作区，Open UI 后用网页界面；Host access 保持默认关闭。直接用 docker run -d -p 127.0.0.1:5080:80 -v a0_usr:/a0/usr agent0ai/agent-zero 得到同一个镜像和同一个容器内运行方式，官方把它列在“其他安装方式”。",
+  "install_method": "官方快速开始：下载 A0 Launcher v1.9（macOS 为 .dmg，Apple Silicon 或 Intel 各一）→ 按提示配 Docker → Create an Instance（Download Agent Zero 或 Run Agent Zero，保持 latest 与持久工作区，点 Create）→ 等 Running → Open UI → 在欢迎界面发第一条消息，被拦下后在向导里连接模型。无 Launcher 时：macOS/Linux 用 A0 Install 脚本 curl -fsSL https://bash.agent-zero.ai | bash，或已有 Docker 时 docker run -d -p 127.0.0.1:5080:80 -v a0_usr:/a0/usr agent0ai/agent-zero。source: https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/README.md#L30-L100 （只作记录，未执行）",
+  "permission_mode": "无权限或审批层：代理在容器内以 root 用本地终端执行命令（ssh_enabled=auto，容器内不走 SSH），读写文件、联网都不需要用户确认；tool_access 默认 allow；唯一的注入检查 infection_check 默认关闭。隔离靠 Docker 容器本身：docker run 路径把网页界面只绑到主机回环（127.0.0.1:5080），Launcher 创建实例时的端口绑定未读其源码；用户数据挂在 /a0/usr。Launcher 的 Host access（用主机的文件、终端、浏览器、Computer Use）默认关闭，开启后命令在主机上执行且不限于所选文件夹。",
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "代码在哪里跑：官方镜像里 supervisord 起 run_ui（root），网页服务、代理循环、命令执行都在 Docker 容器内；code_execution_tool 在容器里用本地终端（ssh_enabled=auto 在 dockerized 时不走 SSH），不经 SSH 或别的方式去别处。别处执行只有两条非默认路：Launcher 的 Host access（默认关）和用户自装并连接的 A0 CLI（此时才出现 code_execution_remote 等四个远程工具）。容器里 sshd 随 supervisor 启动，但快速开始命令只映射 80 端口（容器 EXPOSE 22 不等于发布）。",
+    "插件总规则：仓库 plugins/ 下 47 个内置插件，其中 15 个 always_enabled（不可关）；其余按“默认全开，有 .toggle-0 才关”，只有 _infection_check 带 .toggle-0（默认关），_chat_compaction 带 .toggle-1（默认开）。所以其余 31 个可开关插件默认都是开的。“启用”不等于已配置可用：Telegram、WhatsApp、邮件集成默认没有 bot、号码或邮箱配置，等于不连通。",
+    "默认注册给模型的工具（按 prompts/ 与各插件 prompts/ 下 agent.system.tool.*.md 的名字，主代理 profile agent0）：response、call_subordinate、parallel、skills_tool；code_execution_tool、input、text_editor、browser、search_engine、memory 工具组（memory_load、memory_save、memory_delete、memory_forget）、document_query、scheduler、wait、goal、notify_user、behavior_adjustment、a2a_chat、office_artifact。tools/ 下另有 vision_load 和 unknown，vision_load 是否出现取决于主模型是否支持图像（未核实）。tool_access 默认全部允许（default: allow）。",
+    "子代理默认可用：call_subordinate 与 parallel 默认列在工具说明里，profile 取自 agents/（agent0、default、developer、hacker、researcher 等），不改设置即可派。",
+    "没有权限或审批层：命令、读写文件、联网默认不需要用户确认；唯一的拦截类机制是默认关闭的 infection_check（用工具模型审查代理输出里的注入和凭据外传）。容器是它的隔离边界，容器内以 root 运行，/a0/usr 是持久挂载。",
+    "默认会自发的模型请求：聊天自动命名（工具模型，automatic_naming 默认 true）；每轮结束自动记忆提取与整合（工具模型）；每 3 次循环的记忆召回走本地嵌入向量检索（查询改写、结果过滤两个会调用工具模型的开关默认关）；临界异常重试 1 次；behavior_adjustment 被调用时用工具模型合并行为规则。对话历史压缩用哪个模型未核实。",
+    "嵌入模型 sentence-transformers/all-MiniLM-L6-v2 由 huggingface 提供方在容器内本地运行，不需要嵌入用的 API 密钥（镜像构建时 preload.py 预加载，未读其内容）。",
+    "联网相关默认：update_check_enabled=true，用户从界面发消息后向 api.agent-zero.ai 发送版本号和匿名 id；首次启动无预设文件时联网取 agent0ai/a0-presets 的预设；search_engine 经容器内 SearXNG 向外部搜索引擎发请求。MCP 服务器、A2A 服务器默认关；网页界面默认无登录保护（见 environment_premises）。",
+    "容器内的其他默认面：Playwright 浏览器（runtime_backend=container）、Linux Desktop（Xpra/Xfce）、本地 SearXNG、LibreOffice 的 office 工件、Kokoro 与 Whisper 语音插件（是否主动调用未核实）、记忆、技能（active_skills 默认空，随仓库有 skills/ 7 个与插件内 18 个 SKILL.md）、调度器（scheduler 工具与任务界面；默认任务为空，未核实）、orchestrator（按需加载的技能，用来调用外部无头命令行代理 Codex、Claude Code 等，镜像里没有这些命令则不可用，未核实）。",
+    "a0_acp（连接 ACP 编辑器）插件默认启用，但依赖本机 A0 CLI 连接，官方 Docker 路径下没有连接；agent_editor、migrate_agents、plugin_installer、plugin_scan、plugin_validator 为界面和插件管理类，不向模型注册工具（未逐个核实）。"
+  ],
+  "operating_system": "macOS、Linux、Windows（Launcher 有三平台安装包，运行靠 Docker Desktop 或 Docker Engine；macOS 上 Docker Desktop 需在 Settings → Advanced 打开“Allow the default Docker socket to be used”）；容器内是 Linux。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "environment_premises": {
+    "account_tier": "OpenRouter 按量计费的 API 密钥，在网页向导的 Cloud provider 里选 OpenRouter 并粘贴。Agent Zero 没有自己的账户，官方快速开始让用户在 Cloud provider、AI account（如 ChatGPT/Codex 账户）、Local model 三类里任选；这一家是本研究按“向导云提供方列表排第一”暂定，不是官方指定",
+    "default_model": "不改设置：向导选 OpenRouter 后，主模型 openai/gpt-5.6-terra，工具（Utility）模型 google/gemini-3.1-flash-lite，嵌入模型 huggingface / sentence-transformers/all-MiniLM-L6-v2（容器内本地运行）。这是按向导源码推断，未运行验证；首次启动取到的 agent0ai/a0-presets 预设（当前 Default 为 openai/gpt-6.1-sol 与 openai/gpt-6-luna）可能与向导写入的不同，见证据卡",
+    "host_os": "macOS 或 Linux（不含 Windows；需要 Docker）",
+    "workspace": "代理的默认工作目录是容器内 /a0/usr/workdir，不随启动位置变化；/a0/usr 是持久工作区（Launcher 默认在主机 ~/agent-zero/<实例名>/usr 建文件夹挂入，docker run 路径用命名卷 a0_usr），不带已有提交的 Git 仓库；需要操作 Git 仓库时在任务里放入或克隆",
+    "trust": "没有按目录的信任提示，也没有命令审批；首次使用要在网页向导里连接模型，否则第一条消息会被拦住。网页界面默认没有登录保护：AUTH_LOGIN 为空时不要求登录，只有在 Settings 的 Authentication 里设了用户名才启用；快速开始的 docker run 把端口只绑到主机回环，缓解了未设登录的暴露面",
+    "credentials": "只配 OpenRouter 的 API 密钥（在向导里填入，保存在 /a0/usr/.env）；本机不预先配置其他提供方、Claude Code 或 Codex 登录，也不连 Host access 和 A0 CLI",
+    "other": "同一产品有几种运行方式：官方快速开始默认的 Launcher 与 docker run 都在容器内跑代理和命令（Docker 运行时）；远端 Instance（Launcher 的 Add remote Instance）、Host access、A0 CLI 连接让命令在别处执行，都不是默认。镜像 agent0ai/agent-zero:latest 是构建时从 GitHub main 分支克隆的，v2.15 时 main 头即提交 ba9b67df…；容器内的自更新只在用户从界面确认后才会换版本。本配置编码的是 Launcher 创建的、未开 Host access 的 v2.15 实例。"
+  },
+  "evidence_cutoff": "2026-11-12",
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/agent0ai/agent-zero/releases/tag/v2.15",
+      "locator": "GitHub Release v2.15；标签 v2.15；main 头",
+      "version": "v2.15",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "GitHub releases/latest 为 v2.15（2026-11-01T23:52Z，prerelease=false）。annotated 标签对象 3b4d32cb… 解引用到提交 ba9b67df0f54ac78106ae85c552ef5d2458f7c9a；main 分支头也是这个提交（提交日期 2026-11-01T21:10Z，之后 main 没有再前进）。上一个正式版 v2.14（2026-10-13）。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://hub.docker.com/r/agent0ai/agent-zero/tags",
+      "locator": "Docker Hub agent0ai/agent-zero 标签 latest / v2.15 / ready",
+      "version": "latest = v2.15",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "读取 Docker Hub 公开的标签元数据（未拉取镜像）：标签 latest 与 v2.15 的清单摘要相同，sha256:05d6ab347bd7db4b6bd5a7d902c9965281ff852ff23f29fffcc1c8919e628bd8，推送于 2026-11-01T23:50Z；ready 标签（开发就绪线）是另一个摘要。官方快速开始不带标签的 docker run 和 Launcher 的 latest 卡片都取 latest。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/README.md#L30-L57",
+      "locator": "README.md",
+      "lines": "L30-L57",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "官方快速开始：桌面电脑推荐 A0 Launcher（v1.9），按提示配好 Docker、创建实例、保持默认版本和持久工作区、点 Open UI；服务器或纯命令行环境推荐 A0 Install（curl -fsSL https://bash.agent-zero.ai | bash）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/README.md#L84-L100",
+      "locator": "README.md",
+      "lines": "L84-L100",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "首次对话时才连接模型（Cloud provider、AI account、Local model 三选一，选主模型和工具模型）；已装 Docker 的直接命令 docker run -d -p 127.0.0.1:5080:80 -v a0_usr:/a0/usr agent0ai/agent-zero（不带标签即 latest），网页界面只对 Docker 主机开放。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/setup/installation.md#L10-L34",
+      "locator": "docs/setup/installation.md",
+      "lines": "L10-L34",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "安装指南第一步写 Launcher：保持 latest 和持久工作区点 Create，等 Running 后 Open UI，Host access 可以保持关闭。（本记录取 Launcher 路径为入口；Launcher 本体是独立仓库 agent0ai/a0-launcher 的 Electron 应用，v1.9 为其 releases/latest，2026-10-13，未读其源码。）"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/launcher.md#L28-L45",
+      "locator": "docs/guides/launcher.md",
+      "lines": "L28-L45",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "Launcher 的 Installs 页：latest 卡片跟踪最新发布的镜像，Run 把已装镜像作为本地实例启动；卡片 ready 是开发就绪线，版本卡片是固定版本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/launcher.md#L64-L90",
+      "locator": "docs/guides/launcher.md",
+      "lines": "L64-L90",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "实例的 /a0/usr 存放设置、聊天、记忆、项目和自定义插件；Launcher 默认选项是为实例单独建主机文件夹并挂到 /a0/usr（示例 ~/agent-zero/<实例名>/usr），也可选命名卷或不持久。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/launcher.md#L141-L160",
+      "locator": "docs/guides/launcher.md",
+      "lines": "L141-L160",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "Host access（让实例使用运行 Launcher 的那台电脑上的文件、终端命令、浏览器、Computer Use）默认关闭，首次聊天不需要；开启后命令从所选文件夹起跑，但不限制在该文件夹内。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/build.txt#L37-L38",
+      "locator": "docker/run/build.txt",
+      "lines": "L37-L38",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "官方镜像构建命令：docker buildx build -t agent0ai/agent-zero:vx.x.x -t agent0ai/agent-zero:latest … --build-arg BRANCH=main。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/.github/workflows/docker-publish.yml#L179-L181",
+      "locator": ".github/workflows/docker-publish.yml",
+      "lines": "L179-L181",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "CI 在发布标签触发时构建镜像，build-args 传入 BRANCH=<matrix.branch>；main 分支对应 latest 与版本标签。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/ins/install_A0.sh#L21-L26",
+      "locator": "docker/run/fs/ins/install_A0.sh",
+      "lines": "L21-L26",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "镜像构建时用 git clone -b $BRANCH 从 GitHub 取代码装到 /git/agent-zero。镜像内容因此是构建时 main 的头；v2.15 的 main 头就是提交 ba9b67df…（由此推断，镜像内 git 提交没有读取验证）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/Dockerfile#L1-L36",
+      "locator": "docker/run/Dockerfile",
+      "lines": "L1-L36",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "镜像基于 agent0ai/agent-zero-base:latest，暴露 22、80、9000-9009，启动命令 /exe/initialize.sh。基础镜像另行构建，本记录未读其内容。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf#L20-L76",
+      "locator": "docker/run/fs/etc/supervisor/conf.d/supervisord.conf：program 段（该文件各段）",
+      "lines": "L20-L76",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "容器里由 supervisord 管多个进程：run_sshd（/usr/sbin/sshd -D）、run_cron、run_searxng（本地 SearXNG）、run_ui（/exe/run_A0.sh，user=root）、run_tunnel_api。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/exe/self_update_manager.py#L942-L962",
+      "locator": "docker/run/fs/exe/self_update_manager.py",
+      "lines": "L942-L962",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "容器内网页服务以 python run_ui.py --dockerized=true --port=80 --host=0.0.0.0 启动；--dockerized=true 是后面判断“在容器里”的依据。更新只在收到用户在界面排队的更新请求时才执行（同文件 queue_update_request / execute_pending_update），不会自动换版本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/runtime.py#L59-L60",
+      "locator": "helpers/runtime.py",
+      "lines": "L59-L60",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "is_dockerized() 即启动参数里有没有 dockerized。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/default_config.yaml#L1-L8",
+      "locator": "plugins/_code_execution/default_config.yaml",
+      "lines": "L1-L8",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "ssh_enabled 默认 auto：容器内（dockerized）用本地 TTY，非容器才用 SSH；SSH 默认地址端口 55022、用户 root。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py#L155-L169",
+      "locator": "plugins/_code_execution/tools/code_execution_tool.py",
+      "lines": "L155-L169",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "code_execution_tool 在 ssh_enabled 为真时开 SSH 会话，否则开 LocalInteractiveSession；代码里没有逐条审批。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py#L563-L567",
+      "locator": "plugins/_code_execution/tools/code_execution_tool.py",
+      "lines": "L563-L567",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "_resolve_ssh_enabled 对 auto 返回 not is_dockerized()，所以官方 Docker 镜像里命令直接在容器内以 root 的本地终端执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/plugin.yaml#L1-L5",
+      "locator": "plugins/_code_execution/plugin.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "代码执行插件：终端、Python、Node.js 三种运行时，经本地 TTY 或 SSH。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/login.py#L1-L15",
+      "locator": "helpers/login.py",
+      "lines": "L1-L15",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "网页登录是否需要，只看 .env 里 AUTH_LOGIN 有没有值：没有用户名就不要求登录。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/api.py#L175-L186",
+      "locator": "helpers/api.py",
+      "lines": "L175-L186",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "requires_auth 装饰器：算不出凭据哈希（没设用户名）就直接放行，设了才跳转登录页。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py#L588-L596",
+      "locator": "helpers/settings.py",
+      "lines": "L588-L596",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "默认设置 auth_login=\"\"、auth_password=\"\"、root_password=\"\"，agent_profile 默认 agent0；也就是默认没有网页登录保护。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/setup/installation.md#L582-L598",
+      "locator": "docs/setup/installation.md：Authentication",
+      "lines": "L582-L598",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "官方文档：登录用户名、密码、容器 root 密码、RFC 密码在 Settings 的 Authentication 里自行设置；通过隧道对外之前必须先设（L885）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/dotenv.py#L17-L18",
+      "locator": "helpers/dotenv.py",
+      "lines": "L17-L18",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "设置、API 密钥和登录凭据存放在 usr/.env（容器内 /a0/usr/.env，随持久工作区保留）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py#L604",
+      "locator": "helpers/settings.py",
+      "lines": "L604",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "默认工作目录 workdir_path 为容器内 usr/workdir（即 /a0/usr/workdir）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/plugins.py#L502-L553",
+      "locator": "helpers/plugins.py",
+      "lines": "L502-L553",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "插件默认规则：always_enabled 的一律启用；其余“every plugin is on by default, unless disabled”，只有存在 .toggle-0 文件才默认关，.toggle-1 表示默认开。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_infection_check/default_config.yaml#L1-L3",
+      "locator": "plugins/_infection_check/default_config.yaml + .toggle-0（空文件）",
+      "lines": "L1-L3",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "注入检查插件（用工具模型审查代理输出）；仓库里 plugins/_infection_check/.toggle-0 文件存在（文件树可见，空文件），因此默认关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_compaction/plugin.yaml#L1-L5",
+      "locator": "plugins/_chat_compaction/plugin.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "聊天压缩插件：把整个对话历史压成一条摘要；plugins/_chat_compaction/.toggle-1（空文件）显式默认开启。何时触发（手动还是自动）未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.tools.md#L1-L5",
+      "locator": "prompts/agent.system.tools.md",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "系统提示里“available tools”是把各启用插件和核心的 agent.system.tool.*.md 工具说明拼进 {{tools}}。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.tool.call_sub.md#L1-L12",
+      "locator": "prompts/agent.system.tool.call_sub.md",
+      "lines": "L1-L12",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "call_subordinate 工具默认列在系统提示里，可带 profile 参数派子代理；同目录 agent.system.tool.parallel.md 另有 parallel 工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py#L1-L40",
+      "locator": "tools/call_subordinate.py",
+      "lines": "L1-L40",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "子代理实现：从父代理派生下级代理上下文（SUBORDINATES_DATA_KEY），可用的 profile 来自 agents/ 目录（agent0、default、developer、hacker、researcher 等）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_tool_access/default_config.yaml#L1-L5",
+      "locator": "plugins/_tool_access/default_config.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "工具可见性与执行策略默认 mode: inherit、default: allow、mcp_default: allow，也就是默认全部允许；插件 always_enabled。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_a0_connector/prompts/agent.system.tool.code_execution_remote.md#L1-L8",
+      "locator": "plugins/_a0_connector/prompts/agent.system.tool.code_execution_remote.md",
+      "lines": "L1-L8",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "code_execution_remote、text_editor_remote、input_remote、computer_use_remote 四个远程工具只在已连接的 A0 CLI 声明支持远程执行时才出现（用户在 CLI 里按 F4 打开）；官方 Docker 路径默认没有 CLI 连接，所以不在默认工具里。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_browser/default_config.yaml#L1-L33",
+      "locator": "plugins/_browser/default_config.yaml",
+      "lines": "L1-L33",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "browser 工具是容器内的 Playwright 浏览器，runtime_backend 默认 container；使用主机浏览器要另开 Host access。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_desktop/plugin.yaml#L1-L5",
+      "locator": "plugins/_desktop/plugin.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "desktop 插件提供容器内的 Linux Desktop（Xpra/Xfce）运行时和桌面画面。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_search_engine/plugin.yaml#L1-L5",
+      "locator": "plugins/_search_engine/plugin.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "search_engine 工具走容器内的本地 SearXNG 实例。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/default_config.yaml#L1-L14",
+      "locator": "plugins/_memory/default_config.yaml",
+      "lines": "L1-L14",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "记忆默认开：每 3 次循环召回（memory_recall_interval 3），召回的查询改写和结果过滤默认关；每轮结束自动记忆（memorize_enabled、consolidation 均为 true）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/extensions/python/monologue_end/_50_memorize_fragments.py#L26-L64",
+      "locator": "plugins/_memory/extensions/python/monologue_end/_50_memorize_fragments.py",
+      "lines": "L26-L64",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "自动记忆片段在 monologue 结束时用工具（utility）模型提取（call_utility_model）；同目录 _51_memorize_solutions.py 对解法做同类处理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/tools/memory_save.py#L1-L5",
+      "locator": "plugins/_memory/tools/memory_save.py",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "记忆工具由 memory_load、memory_save、memory_delete、memory_forget 四个文件注册（目录 plugins/_memory/tools/）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_naming/default_config.yaml#L1-L2",
+      "locator": "plugins/_chat_naming/default_config.yaml",
+      "lines": "L1-L2",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "聊天自动命名默认开（automatic_naming true，mode always），用工具模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_error_retry/default_config.yaml#L1-L2",
+      "locator": "plugins/_error_retry/default_config.yaml",
+      "lines": "L1-L2",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "临界异常重试 1 次。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_skills/default_config.yaml#L1-L3",
+      "locator": "plugins/_skills/default_config.yaml",
+      "lines": "L1-L3",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "技能插件：最多同时激活 20 个，active_skills 默认空；仓库 skills/ 下 7 个 SKILL.md、各插件目录下另有 18 个（文件树统计）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/update_check.py#L5-L19",
+      "locator": "helpers/update_check.py",
+      "lines": "L5-L19",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "更新检查向 https://api.agent-zero.ai/a0-update-check 发送当前版本和匿名 id（sha256 前 20 位）；update_check_enabled 默认 true（helpers/settings.py L634），在用户从界面发消息后触发（extensions/python/user_message_ui/_10_update_check.py）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py#L628-L630",
+      "locator": "helpers/settings.py",
+      "lines": "L628-L630",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "MCP 服务器、A2A 服务器默认关闭（mcp_server_enabled、a2a_server_enabled 均为 False）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_model_config/mode_presets_fallback.yaml#L1-L30",
+      "locator": "plugins/_model_config/mode_presets_fallback.yaml",
+      "lines": "L1-L30",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "随代码附带的兜底预设 Default：主模型 openrouter / openai/gpt-5.6-terra，工具模型 openrouter / google/gemini-3.1-flash-lite，嵌入模型 huggingface / sentence-transformers/all-MiniLM-L6-v2。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_model_config/extensions/python/startup_migration/_20_bootstrap_model_presets.py#L10-L58",
+      "locator": "plugins/_model_config/extensions/python/startup_migration/_20_bootstrap_model_presets.py",
+      "lines": "L10-L58",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "首次启动没有预设文件时，先联网从 agent0ai/a0-presets 的 main 分支取 model_presets.yaml，取不到才用上面的兜底预设。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/a0-presets/blob/d70e10d94346ffbd3207ba89c0225c3ab3b7ad90/model_presets.yaml#L1-L30",
+      "locator": "agent0ai/a0-presets model_presets.yaml（外部仓库，非镜像内容）",
+      "lines": "L1-L30",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "a0-presets 当前 main 头 d70e10d9…（2026-10-08）：Default 预设的主模型 openrouter / openai/gpt-6.1-sol，工具模型 openai/gpt-6-luna，嵌入模型同兜底预设。这个外部文件随时可变，首次启动时取到什么取决于那一刻的内容；与引导向导的写入（见下卡）并存时以哪个为准未运行验证。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_onboarding/webui/onboarding-providers.js#L1-L13",
+      "locator": "plugins/_onboarding/webui/onboarding-providers.js",
+      "lines": "L1-L13",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "引导向导“云提供方”列表第一位是 openrouter，第二位 a0_venice（A0T 令牌的 Venice 代理），其后 openai、anthropic、google、deepseek 等。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_onboarding/webui/onboarding-providers.js#L233-L241",
+      "locator": "plugins/_onboarding/webui/onboarding-providers.js",
+      "lines": "L233-L241",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "openrouter 的向导默认主模型 openai/gpt-5.6-terra、工具模型 google/gemini-3.1-flash-lite，api_key_mode 为 required。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_onboarding/webui/onboarding-store.js#L403-L420",
+      "locator": "plugins/_onboarding/webui/onboarding-store.js",
+      "lines": "L403-L420",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "选定提供方后向导把该提供方的默认主模型写入 chat_model、默认工具模型写入 utility_model（用户没改过模型名时覆盖原值）；按源码推断，选 OpenRouter 的结果是 terra 加 gemini-3.1-flash-lite，未运行验证。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_onboarding/AGENTS.md#L12-L19",
+      "locator": "plugins/_onboarding/AGENTS.md",
+      "lines": "L12-L19",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "完成引导会更新全局模型预设 Default，并让被拦下的第一条消息在原对话里继续；向导三个入口：Cloud、Account、Local。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_oauth/plugin.yaml#L1-L5",
+      "locator": "plugins/_oauth/plugin.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "账户登录路线（Account）：本地 OAuth 桥，首个提供方是 Codex / ChatGPT 账户。"
+    }
+  ],
+  "note": "版本：GitHub releases/latest、Docker Hub 标签 latest（与 v2.15 同一摘要）和 main 头一致，均为 v2.15 / ba9b67df…（2026-11-01）；上一个正式版 v2.14（2026-10-13）。镜像里 git 提交没有读取验证（未拉取镜像）：由构建脚本 git clone -b main、当时 main 头为 ba9b67df… 推断。官方快速开始的默认路径是 A0 Launcher（桌面）而不是 docker run，所以 config_id 末段用 launcher-default；Launcher 本体（agent0ai/a0-launcher v1.9）是独立仓库，未读其源码，它创建实例时传给 docker 的端口、挂载和环境变量只依据官方文档，与 docker run 路径相同的部分是镜像内的一切。文档在仓库 docs/ 目录，同时发布在 https://www.agent-zero.ai/p/docs/；站点的 llms-full.txt（约 16 KB）实为文档摘要，不是全文导出。待核：镜像基础层 agent0ai/agent-zero-base 的内容、对话历史压缩所用模型、scheduler 与 orchestrator 的默认状态、vision_load 的出现条件、chat_compaction 的触发方式。"
+}

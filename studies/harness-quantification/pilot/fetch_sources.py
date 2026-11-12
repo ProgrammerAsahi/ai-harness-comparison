@@ -15,6 +15,10 @@ repository from an evidence URL carrying that commit, downloads GitHub's source 
   <out>/<config_id>/SOURCE.txt                repository, commit, archive size and SHA-256, how to unpack
   <out>/<config_id>/docs-llms-full.txt        only for tools whose official docs live outside the repository: the
                                               docs site's own full-text export, with URL, date and SHA-256 in SOURCE.txt
+  <out>/<config_id>/docs-pages.txt            only for tools whose docs site has no full-text export: the pages its own
+                                              index lists (a chosen part of them), fetched one by one as Markdown and
+                                              joined, each under a "Source: <page URL>" line; SOURCE.txt lists the
+                                              indexes, the selection, the page count and any page that failed
 
 A closed-source product has no commit; its record is served by the docs export alone.
 
@@ -44,11 +48,75 @@ DOCS = {
     "A15__openhands": "https://docs.openhands.dev/llms-full.txt",
     "A16__grok-build": "https://docs.x.ai/llms-full.txt",
     "B10__factory-droid": "https://docs.factory.com/llms-full.txt",
+    "C06__open-webui": "https://docs.openwebui.com/llms-full.txt",
+    "C10__nanoclaw": "https://docs.nanoclaw.dev/llms-full.txt",
+    "D01__dify": "https://docs.dify.ai/llms-full.txt",
 }
+# Docs sites with a page index but no full-text export. Per tool: (index URL, pattern a page must match, URL
+# template that returns the page as Markdown, URL template to cite); "{}" is the matched text. Only the parts
+# of a site that describe the coded entry point are taken; the selection is repeated in SOURCE.txt.
+DOC_PAGES = {
+    "B01__cursor": [
+        ("https://cursor.com/llms.txt", r"https://cursor\.com/(?:docs|help)(?:/[\w.-]+)*\.md", "{}", "{}"),
+    ],
+    "B02__github-copilot": [
+        ("https://code.visualstudio.com/llms.txt",
+         r"https://code\.visualstudio\.com/docs/(?:agents|agent-customization|chat|setup|configure|editing|enterprise"
+         r"|reference|getstarted)(?:/[\w.-]+)+\.md", "{}", "{}"),
+        ("https://docs.github.com/api/pagelist/en/free-pro-team@latest",
+         r"/en/copilot/(?:concepts|get-started|reference/(?:ai-models|copilot-cli-reference|copilot-billing)"
+         r"|how-tos/(?:copilot-in-your-ide|use-copilot-agents|copilot-sdk|cloud-and-local-sandboxes"
+         r"|manage-your-account|configure-content-exclusion|troubleshoot-copilot|provide-context|set-up))(?:/[\w.-]+)*",
+         "https://docs.github.com/api/article/body?pathname={}", "https://docs.github.com{}"),
+    ],
+}
+# Closed-source products whose version string carries a 40-hex build identifier that is not a public commit.
+NO_PUBLIC_SOURCE = {"B01__cursor"}
+AGENT = {"User-Agent": "harness-study-source-fetch"}
 
 
 def docs_url(config_id):
     return next((u for key, u in DOCS.items() if config_id.startswith(key)), None)
+
+
+def doc_pages(config_id):
+    return next((v for key, v in DOC_PAGES.items() if config_id.startswith(key)), None)
+
+
+def get(url):
+    return urllib.request.urlopen(urllib.request.Request(url, headers=AGENT), timeout=120).read()
+
+
+def fetch_pages(config_id, dest):
+    """Join the selected pages of an index-only docs site into docs-pages.txt; describe them in SOURCE.txt."""
+    parts, notes = [], []
+    for index, pattern, page_url, cite_url in doc_pages(config_id):
+        text = get(index).decode("utf-8", "replace")
+        if text.lstrip().startswith("["):  # a JSON list of paths
+            found = [x for x in json.loads(text) if re.fullmatch(pattern, x)]
+        else:
+            found = [m.group(0) for m in re.finditer(pattern, text)]
+        found = list(dict.fromkeys(found))
+        failed = []
+        for item in found:
+            try:
+                body = get(page_url.format(item)).decode("utf-8", "replace")
+            except Exception as error:  # a page the index lists but the site does not serve
+                failed.append(f"{item} ({type(error).__name__})")
+                continue
+            parts.append(f"Source: {re.sub(r'[.]md$', '', cite_url.format(item))}\n\n{body.strip()}\n")
+        missing = f", failed: {'; '.join(failed)}" if failed else ""
+        notes.append(f"docs pages: index {index}, pages matching {pattern}: {len(found)} listed, "
+                     f"{len(found) - len(failed)} fetched{missing}\n")
+        print(f"{config_id}: {index}: {len(found) - len(failed)} of {len(found)} pages")
+    data = ("\n\n" + "=" * 80 + "\n").join(parts).encode("utf-8")
+    (dest / "docs-pages.txt").write_bytes(data)
+    with (dest / "SOURCE.txt").open("a", encoding="utf-8") as f:
+        f.write("".join(notes))
+        f.write(f"docs: docs-pages.txt joins those pages as served on {datetime.date.today().isoformat()}, "
+                f"{len(data)} bytes, sha256 {hashlib.sha256(data).hexdigest()}; the site has no full-text export, "
+                "and pages outside the selection were not fetched\n"
+                "docs cite as: evidence kind official_doc; the URL on the Source: line above the passage\n")
 
 
 def pinned(config_id):
@@ -56,8 +124,10 @@ def pinned(config_id):
     raw = (CONFIGS / f"{config_id}.json").read_text(encoding="utf-8")
     version = json.loads(raw)["version_or_commit"]
     shas = list(dict.fromkeys(re.findall(r"\b[0-9a-f]{40}\b", version)))
+    if any(config_id.startswith(key) for key in NO_PUBLIC_SOURCE):
+        return [], []
     if not shas:
-        if docs_url(config_id):
+        if docs_url(config_id) or doc_pages(config_id):
             return [], []
         raise SystemExit(f"{config_id}: no 40-hex commit in version_or_commit and no docs export listed")
     found, unplaced = [], []
@@ -77,11 +147,11 @@ def fetch(config_id):
     sources, unplaced = pinned(config_id)
     dest = OUT / config_id
     dest.mkdir(parents=True, exist_ok=True)
-    for old in list(dest.glob("src*.tar.gz.*")) + list(dest.glob("docs-llms-full.txt")):
+    for old in [*dest.glob("src*.tar.gz.*"), *dest.glob("docs-llms-full.txt"), *dest.glob("docs-pages.txt")]:
         old.unlink()
     lines = [f"config_id: {config_id}\n"]
     if not sources:
-        lines.append("source: none (closed-source product; the official docs export below is the only material)\n")
+        lines.append("source: none (closed-source product; the official docs below are the only material)\n")
     for n, (repo, sha) in enumerate(sources):
         stem = "src" if n == 0 else "src-" + repo.split("/")[1]
         data = subprocess.run(["gh", "api", f"repos/{repo}/tarball/{sha}"], capture_output=True, check=True,
@@ -106,8 +176,7 @@ def fetch(config_id):
     (dest / "SOURCE.txt").write_text("".join(lines), encoding="utf-8")
     url = docs_url(config_id)
     if url:
-        req = urllib.request.Request(url, headers={"User-Agent": "harness-study-source-fetch"})
-        docs = urllib.request.urlopen(req, timeout=300).read()
+        docs = urllib.request.urlopen(urllib.request.Request(url, headers=AGENT), timeout=300).read()
         (dest / "docs-llms-full.txt").write_bytes(docs)
         with (dest / "SOURCE.txt").open("a", encoding="utf-8") as f:
             f.write(f"docs: docs-llms-full.txt is {url} as served on {datetime.date.today().isoformat()}, "
@@ -115,6 +184,8 @@ def fetch(config_id):
                     "docs cite as: evidence kind official_doc; the page URL where the file gives one (a Source: line), "
                     "otherwise the docs site address plus the section heading\n")
         print(f"{config_id}: docs export {len(docs) / 1e6:.1f} MB")
+    if doc_pages(config_id):
+        fetch_pages(config_id, dest)
 
 
 if __name__ == "__main__":

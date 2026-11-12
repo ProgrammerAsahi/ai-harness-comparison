@@ -1,0 +1,393 @@
+{
+  "schema_version": "config-0.1",
+  "synthetic": false,
+  "config_id": "D01__dify__compose-agent-default",
+  "round": "batch-3",
+  "tool_id": "D01",
+  "product": "Dify",
+  "view": "configured",
+  "version_or_commit": "社区版 1.19.0；提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "Docker Compose 自托管社区版的网页控制台（http://localhost），在导航栏 Agents 页新建空白的新 Agent（beta，Compose 默认开启），在它的编辑页对话窗口里对话；执行落在 agent_backend 与 local_sandbox 两个容器。应用类型取新 Agent（研究负责人 2026-11-12 确认）；旧版 Agent 应用（Studio 创建，api 进程内循环）、工作流或 Chatflow 里的 Agent 节点是同一套部署里的其他形态，本记录不取，区别见 note。",
+  "install_method": "command: git clone --branch 1.19.0 --depth 1 https://github.com/langgenius/dify.git；cd dify/docker；cp .env.example .env；openssl rand -hex 32，把输出填进 .env 的 DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN（保持默认 COMPOSE_PROFILES）；docker compose up -d；docker compose ps --all；然后打开 http://localhost/install 创建管理员账户。前置：Docker（macOS 用 Docker Desktop，虚拟机至少 2 vCPU、8 GiB 内存）、Docker Compose 2.35.0 以上、Git、OpenSSL；机器至少 2 核 CPU、4 GiB 内存。alternative: 云版 cloud.dify.ai、源码部署；source: https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/README.md#L66-L92（只记录，未执行）",
+  "permission_mode": "没有逐条命令的审批机制，也没有读、写、联网的分档权限模式：模型通过 shell_run、shell_wait、shell_input、shell_interrupt 在 local_sandbox 容器里直接执行命令、读写文件，无需批准；容器出口走 agent_ssrf_proxy，公网可访问，内网地址默认被拦（可用 SSRF_PROXY_ALLOW_PRIVATE_IPS 等放行）；沙箱里新装的程序在已发布运行中是临时的，只有 Build 模式里装的才随 Agent 保留；Agent 的能力（提示词、技能、工具、型号）只能在配置页改，运行中模型改不了；用户侧权限靠工作区角色（创建和管理 Agent 需 Editor 及以上）。社区版不提供互不信任用户之间的强隔离。",
+  "subagents_enabled": false,
+  "enabled_extensions": [
+    "默认随 Compose 起来的服务（COMPOSE_PROFILES 默认 weaviate,postgresql,collaboration）：api、worker、worker_beat、web、nginx、redis、plugin_daemon（插件守护进程）、sandbox（dify-sandbox 0.2.15，只供工作流代码节点和内置代码工具，本入口的 Agent 命令不走它）、local_sandbox（Agent 的命令沙箱）、agent_backend、agent_ssrf_proxy、ssrf_proxy、PostgreSQL、Weaviate、init_permissions（一次性任务，退出码 0）；knowledge_fs 系列需加 knowledge-fs 档案才起，默认不起。",
+    "所选入口的代码执行位置：模型循环在 agent_backend 容器（pydantic-ai，原生工具调用，每次运行至多 500 次模型请求，默认 1 小时超时），模型请求经 plugin_daemon 里的模型提供方插件发出；命令在 local_sandbox 容器的 workspace 命名卷里执行（DIFY_AGENT_RUNTIME_BACKEND 默认 local），不在宿主机上直接执行，也不挂载宿主机目录；Dify 工具由 plugin_daemon 或 api 进程执行。",
+    "默认注册给模型的工具（按 agent_backend 源码）：shell_run、shell_wait、shell_input、shell_interrupt；挂了知识库且为 Agent decide 时加 knowledge_base_search；声明了结构化输出时加 final_output；用户在配置页添加的 Dify 工具（插件工具、自定义 API、工作流工具、MCP）按配置注册。新建的空白 Agent 没有任何 Dify 工具、技能、文件、知识库；沙箱里另有 dify-agent 命令行（config、files、skills 等子命令）供模型读写自己的配置。没有网页搜索工具，也没有子代理工具。",
+    "新装后不用装插件就能在 Integrations → Tools 里看到并添加的内置工具提供方：time（current_time、localtime_to_timestamp、timestamp_to_localtime、timezone_conversion、weekday）、code（simple_code）、webscraper（webscraper）、audio（asr、tts，依赖默认语音模型，新装时未配）；这些默认都不挂在新建的 Agent 上，要手动添加。Google、GitHub、网页搜索等其余工具都要先去 Marketplace 装插件（部分还需凭据）。",
+    "插件与市场：plugin_daemon 默认随 Compose 起，Marketplace 默认开（MARKETPLACE_ENABLED=true，需要能连外网），插件需签名校验（FORCE_VERIFYING_SIGNATURE=true）；新工作区一个插件都没有（NEW_USER_DEFAULT_PLUGIN_IDS 默认空）。模型提供方是插件，必须先装再填密钥；Agent Strategy 也是插件，但新 Agent 不用它。",
+    "默认开着或关着的开关：NEXT_PUBLIC_ENABLE_AGENT_V2=true（Agents 页和工作流里的新 Agent 节点）；NEXT_PUBLIC_ENABLE_AGENT_V2_IN_CHATFLOW=false；新 Agent 为 beta；知识库、技能（库技能最多 20 个）、环境变量、文件均默认为空；对话开场白、追问建议、引用等 Chat Features 的缺省值未核实；MCP 服务默认一个都没有（仅支持 HTTP 传输）。",
+    "默认会自发的模型请求：上下文压缩（目标预算为模型窗口的 80%，先清理旧工具结果再摘要，摘要用哪个型号未核实）；对话标题自动生成（auto_generate_name 缺省 True，用哪个型号未核实）；Build 模式下的 Generate 提示词也会调用模型，但需用户点击。没有审批分类器类调用。",
+    "不属于本入口但同一部署里还有：旧版 Agent 应用（Studio → Create from Blank → For beginners 折叠区里的 Agent，AppMode agent-chat）、经典 Agent 节点（Agent Strategy 插件驱动）、Workflow、Chatflow、Chatbot、文本生成；它们不进入本配置的编码范围，选项对比见 note。"
+  ],
+  "operating_system": "macOS、Linux（Docker Desktop 或 Docker Engine）；官方文档另列 Windows 的 WSL 2 路线；需 Docker Compose 2.35.0 以上。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-12",
+  "note": "版本：GitHub releases/latest 为 1.19.0（2026-11-04 发布，非预发布）；官方快速开始让用户在 Dify releases 里自选标签，Compose 里的镜像标签也固定为 1.19.0，所以取 1.19.0；注解标签 daa2f261… 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签但没有对应发布页。官方文档在 langgenius/dify-docs 仓库（站外），文档站 llms-full.txt 可用（约 2.9 MB，仅英文，含云版与自托管两部分）。\n\n应用类型是本记录最要紧的取舍：同一套部署里有四类东西可被叫作“Agent”，研究负责人 2026-11-12 确认取第 (1) 类。(1) 新 Agent（本记录取这一类）：Agents 页创建、beta、Compose 默认开启，运行在 agent_backend + local_sandbox，自带 shell 沙箱，无 ReAct/函数调用开关，一次运行至多 500 次模型请求；与工作流里的新 Agent 节点共用同一套代码（clients.agent_backend、agent_v2 请求构造器）。(2) 旧版 Agent 应用（agent-chat）：Studio 里 For beginners 折叠区创建，在 api 进程内循环（fc_agent_runner / cot_agent_runner），型号具备工具调用特性时用函数调用、否则 ReAct，最大迭代默认 10（前端滑块上限默认 99），只有用户添加的工具、没有 shell 沙箱，模板预置型号 openai/gpt-4o（仅当工作区没有默认型号时作回退）。(3) 经典 Agent 节点：只在工作流或 Chatflow 里，由 Agent Strategy 插件（Function Calling、ReAct，需从 Marketplace 装）驱动，与旧版 Agent 应用不是同一套代码，自带 Max Iterations 与 Memory。(4) 官方通用快速开始带新用户建的第一个应用是 Workflow，不是 Agent。\n\n默认提供方与型号：官方没有默认提供方和默认型号，新工作区一个模型提供方也没装、Default Models 全空；官方快速开始（云版）示例装 OpenAI 提供方、用 gpt-5.2；云版新账户有一次性 200 AI credits，自托管没有。未核实：新 Agent 编辑页对话窗口的具体按钮名；Chat Features 各项缺省值；自动标题与上下文摘要实际使用的型号；dify-agent 沙箱镜像（langgenius/dify-agent-local-sandbox）里预装的程序（未下载镜像）。",
+  "evidence": [
+    {
+      "version": "1.19.0",
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/langgenius/dify/releases/tag/1.19.0",
+      "locator": "GitHub Release 1.19.0（2026-11-04T07:36:16Z 发布；releases/latest=1.19.0，prerelease=false）；注解标签 daa2f261ff0cc79a2746d6dc0ecc441e083851c4 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759（提交时间 2026-11-04T07:19:22Z）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "当前正式版。官方快速开始让用户自选发布标签（git clone --branch <version>），README 路径则直接在仓库根目录操作；Compose 文件里镜像标签全部固定为 1.19.0（dify-api、dify-web、dify-agent-backend、dify-agent-local-sandbox），本记录取最新正式版。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签，releases 列表里没有对应的发布页，未当作当前版本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/README.md#L66-L92",
+      "locator": "README.md",
+      "lines": "L66-L92",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "官方快速开始：Docker Compose v2.35.0 以上；cd docker、cp .env.example .env、openssl rand -hex 32 生成令牌填入 DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN、保持默认 COMPOSE_PROFILES；docker compose up -d；打开 http://localhost/install 完成初始设置。最低 2 核 CPU、4 GiB 内存。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/deploy/quick-start/docker-compose",
+      "locator": "docs.dify.ai 自托管：Docker Compose 快速开始（Before Deployment、Deploy and Start、Access）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "与 README 一致：git clone --branch <version> --depth 1；Docker Desktop for Mac 的虚拟机至少 2 vCPU、8 GiB 内存；http://localhost/install 创建管理员账户后用 http://localhost 登录；默认栈带 PostgreSQL、Weaviate，无需另备数据库或向量库。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/.env.example#L11-L15",
+      "locator": "docker/.env.example",
+      "lines": "L11-L15",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "COMPOSE_PROFILES 默认 weaviate,postgresql,collaboration；DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN 留空，必须手填，否则 agent_backend 与 local_sandbox 起不来。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/quick-start",
+      "locator": "docs.dify.ai：30-Minute Quick Start",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "官方通用快速开始（写在云版上，注明自托管按同样步骤）带用户建的第一个应用是 Workflow（Studio → Create from Blank → Workflow，多平台内容生成器），不是 Agent；先在 Integrations → Model Provider 装 OpenAI 提供方，示例型号 gpt-5.2，并把 System Reasoning Model 设成它。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/app/components/app/create-app-modal/index.tsx#L262-L293",
+      "locator": "web/app/components/app/create-app-modal/index.tsx",
+      "lines": "L262-L293",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "Studio 新建应用对话框：默认选中 Chatflow（advanced-chat），主卡片为 Workflow 与 Chatflow；Chatbot、旧版 Agent（agent-chat）、文本生成（completion）收在折叠的“For beginners”里。新 Agent 不在这个对话框里，而在导航栏的 Agents 页创建。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/app/components/app/create-app-modal/index.tsx#L59-L69",
+      "locator": "web/app/components/app/create-app-modal/index.tsx",
+      "lines": "L59-L69",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "新建应用对话框默认选中的类型是 Chatflow（advanced-chat）；折叠区“For beginners”默认是否展开由 shouldExpandBeginnerAppTypes(defaultAppMode) 决定，从空白入口进入时不预选 Agent。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/config/index.ts#L264",
+      "locator": "web/config/index.ts",
+      "lines": "L264",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "MAX_ITERATIONS_NUM 取自 NEXT_PUBLIC_MAX_ITERATIONS_NUM（web/.env.example 默认 99），是旧版 Agent 最大迭代滑块的上限。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime/runner.py#L68",
+      "locator": "dify-agent/src/dify_agent/runtime/runner.py",
+      "lines": "L68",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "_MAX_AGENT_STEPS_PER_RUN = 500；DEFAULT_AGENT_RUN_TIMEOUT_SECONDS = 3600（L69）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/envs/core-services/api-worker.defaults#L44",
+      "locator": "docker/envs/core-services/api-worker.defaults",
+      "lines": "L44",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "MARKETPLACE_ENABLED 默认 true（注释状态即默认值）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/envs/core-services/web.defaults#L51-L52",
+      "locator": "docker/envs/core-services/web.defaults",
+      "lines": "L51-L52",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "NEXT_PUBLIC_ENABLE_AGENT_V2 在 Compose 默认 true（导航栏出现 Agents 页，工作流 Agent 节点可邀请新 Agent）；NEXT_PUBLIC_ENABLE_AGENT_V2_IN_CHATFLOW 默认关（注释状态，值 false）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/build/new-agent/overview",
+      "locator": "docs.dify.ai 自托管：Agent（新）概览",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 标为 beta，Docker Compose 默认开启、运行时内置；在自己的沙箱里运行命令、装程序、读写文件；一次构建，两种用法（独立聊天应用，或工作流 Agent 节点里的一步）；社区版不提供互不信任用户之间的强隔离；与旧版 Agent 应用是两种东西。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/build/new-agent/build",
+      "locator": "docs.dify.ai 自托管：构建 Agent（Create an Agent、Model、Tools、Run Limits、Troubleshooting）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Agents → Create → Create from Blank 新建（需 Editor 及以上角色）；模型栏选用强推理且原生支持工具调用的型号；每次运行至多 500 次模型请求，单次运行默认 1 小时；沙箱联网走代理，默认拦截内网地址；可在 Build 模式里用对话搭建配置。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/build/agent",
+      "locator": "docs.dify.ai 自托管：旧版 Agent 应用",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "旧版 Agent 应用页顶部提示新 Agent 为 beta；旧版在 Agent Settings 自动显示 Function Calling（模型原生支持工具调用）或 ReAct（其余模型）；有 Maximum Iterations 设置；每个会话保留至多 500 条消息或 2000 token 历史。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/nodes/agent",
+      "locator": "docs.dify.ai 自托管：Agent 节点（Classic Agent 与 New Agent 两个标签页）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "经典 Agent 节点：由 Agent Strategy 插件（Function Calling、ReAct，Marketplace 另有更多）驱动，自带 Max Iterations 与 Memory；新 Agent 节点：邀请 Agents 页里已发布的 Agent，或就地建一次性 Agent，运行在同一套沙箱运行时上，只设任务。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/constants/model_template.py#L68-L96",
+      "locator": "api/constants/model_template.py",
+      "lines": "L68-L96",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "default_app_templates：旧版 Agent（AppMode.AGENT_CHAT）模板预置 openai/gpt-4o、chat 模式、不含 agent_mode；新 Agent（AppMode.AGENT）模板不预置任何 model_config，运行时的型号、提示词、工具来自绑定的 Agent Soul 快照，发布前 enable_site、enable_api 都为 False。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/app_service.py#L389-L425",
+      "locator": "api/services/app_service.py",
+      "lines": "L389-L425",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新建新 Agent 时，初始 Agent Soul 的型号取工作区默认 LLM（get_default_model_selection）；工作区没有默认型号则返回 None，Agent 的模型栏为空，需用户在配置里选。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/app_config/easy_ui_based_app/agent/manager.py#L16-L82",
+      "locator": "api/core/app/app_config/easy_ui_based_app/agent/manager.py",
+      "lines": "L16-L82",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "旧版 Agent 应用配置转换：strategy 缺省按 cot（ReAct），写 function_call 才是函数调用；max_iteration 缺省 10。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/config/index.ts#L153-L158",
+      "locator": "web/config/index.ts",
+      "lines": "L153-L158",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "旧版 Agent 的前端默认设置 DEFAULT_AGENT_SETTING：strategy 为函数调用、max_iteration 为 10；最大迭代数上限由 NEXT_PUBLIC_MAX_ITERATIONS_NUM 控制（web/.env.example 默认 99）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/apps/agent_chat/app_runner.py#L196-L231",
+      "locator": "api/core/app/apps/agent_chat/app_runner.py",
+      "lines": "L196-L231",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "旧版 Agent 应用运行时：若所选型号具备工具调用特性（TOOL_CALL 或 MULTI_TOOL_CALL）则强制改用 FunctionCallAgentRunner，否则按模型模式用 CotChatAgentRunner 或 CotCompletionAgentRunner（ReAct）；整个循环在 api 进程内运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/workflow/nodes/agent/plugin_strategy_adapter.py#L5-L25",
+      "locator": "api/core/workflow/nodes/agent/plugin_strategy_adapter.py",
+      "lines": "L5-L25",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "经典 Agent 节点通过 get_plugin_agent_strategy 取 Agent Strategy 插件执行，不使用旧版 Agent 应用的 fc_agent_runner / cot_agent_runner（后者只被 agent_chat 引用）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/apps/agent_app/runtime_request_builder.py#L27-L61",
+      "locator": "api/core/app/apps/agent_app/runtime_request_builder.py",
+      "lines": "L27-L61",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 应用构造发往 agent_backend 的 CreateRunRequest，直接引用 core.workflow.nodes.agent_v2 的请求构造器；工具层、知识库层、shell 层、配置层都由它拼出。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/workflow/nodes/agent_v2/agent_node.py#L7-L65",
+      "locator": "api/core/workflow/nodes/agent_v2/agent_node.py",
+      "lines": "L7-L65",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 节点同样经 clients.agent_backend 调 dify_agent 运行时，与新 Agent 应用共用一套代码与运行时。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime/runner.py#L381-L387",
+      "locator": "dify-agent/src/dify_agent/runtime/runner.py",
+      "lines": "L381-L387",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 一次运行至多 500 次模型请求（UsageLimits request_limit=500），单次运行超时默认 3600 秒；工具调用靠原生工具调用（pydantic-ai 的 Agent），不存在 ReAct / 函数调用二选一的开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime/modules.py#L33-L51",
+      "locator": "dify-agent/src/dify_agent/runtime/modules.py",
+      "lines": "L33-L51",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "agent_backend 的可用模块注册表：提示词、用户提示词、执行上下文、runtime、shell、config、history、llm、tools（插件工具）、core_tools、knowledge、knowledge_fs、output；没有派生子代理的模块，所以本入口模型不能自行派子代理（工作流里多个 Agent 节点接力不算）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/layers/shell/layer.py#L222-L254",
+      "locator": "dify-agent/src/dify_agent/layers/shell/layer.py",
+      "lines": "L222-L254",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "shell 层注册给模型的工具：shell_run、shell_wait、shell_input、shell_interrupt（顺序执行）；代码里没有逐条命令的审批提示，命令直接在沙箱里执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/layers/knowledge/layer.py#L176-L196",
+      "locator": "dify-agent/src/dify_agent/layers/knowledge/layer.py",
+      "lines": "L176-L196",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "挂了知识库检索且为 Agent decide 模式时，另注册 knowledge_base_search(set_name, query) 一个工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/layers/output/output_layer.py#L64-L97",
+      "locator": "dify-agent/src/dify_agent/layers/output/output_layer.py",
+      "lines": "L64-L97",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "声明了结构化输出时，另注册名为 final_output 的输出工具（默认只返回一个 text 输出，见新 Agent 节点文档）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/docker-compose.yaml#L564-L798",
+      "locator": "docker/docker-compose.yaml",
+      "lines": "L564-L798",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "sandbox（dify-sandbox 0.2.15，供工作流代码节点与内置代码工具）、local_sandbox（dify-agent-local-sandbox 1.19.0，命令 shellctl serve，挂两个命名卷，分别作 home 目录与 workspace 目录）、plugin_daemon（dify-plugin-daemon 0.6.14-local）、agent_backend（dify-agent-backend 1.19.0）、agent_ssrf_proxy 都没有 profiles 限定，随默认 docker compose up -d 全部启动。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/docker-compose.yaml#L661-L668",
+      "locator": "docker/docker-compose.yaml",
+      "lines": "L661-L668",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "knowledge_fs 系列服务需要把 knowledge-fs 加进 COMPOSE_PROFILES 才启动，默认不起。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/envs/core-services/dify-agent.defaults#L63-L64",
+      "locator": "docker/envs/core-services/dify-agent.defaults",
+      "lines": "L63-L64",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "DIFY_AGENT_RUNTIME_BACKEND 默认 local，终端沙箱端点默认 http://local_sandbox:5004；另可选 enterprise、e2b、openshell。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/ssrf_proxy/squid-agent.conf.template#L16-L22",
+      "locator": "docker/ssrf_proxy/squid-agent.conf.template",
+      "lines": "L16-L22",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "沙箱出口代理：放行到 agent_backend 的 /agent-stub/ 与到 api 的 /files/，其余先拒绝内网地址（to_private_networks），最后 http_access allow all，即公网地址可访问。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/envs/core-services/api-worker.defaults#L184-L210",
+      "locator": "docker/envs/core-services/api-worker.defaults",
+      "lines": "L184-L210",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "MARKETPLACE_ENABLED 默认 true；PLUGIN_DAEMON_URL 指向 plugin_daemon:5002；NEW_USER_DEFAULT_PLUGIN_IDS 与 NEW_USER_DEFAULT_MODELS 默认为空，即新工作区不预装任何插件，也没有默认提供方和默认型号；AGENT_BACKEND_BASE_URL 指向 agent_backend:5050。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/envs/core-services/plugin-daemon.defaults#L9",
+      "locator": "docker/envs/core-services/plugin-daemon.defaults",
+      "lines": "L9",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "FORCE_VERIFYING_SIGNATURE 默认 true（插件需签名校验）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/workspace/model-providers",
+      "locator": "docs.dify.ai 自托管：模型提供方",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "每个应用至少需要一个模型提供方：在 Integrations → Model Provider 安装提供方插件再 Add API Key；Default Models 里的 System Reasoning Model 等默认为空，为空时依赖它的功能不工作。官方没有预设默认提供方。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.dify.ai/en/self-host/use-dify/workspace/tools",
+      "locator": "docs.dify.ai 自托管：工具（Tool Types）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Tool Plugin 中内置的（如 Current Time）开箱即用，其余从 Marketplace 装，Google、GitHub 等需先配凭据；另有 Swagger API、Workflow、MCP（仅 HTTP 传输）三类自定义工具；含 Human Input 节点的工作流工具不能给 Agent 用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/tools/builtin_tool/_position.yaml#L1-L5",
+      "locator": "api/core/tools/builtin_tool/_position.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "内置工具提供方排序文件：audio、code、knowledge_fs、time、webscraper。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/tools/builtin_tool/providers/time/tools/current_time.yaml#L1-L3",
+      "locator": "api/core/tools/builtin_tool/providers/time/tools/current_time.yaml",
+      "lines": "L1-L3",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "内置 time 提供方含 current_time、localtime_to_timestamp、timestamp_to_localtime、timezone_conversion、weekday 五个工具；code 提供方含 simple_code；webscraper 提供方含 webscraper；audio 提供方含 asr、tts（需默认语音模型）。工具名取自 api/core/tools/builtin_tool/providers/*/tools/*.yaml 文件名。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/apps/agent_app/app_generator.py#L145",
+      "locator": "api/core/app/apps/agent_app/app_generator.py",
+      "lines": "L145",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 应用对话默认自动生成对话标题（auto_generate_name 缺省 True）；标题调用具体用哪个型号未逐行核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime/compaction.py#L22-L46",
+      "locator": "dify-agent/src/dify_agent/runtime/compaction.py",
+      "lines": "L22-L46",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "上下文压缩：目标预算为模型上下文窗口的 80%（并扣除 max_tokens），先清理旧工具结果（保留最近 3 对），再做摘要压缩（保留 20 条消息）；窗口未知则不压缩。摘要所用型号未逐行核实。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "社区版自托管，没有订阅档位：首次打开 http://localhost/install 本地创建管理员账户（成为工作区所有者），之后用 http://localhost 登录；创建和管理 Agent 需要 Editor 及以上角色，所有者满足。云版（cloud.dify.ai，Sandbox 计划含一次性 200 AI credits）不是本记录的入口。",
+    "default_model": "无内置默认型号：全新工作区没有任何模型提供方，System Reasoning Model 为空，新建 Agent 的模型栏也为空。本记录取官方快速开始示例的组合：langgenius/openai 提供方、型号 gpt-5.2，做法是在 Integrations → Model Provider 装 OpenAI 插件、Add API Key，再在 Default Models 里把 System Reasoning Model 设成 gpt-5.2，之后新建的 Agent 自动取它。这一组合是官方文档示例，不是产品默认（研究负责人 2026-11-12 确认按它填）。",
+    "host_os": "macOS 或 Linux（不含 Windows）",
+    "workspace": "不是用户的 Git 仓库：Agent 在 local_sandbox 容器的 workspace 命名卷（dify_agent_local_sandbox_workspace）里工作，宿主机目录不挂载；启动 Compose 的目录是克隆下来的 dify/docker，与 Agent 的工作区无关。",
+    "trust": "没有信任提示（网页控制台，没有按目录的信任概念）。",
+    "credentials": "只有 OpenAI 提供方的接口密钥（按量计费，在 Model Provider 页 Add API Key 填入）；管理员账户为本地创建；DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN 用 openssl 生成，其余内部令牌（DIFY_AGENT_API_TOKEN、PLUGIN_DAEMON_KEY 等）保持 Compose 默认的开发值；没有其他提供方的密钥。",
+    "other": "执行运行时：DIFY_AGENT_RUNTIME_BACKEND 默认 local，即随 Compose 起来的 local_sandbox 容器；另有 enterprise、e2b、openshell 三种远端沙箱可选，快速开始不涉及。安装模型提供方插件需要 plugin_daemon 能访问 Marketplace（外网）。"
+  }
+}

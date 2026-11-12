@@ -1,0 +1,684 @@
+{
+  "schema_version": "config-0.1",
+  "synthetic": false,
+  "config_id": "C06__open-webui__docker-default",
+  "round": "batch-3",
+  "tool_id": "C06",
+  "product": "Open WebUI",
+  "view": "configured",
+  "version_or_commit": "v0.13.3；提交 b0e6098e940942281d9c83f3529ea117287a3a22",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "官方快速开始的 Docker 方式：本机用 docker run 拉起 ghcr.io/open-webui/open-webui:main 容器（映射到 http://localhost:3000），在浏览器里的聊天界面使用；第一个注册的账户是管理员",
+  "install_method": "command: docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data -e WEBUI_SECRET_KEY=<openssl rand -hex 32 的输出> --name open-webui --restart always ghcr.io/open-webui/open-webui:main；platform: macOS / Linux（需先装 Docker；快速开始同时列有 Python、Kubernetes、桌面应用等其他方式，本记录取排第一的 Docker）；source: https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/tab-docker/ManualDocker.md#L3-L5 （只作记录，未执行）",
+  "permission_mode": "没有逐次审批：工具审批模式缺省为 full（ENABLE_TOOL_PERMISSIONS 默认 False），模型发出的工具调用直接执行。没有 shell 或文件系统工具：默认安装不连接 Open Terminal，也没有预置的外部工具服务，模型能做的是内置系统工具（见 enabled_extensions）；这些工具读写的是该用户在 Open WebUI 里的数据（记忆、笔记、聊天、知识库、技能、自动化、日历），管理员账户的模型还能调用 create_tool 在服务端保存并执行 Python 工具模块。代码解释器（需用户在聊天里手动打开）在浏览器的 Pyodide 里运行。联网搜索默认关闭；容器自身对外网无限制。账户规则：第一个注册用户成为管理员并自动关闭注册，之后的用户默认待批准（pending）；管理员绕过所有功能权限检查，非管理员的工作区（工具、模型、知识库、提示词、技能）权限默认都关。服务端进程在容器里以 root 身份运行。",
+  "subagents_enabled": false,
+  "enabled_extensions": [
+    "工具调用模式：原生（Native，智能体）模式是默认；内置系统工具只在请求来自网页界面、模型能力 builtin_tools 未被关掉时注册，直接调接口的人默认拿不到。",
+    "默认注册给模型的内置工具（管理员账户，没有选 Legacy，源码 get_builtin_tools 的注册表）：get_current_timestamp、calculate_timestamp、ask_user；知识库 list_knowledge_bases、search_knowledge_bases、query_knowledge_bases、grep_knowledge_files、search_knowledge_files、query_knowledge_files、view_knowledge_file、display_file（ENABLE_KB_EXEC 默认 False，不走 kb_exec）；search_chats、view_chat；笔记 search_notes、view_note、write_note、replace_note_content；任务 create_tasks、update_task（只在已保存的聊天里）；自动化 create_automation、update_automation、list_automations、toggle_automation、delete_automation；日历 search_calendar_events、create_calendar_event、update_calendar_event、delete_calendar_event；技能 create_skill；create_tool。聊天里带上传文件时另加 list_chat_files、query_chat_files、grep_chat_files、view_file、display_file；有技能被选用时另加 view_skill、read_skill_file、grep_skill_files（未逐行核实触发条件）。",
+    "默认不注册的内置工具：search_web 与 fetch_url（ENABLE_WEB_SEARCH 默认 False 且未选搜索引擎）；generate_image 与 edit_image（图像生成默认关）；频道工具（ENABLE_CHANNELS 默认 False）；delegate_task 与 timer（ENABLE_SUBAGENTS 默认 False）；notify（用户 webhooks 默认关）；kb_exec（ENABLE_KB_EXEC 默认 False）；search_tools/call_tool（工具检索是默认关的实验功能）。",
+    "create_tool：管理员账户（ENABLE_TOOLS 默认 True）的模型默认就带这个工具，保存时在服务端进程里执行模型写出的 Python 模块；同属管理员的 create_skill 只写技能文件。工作区工具（Workspace > Tools）与函数（Functions：Pipes、Filters、Actions）镜像里不预置，由管理员从社区导入或自写；它们在服务端进程内以服务进程权限运行（容器内 root）。",
+    "记忆：memories.enable 默认 True，界面在新聊天里默认带上 memory 开关（settings.memory 未设置时取服务器的 enable_memories），所以八个记忆工具（search_memories、list_memory_paths、read_memory_path、list_memories、update_memory、add_memory、replace_memory_content、delete_memory）默认就注册；ENABLE_MEMORY_SYSTEM_CONTEXT 默认 True（记忆放进系统上下文，具体注入位置未逐行核实）；后台记忆复盘 ENABLE_MEMORY_BACKGROUND_REVIEW 默认 False。",
+    "代码执行：两处开关默认都开（ENABLE_CODE_EXECUTION=True 管回复里代码块的“运行”按钮，ENABLE_CODE_INTERPRETER=True 管 execute_code 工具），引擎默认 pyodide，即在用户浏览器的 WebAssembly 里跑 Python（不在服务端容器里），只含固定的一小组库、不能装包、没有 shell。但每个聊天里代码解释器的开关默认关，要用户在输入框集成菜单里手动打开，或在工作区模型设置里把它设成默认功能；打开后 execute_code 才注册给模型。Jupyter（服务端）要管理员另配，Open Terminal 要另装另连，二者都不在默认安装里。",
+    "联网搜索：默认关闭（ENABLE_WEB_SEARCH=False，WEB_SEARCH_ENGINE 空），需要管理员在 Admin > Web Search 开启并选搜索引擎，之后用户权限默认放行，并要在聊天里为消息打开（或设为模型默认功能）。聊天框里输入 # 加网址取网页内容是否受这个开关控制：未核实。",
+    "知识库检索：默认可用但没有任何知识库内容；聊天里上传文件会在容器内分块、用本地 all-MiniLM-L6-v2 嵌入并存入 ChromaDB（RAG_EMBEDDING_ENGINE 默认空，VECTOR_DB 默认 chroma，镜像含该嵌入模型），BYPASS_EMBEDDING_AND_RETRIEVAL 与 RAG_FULL_CONTEXT 默认 False；附件会触发检索查询生成（ENABLE_RETRIEVAL_QUERY_GENERATION 默认 True），那是一次用任务模型发出的辅助请求。",
+    "外部工具服务接入：MCP（HTTP）、MCPO、OpenAPI 服务在 Admin > Connections 里由管理员添加，TOOL_SERVER_CONNECTIONS 默认空，ENABLE_DIRECT_CONNECTIONS（用户自带直连）默认 False，TERMINAL_SERVER_CONNECTIONS 默认空；默认安装没有任何外部工具服务。Pipelines 是另外运行的服务，以 OpenAI 连接的形式接入（路由在 routers/pipelines.py）；默认安装里没有。仓库里没有关于 Pipelines 的官方文档站页面，其官方说明未核实。",
+    "默认会自发的模型请求：标题生成、标签生成、跟进问题生成（均默认 True）和搜索/检索查询生成（默认 True）都用当前聊天所用的模型当任务模型（TASK_MODEL 默认空）；自动补全默认关；上下文压缩默认关；工具审批分类默认关。服务启动时起的自动化调度循环只有在用户创建了自动化时才会发请求（空闲行为未核实）。",
+    "默认的外网调用：向 api.github.com 查最新版本（ENABLE_VERSION_UPDATE_CHECK 默认开）；对默认 OpenAI 连接请求模型列表（密钥为空）；每次启动检查 Hugging Face 上嵌入模型是否更新（RAG_EMBEDDING_MODEL_AUTO_UPDATE）；匿名统计默认关（SCARF_NO_ANALYTICS、DO_NOT_TRACK、ANONYMIZED_TELEMETRY）。",
+    "入口代码的执行位置：服务端 Python 进程在 Docker 容器内以 root 运行，数据存在命名卷 open-webui（/app/backend/data）；内置工具（记忆、笔记、知识库检索等）和管理员导入的工具、函数都在这个进程里执行；代码解释器的 Pyodide 在用户的浏览器里执行；模型推理在所连接的 Ollama 或云端接口，不在这个容器里。"
+  ],
+  "operating_system": "macOS、Linux（x86_64 与 ARM64）、Windows；Docker 方式需先装 Docker（Docker Desktop 或 Docker Engine）。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "environment_premises": {
+    "account_tier": "Open WebUI 本地管理员账户（首次打开页面时用邮箱和密码创建，只存在本机数据卷里，没有云端账户或订阅）。模型后端的账户另算，见 credentials",
+    "default_model": "无官方默认型号：Open WebUI 自己没有模型，DEFAULT_MODELS 默认空，聊天时在输入框里的模型选择器中选。本记录不钉具体型号（研究负责人 2026-11-12 确认）：后端取本机 Ollama，用哪个型号由用户在选择器里选；本项研究只记机制，不随型号变的部分照常编码，随型号能力而变的地方由编码者注明",
+    "host_os": "macOS 或 Linux（容器经 Docker 运行；macOS 用 Docker Desktop）",
+    "workspace": "没有工作目录这一层：服务不读取启动命令所在目录，所有数据在命名卷 open-webui（容器内 /app/backend/data）；聊天没有项目目录，也没有 Git 仓库概念。需要处理仓库内容时，只能把文件作为附件上传",
+    "trust": "没有按目录的信任提示；首次打开界面是“创建管理员账户”页，创建后注册自动关闭，别人加入要管理员打开 New Sign Ups，新账户先待批准",
+    "credentials": "官方快速开始把本机 Ollama 排在“连接模型提供方”的最前，且不需要云端密钥，所以取这一家（研究负责人 2026-11-12 确认）；OpenAI 或其他 OpenAI 兼容接口的密钥是官方列出的另一条路，本记录不取。另需 WEBUI_SECRET_KEY（快速开始要求自己生成并固定，不是模型凭据）",
+    "other": "快速开始默认用 Docker 的 :main 标准镜像（含嵌入与语音识别模型）；:slim、:cuda、:ollama（内置 Ollama）是可选变体；快速开始另有 Python（pip、uv、conda、venv）、Kubernetes（Helm）、桌面应用等方式。:main 随 main 分支推送滚动更新，今天等于 v0.13.3；以后拉取可能得到更新的提交，编码按本记录钉的提交做。模型后端三选一：本机 Ollama（宿主机上运行，容器经 host.docker.internal 访问）、OpenAI、OpenAI 兼容接口；代码解释器在浏览器的 Pyodide 里运行"
+  },
+  "evidence_cutoff": "2026-11-12",
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/open-webui/open-webui/releases/tag/v0.13.3",
+      "locator": "GitHub Release v0.13.3（prerelease=false，releases/latest，2026-11-08T23:48:24Z）",
+      "version": "v0.13.3",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "最新正式版。标签 v0.13.3 是轻量标签，直接指向提交 b0e6098e…（与 main 分支当前最新提交相同，compare 结果为 identical）。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/open-webui/open-webui/pkgs/container/open-webui",
+      "locator": "ghcr.io/open-webui/open-webui:main 的 OCI 索引与镜像配置（只读清单与配置，没有拉取镜像层）",
+      "version": "main（构建自 v0.13.3）",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本/安装",
+      "note": "官方快速开始拉取的 :main 镜像：镜像标签 org.opencontainers.image.revision = b0e6098e940942281d9c83f3529ea117287a3a22，created 2026-11-08T23:48:38Z，version=main；linux/arm64 清单 sha256:ac342d6d31a51db3298e5922b4b396a8e3d64ae4dc4007f6f791521da432cc14，linux/amd64 清单 sha256:789c6ee992c41e363ac79f6a41945e94700c414a05b0335266f5e798f46b1fc3；镜像配置 User=0:0。:main 是随 main 分支推送滚动更新的标签（见 docker.yaml），今天它恰好等于 v0.13.3。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/.github/workflows/docker.yaml#L5-L10",
+      "locator": ".github/workflows/docker.yaml",
+      "lines": "L5-L10",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本/安装",
+      "note": "镜像在推送到 main 分支和推送 tag 时构建并发布；推送 main 分支即更新 :main 及其变体标签。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/index.mdx#L29-L36",
+      "locator": "Quick Start：开头与方式总览",
+      "lines": "L29-L36",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "官方快速开始列出 Docker（官方支持、多数用户推荐）、Python、Kubernetes、桌面应用等方式；Docker 页签排第一。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/tab-docker/ManualDocker.md#L1-L13",
+      "locator": "Quick Start / Docker 页签：docker run 命令",
+      "lines": "L1-L13",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "快速开始的 Docker 命令：docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data -e WEBUI_SECRET_KEY=… --name open-webui --restart always ghcr.io/open-webui/open-webui:main；数据全部在 open-webui 数据卷。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/tab-docker/ManualDocker.md#L17-L28",
+      "locator": "Quick Start / Docker 页签：Image Variants",
+      "lines": "L17-L28",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": ":main 为标准镜像（推荐，含语音识别与嵌入模型）；:slim、:cuda、:ollama 等是可选变体，本记录取推荐的 :main。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/index.mdx#L162-L172",
+      "locator": "Quick Start：Open it / Create the admin account",
+      "lines": "L162-L172",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "Docker 方式在 http://localhost:3000 打开；第一个屏幕是“创建管理员账户”，第一个账户就是管理员；管理员账户注册后自动关闭注册，别人要加入须管理员在设置里打开 New Sign Ups，新账户先处于 Pending 状态等管理员批准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/auths.py#L808-L826",
+      "locator": "backend/open_webui/routers/auths.py",
+      "lines": "L808-L826",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "建用户时先按默认角色插入，插入后若全库只有这一个用户就把角色改为 admin，并写入 ui.enable_signup=False（首个注册用户成为管理员、之后关闭注册）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/auths.py#L856-L866",
+      "locator": "backend/open_webui/routers/auths.py",
+      "lines": "L856-L866",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "signup：库里已有用户时必须开着注册和登录表单才允许；还没有用户时第一个管理员不受 ENABLE_SIGNUP 限制。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1687-L1687",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1687-L1687",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "ENABLE_SIGNUP 默认 True（WEBUI_AUTH 为真时）；DEFAULT_USER_ROLE 默认 pending（L1749）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py#L765-L767",
+      "locator": "backend/open_webui/env.py",
+      "lines": "L765-L767",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "WEBUI_AUTH 默认 True（开启账户登录）；ENABLE_INITIAL_ADMIN_SIGNUP 默认 False。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1749-L1749",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1749-L1749",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "DEFAULT_USER_ROLE 默认 pending：后续注册用户默认待批准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1774-L1776",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1774-L1776",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "非管理员的 workspace 工具权限（USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS）默认 False；同区块其余 workspace 的模型、知识库、提示词、技能权限也都默认 False。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/index.mdx#L178-L190",
+      "locator": "Quick Start：Connect a model provider",
+      "lines": "L178-L190",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "Open WebUI 自己没有模型。本机 Ollama 会被自动发现（Docker 里用 host.docker.internal:11434），管理员在聊天框的模型选择器里输入名称即可拉取；用 OpenAI、Anthropic 或 OpenAI 兼容接口的密钥，则在 Admin > Connections 里添加连接，模型自动列出。官方没有指定默认型号，快速开始把本机 Ollama 排在最前。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L246-L254",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L246-L254",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "OLLAMA_BASE_URL 在镜像里默认 /ollama，生产模式下改写为 http://host.docker.internal:11434（all-in-one :ollama 镜像才用 localhost）；L284-L285 在 11434 不通时探测 12434。ENABLE_OLLAMA_API 默认 True（L229）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L309-L320",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L309-L320",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "ENABLE_OPENAI_API 默认 True；OPENAI_API_BASE_URL 默认空则取 https://api.openai.com/v1（密钥为空）。所以全新安装已有一个未填密钥的 OpenAI 连接和一个指向宿主机的 Ollama 连接。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1697-L1697",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1697-L1697",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "DEFAULT_MODELS 默认 None：没有产品级默认型号。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2246-L2248",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2246-L2248",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "TASK_MODEL、TASK_MODEL_EXTERNAL 默认空：后台任务用当前聊天所用的模型。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/quick-start/index.mdx#L222-L222",
+      "locator": "Quick Start：Keep it running / Outbound calls",
+      "lines": "L222-L222",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "全新安装自己发起的外网调用：到 GitHub 的版本检查（ENABLE_VERSION_UPDATE_CHECK 可关）、向默认 OpenAI 连接请求模型列表、每次启动检查 Hugging Face 上的本地嵌入模型更新（RAG_EMBEDDING_MODEL_AUTO_UPDATE 可关）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile#L90-L98",
+      "locator": "Dockerfile",
+      "lines": "L90-L98",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "镜像默认 SCARF_NO_ANALYTICS=true、DO_NOT_TRACK=true、ANONYMIZED_TELEMETRY=false；OPENAI_API_KEY 与 WEBUI_SECRET_KEY 默认空。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile#L230-L230",
+      "locator": "Dockerfile",
+      "lines": "L230-L230",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "USER $UID:$GID，而 UID、GID 构建参数默认 0（L24-L25）：标准镜像里服务以 root 身份运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py#L2779-L2790",
+      "locator": "backend/open_webui/main.py",
+      "lines": "L2779-L2790",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "版本检查：ENABLE_VERSION_UPDATE_CHECK 默认 true（env.py L1198），请求 api.github.com 的 releases/latest，超时 1 秒。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L71-L77",
+      "locator": "Essentials：Tool Calling (Native vs Legacy)",
+      "lines": "L71-L77",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "原生（Native，智能体）工具调用是默认；没有明确选模式的模型都走原生，只有显式设为 Legacy 的才走旧的提示词注入；内置系统工具（记忆、笔记、知识库、频道等）只在原生模式下出现。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2070-L2075",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L2070-L2075",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "use_builtin_tools：请求带 session_id（即来自网页界面）、function_calling 不是 legacy、模型能力 builtin_tools 未被关掉（缺省为 True）时才给内置工具；API 调用方默认拿不到。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2854-L2870",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L2854-L2870",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "get_builtin_tools 的返回值并入本次请求的工具表（已有同名工具不覆盖）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_permissions.py#L116-L119",
+      "locator": "backend/open_webui/utils/tool_permissions.py",
+      "lines": "L116-L119",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "requires_tool_approval：tool_approval_mode 缺省为 full，full 模式下（以及 ask_user 工具）不需要审批，工具调用直接执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/utils/toolPermissions.ts#L3-L7",
+      "locator": "src/lib/utils/toolPermissions.ts",
+      "lines": "L3-L7",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "界面把没有设定的审批模式解析为 full（只有管理员打开 Auto 权限时才解析为 auto）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2262-L2264",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2262-L2264",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "ENABLE_TOOL_PERMISSIONS、ENABLE_TOOL_CALL_LABELS、ENABLE_TOOL_PERMISSIONS_AUTO 默认都为 False（审批功能是管理员另开的实验功能）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/extensibility/plugin/tools/index.mdx#L295-L301",
+      "locator": "Tools：Tool Permissions",
+      "lines": "L295-L301",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "默认情况下模型一发出工具调用就执行；管理员可在 Settings > Admin > Interface 打开 Tool Permissions（实验功能，默认关）提供询问与自动审批模式。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L634-L641",
+      "locator": "backend/open_webui/utils/tools.py：get_builtin_tools 开头",
+      "lines": "L634-L641",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "get_builtin_tools 总说明：只有全局开关与模型能力同时允许才返回对应工具，缺省的模型能力与类别开关都视为开（L646-L654）；用户功能权限检查 has_user_permission 对 admin 直接返回 True（L673-L675），普通用户才按 user.permissions 判断。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L727-L731",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L727-L731",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "时间工具 get_current_timestamp、calculate_timestamp 与提问工具 ask_user 默认注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L756-L795",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L756-L795",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "知识库工具：model 的 knowledge 类别默认开；ENABLE_KB_EXEC（env.py L980）默认 False，所以走分项工具；模型没有附加知识库时注册 list_knowledge_bases、search_knowledge_bases、query_knowledge_bases、grep_knowledge_files、search_knowledge_files、query_knowledge_files、view_knowledge_file、display_file。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L796-L798",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L796-L798",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "聊天历史工具 search_chats、view_chat 默认注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L799-L806",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L799-L806",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "子代理工具 delegate_task、timer 仅当 subagents.enable 为真时注册；该开关默认 False（config.py L2096）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L808-L827",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L808-L827",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "记忆工具（search_memories、list_memory_paths、read_memory_path、list_memories、update_memory、add_memory、replace_memory_content、delete_memory）需要 memories.enable、本次请求 features.memory 为真、模型 memory 能力与用户 memories 权限同时满足。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L829-L856",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L829-L856",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "联网搜索（search_web、fetch_url）要求 web.search.enable；图像生成与编辑（generate_image、edit_image）要求相应全局开关；本次请求里的 features 也必须为真。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L858-L867",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L858-L867",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "代码解释器工具 execute_code 要求 code_interpreter.enable、模型 code_interpreter 能力、本次请求 features.code_interpreter 与用户权限同时满足。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L869-L877",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L869-L877",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "笔记工具（search_notes、view_note、write_note、replace_note_content）默认注册（notes.enable 默认 True）；频道工具要求 channels.enable（默认 False）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L886-L908",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L886-L908",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "技能：管理员总能得到 create_skill；有技能被选用时才有 view_skill 等；ENABLE_TOOLS（默认 True）为真时，管理员得到 create_tool；有保存的聊天时注册 create_tasks、update_task。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L910-L931",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L910-L931",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "自动化（create_automation、update_automation、list_automations、toggle_automation、delete_automation）与日历（search/create/update/delete_calendar_event）默认注册给管理员；通知工具 notify 要求用户 webhooks 开关（默认 False）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py#L3909-L3948",
+      "locator": "backend/open_webui/tools/builtin.py",
+      "lines": "L3909-L3948",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "create_tool 的说明：“保存时在服务端执行该 Python 模块”，管理员（或有 workspace.tools 权限者）可由模型写出并保存服务端工具。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/extensibility/plugin/tools/index.mdx#L373-L440",
+      "locator": "Tools：Built-in System Tools (Native/Agentic Mode)",
+      "lines": "L373-L440",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "官方列出的内置系统工具及各自启用条件（联网搜索、代码解释器需对应全局开关加每个聊天的开关；记忆、笔记、知识库、聊天历史、任务、自动化、日历默认开）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2084-L2096",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2084-L2096",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_CHANNELS 默认 False；ENABLE_CALENDAR、ENABLE_AUTOMATIONS 默认 True；ENABLE_SUBAGENTS 默认 False；SUBAGENTS_BACKGROUND_ENABLED 默认 False。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2118-L2118",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2118-L2118",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_NOTES 默认 True。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1939-L1972",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1939-L1972",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "非管理员的功能权限默认值：联网搜索、图像生成、代码解释器、文件夹、笔记、频道、记忆、日历为 True；直连工具服务、API 密钥、自动化、用户 webhooks 为 False（管理员不受限）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L406-L417",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L406-L417",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_MEMORIES 默认 True；ENABLE_MEMORY_SYSTEM_CONTEXT 默认 True；ENABLE_MEMORY_BACKGROUND_REVIEW 默认 False（后台复盘记忆关闭）；MEMORIES_REVIEW_INTERVAL_TURNS 默认 10。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte#L4404-L4426",
+      "locator": "src/lib/components/chat/Chat.svelte",
+      "lines": "L4404-L4426",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "界面构造 features：memory 取用户设置 settings.memory，没设置就取服务器的 enable_memories（默认 True），所以记忆在新聊天里默认就带上；联网搜索、图像生成、代码解释器取各自的聊天开关状态。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/chat-conversations/memory.mdx#L24-L38",
+      "locator": "Memory & Personalization：How it works",
+      "lines": "L24-L38",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "记忆在原生模式下由模型用内置工具主动管理，用户也可在 Settings > Personalization > Memory 手动管理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L391-L393",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L391-L393",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_CODE_EXECUTION 默认 True，CODE_EXECUTION_ENGINE 默认 pyodide（回复里代码块的“运行”按钮）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L406-L406",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L406-L406",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_CODE_INTERPRETER 默认 True（L415 引擎默认 pyodide）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte#L1145-L1190",
+      "locator": "src/lib/components/chat/Chat.svelte",
+      "lines": "L1145-L1190",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新聊天里联网搜索、图像生成、代码解释器的开关初始值：只有模型的 defaultFeatureIds 含该功能（且功能可用）才为开，否则默认关；用户在输入框的集成菜单里手动打开。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py#L712-L730",
+      "locator": "backend/open_webui/tools/builtin.py",
+      "lines": "L712-L730",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "execute_code 取引擎 code_interpreter.engine（缺省 pyodide）；pyodide 时通过 WebSocket 事件调用把代码交给前端浏览器执行，没有连接就报错；jupyter 时才走服务端 Jupyter（L753）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/chat-conversations/chat-features/code-execution/index.md#L26-L36",
+      "locator": "Code Execution：Choosing a Code Execution Backend / Pyodide (Legacy)",
+      "lines": "L26-L36",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Pyodide 在浏览器里用 WebAssembly 跑 Python，是内置、零配置的默认；Pyodide 与 Jupyter 都被官方标为遗留引擎，推荐另装 Open Terminal（Docker 容器里的真实 shell）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/chat-conversations/chat-features/code-execution/python.md#L48-L76",
+      "locator": "Python Code Execution：Enabling Code Interpreter / Native Function Calling",
+      "lines": "L48-L76",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "代码解释器全局默认值（ENABLE_CODE_INTERPRETER=true、引擎 pyodide）；原生模式下以 execute_code 工具提供，需要全局开关、模型能力与原生模式同时满足。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L368-L382",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L368-L382",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "TOOL_SERVER_CONNECTIONS 与 TERMINAL_SERVER_CONNECTIONS 默认都是空列表 []：没有预置的外部工具服务，也没有连接 Open Terminal。ENABLE_DIRECT_CONNECTIONS 默认 False（L224）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L259-L261",
+      "locator": "Essentials：Open Terminal",
+      "lines": "L259-L261",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Open Terminal 是另装、另连的功能：给模型一个真实 shell（默认在 Docker 容器里隔离）。不属于默认安装。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1169-L1178",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1169-L1178",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_WEB_SEARCH 默认 False，WEB_SEARCH_ENGINE 默认空，ENABLE_WEB_SEARCH_CONFIRMATION 默认 False：联网搜索要管理员在 Admin > Web Search 里先开启并选搜索引擎。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L236-L249",
+      "locator": "Essentials：Web Search",
+      "lines": "L236-L249",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "联网搜索是内置工具，需要管理员开启并选提供方（二十多种，含自托管的 SearXNG 与付费接口），聊天里用 + 菜单为单条消息打开。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py#L1182-L1186",
+      "locator": "backend/open_webui/env.py",
+      "lines": "L1182-L1186",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_PLUGINS 默认 True；ENABLE_TOOLS、ENABLE_FUNCTIONS、ENABLE_TOOL_SERVERS 在其下默认 True。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/features/extensibility/plugin/index.mdx#L22-L34",
+      "locator": "Tools & Functions (Plugins)：安全警告",
+      "lines": "L22-L34",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "官方警告：Tools、Functions、Pipes、Filters、Pipelines 都在服务器上执行任意 Python；只应让受信任的管理员管理；数据目录 /app/backend/data 里缓存着它们。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L29-L50",
+      "locator": "Essentials：Plugins",
+      "lines": "L29-L50",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "两类插件：Tools（工作区工具、外部工具服务）与 Functions（Pipes、Filters、Actions）；都从社区站点导入后由管理员启用，镜像不预置。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/pipelines.py#L53-L57",
+      "locator": "backend/open_webui/routers/pipelines.py：get_openai_connection 与过滤器入口",
+      "lines": "L53-L57",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Pipelines 路由只是把请求转发给以 OpenAI 连接形式配置的外部 Pipelines 服务（取连接的 URL 与密钥）；本安装没有这样的服务，也没有预置连接。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L1011-L1017",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L1011-L1017",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "RAG_EMBEDDING_ENGINE 默认空（即容器内本地 SentenceTransformers），RAG_EMBEDDING_MODEL 默认 sentence-transformers/all-MiniLM-L6-v2。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L483-L483",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L483-L483",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "VECTOR_DB 默认 chroma（slim 镜像默认 pgvector）。BYPASS_EMBEDDING_AND_RETRIEVAL（L954）与 RAG_FULL_CONTEXT（L968）默认 False。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L185-L198",
+      "locator": "Essentials：Basic RAG",
+      "lines": "L185-L198",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "知识库检索默认：一次性附件在该聊天内分块嵌入；知识库在 Workspace > Knowledge 里创建，默认没有任何知识库；默认嵌入模型在 CPU 上本地运行，向量库为 ChromaDB。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2391-L2400",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2391-L2400",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "后台任务开关默认值：跟进问题、标签、标题生成默认 True；搜索查询生成、检索查询生成默认 True（有联网搜索或检索时由任务模型生成查询）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2429-L2429",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2429-L2429",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "自动补全 ENABLE_AUTOCOMPLETE_GENERATION 默认 False。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L2260-L2260",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L2260-L2260",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "上下文压缩 ENABLE_CONTEXT_COMPACTION 默认 False（阈值 80000 令牌，L2275）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://github.com/open-webui/docs/blob/36b7e50e4140f3cca1de0aeef4ae776af21169cb/docs/getting-started/essentials.mdx#L108-L146",
+      "locator": "Essentials：Task models",
+      "lines": "L108-L146",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "后台任务（标题、标签、跟进问题）默认使用当前聊天模型，自动补全默认关闭；每项任务都有管理员开关与环境变量。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py#L446-L451",
+      "locator": "backend/open_webui/main.py",
+      "lines": "L446-L451",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "服务启动时就起一个自动化调度循环 scheduler_worker_loop；是否发出模型请求取决于有没有用户创建的自动化（空闲时的行为没有逐行核实）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py#L2382-L2384",
+      "locator": "backend/open_webui/main.py",
+      "lines": "L2382-L2384",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "没有任何用户时界面进入引导（onboarding）状态，由此创建第一个管理员账户；没有按目录的信任提示。"
+    }
+  ],
+  "note": "版本：GitHub releases/latest 为 v0.13.3（2026-11-08），非预发布；该标签是轻量标签，直接指向提交 b0e6098e940942281d9c83f3529ea117287a3a22，与 main 分支当前最新提交相同；官方快速开始拉取的 ghcr.io/open-webui/open-webui:main 镜像的 OCI 标签 revision 也是这个提交（2026-11-12 只读镜像索引与配置核对，没有拉取镜像层）。:main 随 main 推送滚动，是浮动标签，v0.13.3 之后的提交会让它变化；Python 方式（pip install open-webui）装的是发行版，本记录不取。官方文档不在代码仓库里，而在 open-webui/docs 仓库和 https://docs.openwebui.com ：文档引用固定到 docs 仓库提交 36b7e50e4140f3cca1de0aeef4ae776af21169cb（docs 仓库 main 分支，2026-11-12 读取）；文档站有全文导出 https://docs.openwebui.com/llms-full.txt（约 4,444,695 字节）和目录 https://docs.openwebui.com/llms.txt（约 90,298 字节）。文档与源码口径：文档称 Pyodide 和 Jupyter 为遗留引擎、推荐 Open Terminal；文档称“内置系统工具”默认可用，源码里这些工具是否注册取决于逐项条件（全局开关、模型能力、用户权限、每聊天的功能开关），本记录以源码条件为准；管理员账户绕过用户权限检查，普通用户的工具集更小（自动化、日历之外，非管理员没有 create_skill、create_tool，自动化权限默认关）。本记录描述的是管理员账户（首个注册用户）、新聊天、未改任何设置、已连一个支持工具调用的模型的情形。待核：#加网址取页面是否受联网搜索开关控制；Pipelines 的官方文档说明；记忆系统上下文的具体注入位置；自动化调度循环空闲时的行为；技能工具的触发条件。许可：仓库许可为自定义（GitHub 标为 NOASSERTION），不影响本记录事实。"
+}

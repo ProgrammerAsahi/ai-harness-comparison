@@ -1,0 +1,330 @@
+{
+  "schema_version": "config-0.1",
+  "synthetic": false,
+  "config_id": "B17__avante-nvim__neovim-default",
+  "round": "batch-3",
+  "tool_id": "B17",
+  "product": "Avante.nvim",
+  "view": "configured",
+  "version_or_commit": "提交 4d18d589a759634f1d44a3b7cda6551f5d800052（avante-corp/avante.nvim 的 main 分支头，2026-11-12T13:13:22Z；官方 lazy.nvim 安装片段 version = false，默认安装跟随默认分支头；lua/avante/version.lua 仍为 0.5.0）；最新正式发行版 v0.5.0 对应提交 6b0c359（完整标识见 note，本记录不取）（2026-10-31，分支头比它领先 80 个提交，含 2026-11-09 的 LLM 层改用 Rust Rig）",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "Neovim 插件侧栏：用 lazy.nvim 按 README 默认片段安装并 setup 后，在 Neovim 里打开仓库内的代码文件，运行 :AvanteAsk 提问（打开侧栏），或 :AvanteChat 对话。默认走“直接调模型”这条路：provider = claude（Anthropic Messages 接口，由进程内 Rust 原生模块发请求），mode = agentic（自带工具循环，模型可自动读、写文件和执行命令）；ACP 外部代理只在把 provider 改成 acp_providers 中某一项时才用，默认不用。",
+  "install_method": "command: lazy.nvim 片段 { \"yetone/avante.nvim\", build = \"make\", event = \"VeryLazy\", version = false, opts = {...} }，另需 README 列出的依赖插件（nui.nvim、plenary.nvim 等）；build = make 在本机用 cargo 构建原生库（需 Rust 工具链）；Windows 用 Build.ps1。source: https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L161-L190（只作记录，未执行）。备选：vim.pack 片段固定 version='v0.5.0'（README L270-L273），Vim-Plug、mini.deps 等其他管理器写在同一节。",
+  "permission_mode": "无审批：behaviour.auto_approve_tool_permissions 默认 true，所有工具（读、写、删除路径、bash、联网搜索与抓取）自动批准，不弹任何确认。读写类工具的路径参数须在项目根目录或 Neovim 配置目录内、默认排除被 .gitignore 忽略的文件，但这只是路径检查；bash 的命令内容不受限制，用 bash -c 在本机以启动 Neovim 的账户权限执行（超时 2 分钟），没有沙箱。联网：模型请求发往 api.anthropic.com；fetch 工具可取任意网址；web_search_tavily 需 TAVILY_API_KEY。run_python 经 docker 执行。没有项目信任提示。",
+  "operating_system": "macOS、Linux（Windows 也有构建脚本 Build.ps1）。Neovim 0.11.0 或更高（README 文字）/ 徽章写 0.12+，源码下限未核实；默认构建需要 Rust 工具链。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "默认注册给模型的工具（agentic 模式，按 lua/avante/llm_tools/init.lua 注册表）：dispatch_agent、glob、run_python、git_diff、git_commit、ls、grep、delete_tool_use_messages、read_todos、write_todos、read_file_toplevel_symbols、str_replace、view、write_to_file、insert、undo_edit、move_path、copy_path、delete_path、create_dir、think、get_diagnostics、bash、attempt_completion、web_search_tavily、fetch、read_definitions；侧栏另追加 add_file_to_context、remove_file_from_context。",
+    "注册但默认不启用：rag_search（需 RAG 服务开启并就绪，rag_service.enabled 默认 false）、read_global_file 与 write_global_file（只有用户消息里 @ 提到才启用）、edit_file（需 behaviour.enable_fastapply，默认 false）。disabled_tools 默认空表。legacy 模式下不自动执行工具，attempt_completion 也随之停用（本记录取默认 agentic）。",
+    "子代理：dispatch_agent 默认可用，子代理只有 ls、grep、glob、view、attempt_completion 五个只读工具，不能改文件，请求发往同一个 provider。",
+    "ACP：acp_providers 预置 gemini-cli、claude-code、goose、codex、opencode、kimi-cli，默认不选用（provider 默认是直连的 claude）；选用 ACP 时工具循环和权限交给外部代理，claude-code 一项的 ACP_PERMISSION_MODE 默认 bypassPermissions。",
+    "MCP 服务：源码与 README 的默认配置里没有预置；README 只说明通过外部插件 mcphub.nvim 接入 MCP（README L1455-L1457），默认未安装、未启用。",
+    "技能：未发现随插件默认启用的技能；项目指令文件 avante.md（instructions_file 默认值）放在项目根目录时自动引用，没有信任判断。",
+    "默认会自发的模型请求：对话压缩与记忆摘要（上下文超过 context_window 的 90% 时自动发起，也可手动触发），提供方取 memory_summary_provider，默认空即沿用 claude。auto_suggestions 默认 false，没有补全类后台请求；rag 默认关；dual_boost 默认关；没有标题生成请求（未发现，代码搜索未命中）；llm.lua 里的 generate_todos 只有定义，未发现调用。",
+    "默认开启的本机行为：prompt_logger 把提示词记录写到 Neovim 缓存目录（最多 100 条）；enable_token_counting 默认 true；auto_check_diagnostics 默认 true；auto_add_current_file 默认 true（新对话自动把当前文件加入上下文）。遥测：源码检索未发现遥测或使用统计上报。",
+    "代码在哪里执行：Neovim 本机进程内（Lua 加上加载进来的 Rust 原生库），bash 工具本机 bash -c，没有容器或远端沙箱；只有 run_python 与可选的 RAG 服务用 docker。"
+  ],
+  "evidence_cutoff": "2026-11-12",
+  "note": "库已从 yetone/avante.nvim 迁到 avante-corp/avante.nvim（旧地址自动跳转）；本仓库来源清单里的快照提交 18316361891e59f3d18732fea0b1fe68c8be56e9 是 2026-09-22 的旧状态，与这里钉的提交不同，编码以本记录为准。官方 releases/latest 为 v0.5.0（6b0c359ff11ecb464a877273851888b3c5e99d57），默认安装（version = false）得到的是 main 分支头 4d18d589a759634f1d44a3b7cda6551f5d800052；分支头每天还在变，编码期间仍按本记录钉的提交。两者的实质差别：分支头已把 LLM 请求层从 Lua 提供方改为 Rust 原生库（Rig），默认 claude 型号为 claude-sonnet-5-5；v0.5.0 默认 claude 型号为 claude-sonnet-4-5-20250929，auth_type 默认 api，并保留 bedrock、vertex_claude、watsonx 等 Lua 提供方文件。README 与 Makefile 对“预编译下载还是源码构建”的描述不一致，已在安装证据里注明。文档在仓库内（README.md、doc/avante.txt 的 Vim 帮助）以及 GitHub 维基；没有独立文档站和全文导出。",
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/avante-corp/avante.nvim/releases/tag/v0.5.0",
+      "locator": "GitHub Release v0.5.0（2026-10-31T18:36:29Z 发布，非预发布；tag → 6b0c359ff11ecb464a877273851888b3c5e99d57）；releases/latest=v0.5.0；main 分支头 4d18d589a759634f1d44a3b7cda6551f5d800052（2026-11-12T13:13:22Z 提交 feat(api): expose and reuse is_acp_provider），比 v0.5.0 领先 80 个提交，期间包含 2026-11-09 的 refactor(llm): refactor the llm to Rust Rig",
+      "version": "v0.5.0（releases/latest）；默认安装实际得到 main@4d18d589",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "官方 lazy.nvim 安装片段写 version = false，lazy.nvim 因此跟随默认分支头而不是 v0.5.0 标签，所以默认安装实际得到的是 main 分支头，不是 releases/latest。仓库已从 yetone/avante.nvim 迁到 avante-corp/avante.nvim（GitHub 自动跳转，README 片段里仍写 yetone/avante.nvim）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/version.lua#L1",
+      "locator": "lua/avante/version.lua",
+      "lines": "L1",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "版本",
+      "note": "插件内部版本号仍是 0.5.0（x-release-please-version），分支头尚未发新版本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L161-L190",
+      "locator": "README.md",
+      "lines": "L161-L190",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "官方快速开始的 lazy.nvim 片段：build 用 make，event = VeryLazy，version = false（注释写明不要设成 \"*\"），opts 里只是示例（provider = claude，model = claude-sonnet-5-5），不改任何默认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L270-L273",
+      "locator": "README.md",
+      "lines": "L270-L273",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "vim.pack 安装片段才固定在标签 version='v0.5.0'；lazy.nvim 片段不固定。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/Makefile#L34-L46",
+      "locator": "Makefile",
+      "lines": "L34-L46",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "make 的默认目标 all: luajit，执行 cargo build --workspace --release 并把各原生库复制进 lua/ 目录，即默认构建需要本机装有 Rust 工具链；README 写的“不从源码构建就用 curl 和 tar 取预编译库”与 :AvanteBuild 对应，lazy 的 build = make 路径是否会回退到预编译下载，这里没有看到相应逻辑。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L441",
+      "locator": "README.md",
+      "lines": "L441",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "文字要求 Neovim 0.11.0 或更高；同一文件顶部徽章（L7）写 v0.12+，两处不一致，源码里的实际下限未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L1031-L1033",
+      "locator": "README.md",
+      "lines": "L1031-L1033",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": ":AvanteAsk 提问（默认直接提问并打开侧栏）与 :AvanteChat 对话（默认 ask=false）；基本用法是打开代码文件后运行 :AvanteAsk（L961-L962）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L338-L345",
+      "locator": "lua/avante/config.lua",
+      "lines": "L338-L345",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "默认 mode = \"agentic\"（用工具自动生成并应用改动；legacy 是不自动执行工具的旧规划方式），默认 provider = \"claude\"，auto_suggestions_provider 与 memory_summary_provider 默认为空。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L476-L483",
+      "locator": "lua/avante/config.lua",
+      "lines": "L476-L483",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "claude 提供方默认：端点 https://api.anthropic.com，型号 claude-sonnet-5-5，context_window 200000，max_tokens 64000。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/providers/claude.lua#L1-L33",
+      "locator": "lua/avante/providers/claude.lua",
+      "lines": "L1-L33",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "claude 的密钥环境变量是 ANTHROPIC_API_KEY；订阅登录（Claude Pro/Max）需显式设 providers.claude.auth_type = \"subscription\" 再运行 :Avante claude login，默认走 API 密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/providers/init.lua#L88-L134",
+      "locator": "lua/avante/providers/init.lua",
+      "lines": "L88-L134",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "没有设环境变量时，插件在启动后弹出输入框让用户填该提供方的密钥，只写入当前 Neovim 会话；README L897 同样写明。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L895-L898",
+      "locator": "README.md",
+      "lines": "L895-L898",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "官方建议把密钥设在 shell 环境里；默认情况下 Avante 启动时提示输入所选提供方的密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/libs/rig_client.lua#L1-L18",
+      "locator": "lua/avante/libs/rig_client.lua",
+      "lines": "L1-L18",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "分支头的 LLM 推理由 Neovim 进程内加载的 Rust 原生模块 avante_llm（基于 Rig）完成：Rust 负责提供方选择、请求编码、HTTP 传输与响应解码；Lua 负责构建上下文、执行工具、界面和历史，并在模型请求工具时发起下一轮推理。默认直接连 api.anthropic.com，不经 ACP 代理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L383-L426",
+      "locator": "lua/avante/config.lua",
+      "lines": "L383-L426",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "acp_providers 预置 gemini-cli、claude-code、goose、codex、opencode、kimi-cli 六项，默认不选用；要用 ACP 须把 provider 改成其中一项的名字。claude-code 一项的环境里 ACP_PERMISSION_MODE 默认 bypassPermissions（L401）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/README.md#L1154-L1163",
+      "locator": "README.md",
+      "lines": "L1154-L1163",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "ACP 支持的官方说明：Avante 作为 ACP 客户端，通过原生模块的 stdio 适配与外部代理通信；默认提供 codex、gemini、claude-code 等提供方。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L653-L677",
+      "locator": "lua/avante/config.lua",
+      "lines": "L653-L677",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "behaviour.auto_approve_tool_permissions 默认 true（注释：自动批准全部工具，不弹确认）；auto_check_diagnostics 默认 true，enable_fastapply 默认 false，auto_suggestions 默认 false，auto_add_current_file 默认 true，confirmation_ui_style 默认 inline_buttons。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/helpers.lua#L66-L90",
+      "locator": "lua/avante/llm_tools/helpers.lua",
+      "lines": "L66-L90",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "确认函数：session 已选“始终允许”，或 auto_approve_tool_permissions 为 true（或工具名在数组里）时直接批准，否则才在侧栏显示确认按钮。默认值为 true，所以默认不出现任何工具确认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/helpers.lua#L188-L208",
+      "locator": "lua/avante/llm_tools/helpers.lua",
+      "lines": "L188-L208",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "路径权限检查：绝对路径必须落在项目根目录或 Neovim 配置目录内，且默认排除被 .gitignore 忽略的文件（behaviour.allow_access_to_git_ignored_files 默认 false）；这是工具路径参数的检查，不是沙箱。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/bash.lua#L219-L265",
+      "locator": "lua/avante/llm_tools/bash.lua",
+      "lines": "L219-L265",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "bash 工具只检查路径参数（cwd）在项目根内，命令本身经确认函数（默认自动批准）后用 bash -c 在本机执行，超时 2 分钟，没有沙箱或命令白名单。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/init.lua#L559-L581",
+      "locator": "lua/avante/llm_tools/init.lua",
+      "lines": "L559-L581",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "get_tools：全部注册工具减去 disabled_tools（默认空表），再按各工具自己的 enabled 条件过滤；没有 enabled 的工具一律启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/init.lua#L603-L1121",
+      "locator": "lua/avante/llm_tools/init.lua",
+      "lines": "L603-L1121",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "默认注册表：dispatch_agent、glob、rag_search、run_python、git_diff、git_commit、ls、grep、delete_tool_use_messages、read_todos、write_todos、read_file_toplevel_symbols、str_replace、view、write_to_file、insert、undo_edit、read_global_file、write_global_file、move_path、copy_path、delete_path、create_dir、think、get_diagnostics、bash、attempt_completion、edit_file、web_search_tavily、fetch、read_definitions。其中 rag_search 需 RAG 服务开启并就绪（L608），read_global_file 与 write_global_file 只有用户消息里 @ 提到才启用（L816、L861）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/attempt_completion.lua#L11-L20",
+      "locator": "lua/avante/llm_tools/attempt_completion.lua",
+      "lines": "L11-L20",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "attempt_completion 只在 mode = agentic 时启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/edit_file.lua#L9-L13",
+      "locator": "lua/avante/llm_tools/edit_file.lua",
+      "lines": "L9-L13",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "edit_file 只在 agentic 且 behaviour.enable_fastapply 为真时启用；后者默认 false，所以默认没有快速应用模型这条请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/sidebar.lua#L3180-L3184",
+      "locator": "lua/avante/sidebar.lua",
+      "lines": "L3180-L3184",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "侧栏发请求前在注册表之外再追加 add_file_to_context、remove_file_from_context 两个上下文工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/init.lua#L1089-L1092",
+      "locator": "lua/avante/llm_tools/init.lua",
+      "lines": "L1089-L1092",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "联网工具：web_search_tavily（需 TAVILY_API_KEY，未设时返回错误）与 fetch（取网页转 Markdown）默认注册；其余搜索引擎工具（如 keenable）只在 web_search.lua 里定义，不在默认注册表里。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/init.lua#L487-L497",
+      "locator": "lua/avante/llm_tools/init.lua",
+      "lines": "L487-L497",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "run_python 工具经 docker 运行 Python 代码（默认容器 python:3.14-slim-bookworm）；本机没有 docker 时该工具不可用，未核实其确认逻辑。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm_tools/dispatch_agent.lua#L72-L82",
+      "locator": "lua/avante/llm_tools/dispatch_agent.lua",
+      "lines": "L72-L82",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "dispatch_agent 默认注册给模型；子代理只用 ls、grep、glob、view、attempt_completion 五个只读工具，不能改文件，经同一个 llm 模块发起独立请求（L195-L215）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm.lua#L35-L80",
+      "locator": "lua/avante/llm.lua",
+      "lines": "L35-L80",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "summarize_memory：对话摘要请求，提供方取 memory_summary_provider，默认空则用当前 provider（providers/init.lua L372-L376），即默认也是 claude。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/llm.lua#L448-L466",
+      "locator": "lua/avante/llm.lua",
+      "lines": "L448-L466",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "上下文压缩：已用词元超过 context_window 的 90% 时，把待压缩历史交给摘要请求，属于默认会自发的辅助模型请求；侧栏手动压缩也走同一函数（sidebar.lua L2619）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L359-L362",
+      "locator": "lua/avante/config.lua",
+      "lines": "L359-L362",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "RAG 服务默认关闭（enabled = false，runner 默认 docker）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L679-L691",
+      "locator": "lua/avante/config.lua",
+      "lines": "L679-L691",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "prompt_logger 默认开启：把提示词按时间戳记录到 Neovim 缓存目录（最多 100 条），只写本机。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/avante-corp/avante.nvim/blob/4d18d589a759634f1d44a3b7cda6551f5d800052/lua/avante/config.lua#L266-L270",
+      "locator": "lua/avante/config.lua",
+      "lines": "L266-L270",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "项目指令文件默认名 avante.md，位于项目根目录，存在即自动引用；没有任何项目信任判断。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "Anthropic API 账户（按量计费，需要有可用余额的 API 密钥）；官方快速开始里 provider = claude 且默认 API 密钥认证。Claude Pro/Max 订阅登录是显式开关（auth_type = \"subscription\" 加 :Avante claude login），不是默认；其他提供方（openai、gemini、ollama 等）也都在同一份快速开始里列出，官方默认和 opts 示例都是 claude，这里取排在最前的 claude。",
+    "default_model": "claude-sonnet-5-5（providers.claude.model；与 README opts 示例写的型号一致；来源 lua/avante/config.lua L476-L483）",
+    "host_os": "macOS 或 Linux",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动 Neovim 并打开仓库内的文件（项目根由 Neovim 当前缓冲区所在项目推断，use_cwd_as_project_root 默认 false）",
+    "trust": "没有信任提示：首次打开目录不弹确认，项目根里的 avante.md 直接作为项目指令引用，工具调用默认自动批准",
+    "credentials": "只有 ANTHROPIC_API_KEY（环境变量；未设置时插件启动后弹出输入框，只写入当前会话）；没有其他提供方的密钥，没有 TAVILY_API_KEY，没有 OPENAI_API_KEY，不登录订阅",
+    "other": "默认走“直接调模型”：Neovim 进程内的 Rust 原生库直连 api.anthropic.com，不经 ACP 外部代理，不用容器；工具循环由 Lua 侧栏执行，bash 本机运行。把 provider 改成 acp_providers 中任一项即交给外部 ACP 代理，模型、工具与权限随之由那个代理决定"
+  }
+}
