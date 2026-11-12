@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-编码文件在 [`../data/codings/`](../data/codings/)。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
+编码文件在 [`batch-1/`](batch-1/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
 
 ## 怎样做的
 
@@ -125,7 +125,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码者和读者提出的口径疑问
 
-下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里“归法不同”的条目。留给下一次小修订，这里不作裁决。
+下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里“归法不同”的条目。这里不作裁决。其中总则 R2、R3 和 F04、F13 的几条，负责人 2026-11-12 定了口径，写进了 `fields-0.6`；其余留给以后的修订。
 
 | 字段 | 疑问 |
 |---|---|
@@ -168,12 +168,12 @@ python3 studies/harness-quantification/compare_codings.py
 
 - C02 是这一批一致率最低的配置（78%）。交叉核对的 13 条里有 6 条落在这四项机制上：F20 两条（Swarm 重放时的查重、技能工坊改前留底）、F22 一条和 F36 一条（`suggest_task`）、F23 两条（Code Mode 脚本运行时算不算沙箱、任务建议里的提示要求）。两位编码者都从快照里读到了 Code Mode，分歧多在读得多细和怎样归类，记录补全后下一次编码的起点会更齐。
 - A10 的两项没有直接造成主值分歧，是编码者在备注里指出记录缺了这两句。
-- 这一批的 20 份编码文件没有因为记录补记而改动。记录补全后是否重编 C02，留到码本小修订时一起定。
+- 这一批的 20 份编码文件没有因为记录补记而改动。负责人 2026-11-12 定：C02 随第二批按 `fields-0.6` 重编。
 
 核实过、不用改的记录：A05 的记录已经写明权限文档与代码的出入；A07 的补丁工具文档与实现不一致，不涉及记录里的任何一栏；A06 的记录与代码一致。
 
 ## 编码文件在哪里
 
-- 这一批：[`../data/codings/`](../data/codings/) 下的 `opus/`、`gpt/` 各 10 份，按 `fields-0.5` 填写并通过了 `validate_data.py`。
+- 这一批：[`batch-1/`](batch-1/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `batch-1/fields-0.5.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.5` 填写并通过了 `validate_data.py`；码本小修订为 `fields-0.6` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.6.md`。
 - 交叉核对：[`batch-1/crosscheck-card.md`](batch-1/crosscheck-card.md) 是读者拿到的任务卡，[`batch-1/crosscheck.json`](batch-1/crosscheck.json) 是 57 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者；[`batch-1/spotcheck.json`](batch-1/spotcheck.json) 是对其中 28 条“一方没提”的抽查结果。
 - 三轮试编码：[`../pilot/`](../pilot/) 下各轮连同当时的码本，只作历史记录，不参加现在的校验和对比。

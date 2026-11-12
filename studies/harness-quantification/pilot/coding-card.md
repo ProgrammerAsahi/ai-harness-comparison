@@ -1,4 +1,4 @@
-# 编码卡（提示版本 coding-card-v7）
+# 编码卡（提示版本 coding-card-v8）
 
 你是量化研究的一位编码者。任务是按码本给**一个配置**的**一组字段**（12 个）填值，每个值都要有能复查的证据。另一位编码者独立编同一个配置，两份结果用来算一致率、找出码本没说清的地方，所以请严格照总则和判定标准填。事实查不到就如实写未知，不要按印象或“同类产品一般如此”补；口径上的疑问（算不算、归哪一项）按总则和字段定义判，再把疑问写进 `coder_note`。
 
@@ -16,7 +16,7 @@
 ## 不要读
 
 - `studies/harness-quantification/data/codings/`、`data/adapters/` 里的文件，以及别的编码者或别的字段组交回的文件（`<part>` 所在目录的同级和上级目录）。
-- `studies/harness-quantification/pilot/` 下的 `round1.md`、`round2.md`、`round3.md`、`round1/`、`round2/`、`round3/`，`data/schema/` 下的 `definition-decisions-*.md`，以及 `tmp/quant-pilot/` 下除 `<sources>` 和 `<part>` 以外的文件。
+- `studies/harness-quantification/pilot/` 下的 `round1.md`、`round2.md`、`round3.md`、`round1/`、`round2/`、`round3/`，`studies/harness-quantification/batches/` 下的全部文件（各批的记录、归档的编码和交叉核对），`data/schema/` 下的 `definition-decisions-*.md`，以及 `tmp/quant-pilot/` 下除 `<sources>` 和 `<part>` 以外的文件。
 - Git 历史和别的分支里上面这些路径的内容。
 - 主报告 `report/` 与 `AI-Harness调研报告.html` 中本工具的档案。这里要看两位编码者各自从原始材料得出什么，不复述已有结论。
 
