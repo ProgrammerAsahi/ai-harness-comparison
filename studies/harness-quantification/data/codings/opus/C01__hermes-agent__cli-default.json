@@ -1,0 +1,2231 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "C01__hermes-agent__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "event_scheduling"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "经典 CLI 把一条消息交给网关里的 AIAgent：模型回复带工具调用就执行并把结果交回模型，直到不再请求工具。event_scheduling：用户用 /kanban 或 hermes kanban create --triage 把一个任务放进看板 Triage，网关内置分派器默认自动跑分解器把它拆成子任务图，再按依赖和节拍派给工人（第二档，命令启用）。/goal、/loop、/heartbeat 是框架在回合之间按判定或计时自动续跑，回合内部仍是模型循环，按 scope_rule 不另记；可选：kanban 工具集默认关闭，要改设置模型才能自己建卡。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_agent_setup_mixin.py#L647-L667",
+          "locator": "hermes_cli/cli_agent_setup_mixin.py（_init_agent）",
+          "lines": "L647-L667",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "经典 CLI 固定导入 GatewayAgent 作代理类，注释写明由网关执行回合，随后建立网关会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/conversation_loop.py#L1786-L1790",
+          "locator": "agent/conversation_loop.py（每次响应后的分派）",
+          "lines": "L1786-L1790",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "助手消息带工具调用就进 run_tool_round，否则进 finish_text_response 结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/commands.py#L136-L171",
+          "locator": "hermes_cli/commands.py（COMMAND_REGISTRY：bg、btw、queue、steer、goal、heartbeat、review、loop、plan、moa、subgoal）",
+          "lines": "L136-L171",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令列表",
+          "note": "内置斜杠命令表中与任务推进有关的条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/goals.md#L7-L9",
+          "locator": "website/docs/user-guide/features/goals.md（Persistent Goals）",
+          "lines": "L7-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/goal 路径",
+          "note": "/goal 设定常驻目标，回合后判定模型判断是否达成，未达成自动续发，直到达成、暂停或回合预算用完。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/kanban-tutorial.md#L25-L25",
+          "locator": "website/docs/user-guide/features/kanban-tutorial.md（Triage 列）",
+          "lines": "L25-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径：kanban",
+          "note": "放进 Triage 的任务默认由分派器自动跑分解器，生成子任务图并按依赖路由给各档案的工人。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/kanban.md#L314-L320",
+          "locator": "website/docs/user-guide/features/kanban.md（Gateway-embedded dispatcher (default)）",
+          "lines": "L314-L320",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径：kanban",
+          "note": "分派器默认嵌在网关进程里，每 60 秒一个节拍取就绪任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单（命令表 hermes_cli/commands.py 与快速开始）逐项判：/bg 另开后台会话，内部仍是模型循环，不改推进方式；/btw 附带提问，不进主线；/queue、/steer 只是排队或插话；/goal、/subgoal 是回合间由判定模型决定续跑，按“框架在回合之间自动续跑…不另记”不记；/loop、/heartbeat 是计时器在回合间重发提示，同理不记（这类计时续跑是否应算 event_scheduling，码本可再说清）；/review 派一个子代理审阅，模型循环；/plan 只出计划不执行；/moa 换成 MoA 虚拟提供方，聚合模型仍跑普通工具循环；/refine、/learn、/init 都是作为普通回合交给模型；/cron、/blueprint 属任务发起（F33）；/kanban（及 hermes kanban create --triage）由分派器拆分并按依赖调度，记 event_scheduling；hermes --tui、hermes gateway、hermes chat -q 都不改推进方式；execute_code 的脚本在一次工具调用里跑完，只在 F10 记。kanban 记进 secondary_modes 的前提是“看板分解+分派器调度”算一条任务指令内部的下一步，若主控认为用户建卡即属 F33，应删去。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "todo_list 在默认工具集 hermes-cli 的核心工具里，带条目和四种状态，存在代理对象上、压缩后重新注入，界面显示；由模型自己决定何时调用，框架不按表的顺序推进或拦截。它在 tool_search 默认延迟清单里，模型经 tool_search / tool_describe / tool_call 桥接取用，无需用户操作。子代理继承父代理工具集，也带它。可选：/plan（写 markdown 计划、不执行）是用户命令；verify-on-stop 等不是计划约束。没有找到按计划条目推进或拦下偏离动作的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/todo_tool.py#L1-L4",
+          "locator": "tools/todo_tool.py（模块说明）",
+          "lines": "L1-L4",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "todo_list：带修订号的任务表，状态存在 AIAgent 上，压缩后重新注入，写入都返回整张表，界面可显示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/todo_tool.py#L9-L9",
+          "locator": "tools/todo_tool.py（VALID_STATUSES）",
+          "lines": "L9-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "条目状态 pending、in_progress、completed、cancelled。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/toolsets.py#L11-L37",
+          "locator": "toolsets.py（_HERMES_CORE_TOOLS）",
+          "lines": "L11-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集 hermes-cli",
+          "note": "核心工具含 todo_list、clarify、execute_code、delegate_task 等；kanban_* 另受默认关闭的工具集与检查函数控制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1965-L2005",
+          "locator": "hermes_cli/config_defaults.py（tools.tool_search）",
+          "lines": "L1965-L2005",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "tool_search 默认 auto，todo_list 等在默认延迟清单里，经 tool_search / tool_describe / tool_call 桥接调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/plan_prompt.py#L1-L4",
+          "locator": "agent/plan_prompt.py（/plan）",
+          "lines": "L1-L4",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径：/plan",
+          "note": "/plan 只把计划模式提示作为普通回合交给代理，写一份 markdown 计划、不执行，没有模型工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有逐行读默认系统提示是否要求先写计划；因取值按“可执行流程约束→结构化任务表→仅提示文本”顺序判，结构化任务表已命中，不影响结果。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "model_end_signal：回复不带工具调用即进 finish_text_response 结束本轮。verification_condition：①默认开启的 LSP（lsp.enabled=true）在模型要结束时，若本回合编辑的文件有尚未交回的语言服务器诊断，框架把答复暂存、追加诊断并继续本回合，每回合最多 3 次；能否触发取决于项目语言和语言服务器是否可装（install_strategy=auto）；②delegate_task 的 output_schema 由模型在派生时自填，子代理答复不合结构就带错误再跑一轮（只一次），范围为子代理（总则 R3 第一档）。budget：主代理 max_turns 默认不限；子代理各 250 次迭代、回合后审阅分支 16 次迭代和输入 Token 总预算，到限即停（子代理会再要一次总结）。user_interrupt：空提示按 Ctrl+C 中断。可选：/goal 目标续跑由判定模型判 done 才停、20 回合预算（用户命令进入）；agent.verify_on_stop 默认 False；pre_verify 钩子要插件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/conversation_loop.py#L1786-L1790",
+          "locator": "agent/conversation_loop.py（每次响应后的分派）",
+          "lines": "L1786-L1790",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "助手消息带工具调用就进 run_tool_round，否则进 finish_text_response 结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_stop_gates.py#L95-L175",
+          "locator": "agent/turn_stop_gates.py（_MAX_LSP_TURN_END_NOTES、_late_lsp_verdicts、apply_stop_gates）",
+          "lines": "L95-L175",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "模型给出文字答复要结束时，若语言服务器对本回合编辑的文件报出问题，框架把答复暂存为中间行、追加系统提示并继续本回合，每回合最多 3 次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L2366-L2370",
+          "locator": "hermes_cli/config_defaults.py（lsp.enabled）",
+          "lines": "L2366-L2370",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "lsp.enabled 默认 True，wait_mode=document。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool.py#L824-L830",
+          "locator": "tools/delegate_tool.py（delegate_task 参数 tasks[].output_schema）",
+          "lines": "L824-L830",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "output_schema 是模型可自填的可选参数：子代理答复须合此 JSON Schema，父代理校验并给一次纠正重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool_child_run.py#L547-L589",
+          "locator": "tools/delegate_tool_child_run.py（_validate_child_output_schema）",
+          "lines": "L547-L589",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动派生的子代理",
+          "note": "子代理最终答复按派生时附带的 output_schema 校验，不合格就带错误再跑一轮（只重试一次）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1344-L1346",
+          "locator": "hermes_cli/config_defaults.py（delegation.max_iterations）",
+          "lines": "L1344-L1346",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理默认值",
+          "note": "每个子代理迭代上限默认 250，独立于父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_finalizer.py#L125-L165",
+          "locator": "agent/turn_finalizer.py（迭代预算耗尽处理）",
+          "lines": "L125-L165",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主代理与子代理",
+          "note": "迭代数达到 max_iterations 时停止，再发一次不带工具的请求让模型总结。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/background_review.py#L173-L182",
+          "locator": "agent/background_review.py（_REVIEW_MAX_ITERATIONS、输入 Token 预算）",
+          "lines": "L173-L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合后自动派生的审阅代理",
+          "note": "回合后的记忆／技能审阅分支最多 16 次迭代，并按模型窗口的 75%（上限 60 万）给整段审阅设输入 Token 总预算。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/cli.md#L274-L278",
+          "locator": "website/docs/user-guide/cli.md（Keybindings：Ctrl+C、Ctrl+D）",
+          "lines": "L274-L278",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "空提示时按 Ctrl+C 中断代理；Ctrl+D 退出时网关继续把回合跑完。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L63-L73",
+          "locator": "hermes_cli/config_defaults.py（agent.max_turns、budget_warning_ratio、run_budget_seconds）",
+          "lines": "L63-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "主代理回合上限 max_turns 默认 null 即不限；预算预警比例与墙钟预算默认都关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L203-L209",
+          "locator": "hermes_cli/config_defaults.py（agent.verify_on_stop）",
+          "lines": "L203-L209",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "verify-on-stop（编辑后无新验证证据就拒绝结束）默认 False，要改设置才开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1383-L1390",
+          "locator": "hermes_cli/config_defaults.py（goals.max_turns）",
+          "lines": "L1383-L1390",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/goal 路径",
+          "note": "/goal 目标续跑：每回合后由辅助模型判定，未完成就续发，默认 20 个续跑回合后自动暂停。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "LSP 迟到诊断的关卡：每次结束尝试最多拦一次、每回合最多 3 次，模型改完仍可结束；它是按文件检查结果拒绝结束，不是只提醒一次，所以记 verification_condition，但界线可议。kanban 工人的终结工具关卡只在分派器拥有的工人里生效，不属默认路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：接口错误（断连、超时、5xx）默认 Hermes 层重试 3 次（OpenAI SDK 另重试 2 次），用尽后对瞬时故障按 15/30/60/60/60 秒倒计时自动恢复 5 轮；上下文溢出会先压缩再重发（压缩记 F14）。model_self_repair：工具报错、无效工具名、坏 JSON 参数都以工具结果交回模型；重复失败或无进展的调用默认注入警告提示（交互式 cli 硬停止默认关，无人值守平台默认开）。framework_input_repair：执行前自动修复不匹配的工具名后照常执行；畸形参数 JSON（尾逗号、None、控制字符）先修复，修不好换成 {}（有损替换）。可选：fallback_providers 默认为空，换型号回退要改设置；/goal 里判定受阻后暂停属用户命令路径。失败后的提示文案让用户发 /retry 或 /model，属用户自己重发，不记 escalate_to_human。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L118-L127",
+          "locator": "hermes_cli/config_defaults.py（agent.api_max_retries、auto_recovery_cycles）",
+          "lines": "L118-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "接口错误（断连、超时、5xx）默认重试 3 次；重试和回退链都用完后的瞬时故障再按 15/30/60/60/60 秒自动恢复 5 轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_api_error.py#L1-L7",
+          "locator": "agent/turn_api_error.py（模块说明）",
+          "lines": "L1-L7",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "API 调用异常处理：分类恢复、上下文溢出恢复、重试耗尽后主传输恢复→回退→终止，以及可中断的退避。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_recovery_autorecover.py#L1-L12",
+          "locator": "agent/turn_recovery_autorecover.py（模块说明）",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "重试与回退链用完后，对瞬时故障带倒计时停住再重入重试循环；认证、格式、计费、内容策略错误不进入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_tool_validation.py#L99-L116",
+          "locator": "agent/turn_tool_validation.py（validate_tool_calls）",
+          "lines": "L99-L116",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "执行前先修复不匹配的工具名（大小写、分隔符、后缀、模糊匹配），修好照常执行；仍无效的只对这些调用回错误结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/agent_runtime_helpers.py#L2555-L2575",
+          "locator": "agent/agent_runtime_helpers.py（repair_tool_call）",
+          "lines": "L2555-L2575",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "工具名修复规则：截掉泄漏的 XML 片段、规范大小写与下划线、去 _tool 后缀，再模糊匹配已注册工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/message_sanitization.py#L230-L250",
+          "locator": "agent/message_sanitization.py（_repair_tool_call_arguments）",
+          "lines": "L230-L250",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "修复畸形的调用参数 JSON（截断、尾逗号、Python None、控制字符），修不好的换成 {}。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L542-L561",
+          "locator": "hermes_cli/config_defaults.py（tool_loop_guardrails）",
+          "lines": "L542-L561",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "重复失败、无进展的工具调用默认发软警告（2–3 次后）；硬停止对交互式 cli/tui 默认关，对无人值守平台默认开；另有每回合 web 搜索 50 次、子代理 50 个的硬上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/tool_guardrails.py#L1-L6",
+          "locator": "agent/tool_guardrails.py（模块说明）",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "护栏控制器跟踪每回合调用，决定发警告提示、合成工具结果或受控停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L24-L28",
+          "locator": "hermes_cli/config_defaults.py（fallback_providers）",
+          "lines": "L24-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "主型号回退链 fallback_providers 默认为空。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "escalate_to_human 没有找到默认路径上框架暂停任务、留待答选择再从原处续跑的失败分支：Nous 401 由凭据池自动刷新重试，额度用尽只显示建议（/model、/topup），没有挂起状态；没有逐个查完所有错误类型的终端文案分支，若有遗漏可能在 turn_failure_copy.py。_repair_tool_call_arguments 的调用点没逐一追到，是否在执行前对模型参数生效按其文档字符串判断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "经典 CLI 进程只是前端：启动时发现或拉起本 profile 的网关守护进程（客户端自动拉起、空闲 600 秒自行退出，已有常驻网关则直接接上），经本地 WebSocket 建立会话，回合在网关进程里执行，没有回退到进程内代理的分支。其他环境：hermes --tui 经 tui_gateway JSON-RPC 接同一运行时。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_agent_setup_mixin.py#L647-L667",
+          "locator": "hermes_cli/cli_agent_setup_mixin.py（_init_agent）",
+          "lines": "L647-L667",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "经典 CLI 固定导入 GatewayAgent 作代理类，注释写明由网关执行回合，随后建立网关会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_agent.py#L1-L9",
+          "locator": "hermes_cli/gateway_agent.py（模块说明）",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "CLI 进程不建代理、不跑工具、不写 state.db；run_conversation 经 prompt.submit 交网关执行并回放事件流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_runtime.py#L414-L432",
+          "locator": "hermes_cli/gateway_runtime.py（ensure_gateway_runtime）",
+          "lines": "L414-L432",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "客户端入口（chat、TUI、cron/kanban/ACP 客户端）确保有该 profile 的网关运行；自己拉起的无托管守护进程空闲后自行退出。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "网关可同时供 TUI、Desktop、消息平台等多个前端共用，符合本地服务 API 的判定；全新安装首次启动时由 CLI 自动拉起，仍是独立常驻进程。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "参照点是网关进程（执行核心）。main_process：todo_list、memory、clarify、session_search、delegate_task（子代理在同一进程的线程里）以及 web 搜索等经 HTTP 的工具在网关进程内执行。subprocess：terminal 走 local 后端，每次调用起子进程；read_file、write_file、patch、search_files 也经终端后端执行 shell 命令；execute_code 的脚本在子进程里跑、经 Unix 套接字回调工具；本地 Chromium 与 cua-driver 由核心拉起。可选：docker、ssh、modal、daytona、vercel_sandbox 后端要改 terminal.backend；MCP 服务默认没有配置。云端执行：登录 Nous Portal 后 web 搜索、图像生成、TTS、云浏览器经 Tool Gateway 在云端执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_agent.py#L1-L9",
+          "locator": "hermes_cli/gateway_agent.py（模块说明）",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "CLI 进程不建代理、不跑工具、不写 state.db；run_conversation 经 prompt.submit 交网关执行并回放事件流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_operations.py#L207-L235",
+          "locator": "tools/file_operations.py（ShellFileOperations._exec）",
+          "lines": "L207-L235",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "文件读写在终端后端上执行 shell 命令完成（env.execute），local 后端即本机子进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/environments/local.py#L1-L1",
+          "locator": "tools/environments/local.py（模块说明）",
+          "lines": "L1-L1",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "local 终端后端",
+          "note": "local 后端每次调用起一个子进程（spawn-per-call），带会话快照。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/code-execution.md#L9-L19",
+          "locator": "website/docs/user-guide/features/code-execution.md（How It Works）",
+          "lines": "L9-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具 execute_code",
+          "note": "模型写 Python 脚本，经生成的 hermes_tools 存根在子进程里调用 Hermes 工具，调用经 Unix 套接字 RPC 回到 Hermes，只把 print 输出交回模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "浏览器在 Tool Gateway 打开时默认走云端还是本地 Chromium 没有细查，只影响 value_note，不影响取值（终端与文件工具已确定在子进程）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话消息与元数据存在 ~/.hermes/state.db（SQLite），由网关进程里的代理循环写入和读回；CLI 前端不写 state.db，恢复会话经网关进行。state.db 是核心写的本机文件，不是独立服务。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_agent.py#L1-L9",
+          "locator": "hermes_cli/gateway_agent.py（模块说明）",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "CLI 进程不建代理、不跑工具、不写 state.db；run_conversation 经 prompt.submit 交网关执行并回放事件流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_agent_setup_mixin.py#L647-L667",
+          "locator": "hermes_cli/cli_agent_setup_mixin.py（_init_agent）",
+          "lines": "L647-L667",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "经典 CLI 固定导入 GatewayAgent 作代理类，注释写明由网关执行回合，随后建立网关会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/sessions.md#L17-L27",
+          "locator": "website/docs/user-guide/sessions.md（Session Storage）",
+          "lines": "L17-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话元数据与完整消息历史存在 ~/.hermes/state.db（SQLite），按会话 ID 分开，含父会话 ID。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话按会话 ID 在 state.db 中分开存放；/new 在同一进程里开新会话。网关进程为多个会话共用，新会话不换进程；默认在启动目录工作，不为会话建专用目录。可选：--worktree 需要进程内代理，在本入口被拒绝；kanban 任务的 scratch 工作区只属看板路径；容器后端要改设置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/sessions.md#L17-L27",
+          "locator": "website/docs/user-guide/sessions.md（Session Storage）",
+          "lines": "L17-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话元数据与完整消息历史存在 ~/.hermes/state.db（SQLite），按会话 ID 分开，含父会话 ID。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/commands.py#L87-L88",
+          "locator": "hermes_cli/commands.py（/new）",
+          "lines": "L87-L88",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令列表",
+          "note": "/new 在同一进程里开新会话：新会话 ID 加新历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_agent_setup_mixin.py#L647-L667",
+          "locator": "hermes_cli/cli_agent_setup_mixin.py（_init_agent）",
+          "lines": "L647-L667",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（经典 CLI）",
+          "note": "经典 CLI 固定导入 GatewayAgent 作代理类，注释写明由网关执行回合，随后建立网关会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心内置 chat_completions、anthropic_messages、codex_responses、bedrock 等传输的归一化实现，另有 gemini 原生适配，随默认安装附带、按提供方配置启用。钉住环境：Nous Portal 的 anthropic/claude-fable-5.2 在 nous.anthropic_wire=auto 下走 chat/completions。部分提供方 SDK（如 anthropic、boto3）由安装器按首次使用懒装，适配代码本身随包。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/transports/__init__.py#L16-L31",
+          "locator": "agent/transports/__init__.py（_REGISTRY、_TRANSPORT_MODULES）",
+          "lines": "L16-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "执行核心",
+          "note": "传输注册表收 anthropic、codex、chat_completions、bedrock 四种接口格式的归一化实现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/nous_wire.py#L1-L8",
+          "locator": "agent/nous_wire.py（模块说明）",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Nous 路线",
+          "note": "Nous Portal 的 anthropic/* 型号在 auto 下走 chat/completions，不升到原生 Messages 接口。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "native_structured：工具定义放进请求的 tools 字段，模型回复里的结构化 tool_calls 经 run_tool_round 执行。protocol_translation：MCP 扩展点默认开放，在 mcp_servers 加一条服务配置即把 MCP 工具包装成原生函数（本配置默认没有服务）。script_dispatch：execute_code 默认注册，脚本里经 hermes_tools 存根调用其他工具。tool_search 桥接（tool_call 代调被延迟的工具）仍是同一种原生函数调用，不算协议转换。解析失败：无效工具名先修复、仍无效回错误结果；坏 JSON 参数修复或回错误结果（见 F04）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/conversation_loop.py#L1786-L1790",
+          "locator": "agent/conversation_loop.py（每次响应后的分派）",
+          "lines": "L1786-L1790",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "助手消息带工具调用就进 run_tool_round，否则进 finish_text_response 结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_tool_validation.py#L99-L116",
+          "locator": "agent/turn_tool_validation.py（validate_tool_calls）",
+          "lines": "L99-L116",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "执行前先修复不匹配的工具名（大小写、分隔符、后缀、模糊匹配），修好照常执行；仍无效的只对这些调用回错误结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/mcp.md#L29-L40",
+          "locator": "website/docs/user-guide/features/mcp.md（Quick start）",
+          "lines": "L29-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "扩展点",
+          "note": "在 config.yaml 的 mcp_servers 加一条服务配置即可把 MCP 服务的工具接给代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/code-execution.md#L9-L19",
+          "locator": "website/docs/user-guide/features/code-execution.md（How It Works）",
+          "lines": "L9-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具 execute_code",
+          "note": "模型写 Python 脚本，经生成的 hermes_tools 存根在子进程里调用 Hermes 工具，调用经 Unix 套接字 RPC 回到 Hermes，只把 print 输出交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/toolsets.py#L11-L37",
+          "locator": "toolsets.py（_HERMES_CORE_TOOLS）",
+          "lines": "L11-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集 hermes-cli",
+          "note": "核心工具含 todo_list、clarify、execute_code、delegate_task 等；kanban_* 另受默认关闭的工具集与检查函数控制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1965-L2005",
+          "locator": "hermes_cli/config_defaults.py（tools.tool_search）",
+          "lines": "L1965-L2005",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "tool_search 默认 auto，todo_list 等在默认延迟清单里，经 tool_search / tool_describe / tool_call 桥接调用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有找到默认路径上从普通文本里解析工具调用的分支（agent_runtime_helpers.py 里的 <tool_call> 格式只用于轨迹存档；codex_responses_adapter 的泄漏检测属 codex 路线），text_parsing 不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主执行链：主代理用用户选定的型号（钉住 anthropic/claude-fable-5.2）；子代理 delegation.model 留空即继承父代理；回合后审阅分支 auto 即用主型号；delegate_task 没有型号或推理强度参数；fallback_providers 默认为空，没有自动换型号。auxiliary_models：per_role——vision_analyze 在主提供方为 nous 时取 Portal 按档位下发的视觉槽位型号（型号由服务端决定）；标题生成、上下文压缩、动作审核分类、记忆查询改写都按 auto 继承主型号。Tool Gateway 的 web 搜索、图像生成、TTS 是托管服务，客户端选不了型号，不计入。子维度未确认：failover——文本辅助自动链在主提供方失败（如 402）时沿链往下，下一个可用环节 Nous Portal 用 Portal 推荐的辅助型号，没有追到本环境下是否真会落到这一步。可选：/model 切换、MoA 预设、/goal 判定模型另设型号、fallback_providers 都要用户命令或改设置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1312-L1318",
+          "locator": "hermes_cli/config_defaults.py（delegation.model、provider、fallback_providers）",
+          "lines": "L1312-L1318",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理默认值",
+          "note": "子代理型号与提供方留空即继承父代理；回退链 null 即继承父代理（父代理为空）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool.py#L808-L870",
+          "locator": "tools/delegate_tool.py（delegate_task 参数）",
+          "lines": "L808-L870",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册工具",
+          "note": "delegate_task 参数为 tasks[]（goal、context、output_schema、images、group）与 action、subagent_id、message，没有型号或推理强度参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L783-L795",
+          "locator": "hermes_cli/config_defaults.py（auxiliary.background_review）",
+          "lines": "L783-L795",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "回合后自我改进分支默认开启，auto 即用主型号回放整段对话，迭代上限 16，输入总量有上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L24-L28",
+          "locator": "hermes_cli/config_defaults.py（fallback_providers）",
+          "lines": "L24-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "主型号回退链 fallback_providers 默认为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L738-L771",
+          "locator": "hermes_cli/config_defaults.py（auxiliary.vision、compression、approval、title_generation）",
+          "lines": "L738-L771",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "各辅助任务 provider 为 auto 即继承主型号；标题生成 prefer_fast_model 默认 False。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/auxiliary_client.py#L5451-L5455",
+          "locator": "agent/auxiliary_client.py（_vision_main_provider_client）",
+          "lines": "L5451-L5455",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用：媒体理解",
+          "note": "主提供方为 nous 时，视觉辅助调用由 Portal 按档位的槽位选型号，不用主聊天型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/auxiliary_client.py#L1-L8",
+          "locator": "agent/auxiliary_client.py（模块说明）",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "文本辅助自动链：主提供方加主型号 → OpenRouter → Nous Portal → 自定义端点 → Anthropic …；402 会沿链往下走。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对清单：标题生成——auto 继承主型号（prefer_fast_model=false）；上下文压缩——auto 继承主型号；动作审核分类（approval，smart 模式）——auto 继承主型号；联网搜索与网页抓取——Tool Gateway 托管、web_extract 不再用辅助模型，不计；媒体理解——vision 走 Nous 视觉槽位，per_role；生成类工具——image_generate 经 Tool Gateway 托管，不计。回合后审阅分支能多步调用工具，按总则 R4 计入 value（用主型号），不记进辅助调用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "total_tokens",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "total_tokens",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：finish_reason=length 有专门处理（文字续写提示最多 4 次、被截断的工具调用提高 max_tokens 重试）；请求按配置或提供方档案的按型号上限填 max_tokens，钉住型号的具体数值未查。total_tokens：回合后自动派生的记忆／技能审阅分支有整段输入 Token 预算（模型窗口的 75%，上限 60 万，窗口未知时 12 万），到限即停。call_count：子代理各 250 次迭代、审阅分支 16 次迭代，到限停止（子代理再要一次总结）；主代理 max_turns 默认不限。不计入：每回合 web 搜索 50 次与子代理 50 个的上限（工具次数与子代理数）、网关空闲超时 1800 秒及 900 秒空闲提醒（按空闲而非总时长）。可选：agent.max_turns、budget_warning_ratio、run_budget_seconds（80% 时提醒）、delegation.child_timeout_seconds 默认都关；/goal 默认 20 续跑回合预算属用户命令路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_truncation.py#L1-L8",
+          "locator": "agent/turn_truncation.py（模块说明）",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "finish_reason=length 时的处理：文字续写提示最多 4 次、被截断的工具调用提高 max_tokens 重试、重复内容截断直接中止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/transports/chat_completions.py#L376-L384",
+          "locator": "agent/transports/chat_completions.py（_apply_max_tokens）",
+          "lines": "L376-L384",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Nous 路线",
+          "note": "按配置值或提供方档案的按型号上限给请求填 max_tokens。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/background_review.py#L173-L182",
+          "locator": "agent/background_review.py（_REVIEW_MAX_ITERATIONS、输入 Token 预算）",
+          "lines": "L173-L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合后自动派生的审阅代理",
+          "note": "回合后的记忆／技能审阅分支最多 16 次迭代，并按模型窗口的 75%（上限 60 万）给整段审阅设输入 Token 总预算。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/conversation_loop.py#L114-L123",
+          "locator": "agent/conversation_loop.py（_review_input_budget_exhausted）",
+          "lines": "L114-L123",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合后自动派生的审阅代理",
+          "note": "审阅分支累计输入 Token 达到预算后，在下一次迭代开头停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L783-L795",
+          "locator": "hermes_cli/config_defaults.py（auxiliary.background_review）",
+          "lines": "L783-L795",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "回合后自我改进分支默认开启，auto 即用主型号回放整段对话，迭代上限 16，输入总量有上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1344-L1346",
+          "locator": "hermes_cli/config_defaults.py（delegation.max_iterations）",
+          "lines": "L1344-L1346",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理默认值",
+          "note": "每个子代理迭代上限默认 250，独立于父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/iteration_budget.py#L1-L5",
+          "locator": "agent/iteration_budget.py（模块说明）",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主代理与子代理",
+          "note": "每个 AIAgent 自有迭代预算：父代理 max_iterations，子代理 delegation.max_iterations。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_finalizer.py#L125-L165",
+          "locator": "agent/turn_finalizer.py（迭代预算耗尽处理）",
+          "lines": "L125-L165",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主代理与子代理",
+          "note": "迭代数达到 max_iterations 时停止，再发一次不带工具的请求让模型总结。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L63-L73",
+          "locator": "hermes_cli/config_defaults.py（agent.max_turns、budget_warning_ratio、run_budget_seconds）",
+          "lines": "L63-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "主代理回合上限 max_turns 默认 null 即不限；预算预警比例与墙钟预算默认都关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L542-L561",
+          "locator": "hermes_cli/config_defaults.py（tool_loop_guardrails）",
+          "lines": "L542-L561",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "重复失败、无进展的工具调用默认发软警告（2–3 次后）；硬停止对交互式 cli/tui 默认关，对无人值守平台默认开；另有每回合 web 搜索 50 次、子代理 50 个的硬上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1383-L1390",
+          "locator": "hermes_cli/config_defaults.py（goals.max_turns）",
+          "lines": "L1383-L1390",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/goal 路径",
+          "note": "/goal 目标续跑：每回合后由辅助模型判定，未完成就续发，默认 20 个续跑回合后自动暂停。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "total_tokens 与 16 次迭代只来自回合后审阅分支；按总则 R4 它是框架自动派生、能多步调用工具的代理，所以计入。若主控认为这类回合后后台代理不属“一次任务”的预算，这两维应删去或只留子代理的 call_count。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "经典 CLI 的回合在本机网关里执行：每个用户回合开始时网关用 load_transcript 从 state.db 重读该会话的活动消息行（active=1，沿压缩续接的 tip 定位起点），转成 OpenAI 格式消息列表交给 AIAgent.run_conversation；回合内各次请求沿用这份内存列表并追加助手消息与工具结果，按提供方格式转换后发出。记录里只有消息行，active、compacted、_compressed_summary、display_kind 都是消息行上的标志（消息元数据）；session_meta 行（首回合的工具／型号／平台登记）在转换时被排除。压缩（默认 in_place）把被吸收的行标为 active=0 并插入一条摘要消息，读取时按 active 标志取，属一刀切的定位，不是逐类解释。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/run_turn_prepare.py#L798-L807",
+          "locator": "gateway/run_turn_prepare.py（_hmwa 回合准备：load_transcript）",
+          "lines": "L798-L807",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口（网关执行经典 CLI 回合）",
+          "note": "每个回合先从会话存储重读整段记录再做会话卫生检查，读失败即拒绝执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/session_transcript.py#L631-L652",
+          "locator": "gateway/session_transcript.py（SessionStore.load_transcript）",
+          "lines": "L631-L652",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "沿 reroute 与压缩 tip 定位会话后调用 get_messages_as_conversation，state.db 为唯一权威记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_messages.py#L1522-L1538",
+          "locator": "hermes_state_messages.py（SessionDB.get_messages_as_conversation）",
+          "lines": "L1522-L1538",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "按 active 子句取消息行并逐行解码成 OpenAI 格式消息，只做标志过滤和交替修复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_common.py#L537-L568",
+          "locator": "hermes_state_common.py（messages 表结构）",
+          "lines": "L537-L568",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "记录单位是消息行；压缩、撤销、显示类别都以列标志存在消息行上，没有独立的控制条目表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/agent-loop.md#L59-L79",
+          "locator": "website/docs/developer-guide/agent-loop.md（Turn Lifecycle）",
+          "lines": "L59-L79",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环",
+          "note": "回合内从会话历史构造 API 消息，工具结果追加后回到第 5 步再发请求。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "session_meta 行有自己的 role，记录首回合的工具、型号、平台，构造请求时按 role 排除（gateway/run.py L1262-L1263 一带）。我按“登记性条目、不改变回放取舍”视同标题一类元数据，没算控制条目；若码本认为这类配置登记属于“型号或配置切换”，F13 仍是 sequential_messages（它只是被排除、不决定其他条目发不发），但 F17 可能要改 event_log。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：单个工具结果超过该工具阈值（默认 10 万字符，按窗口缩放）时全文存进 $HERMES_HOME/cache/spillover，上下文只留前约 1500 字符预览加路径；一回合工具结果合计超过 20 万字符时再把最大的几条照此处理（enforce_turn_budget）；写不进文件时就地截短。summarization：compression.enabled 默认开，上下文超过窗口的 50%（窗口小于 512K 时下限 0.75）时用辅助模型把中段历史改写成结构化摘要，保留头部和按 token 预算的尾部；网关在回合前另有 85% 的会话卫生压缩。tool_result_replacement：压缩前的第一步不调模型，把受保护尾部以外的旧工具结果降成一行摘要或占位“[Old tool output cleared to save context space]”，重复结果去重。可选：compression.micro_compact（默认关）每回合吸收一段；/compress 手动压缩（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/tool_result_storage.py#L422-L463",
+          "locator": "tools/tool_result_storage.py（maybe_persist_tool_result）",
+          "lines": "L422-L463",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具执行路径",
+          "note": "超阈值结果另存 spillover 文件、返回预览加路径；无处可写时就地截短。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/tool_result_storage.py#L488-L513",
+          "locator": "tools/tool_result_storage.py（enforce_turn_budget）",
+          "lines": "L488-L513",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具执行路径",
+          "note": "一回合合计超预算时从最大的结果起逐条另存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L563-L575",
+          "locator": "hermes_cli/config_defaults.py（compression 默认值）",
+          "lines": "L563-L575",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "compression.enabled=True，threshold 0.50（小窗口下限 0.75）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/context_compressor.py#L3273-L3300",
+          "locator": "agent/context_compressor.py（ContextCompressor._prune_old_tool_results）",
+          "lines": "L3273-L3300",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "压缩流程",
+          "note": "压缩时先把旧工具结果投影成有界摘要并去重，不改调用参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/context-compression-and-caching.md#L552-L566",
+          "locator": "website/docs/developer-guide/context-compression-and-caching.md（Phase 1: Prune Old Tool Results）",
+          "lines": "L552-L566",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "压缩流程",
+          "note": "旧工具结果（>200 字符）在受保护尾部之外替换为占位文字，不调模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "spillover 是“截短后余下内容另存文件留路径”，按 scope_rule 只记 truncation；压缩第一步的整条占位记 tool_result_replacement。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：输入里写 @file:、@folder:、@diff、@staged、@git:N、@url: 时，网关在会话工作目录里展开并附进本回合文本（经典 CLI 的 api_text 也经这一步）。keyword：默认注册的 search_files 工具（ripgrep 支持，正则查内容或按通配查文件名）。semantic_retrieval、structural_index 已知没有：默认工具清单里没有向量检索或按符号查找的工具，LSP 只在 write_file/patch 之后给诊断，不供查询。代理也可在 terminal 里自己跑 rg/grep（通用命令行，不计）。web_search、web_extract、浏览器不计。技能目录：技能清单常驻提示、正文由 skill_view 按需读取。coding_context=auto 会把编码说明与 git／工作区快照放进系统提示（固定注入，不是按任务检索）。session_search 只查历次会话，归 F16。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/context-references.md#L8-L22",
+          "locator": "website/docs/user-guide/features/context-references.md（Context References）",
+          "lines": "L8-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口输入语法",
+          "note": "@file、@folder、@diff、@git、@url 等引用在发送前展开附进消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/session_context_refs.py#L1-L7",
+          "locator": "gateway/session_context_refs.py（模块说明 / expand_references）",
+          "lines": "L1-L7",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口（网关）",
+          "note": "入站准备步骤和经典 CLI 的 api_text 都在这里按会话工作区展开 @ 引用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools.py#L1296-L1302",
+          "locator": "tools/file_tools.py（SEARCH_FILES_SCHEMA）",
+          "lines": "L1296-L1302",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "search_files 是 ripgrep 支持的正则内容搜索与文件名查找工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/toolsets.py#L11-L37",
+          "locator": "toolsets.py（_HERMES_CORE_TOOLS）",
+          "lines": "L11-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "核心工具含 search_files，没有向量或符号检索工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/lsp.md#L21-L40",
+          "locator": "website/docs/user-guide/features/lsp.md（When LSP runs）",
+          "lines": "L21-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "LSP 只在写文件后给诊断结果。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：每次新会话把 HERMES_HOME/SOUL.md（安装时种一份默认的）和项目上下文文件（.hermes.md→AGENTS.md→CLAUDE.md→.cursorrules 取第一个）读进系统提示；本前提仓库里没有项目文件，机制照样开放。auto_summary：内置 memory 工具（memory.memory_enabled 默认开）把自由文本条目写进 ~/.hermes/memories/MEMORY.md 与 USER.md，新会话开始时整份注入系统提示；回合后后台审阅每满 10 个用户回合由框架自动起一次记忆审阅并直接写入（write_approval 默认关）。retrieval_store：默认注册的 session_search 工具对 state.db 的 FTS5 全文索引按查询取回历次会话片段（默认经 tool_search 桥接延迟加载，模型不经用户操作即可调用）。structured_records 不计：记忆条目只分 memory／user 两个目标，内容是自由文本。可选：外部记忆提供方（memory.provider，Honcho 等）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1295-L1309",
+          "locator": "hermes_cli/config_defaults.py（memory 默认值）",
+          "lines": "L1295-L1309",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "memory_enabled 与 user_profile_enabled 默认开，write_approval 关，nudge_interval 10，外部提供方为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/memory.md#L11-L23",
+          "locator": "website/docs/user-guide/features/memory.md（How It Works）",
+          "lines": "L11-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "MEMORY.md、USER.md 在会话开始时作为冻结快照注入系统提示，代理用 memory 工具增删改。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_finalizer.py#L591-L600",
+          "locator": "agent/turn_finalizer.py（_mirror_turn_to_memory）",
+          "lines": "L591-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合结束后",
+          "note": "回合交付后同步外部记忆并启动后台记忆／技能审阅。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/context-files.md#L9-L24",
+          "locator": "website/docs/user-guide/features/context-files.md（Supported Context Files）",
+          "lines": "L9-L24",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "新会话开始",
+          "note": "SOUL.md 全局加载，项目上下文文件按优先顺序取一个自动注入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/session_search_tool.py#L798-L803",
+          "locator": "tools/session_search_tool.py（registry.register(session_search)）",
+          "lines": "L798-L803",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "session_search 工具注册，FTS5 检索历次会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/memory.md#L235-L245",
+          "locator": "website/docs/user-guide/features/memory.md（Session Search）",
+          "lines": "L235-L245",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "历次会话存于 state.db 并有 FTS5 索引，代理可检索取回。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "messages：网关把每条用户、助手、工具消息写成 state.db messages 表的一行（含工具调用、推理、用量等列）；压缩、撤销、显示类别是行上的标志（active、compacted、_compressed_summary、display_kind），属消息元数据；sessions 表的父会话、结束原因（compression、branch）属会话元数据；另有首回合 session_meta 登记行、session_admissions 输入准入账本、system_prompts 提示快照，都不计入 state_snapshot。external_reference：工具结果超阈值时全文另存 $HERMES_HOME/cache/spillover/{id}.txt，记录里只留预览和路径，按 sessions.retention_days（默认 90 天）清理，跨进程保留。state_snapshot 不计：checkpoints.enabled 默认关（可选：--checkpoints 或改配置）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_common.py#L537-L568",
+          "locator": "hermes_state_common.py（messages 表结构）",
+          "lines": "L537-L568",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "消息行带 role、tool_calls、tool_call_id、reasoning 和若干标志列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/tool_result_storage.py#L1-L6",
+          "locator": "tools/tool_result_storage.py（模块说明）",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限工具结果",
+          "note": "超阈值输出另存 spillover 文件并以预览加路径替代。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/tool_result_storage.py#L51-L60",
+          "locator": "tools/tool_result_storage.py（_spillover_retention_hours）",
+          "lines": "L51-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限工具结果",
+          "note": "spillover 文件保留期取会话保留期（默认 90 天），会话日后恢复仍能找到。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L485-L488",
+          "locator": "hermes_cli/config_defaults.py（checkpoints 默认值）",
+          "lines": "L485-L488",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "checkpoints.enabled 默认 False。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "session_meta 行（自带 role，记录工具／型号／平台）和 session_admissions（queue/steer/redirect 意图与状态）我都没算控制条目：前者是登记、不改回放，后者是输入准入账本、不在消息记录里。若判为控制条目，取值应为 event_log。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "hermes -c／--continue、--resume ID 或标题（经典 CLI 经网关会话恢复）把会话的活动消息行读回上下文，并恢复工作目录，然后等下一条输入；中断时没有结果的工具调用由 replay_cleanup 补一条合成结果，不再执行。网关崩溃时丢失的回合标为 unknown，客户端以退出码 3 提示，用 /discard 或 hermes sessions discard 确认后继续；待批的审批不跨重启。消息平台适配器另有 resume_pending 自动续跑（其他环境：消息网关）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/sessions.md#L145-L160",
+          "locator": "website/docs/user-guide/sessions.md（CLI Session Resume）",
+          "lines": "L145-L160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "--continue / -c 恢复最近的 CLI 会话，--resume 按编号或标题恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/gateway-classic-cli.md#L14-L45",
+          "locator": "website/docs/developer-guide/gateway-classic-cli.md（Classic gateway client）",
+          "lines": "L14-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "客户端打印会话编号，用 --resume ID 恢复；网关崩溃中丢失的回合以 /discard 确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/replay_cleanup.py#L76-L106",
+          "locator": "agent/replay_cleanup.py（中断调用的合成结果）",
+          "lines": "L76-L106",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "对中断或悬空的工具调用补一条带 effect_disposition 的结果，不重新执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：恢复时活动消息行（含工具调用与结果）放回上下文；已被压缩降级或 spillover 的结果按占位或文件路径取回。task_plan：恢复后首个回合从历史里最新的 todo_list 结果重建待办清单（_hydrate_todo_store）；/goal 设立的目标、契约与子目标存于 state_meta，文档称经 /resume 保留。subagent_links：后台委派完成后结果先写进 state.db，网关重启后 restore_undelivered_completions 把未交付的完成事件重新排队，作为新回合送回父会话（第 2 条）；仍在运行的子代理不会续跑，记为 unknown。工作目录随恢复切回（不是文件内容，不计 workspace）。外部副作用不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_context.py#L770-L777",
+          "locator": "agent/turn_context.py（_hydrate_from_history）",
+          "lines": "L770-L777",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复后首回合",
+          "note": "从持久化历史重建进程内的待办清单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_todo.py#L1-L25",
+          "locator": "hermes_state_todo.py（SessionTodoResultMixin.get_latest_todo_result）",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "恢复时取会话谱系里最新的有效 Todo 结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/async_delegation.py#L347-L360",
+          "locator": "tools/async_delegation.py（restore_undelivered_completions）",
+          "lines": "L347-L360",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "网关重启后",
+          "note": "把持久化的未交付完成事件作为新回合重新排队。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/run_startup.py#L1248-L1253",
+          "locator": "gateway/run_startup.py（启动时恢复未交付完成事件）",
+          "lines": "L1248-L1253",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "网关启动",
+          "note": "网关启动时调用 restore_undelivered_completions。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md#L219-L233",
+          "locator": "website/docs/user-guide/features/delegation.md（Durable background completions）",
+          "lines": "L219-L233",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台委派",
+          "note": "完成事件先落 state.db，重启后恢复投递；运行中的子代理不续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/goals.md#L115-L120",
+          "locator": "website/docs/user-guide/features/goals.md（/goal 契约持久化）",
+          "lines": "L115-L120",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "目标与契约存于 SessionDB.state_meta，经 /resume 保留。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "subagent_links 只凭第（2）条：结果投递依赖网关进程，这里网关正是所选入口自动拉起的执行宿主，所以没写“其他环境：”。第（1）条（按原编号给原子代理发新指令）只对仍在运行的子代理有 steer，恢复后不成立。goals 的恢复只看了文档，没追代码。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：/branch（别名 /fork）把当前会话连同完整历史复制成独立的新会话，原会话保留在 /resume 与会话列表里可切回。/undo、/retry 只把后续消息软删除（active=0），属裁掉后续，不计。workspace_snapshot 不计：checkpoints 默认关，可选：--checkpoints 或 checkpoints.enabled=true 后才有 /rollback 恢复文件。compensation 没有。idempotency_key 不计：session_admissions 对同一 principal、会话与 request_id 唯一，入站平台消息编号在重启窗口内去重，都只针对用户输入；恢复时悬空调用只补合成结果、不查重重跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_commands_mixin.py#L915-L940",
+          "locator": "hermes_cli/cli_commands_mixin.py（_handle_branch_command）",
+          "lines": "L915-L940",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口会话命令",
+          "note": "/branch 复制出独立会话，原会话保持可见、可恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/checkpoints-and-rollback.md#L8-L35",
+          "locator": "website/docs/user-guide/checkpoints-and-rollback.md（Checkpoints and /rollback）",
+          "lines": "L8-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "检查点从 v2 起为可选，默认关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_common.py#L597-L612",
+          "locator": "hermes_state_common.py（session_admissions 表）",
+          "lines": "L597-L612",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "输入准入",
+          "note": "按 principal、会话、request_id 唯一，去重对象是输入准入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/replay_cleanup.py#L76-L106",
+          "locator": "agent/replay_cleanup.py（中断调用的合成结果）",
+          "lines": "L76-L106",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "悬空调用只补结果，不执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：工具集开关（toolsets，hermes tools）从工具清单里去掉整类工具；approvals.mode 选 manual／smart／off。command_rule：approvals.deny（按命令文本 fnmatch 一律拒绝）和 command_allowlist（命令文本、通配或危险类键名，永久放行）。file_path：环境变量 HERMES_WRITE_SAFE_ROOT 限定 write_file／patch 可写目录（仅限文件工具，终端不受）；security.protected_instruction_extra_patterns 追加需审批的文件名通配。network_target：security.website_blocklist 按域名拦 web 与浏览器工具（仅限这些工具，不管命令联网）；security.allow_private_urls 开关私网地址。默认效果：改工作区内普通文件直接写（受保护的 AGENTS.md 等指令文件例外，要审批）；构建脚本一类不命中危险模式的命令直接在本机执行；工作区外写文件只受硬黑名单（~/.ssh 私钥等），~/.ssh/config 走审批；命令联网不受限，只有 curl|sh 一类命中危险模式才过审批。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1637-L1663",
+          "locator": "hermes_cli/config_defaults.py（approvals）",
+          "lines": "L1637-L1663",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "mode 默认 smart，可选 manual、off；超时与无人值守的处置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L165-L183",
+          "locator": "website/docs/user-guide/security.md（User-Defined Deny Rules (approvals.deny)）",
+          "lines": "L165-L183",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则格式",
+          "note": "approvals.deny 按命令文本 glob 无条件拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L313-L331",
+          "locator": "website/docs/user-guide/security.md（Permanent Allowlist）",
+          "lines": "L313-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则格式",
+          "note": "command_allowlist 可写命令文本、glob 或危险类键名。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L426-L440",
+          "locator": "website/docs/user-guide/security.md（HERMES_WRITE_SAFE_ROOT）",
+          "lines": "L426-L440",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则格式",
+          "note": "设置后文件写入限定在列出的目录内。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L775-L793",
+          "locator": "website/docs/user-guide/security.md（Website Access Policy）",
+          "lines": "L775-L793",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则格式",
+          "note": "website_blocklist 按域名拦 web 与浏览器等 URL 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1748-L1768",
+          "locator": "hermes_cli/config_defaults.py（security 默认值）",
+          "lines": "L1748-L1768",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置",
+          "note": "allow_private_urls False、protected_instruction_files True、website_blocklist 默认关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L207-L247",
+          "locator": "website/docs/user-guide/security.md（What Triggers Approval）",
+          "lines": "L207-L247",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "只有命中危险模式的命令才进审批，普通命令直接执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "default_command 按“项目构建脚本不命中危险模式”判 allow；若构建脚本写成 bash -c 形式会命中危险模式转审批。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user",
+          "auto_reviewer"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "终端命令命中危险模式时在执行前拦下：smart 模式先交辅助模型判断，低风险直接放行、明显危险拒绝、拿不准的升级为用户审批（once／session／always／deny，300 秒不答按拒绝）；同一模型回复里的几条命令可批量预审（terminal_approval_batch）。写受保护的代理指令文件、写 ~/.ssh/config、computer_use 的破坏性动作同样在调用前单次审批。execute_code：本地会话里用户自己输入的回合不做整脚本审批，脚本内的 terminal() 调用逐次审批（算内层调用）；委派完成等非用户回合要整脚本一次批准，仍是调用层。“本会话允许”“永久允许”相当于新增规则。子代理内的审批默认自动拒绝。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/approval.py#L1276-L1300",
+          "locator": "tools/approval.py（check_all_command_guards）",
+          "lines": "L1276-L1300",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "执行前依次过硬黑名单、yolo/off、永久白名单，再进入审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/approval_smart.py#L88-L100",
+          "locator": "tools/approval_smart.py（_smart_approve）",
+          "lines": "L88-L100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式（smart）",
+          "note": "辅助模型返回 approve、deny 或 escalate。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L250-L278",
+          "locator": "website/docs/user-guide/security.md（execute_code Scripts；Approval Flow (CLI)）",
+          "lines": "L250-L278",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "本地会话的脚本审批规则与 CLI 审批提示的四个选项。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/file_tools_write_guards.py#L263-L300",
+          "locator": "tools/file_tools_write_guards.py（_request_protected_instruction_approval）",
+          "lines": "L263-L300",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "写受保护指令文件前单次人工审批。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "approver 两者都写：smart 模式下自动审核器先判，只把拿不准的升级给用户。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：命令执行前的硬黑名单、approvals.deny、危险模式与 smart 审核，文件工具的受保护路径与指令文件审批，URL 工具的私网和云元数据拦截，都是 Hermes 自己的代码检查。没有操作系统隔离：默认 terminal.backend=local，命令以启动账户权限直接在本机执行；可选：docker、modal、daytona 等容器或云后端（改配置）。execute_code 是普通 Python 子进程，只做环境变量清理，不算运行时沙箱。prompt_only=present：/plan 计划模式（“planning only，不改项目文件、不跑变更命令”）只是作为一个普通回合发给模型的提示，没有工具限制或代码检查。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/approval.py#L1178-L1200",
+          "locator": "tools/approval.py（_user_deny_block / _floor_block）",
+          "lines": "L1178-L1200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "用户拒绝规则和硬黑名单在执行前拦截命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L628-L640",
+          "locator": "website/docs/user-guide/security.md（Terminal Backend Security Comparison）",
+          "lines": "L628-L640",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认后端",
+          "note": "local 后端无隔离、做危险命令检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/plan_prompt.py#L1-L25",
+          "locator": "agent/plan_prompt.py（_PLAN_MODE_RULES）",
+          "lines": "L1-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/plan 内置模式",
+          "note": "计划模式规则只写在提示里，模块说明称没有引擎、不动模型工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/code-execution.md#L236-L240",
+          "locator": "website/docs/user-guide/features/code-execution.md（execute_code 环境）",
+          "lines": "L236-L240",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "脚本子进程只做最小环境与凭据剥离。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 核对清单：默认 smart 模式——命令与文件限制都有代码检查；不改设置能切换的内置模式——/yolo 是放宽，/plan 只靠提示（present）；默认会被调用的内置子代理——delegate_task 叶子不能再派生由工具清单去掉落实、子代理审批自动拒绝有代码，/review 审阅者是全权限子代理、没交代限制，后台记忆／技能审阅只给记忆与技能工具；文档列出的限制设置（approvals.deny、website_blocklist、HERMES_WRITE_SAFE_ROOT、protected_instruction_files）都有代码检查。/plan 是用户输入的斜杠命令，我按清单“不改设置就能切换的内置模式”算入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "state.db messages 表默认持久化全部会话：intent——触发动作的用户消息，以及与 tool_calls 同一行的助手文字和 reasoning；actual_operation——助手行的 tool_calls（工具名与完整参数，带调用编号）；result——role=tool 行带 tool_call_id、tool_name 和输出内容。子代理有各自的会话记录。没有专门的审计日志。approval 不计：代码自述没有审批决定账本，once／session 批准只在内存，always 只落进 command_allowlist，记录里只留被拒后的错误结果，分不出人工批准和 smart 自动放行。identity 不计：本地 CLI 只有单一本机操作者，sessions.user_id 与准入 principal 在本前提下恒定。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_state_common.py#L537-L568",
+          "locator": "hermes_state_common.py（messages 表结构）",
+          "lines": "L537-L568",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "每行存 role、content、tool_calls、tool_call_id、tool_name、reasoning，按调用编号可对上。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/approvals_suggest.py#L1-L9",
+          "locator": "hermes_cli/approvals_suggest.py（模块说明）",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批记录",
+          "note": "明说 Hermes 没有审批决定账本，只能从执行过的危险命令推断。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "delegate_task 在默认 hermes-cli 工具集里，主代理调用它就派出带独立对话、能自己多步调用工具的子代理，框架登记 delegation_id、可用 /agents 或 action=list 查询运行状态。另有：/review、/bg 命令直接派出的代理；回合后后台记忆／技能审阅分叉（最多 16 次迭代、可调技能和记忆工具）；curator 后台分叉；cron 到点在网关里起新的 AIAgent 运行。执行位置是 CLI 自动拉起的本机网关进程。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, Subagent Delegation; How Subagent Context Works",
+          "lines": "L7-L11",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集、交互式 CLI 会话",
+          "note": "delegate_task 派出带独立上下文、继承工具的子 AIAgent，顶层调用默认在后台运行并把结果作为新消息交回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool.py",
+          "locator": "tools/delegate_tool.py, registry.register(name=\"delegate_task\", toolset=\"delegation\")",
+          "lines": "L928-L944",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具注册",
+          "note": "delegate_task 注册进 delegation 工具集，hermes-cli 默认工具包含该工具集（toolsets.py L11-L37、L152）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/background_review.py",
+          "locator": "agent/background_review.py, 模块说明与 _REVIEW_MAX_ITERATIONS",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合后后台审阅（auxiliary.background_review.enabled 默认 true）",
+          "note": "每回合后可起分叉 AIAgent 回放对话并直接写记忆和技能，L173 迭代上限 16，是能多步调工具的辅助代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录 subagents_enabled=true，与代码一致（delegation 不在默认关闭的工具集名单里）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：模型调用默认注册的 delegate_task（工具说明写着“只在合适时用”一类限定，代码不拦）。user：/review 命令直接在后台委派轨道上派出审阅子代理，结果回到本会话；/bg 在单独后台会话跑一条提示，结果以面板交回。event_scheduling：cronjob 工具和 /cron 可建定时任务，CLI 自动拉起的网关每 60 秒 tick，到点为每个任务起新的 AIAgent 会话（不经主代理）。framework_internal：回合交付后按 memory.nudge_interval／skills.creation_nudge_interval（默认各 10）自动起后台审阅分叉；curator 在 CLI 会话开始或网关整理时按间隔（默认 7 天、空闲 2 小时）起后台分叉。workflow 未见默认路径：kanban 工具集默认关闭（可选：启用 kanban 后由分派器按看板起 worker）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, The /review Command",
+          "lines": "L340-L364",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户命令，经典 CLI 可用",
+          "note": "/review 由用户命令直接派出全权限后台子代理，走与 delegate_task 相同的后台委派轨道，结果回到同一会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/reference/slash-commands.md",
+          "locator": "website/docs/reference/slash-commands.md, CLI 命令表 /refine /review /bg",
+          "lines": "L59-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "经典 CLI 命令清单",
+          "note": "/review 派审阅子代理；/bg 在单独后台会话运行提示，完成后以面板交回。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/cron.md",
+          "locator": "website/docs/user-guide/features/cron.md, How it works; Gateway scheduler behavior",
+          "lines": "L421-L459",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "网关进程内的定时器",
+          "note": "网关每 60 秒 tick，到点为每个任务起新的 AIAgent 会话并跑完提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/run_bootstrap.py",
+          "locator": "gateway/run_bootstrap.py, _start_gateway_start_cron_and_housekeeping",
+          "lines": "L392-L417",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "网关启动（含 CLI 自动拉起的无托管网关）",
+          "note": "网关启动时起 cron 调度线程；gateway/run_idle_exit.py L1-L12 写明有可运行的 cron 任务时自动拉起的网关不会空闲退出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_finalizer.py",
+          "locator": "agent/turn_finalizer.py, 回合交付后启动后台审阅",
+          "lines": "L591-L616",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的回合后审阅",
+          "note": "回合交付后（未被打断、有最终回复）由框架自己在后台启动记忆／技能审阅分叉。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/curator.md",
+          "locator": "website/docs/user-guide/features/curator.md, How it runs",
+          "lines": "L18-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "curator 默认开启",
+          "note": "CLI 会话开始和网关整理时按间隔与空闲条件检查，满足就起后台 AIAgent 分叉。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cron 运行算 event_scheduling：定时器直接起新 AIAgent 会话，有运行记录和 cron status 可查，按 F25 算框架跟踪。/bg 是否算 F25 意义上的“框架派出的代理”：它新开独立会话，但框架跟踪运行并把结果交回当前会话的面板，按 F25 判为计入；即使不计，/review 已足以支持 user。curator 首次运行要等一个完整间隔，但机制默认开着，按 R2 计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：每个子代理从全新对话开始，只拿到 goal 与 context，另嵌入工作区的项目上下文文件；只有最终摘要回到父代理。messages：父代理可用 delegate_task 的 action=steer 按 subagent_id 给运行中的子代理追加消息，子代理在下一次迭代边界读到后接着做（只对运行中的子代理，结束后返回 rejected）。shared_files：默认子代理与父代理共用同一工作目录（可选：delegation.worktree_isolation=true 改为各自 git worktree）。各子代理有自己的终端会话。权限：子代理继承父代理已启用的工具集，不能扩大；叶子子代理不能调 delegate_task、clarify、memory、send_message、cronjob；子代理内的审批一律非交互处理，默认自动拒绝（delegation.subagent_auto_approve=false）。后台审阅分叉以父对话副本起步，各自独立；cron 运行与其他代理之间无执行中共享。可选：kanban 工具集启用后各代理读写同一看板。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, How Subagent Context Works",
+          "lines": "L80-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理从全新对话开始，只有父代理填写的 goal 和 context，外加工作区项目上下文文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, Steering a Running Subagent; From the parent agent",
+          "lines": "L524-L542",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互式会话的后台委派",
+          "note": "父代理用同一工具的 steer 动作按编号给运行中的子代理排一条消息，子代理在检查点读到后改向继续。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, Key Properties; Worktree Isolation",
+          "lines": "L700-L716",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 delegation 设置",
+          "note": "子代理各有终端会话、继承父代理工具集；默认与父代理共用工作目录，worktree 隔离默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shared_state 判为没有：记忆文件和技能目录由主代理与后台审阅分叉都可写，但它们是文件形式的存储，且主代理系统提示里的记忆是会话开始时的快照；按“通过文件交换的记共享文件”，不另记 shared_state。子代理不能用 memory 工具。messages 只对运行中的子代理成立，已结束的子代理不能续派，按判定标准（运行中也算）记入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "async_wait：交互式 TTY 会话里顶层 delegate_task 一律后台运行（模型不能选），立即返回句柄，结果在父代理两轮之间作为新消息进入会话；框架通知完成。synchronous_return：后台池满（delegation.max_concurrent_children）或会话不能接收后到结果时，整批改为在本次工具调用内同步跑完（触发条件：超限）；编排者子代理也同步等自己的工作者（默认 max_spawn_depth=1 时没有编排者）；单次 -q／-Q 运行也同步合流。cancel_propagation：/new（重置会话）或最后一个查看者关闭会话时，网关对该会话的后台委派调 interrupt_for_session，子代理带部分输出以 interrupted 返回。用户打断当前回合（Ctrl+C、Esc）与后续消息不取消后台子代理；专门的 /stop 命令会结束后台委派，按规则不记。模型也可用 action=stop 单独停某个子代理。cron 运行没有调用方，不参与本字段。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool.py",
+          "locator": "tools/delegate_tool.py, _DESCRIPTION_DELIVERY 与 _model_background_value",
+          "lines": "L710-L719",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型可见的 delegate_task 说明",
+          "note": "没有后到结果消费者的会话在调用内合流；否则后台运行，结果在父代理两轮之间作为新消息交回；L916-L921 写明顶层委派一律后台、模型不选。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool_dispatch.py",
+          "locator": "tools/delegate_tool_dispatch.py, _dispatch_background 与 _run_batch",
+          "lines": "L460-L524",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径及超限分支",
+          "note": "后台派发；异步池满时 _run_sync_with_note(batch, \"at_capacity\") 改为同步跑完整批。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/delegation.md",
+          "locator": "website/docs/user-guide/features/delegation.md, Lifetime and Durability",
+          "lines": "L682-L693",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI／TUI 会话的后台委派",
+          "note": "Ctrl+C、Esc、Stop 只结束当前回合；/stop、关闭或重置所属会话会结束后台子代理，停止沿派生树递归。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/slash_commands_session.py",
+          "locator": "gateway/slash_commands_session.py, 会话重置时 interrupt_for_session(reason=\"session_reset\")",
+          "lines": "L217-L223",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/new 重置会话",
+          "note": "会话重置时框架自动中断该会话的进行中异步委派；gateway/session_viewer_close.py L79-L95 对最后一个查看者离开做同样处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/delegate_tool_dispatch.py",
+          "locator": "tools/delegate_tool_dispatch.py, _run_gated 说明",
+          "lines": "L128-L132",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台委派单元",
+          "note": "脱离的后台单元忽略父代理的回合中断，只有子代理自己的停止才跳过。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式逐项：用户打断当前回合（Ctrl+C／Esc）——不连带（后台单元忽略父回合中断）；取消等待中的调用——默认路径上没有（顶层委派立即返回句柄，父代理不在调用内等待；只在超限转同步时才有，那时会连带）；取消父运行（/new 重置会话、最后一个查看者关闭会话、网关继续运行）——连带。故 some_ways。cancel_depth：代码与文档写明停止沿整棵派生树递归，但默认 max_spawn_depth=1，代理树只有一层，按子维度规则记 direct_children。synchronous_return 是否该按“超限分支”计入值得复核：它是池满时的回退，不是模型可选的参数。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "some_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：hermes-cli 工具包的核心工具写在 tools/ 下、经 registry.register 注册。plugin_api：通用插件在 register(ctx) 里用 ctx.register_tool 注册模型可调用的新工具；记忆提供方插件也可经 get_tool_schemas 提供工具；一般插件默认不加载，要把名字加进 plugins.enabled（改设置）。external_protocol_service：在 config.yaml 的 mcp_servers 加一条服务配置即可接入 MCP 服务器工具（默认为空）；ACP 模式下编辑器在 session/new 送来的 mcpServers 也由网关作为 MCP 客户端连接。未见 user_script（~/.hermes/scripts 只用于 webhook 过滤和 cron 无代理脚本，不注册成工具）与 embedder_declared（ACP、API server、TUI 网关都不让嵌入方声明由它执行的工具；Desktop 界面工具属于另一产品形态的核心工具集）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/toolsets.py",
+          "locator": "toolsets.py, _HERMES_CORE_TOOLS",
+          "lines": "L11-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 hermes-cli 工具包",
+          "note": "核心工具清单写在核心代码里，默认工具集即全部核心工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/plugins.md",
+          "locator": "website/docs/user-guide/features/plugins.md, What plugins can do; Plugins are opt-in",
+          "lines": "L103-L175",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件接口",
+          "note": "插件经 ctx.register_tool 加工具；一般插件默认不加载，需加入 plugins.enabled。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/mcp.md",
+          "locator": "website/docs/user-guide/features/mcp.md, Quick start",
+          "lines": "L24-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "mcp_servers 配置",
+          "note": "在 config.yaml 加 MCP 服务器条目后，Hermes 发现其工具并像其他工具一样使用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/plugins.md",
+          "locator": "website/docs/user-guide/features/plugins.md, What the allow-list does NOT gate",
+          "lines": "L276-L290",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认自动加载的随包插件",
+          "note": "自动加载的只有平台适配器、后端、记忆提供方、上下文引擎、模型提供方等基础设施，选择仍靠设置项；通用插件按需启用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "in_use_by_default 只记 internal_code：配置记录写明一般插件默认不加载、mcp_servers 为空；自动加载的随包后端（如图像生成提供方）不注册新工具（image_generate 本身是核心工具），记忆提供方默认是内置的。plugin_api 不进 via_default_entry：装好插件后还要把名字加进 plugins.enabled，按 R2 算改设置。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：每会话自动装载 .hermes.md／AGENTS.override.md／AGENTS.md／CLAUDE.md／.cursorrules（取第一个命中的）和 HERMES_HOME/SOUL.md 人格文件。skill_directory：~/.hermes/skills 等目录的 SKILL.md 只把索引放进提示，按需 skill_view 读全文。role_template：用户可在 config.yaml 的 agent.personalities 新增人格，再用 /personality <名> 按名切换系统提示叠加层。prompt_template：每个已装技能自动成为 /<skill-name> 斜杠命令，调用时把技能内容展开为一条用户消息；skill bundles（YAML）把几个技能合成一条 /<bundle> 命令。未见 workflow_definition（命令和技能都只展开为提示，由模型推进）。可选：skills.inline_shell=true 后 SKILL.md 里的 !`cmd` 片段在装载时由框架执行（默认关），届时 skill_directory 与 prompt_template 进 executable_items。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/context-files.md",
+          "locator": "website/docs/user-guide/features/context-files.md, Supported Context Files",
+          "lines": "L11-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每个会话自动装载",
+          "note": "列出自动发现的项目说明文件与 SOUL.md，以及每会话只装一种项目上下文的优先顺序。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/skills.md",
+          "locator": "website/docs/user-guide/features/skills.md, Using Skills; Progressive Disclosure; Skill Bundles",
+          "lines": "L73-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认技能目录",
+          "note": "每个已装技能自动可作斜杠命令调用；L172-L192 渐进披露；L521-L542 bundles 把几个技能装进一条用户消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/personality.md",
+          "locator": "website/docs/user-guide/features/personality.md, Custom personalities in config",
+          "lines": "L194-L231",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/personality 命令与 agent.personalities",
+          "note": "用户可在配置里新增人格并按名切换，作为系统提示叠加层。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py",
+          "locator": "hermes_cli/config_defaults.py, skills.inline_shell",
+          "lines": "L1449-L1453",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 skills 设置",
+          "note": "inline_shell 默认 False，技能里的 !`cmd` 片段默认不由框架执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "role_template 取 agent.personalities：它是配置文件里的一段文字（添加内容），按名切换、改写系统提示，用户能自己新增，符合判定的“人格叠加”一句；但它不是单独的文件，若码本要求“以文件保存”则可能有分歧。delegation 的 profile_routes 可把子代理派成某个 profile 的人格，但要装官方 advanced-delegation 插件并改 delegation.backend，不计。executable_items 写 []：默认没有由框架执行的装载项（inline_shell 关；quick_commands 默认为空且不是装载给模型的指导）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "四套钩子：config.yaml 的 hooks: 块（shell 钩子，事件为 VALID_HOOKS 全集，首次使用需同意）、插件 ctx.register_hook、~/.hermes/hooks 网关钩子（只在消息网关）、出站 webhook。input：pre_llm_call 每回合进循环前触发，可注入上下文或阻断本回合；pre_gateway_dispatch 管消息平台入站。model_call：插件中间件 llm_request／llm_execution 可改写或替换每次提供方请求；pre_api_request／post_api_request 仅观察。tool_before_after：pre_tool_call 可 block／approve／modify 参数，post_tool_call、transform_tool_result（替换结果），审批前后、subagent_start。end：pre_verify 可让回合继续，post_llm_call、transform_llm_output（改写最终回复）、on_session_end、subagent_stop。context_compaction：记忆提供方 on_pre_compress 返回的文字进入压缩摘要提示；post_compaction 仅观察。session_start：on_session_start、on_session_open 仅观察；记忆提供方 system_prompt_block 在建系统提示时返回静态文字注入。save 未见以写盘为本义的事件点。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/hooks.md",
+          "locator": "website/docs/user-guide/features/hooks.md, Event Hooks 总表",
+          "lines": "L7-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子系统总览",
+          "note": "四套钩子及运行位置；shell 与插件钩子在 CLI 与网关都运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/hooks.md",
+          "locator": "website/docs/user-guide/features/hooks.md, Shipped plugin-hook catalog",
+          "lines": "L449-L500",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件与 shell 钩子事件",
+          "note": "pre_tool_call（L455）、pre_llm_call（L460）、pre_verify（L463）为可干预；pre_api_request、on_session_start、post_compaction 等为观察者。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/middleware.md",
+          "locator": "website/docs/developer-guide/middleware.md, Contract",
+          "lines": "L28-L54",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件中间件",
+          "note": "llm_request 替换提供方请求参数、llm_execution 包裹或替换实际调用、tool_request 替换工具参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/memory_provider.py",
+          "locator": "agent/memory_provider.py, MemoryProvider.on_pre_compress / system_prompt_block",
+          "lines": "L208-L210",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "记忆提供方插件接口",
+          "note": "on_pre_compress 返回要放进压缩摘要的要点；conversation_compression.py L2862-L2894 实际调用；L140-L142 system_prompt_block 返回系统提示静态文字。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/hooks.md",
+          "locator": "website/docs/user-guide/features/hooks.md, Shell Hooks",
+          "lines": "L1944-L1971",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "config.yaml hooks: 块",
+          "note": "在配置里写一条 shell 钩子即可在 CLI 与网关会话的 VALID_HOOKS 事件上运行，可阻断工具、注入上下文。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 收全部六项：在 config.yaml 的 hooks: 块加一条带命令的 shell 钩子，按 R2 是添加内容，事件覆盖 VALID_HOOKS（含 pre_llm_call、pre_api_request、pre_tool_call、pre_verify、post_compaction、on_session_start）；首次使用的同意提示是对话框批准。插件钩子与中间件要 plugins.enabled，记忆提供方要设 memory.provider，均为改设置。in_use_by_default 写 []：配置记录写明一般插件默认不加载、没有预置钩子；内置处理器（如自带的提示注入扫描）编进核心，不计。session_start 是否可干预只靠记忆提供方 system_prompt_block（静态文字，建系统提示时调用一次），拿不准它算不算“会话开始”专属处理器；若不算，session_start 应进 observe_only。gateway 钩子的 session:start 等只在消息平台触发。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": []
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "library",
+        "service_api",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：hermes acp（ACP，stdio JSON-RPC，编辑器作客户端）；OpenAI 兼容 API server（/v1/chat/completions、/v1/responses，每个请求在背后跑完整代理循环，需在 .env 设合格的 API_SERVER_KEY 才启动）。cli_subprocess：hermes chat -q／-Q／--oneshot，--format stream-json 输出 JSONL；tui_gateway 的 hermes-gateway-v1 JSON-RPC 也可走 stdio（tui_gateway/entry.py）。service_api：同一网关的 WebSocket（hermes-gateway-v1，经 hermes gateway attach --json 取一次性票据）以及 API server 上自家定义的 /v1/runs、Sessions、Jobs REST 接口。library：文档写明可直接 import run_agent.AIAgent 在进程内嵌入。ACP 要在安装目录里同步 acp 依赖（第三方 agent-client-protocol 包，不是另一个官方包）。mcp-serve 插件只把消息会话和单步工具暴露给 MCP 客户端，不记 public_protocol。未见 host_extension_api（Desktop 插件 SDK 属另一产品形态的界面扩展）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/programmatic-integration.md",
+          "locator": "website/docs/developer-guide/programmatic-integration.md, Programmatic Integration 总表；Which one should I use?",
+          "lines": "L7-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "同一发行版全部程序化入口",
+          "note": "ACP、TUI 网关 JSON-RPC、OpenAI 兼容 API server 三种协议驱动同一 AIAgent 核心；L273 写明可直接 import run_agent.AIAgent 进程内嵌入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/reference/cli-commands.md",
+          "locator": "website/docs/reference/cli-commands.md, hermes chat 选项；--format stream-json",
+          "lines": "L128-L175",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "-q/--oneshot 单次回答后退出，--format stream-json 给程序输出结构化 JSONL。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/gateway-internals.md",
+          "locator": "website/docs/developer-guide/gateway-internals.md, hermes gateway attach",
+          "lines": "L577-L594",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI 自动拉起的本机网关",
+          "note": "attach --json 是给自带界面的本地客户端连网关的公开步骤，没有服务时启动带空闲退出的无托管网关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/programmatic-integration.md",
+          "locator": "website/docs/developer-guide/programmatic-integration.md, OpenAI-Compatible API Server",
+          "lines": "L174-L196",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API server（需 API_SERVER_KEY）",
+          "note": "OpenAI 兼容对话与 Responses 接口，另有 runs、approval、steer、stop 等自定义 HTTP 接口。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/acp.md",
+          "locator": "website/docs/user-guide/features/acp.md, Installation",
+          "lines": "L82-L95",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP 入口",
+          "note": "ACP 要在安装目录同步 acp 依赖后才能用 hermes acp。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 只记 service_api：所选入口不带参数就自动拉起本机网关，外部程序按文档跑 hermes gateway attach --json 取票据即可连上，不另配凭据；票据每次连接由网关发给任何本地客户端，不是只交给自家前端的启动密钥，所以按 R5 判为直接开放，但这一点可能有分歧。cli_subprocess 要加 -q 等参数（不加参数、只靠管道输入是否进非交互模式，文档没写），API server 要设密钥，ACP 要装额外依赖，都不算直接开放。API server 一处同时有公共协议和自家 HTTP 接口，按“一种协议只记一项”分别记 public_protocol 和 service_api。needs_official_package 写 []：ACP 依赖是第三方包，library 从同一安装导入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：终端输入；配置消息平台后，人在聊天通道发来的消息。api：F32 的全部嵌入方式（-q／stream-json、ACP、API server、网关 WebSocket、AIAgent 库）。schedule：网关内置 cron 定时器，模型用默认 cronjob 工具或用户用 /cron、hermes cron 建任务，CLI 自动拉起的网关每 60 秒 tick。external_event：webhook 适配器接收 GitHub、GitLab 等外部服务的 POST 回调转成代理运行，路由可在 config 或 hermes webhook subscribe 动态添加，需要先经 hermes gateway setup 或环境变量启用 webhook 适配器。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/cron.md",
+          "locator": "website/docs/user-guide/features/cron.md, Creating scheduled tasks; How it works",
+          "lines": "L59-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 cronjob 工具与网关定时器",
+          "note": "可在对话里用 /cron、命令行或自然语言让模型建定时任务；L423 写明由网关每 60 秒 tick 执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/messaging/webhooks.md",
+          "locator": "website/docs/user-guide/messaging/webhooks.md, Webhooks; Quick Start",
+          "lines": "L7-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "webhook 适配器（需启用）",
+          "note": "接收外部服务事件、校验签名、转成提示触发代理运行；先启用适配器，再配置或动态订阅路由。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/programmatic-integration.md",
+          "locator": "website/docs/developer-guide/programmatic-integration.md, Programmatic Integration",
+          "lines": "L7-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "程序化入口",
+          "note": "外部程序可经三种协议提交任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "api 进 via_default_entry，照 F32 的 via_default_entry（service_api）。schedule 进 via_default_entry：cronjob 工具默认注册（经 tool_search 延迟加载，但模型能调到），所选入口自动拉起的网关会跑定时器。external_event 要先启用 webhook 适配器（改设置或配环境变量），不进 via_default_entry。process 的 watch_patterns 和后台委派完成属于内部续办，不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "裸 hermes 的 CLI 进程只是前端：启动时发现或拉起本 profile 的网关，回合在网关进程里执行。客户端拉起的网关是脱离终端的无托管守护进程（macOS 上作为一次性 launchd 作业加载，plist 加载后即删、不进 LaunchAgents、无 KeepAlive，系统不负责重启；Linux 上以 Popen 脱离启动），空闲 600 秒（gateway.unmanaged_idle_exit_seconds）且无客户端、无任务时自行退出。可选：hermes gateway install 注册为用户服务（launchd／systemd）才是 local_service。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/cli.md",
+          "locator": "website/docs/user-guide/cli.md, 经典 CLI 经网关会话",
+          "lines": "L176-L176",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "display.interface=cli 的裸 hermes",
+          "note": "CLI 不在终端进程里跑代理，发现或拉起网关后经本地 WebSocket 接入；关终端只是断开，已接受的工作在网关继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_launchd_runtime.py",
+          "locator": "hermes_cli/gateway_launchd_runtime.py, 模块说明与 start_gateway_job",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "macOS 上客户端拉起的无托管网关",
+          "note": "一次性 launchd 作业，不安装、无 KeepAlive，不在登录时启动，launchd 不会重启网关；L100-L128 为实现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/gateway_runtime_start.py",
+          "locator": "hermes_cli/gateway_runtime_start.py, 网关启动命令",
+          "lines": "L60-L95",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "客户端拉起网关",
+          "note": "以 gateway run --idle-exit 启动，macOS 走 launchd 作业，否则以脱离启动者的 Popen 运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/run_idle_exit.py",
+          "locator": "gateway/run_idle_exit.py, 模块说明",
+          "lines": "L1-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "无托管网关的空闲退出",
+          "note": "无客户端、无适配器、无任务与运行时才在 600 秒后退出，有监管者的网关不启用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录的入口描述与代码一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层在网关：经 prompt.submit 接受的输入是写盘的准入记录，网关冷重启后从未开始的排队输入按同一 FIFO 继续执行，已开始被中断的转为 unknown 不重放；cron 任务定义存 ~/.hermes/cron/jobs.json，调度器每次 tick（含重启后）对账未完成的触发；后台委派已完成未送达的结果存 state.db，重启后恢复投递（运行中的子代理不恢复）。交互输入层：默认 busy_input_mode=interrupt，运行中按 Enter 的消息先放进 CLI 进程内存里的 _interrupt_queue，本回合结束后合并为下一条提示再提交；可选：busy_input_mode=queue 时排进网关的持久队列（文档称 crash-durable），/queue 命令也排进那里。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/developer-guide/gateway-local-sessions.md",
+          "locator": "website/docs/developer-guide/gateway-local-sessions.md, 冷重启恢复",
+          "lines": "L218-L228",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机网关会话（CLI 所用）",
+          "note": "从未开始的排队本地输入在启动就绪后按同一 FIFO 继续；已开始被中断的变 unknown、不重放。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/cli.md",
+          "locator": "website/docs/user-guide/cli.md, Busy Input Mode",
+          "lines": "L471-L477",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "display.busy_input_mode 默认 interrupt",
+          "note": "默认 interrupt 改向当前回合；queue 模式排进网关上可撑过崩溃的队列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/cli_chat_turn_mixin.py",
+          "locator": "hermes_cli/cli_chat_turn_mixin.py, 回合结束后重排 interrupt 消息",
+          "lines": "L611-L640",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "busy_input_mode=interrupt",
+          "note": "interrupt 模式下运行中输入的消息留在 CLI 进程内存的 _interrupt_queue，回合结束后合并为下一条提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/cron.md",
+          "locator": "website/docs/user-guide/features/cron.md, Admission recovery",
+          "lines": "L46-L52",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "cron 调度",
+          "note": "调度器每次 tick（包括所属进程重启后）对账未完成的触发记录。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "interactive_queue 记 in_memory：默认 interrupt 模式下，消息并不进当前回合的模型请求，而是存在 CLI 进程内存里、回合结束后再提交（代码 L611-L615 注释写明）；文档把它描述成“改向当前回合”，与代码细节有出入，未细查网关一侧是否另把中断文本写盘。persistent 取自网关的准入 FIFO 与 cron。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：smart 模式下拿不准的危险命令、写受保护的代理指令文件和 ~/.ssh/config 时停下等人工审批（超时 300 秒按拒绝）；模型可调默认注册的 clarify 工具向用户提问并等待回答。resumable_todo：网关所属进程中断后，已开始的输入转为 unknown 并暂停后续排队输入，持久保存，要用户恢复会话后检查并用 /discard 确认才继续（只在崩溃或重启后出现）。可选：display.bell_on_complete／bell_on_prompt 打开后才有终端响铃与 OSC 9 桌面通知（默认都关）；消息平台推送要先配平台。未见结构化交接：委派结果的固定字段只交父代理（归 F28）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md",
+          "locator": "website/docs/user-guide/security.md, Dangerous Command Approval; Approval Modes",
+          "lines": "L24-L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "approvals.mode=smart（默认）",
+          "note": "危险命令经辅助模型判断，拿不准的升级为人工审批提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/toolsets.py",
+          "locator": "toolsets.py, _HERMES_CORE_TOOLS（clarify）",
+          "lines": "L11-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 hermes-cli 工具包",
+          "note": "clarify 在核心工具里（L23），L150 说明为向用户提多选或开放问题。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/cli.md",
+          "locator": "website/docs/user-guide/cli.md, 排队输入丢失所属时",
+          "lines": "L179-L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "经典 CLI 经网关",
+          "note": "运行中的回合失去所属进程时，已接受的输入留在队列，要用户恢复会话检查 unknown 回合并用 /discard 确认后再继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py",
+          "locator": "hermes_cli/config_defaults.py, display.bell_on_complete / bell_on_prompt",
+          "lines": "L835-L836",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认显示设置",
+          "note": "两项默认 False；cli_modal_mixin.py L557-L563 显示终端响铃和 OSC 通知都受这两项控制。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "resumable_todo 取 unknown 准入：它持久保存、重启后仍在、明确等人决定（/discard 或检查后继续），不是代理自用计划，也不是停下等回答的审批；但它只在崩溃路径出现，按 R2 计入，值得复核。审批在无人值守时（子代理、cron）直接拒绝，不阻塞。达到迭代上限只打印提示、不问人，不记 question。skills.write_approval 与 memory.write_approval 默认关，暂存待批的写入默认不出现。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,1631 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "A13__crush__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "交互 TUI 里直接输入任务时，sessionAgent.Run 用 fantasy 代理按模型输出的工具调用执行工具、把结果交回模型，循环到模型不再请求工具（结束原因 stop 记为 end_turn）、工具结果要求停下或用户取消。子代理（agent_dispatch 派出的 task 子代理、agentic_fetch 的内部会话）也是同一套 Run 循环。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：sessionAgent.Run 中 fantasy.NewAgent 与 agent.Stream",
+          "lines": "L908-L913",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 默认路径",
+          "note": "主代理以系统提示和工具表构造 fantasy 代理，随后 Stream 进入模型—工具循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：OnStepFinish 与 turnFinish",
+          "lines": "L1173-L1186",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 默认路径",
+          "note": "每步结束按结束原因判断：工具调用则继续，工具结果带 StopTurn 时不再调用模型、本轮结束。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 逐个入口判过（命令表取 internal/cmd 子命令、internal/ui/dialog/commands.go 命令面板、README）：crush run 非交互单次运行，仍是模型循环（子代理改为阻塞式 agent 工具），不改推进方式；shift+tab 切到 plan 代理，仍是模型循环，只换代理与工具集；crush server／CRUSH_CLIENT_SERVER=1 只把同一循环搬到本机服务里；命令面板的 New Session、Sessions、Switch Model、Summarize、思考与推理强度、Yolo／Sysadmin、Initialize Project（发一条初始化提示进模型循环）、Docker MCP 与 MCP 开关都不改推进方式；用户可调用技能和 MCP 提示只把说明载入对话，交给模型循环；! 前缀直接执行 shell，不经模型，不算控制方式；--channels 让 MCP 渠道消息发起回合，属任务发起（F33），回合内仍是模型循环。没有看到工作流执行器或调度器，故 secondary_modes 写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "coder 代理默认注册 todos 工具（条目带 pending／in_progress／completed 状态），由模型自己决定何时调用；框架把表存进会话记录、在界面上展示，待办为空时向主代理注入一条提醒，压缩摘要也带上当前待办；没有按表推进或拦下偏离的代码。默认系统提示只要求“在内部规划、不对用户叙述”，不要求先写出计划。可选：shift+tab 切到 plan 模式（plan 代理只有只读工具、question 和子代理工具，计划交接后再切回 coder），要用户按键进入，属第二档。范围：task 子代理工具表里没有 todos。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/todos.go",
+          "locator": "internal/agent/tools/todos.go：NewTodosTool",
+          "lines": "L36-L125",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "待办工具把带状态的条目保存到会话并统计各状态数量，不约束执行顺序。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go",
+          "locator": "internal/config/config.go：allToolNames 与 SetupAgents",
+          "lines": "L1060-L1096",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "内置工具全表含 todos，disabled_tools 为空时全部给 coder。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：preparePrompt 待办为空提醒",
+          "lines": "L1712-L1720",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主代理",
+          "note": "非子代理会话的历史前注入提醒：任务适合时用 todos 工具建表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/templates/coder.md.tpl",
+          "locator": "internal/agent/templates/coder.md.tpl：task_completion",
+          "lines": "L220-L225",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认系统提示",
+          "note": "提示只要求动手前在内部想清楚，规划不叙述给用户。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/keys.go",
+          "locator": "internal/ui/model/keys.go：ShiftTab 模式键；ui.go setInputMode L5033-L5036",
+          "lines": "L126-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选路径",
+          "note": "plan 模式由用户按 shift+tab 切换。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型结束信号：结束原因 stop 记为 end_turn，模型不再请求工具即结束本轮。用户中断：TUI 里代理忙时按 esc 取消当前回合（排队的后续提示一并丢弃）。主循环的 StopWhen 只有两条：上下文剩余低于阈值时停下去做自动压缩、压缩后由排队的续写提示接着做（D 组），以及重复工具调用检测（F04）。没有步数、Token、时长或金额上限。子代理走同一个 Run，结束方式相同；主模型还能用 agent_stop 停掉派出的子代理。工具结果带 StopTurn（权限被拒、钩子叫停）也会结束本轮，记 F22。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：turnFinish",
+          "lines": "L666-L670",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环结束判定",
+          "note": "stop 映射为 end_turn，tool_calls 映射为继续使用工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：Run 的 StopWhen",
+          "lines": "L1210-L1236",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环结束判定",
+          "note": "停止条件只有上下文阈值（转去压缩）和重复调用检测，没有预算类上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go",
+          "locator": "internal/ui/model/ui.go：Chat.Cancel 键处理（esc，keys.go L205-L207）",
+          "lines": "L3349-L3355",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI",
+          "note": "代理忙时按 esc 调用 cancelAgent，最终走 sessionAgent.Cancel（agent.go L2211）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "budget 判没有：查过 Run 的 StopWhen、配置项全表（config.go 的 json 键里没有步数、回合、费用一类上限，只有单次请求的 request_timeout 和每型号 max_tokens）、子代理派发代码（agent_dispatch.go 只有关停时的等待超时）。verification_condition 判没有：默认无钩子，子代理交回的报告不做结构检查。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "value_note": "调用重试：模型请求失败时由 fantasy 库不经模型自动重发，Crush 在 OnRetry 里清掉已流出的内容；收到 401 时 OAuth 提供方先刷新令牌再重发（重试次数、退避和可重试错误类型在快照之外的 fantasy 库里）。升级人工：钉住环境是 Hyper 的 OAuth 登录，刷新令牌被吊销时框架发出重新登录通知、界面弹出登录对话框，请求阻塞最多 5 分钟等用户登录，登录后重建模型、从原请求接着走。模型自修：工具出错作为错误结果交回模型；参数不是合法 JSON 时，存档改成 {}，结果替换成“参数不是合法 JSON，请检查后重试”的错误交回模型。循环检测：最近 10 步里同一调用签名出现超过 5 次就直接停止本轮，不注入纠正提示。请求超时、其他提供方错误、内容过滤只把错误显示给用户、结束本轮，不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：OnRetry 回调；SessionAgentCall.OnAuthRefresh 注释 L149-L154",
+          "lines": "L1116-L1126",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用出错",
+          "note": "提供方请求失败时由库自动重试，Crush 只重置本条消息里已流出的内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go",
+          "locator": "internal/agent/coordinator.go：retryAfterUnauthorized 与 waitForInteractiveReauth",
+          "lines": "L1683-L1750",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "认证失效（OAuth 提供方）",
+          "note": "401 先刷新令牌重试；刷新令牌被吊销时通知重新登录并阻塞最多 5 分钟，登录后重建模型返回 nil 让请求重发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go",
+          "locator": "internal/ui/model/ui.go：TypeReAuthenticate 处理",
+          "lines": "L6172-L6173",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "认证失效（OAuth 提供方）",
+          "note": "界面收到重新登录通知后打开登录流程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：OnToolResult 对畸形参数的处理；sanitizeToolInput L2547-L2562",
+          "lines": "L1151-L1156",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用出错",
+          "note": "参数不是合法 JSON 的调用，结果被替换为错误并交回模型重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/loop_detection.go",
+          "locator": "internal/agent/loop_detection.go：hasRepeatedToolCalls",
+          "lines": "L11-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "循环检测",
+          "note": "窗口 10 步、同一签名超过 5 次即判为循环，由 StopWhen 停止本轮。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "framework_input_repair 判没有：畸形 JSON 换成 {} 只用于存档，结果改成错误交回模型，按定义记 model_self_repair；edit 工具的空白容错属工具自身匹配逻辑，不是按输入模式修正参数。workflow_branch 没有。escalate_to_human 取决于钉住的 Hyper OAuth 登录；若用 HYPER_API_KEY（环境前提里的二选一），makeAuthRefreshCallback 返回 nil，这一项不成立。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "未设 CRUSH_CLIENT_SERVER 时，setupWorkspace 走 setupLocalWorkspace，在同一进程里建 app.App，TUI 经 AppWorkspace 直接调用。可选：设环境变量 CRUSH_CLIENT_SERVER=1 后改为连接（必要时自动拉起）本机 crush 服务，属 local_service_api，第三档。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/root.go",
+          "locator": "internal/cmd/root.go：useClientServer 与 setupWorkspace",
+          "lines": "L261-L294",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 入口",
+          "note": "默认创建进程内 app.App；只有 CRUSH_CLIENT_SERVER=1 才连接服务进程。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "文件读写、搜索、fetch 等工具在 Crush 进程内执行；bash 由进程内的 mvdan.cc/sh 解释器运行，jq 和配置类内置命令在进程内处理，外部程序按命令起子进程（Unix 上放进独立进程组）。auto_lsp 默认开，语言服务器由 Crush 拉起为子进程，要本机装有对应服务器。可选：MCP 服务要用户添加配置；Docker MCP 要用户在命令面板启用。没有容器执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/shell/run.go",
+          "locator": "internal/shell/run.go：standardHandlers 与 builtinHandler",
+          "lines": "L336-L362",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "bash 工具",
+          "note": "解释器的执行中间件先在进程内处理内置命令，其余交给下一层。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/shell/exec_unix.go",
+          "locator": "internal/shell/exec_unix.go：processGroupExecHandler",
+          "lines": "L44-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "bash 工具（Unix）",
+          "note": "外部命令用 exec.Cmd 起子进程执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "代理循环每轮从会话与消息服务读回会话和全部消息来构造请求，消息和会话由核心写进数据目录下的 SQLite 库（默认 .crush/crush.db）；TUI 只订阅事件做显示。前端与核心同进程，按分层判归执行核心。可选：CRUSH_CLIENT_SERVER=1 时状态在本机服务一侧。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：Run 中 sessions.Get 与 getSessionMessages",
+          "lines": "L915-L924",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话状态",
+          "note": "每轮请求的历史由代理循环从存储读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/db/connect.go",
+          "locator": "internal/db/connect.go：Connect",
+          "lines": "L83-L99",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话状态",
+          "note": "在数据目录下打开 crush.db 存放会话与消息。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "新会话由 session 服务分配 UUID，消息按会话编号存入同一个 SQLite 库；同一进程里可新开会话（ctrl+n），各会话共用同一工作目录。子代理会话以工具调用编号为 ID、带父会话编号。没有按会话分配进程、目录、文件系统视图或容器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/session/session.go",
+          "locator": "internal/session/session.go：Create 与 CreateTaskSession",
+          "lines": "L102-L122",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话管理",
+          "note": "会话只靠生成的编号区分，子会话另记父会话编号。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心以库的形式内嵌 fantasy，buildProvider 按提供方和线路类型分别构造 Anthropic Messages、OpenAI Responses、OpenAI 兼容 chat completions、Google Gemini／Vertex、Bedrock 等实现，默认安装即具备，加一条提供方配置或凭据就能用。钉住环境用 Hyper，走 chat completions（OpenAI 兼容）线路。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go",
+          "locator": "internal/agent/coordinator.go：buildProvider",
+          "lines": "L1442-L1520",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接入",
+          "note": "按提供方与线路类型分派到多种接口协议的适配实现，Hyper 走 chat completions。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具以 fantasy AgentTool 放进请求的工具列表，模型回复里带结构化调用条目，框架按调用编号执行并回传结果。MCP 扩展点默认开放，用户添加一条服务配置后，MCP 工具被包成模型可调的函数、调用时转成 MCP CallTool 请求。参数不是合法 JSON 时，把错误作为工具结果交回模型。没有文本解析调用，也没有调用其他工具的脚本执行器（bash 只跑 shell，内置命令只有 jq 和配置类命令）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：OnToolCall 记录结构化调用",
+          "lines": "L1134-L1150",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具调用",
+          "note": "从结构化调用条目取工具名、编号和参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/mcp-tools.go",
+          "locator": "internal/agent/tools/mcp-tools.go：Tool.Info 与 Tool.Run",
+          "lines": "L41-L112",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 扩展点",
+          "note": "MCP 工具包装成 fantasy 工具，执行时经 mcp/tools.go L52 的 CallTool 转发。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md",
+          "locator": "README.md：MCPs",
+          "lines": "L419-L441",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 扩展点",
+          "note": "官方说明在配置里添加 stdio、http、sse 三类 MCP 服务即可使用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role",
+          "failover"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主代理 coder 用大模型槽（钉住环境为 hyper/prism）；agent_dispatch 派出的 task 子代理在非 Copilot 提供方上沿用同一大模型；agentic_fetch 的内部子代理能多步调用 web_fetch、web_search 等工具，按总则 R4 算自动派生子代理，它固定用小模型槽（prism-flash），记 per_role，型号由服务端目录决定。模型自选型号：agent_dispatch 和 agent_send 带 model、provider、reasoning 参数，主模型可为子代理指定型号和推理强度，框架校验后执行；Hyper 目录有多个型号。prism 本身是 Hyper 服务端的路由型号（响应头报告实际型号），属托管服务内部，不算框架的按请求路由。主执行链没有失败换型号。可选：ctrl+l 切换型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agentic_fetch_tool.go",
+          "locator": "internal/agent/agentic_fetch_tool.go：内部子代理构造",
+          "lines": "L150-L187",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "agentic_fetch 子代理",
+          "note": "内部会话以 smallOnlyModels 构造，带 web_fetch、web_search、glob、grep、sourcegraph、view 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/shared_models.go",
+          "locator": "internal/agent/shared_models.go：rebuildModels、subAgentModels、smallOnlyModels",
+          "lines": "L28-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "型号分配",
+          "note": "子代理大模型除 Copilot 外等于主大模型；小模型另建（subAgentModels L130、smallOnlyModels L136）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go",
+          "locator": "internal/agent/agent_dispatch.go：AgentDispatchParams；agent_dispatch_model.go resolveModelOverride L30-L60",
+          "lines": "L44-L53",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理派发",
+          "note": "派发参数含 model、provider、reasoning，由主模型填写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：generateTitle 依次尝试小、大模型",
+          "lines": "L1960-L1985",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用（标题）",
+          "note": "标题先用小模型，出错或输出到上限再改用大模型。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 逐项：标题生成——小模型（与主型号不同），失败或输出到上限换大模型，记 per_role 和 failover；上下文压缩——summarize 用当前代理的大模型（agent.go L1495），与主执行链同一型号；动作审核分类——无；联网搜索与网页抓取——agentic_fetch 是能多步调工具的子代理，计入 value，不记这里，普通 fetch 工具不调模型；媒体理解——无；生成类工具——无。槽位具体型号来自 Hyper 线上目录（prism／prism-flash），confidence 因此取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "每次主循环请求带 MaxOutputTokens＝型号目录里的 default_max_tokens（用户没设 max_tokens 时），子代理同样。钉住环境下目录从 Hyper 服务端取，截断后只记 max_tokens 结束原因、没有续写或重试；但取目录失败且无缓存时退回二进制内嵌目录（prism 131072，qwen3.8-max 65536），这是框架代码里按型号查表的分支，按总则 R2 计入。没有步数、总 Token、时长、金额上限；request_timeout 是单次请求超时，不计；上下文阈值触发的自动压缩属 D 组；循环检测记 F04；Hyper 余额由服务端计费。可选：每个型号的 max_tokens 设置项。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go",
+          "locator": "internal/agent/coordinator.go：Run 中 maxTokens 取值",
+          "lines": "L389-L392",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环输出上限",
+          "note": "默认取目录的 DefaultMaxTokens，用户设了 max_tokens 才覆盖。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/hyper.go",
+          "locator": "internal/config/hyper.go：hyperSync.fetch",
+          "lines": "L76-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "型号目录来源",
+          "note": "取线上目录失败时用缓存，缓存为空时用内嵌目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/hyper/provider.json",
+          "locator": "internal/agent/hyper/provider.json：prism 条目",
+          "lines": "L9-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内嵌型号目录",
+          "note": "内嵌目录给 prism 定 default_max_tokens 131072。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go",
+          "locator": "internal/agent/agent.go：turnFinish 的 FinishReasonLength 分支",
+          "lines": "L672-L683",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环截断处理",
+          "note": "输出到上限只记 max_tokens 结束原因并写日志，不续写。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "口径疑问：钉住环境的上限值由 Hyper 服务端目录下发，按 output_limit 的专门规定本不计入；但取不到目录且无缓存时会落到内嵌表，按总则 R2“只在失败时走到的分支也算”计入。两条规定在这里冲突，我取计入，请码本写明服务端目录带内嵌兜底表时怎样判。其他维查过：config.go 的配置键没有步数、费用、时长上限，StopWhen 只有上下文阈值和循环检测。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每个用户回合开始时 Run 从 SQLite 重读本会话从最近一次摘要消息起的消息（ListFromSummary，摘要之前一概不发，属定位起点），preparePrompt 按角色转换、跳过空的助手消息、把工具结果挪到对应调用之后，再交给 fantasy 代理；回合内各步 PrepareStep 直接取 fantasy 维护并追加的消息列表，只做清洗（去空媒体、媒体降级、缓存标记、折入排队提示）。记录里只有消息：摘要是带 is_summary_message 标志的消息，Finish 分片只标记流程，均按元数据处理，不算控制条目。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L1862-L1886",
+          "locator": "internal/agent/agent.go：getSessionMessages",
+          "lines": "L1862-L1886",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环（coder 代理）",
+          "note": "每次运行从库里只取最近摘要消息起的尾部，摘要消息改作用户角色，之前的不发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L1710-L1803",
+          "locator": "internal/agent/agent.go：preparePrompt",
+          "lines": "L1710-L1803",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环（coder 代理）",
+          "note": "按角色把存储的消息转成请求消息，只跳过空消息、重排工具结果，没有按控制条目删段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L986-L1029",
+          "locator": "internal/agent/agent.go：Run 中的 PrepareStep",
+          "lines": "L986-L1029",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环（coder 代理）",
+          "note": "回合内每步直接取 options.Messages，只追加排队提示并做清洗和缓存标记。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "回合开始时从存储重读并整份转换一遍，但转换只看角色和空内容，不读控制条目，故按 scope_rule 记 sequential_messages；回合内的 fantasy 列表与回合开始时的转换合为同一份顺序消息，layers 只写一项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：bash 与 job_output 输出超过 30000 字符时保留首尾各一半，中段整份写入数据目录 shell-output 下的文件并在标记里给出路径；fetch 超过上限截短；grep、glob 结果超过 100 条截断，ls 有条目上限。summarization：每步后检查会话累计 token，剩余量低于阈值（窗口大于 20 万时留 2 万，否则窗口的 20%）且未设 disable_auto_summarize 时停止本回合，调用大模型按摘要提示改写历史，摘要消息成为之后请求的起点；中断时有未完成工具调用的会自动排队续跑。窗口未知（0）时不自动摘要；钉住的 prism 在内嵌目录中窗口为 1000000，线上目录值不可见。可选：命令面板 Summarize Session 手动摘要（第二档）。不支持图像的型号会把工具结果里的媒体换成一句占位，这是能力兼容而不是按大小缩减，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/bash.go#L499-L519",
+          "locator": "internal/agent/tools/bash.go：TruncateOutput",
+          "lines": "L499-L519",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 bash、job_output",
+          "note": "超长输出保留首尾，中段另存文件、上下文只留路径标记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L1210-L1231",
+          "locator": "internal/agent/agent.go：Run 的 StopWhen 自动摘要判定",
+          "lines": "L1210-L1231",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "剩余窗口低于阈值且未关闭自动摘要时触发压缩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L1490-L1560",
+          "locator": "internal/agent/agent.go：summarize",
+          "lines": "L1490-L1560",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "用大模型和摘要提示生成 is_summary_message 消息，替换此前历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L463",
+          "locator": "internal/config/config.go：Options.DisableAutoSummarize",
+          "lines": "L463",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "自动摘要默认开启（default=false 的关闭开关）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有找到在后续轮次把旧工具结果整条换成占位的流程，也没有按相关性挑选旧轮次，故不记 tool_result_replacement、segment_selection。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "structural_index"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：TUI 输入框里按 @ 引用文件，选中后框架读入文件内容作为附件随请求发出（已读且未改的跳过），另有文件选择器和粘贴附件。keyword：默认注册的 grep 工具按正则搜文件内容（glob 只按文件名）。structural_index：auto_lsp 默认开启，默认注册 lsp_references、lsp_definition、lsp_symbols、lsp_call_hierarchy 等工具；能否真正取回取决于本机是否装有对应语言服务器，环境前提没钉住这一点。sourcegraph 工具检索的是公共代码库而不是项目文件，写在这里不另计；fetch、agentic_fetch 的网页抓取和搜索不计。技能目录（内置 crush-config、crush-hooks、jq 和自动发现的技能）以说明常驻系统提示、正文由 view 按需读取。可选：配置 MCP 后才有 list_mcp_resources、read_mcp_resource 和 @ 引用 MCP 资源。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go#L5144-L5190",
+          "locator": "internal/ui/model/ui.go：insertFileCompletion",
+          "lines": "L5144-L5190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（TUI）",
+          "note": "@ 引用文件后读入内容，作为 message.Attachment 随请求发送。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L1022-L1062",
+          "locator": "internal/agent/coordinator.go：buildTools",
+          "lines": "L1022-L1062",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "默认注册 grep、glob、sourcegraph 等；auto_lsp 未设或为 true 时注册 LSP 引用、定义、符号、调用层次工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L475",
+          "locator": "internal/config/config.go：Options.AutoLSP",
+          "lines": "L475",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "auto_lsp 默认开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "structural_index 依赖本机装有语言服务器（总则 R2：能否触发取决于未钉住的环境参数，照样计入，confidence 取 medium）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每次构造系统提示时自动读入项目根的默认上下文文件（AGENTS.md、CRUSH.md、CLAUDE.md、.cursorrules 等）和全局的 ~/.config/crush/CRUSH.md、~/.config/AGENTS.md。本配置首次启动的初始化询问按默认 Yep 作答，模型会写出 AGENTS.md，之后新会话读入它。系统提示的 memory_instructions 段要求模型发现命令、风格等时更新记忆文件，写入靠通用 edit/write 工具，没有专门的记忆工具或固定时点触发，按码本不计 auto_summary。没有结构化记忆条目或检索库。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L30-L47",
+          "locator": "internal/config/config.go：defaultContextPaths",
+          "lines": "L30-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "项目级默认上下文文件清单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/prompt/prompt.go#L185-L194",
+          "locator": "internal/agent/prompt/prompt.go：promptData",
+          "lines": "L185-L194",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "系统提示构造",
+          "note": "构造提示时加载项目和全局上下文文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md#L539-L561",
+          "locator": "README.md：Global context files",
+          "lines": "L539-L561",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "自动纳入两份全局说明文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/templates/coder.md.tpl#L266-L272",
+          "locator": "internal/agent/templates/coder.md.tpl：memory_instructions",
+          "lines": "L266-L272",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "coder 系统提示",
+          "note": "只在提示里要求模型更新记忆文件，没有专门的记忆写入流程。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过工具注册表（coordinator.go buildTools）和数据库表（sessions、messages、files、read_files），没有记忆工具或记忆库。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "messages：运行记录存进数据目录（默认仓库根 .crush/crush.db）的 SQLite messages 表，每行一条消息，parts 里是文字、推理、工具调用、工具结果、Finish、ShellCommand、SubAgentReport 等分片；摘要是带 is_summary_message 标志的消息，Finish 只标记流程，都算消息元数据，没有独立的控制条目。external_reference：bash、job_output 输出超限时中段整份写进数据目录 shell-output 下的文件，记录里只留路径；文件跨进程保留，按 7 天和 256MB 定期清理（条件：输出超过 30000 字符）。sessions 表的 todos、summary_message_id、用量等是会话元数据；files 表按会话存改前改后的文件版本，只用于侧栏展示改动对比、恢复和回退流程都不读，不计 state_snapshot；read_files 表记读过的文件；logs/crush.log 是应用日志。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/db/models.go#L11-L65",
+          "locator": "internal/db/models.go：File、Message、ReadFile、Session",
+          "lines": "L11-L65",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认持久化",
+          "note": "持久化表结构：消息行带 is_summary_message 标志，没有其他条目类型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/message/content.go#L122-L200",
+          "locator": "internal/message/content.go：ToolCall、ToolResult、Finish、ShellCommand、SubAgentReport",
+          "lines": "L122-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认持久化",
+          "note": "消息分片类型均为内容或流程标记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/shell/truncate.go#L133-L169",
+          "locator": "internal/shell/truncate.go：SpillOutput",
+          "lines": "L133-L169",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限工具输出",
+          "note": "超限输出写进数据目录下文件、跨进程保留，按保留期清理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/session.go#L123-L170",
+          "locator": "internal/ui/model/session.go：loadSessionFiles",
+          "lines": "L123-L170",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件版本历史",
+          "note": "files 表的版本只用于生成改动对比展示。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "crush -C/--continue 继续最近会话，-s/--session 按编号继续，TUI 里 ctrl+s 打开会话列表。恢复时从库里读回消息；死掉的进程留下的未完成工具调用被补上一条“已中断、可重试”的错误结果并给助手消息补 Finish，不再执行，由模型在下一次调用中重新决定；之后等用户输入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/root.go#L66-L67",
+          "locator": "internal/cmd/root.go：--session、--continue",
+          "lines": "L66-L67",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "官方继续会话参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/settle.go#L137-L172",
+          "locator": "internal/agent/settle.go：repairInterruptedToolCalls",
+          "lines": "L137-L172",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "中断的工具调用只补错误结果、不接着执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：每次运行从库里重读消息（含工具调用与结果）。task_plan：todos 存在 sessions 表，恢复后界面照原样显示，todos 工具读出原清单继续更新。subagent_links：重启后注册表为空，agent_send 按标签找不到时由 rehydrateDispatch 从父会话记录和子会话重建，子代理带着原会话接着做（总则 R3 第一档）；agentic_fetch 起的后台搜索子代理不能这样恢复。workspace 不带回。外部副作用（已执行的命令、已发出的网络请求）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L1862-L1886",
+          "locator": "internal/agent/agent.go：getSessionMessages",
+          "lines": "L1862-L1886",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复后运行",
+          "note": "从存储读回消息和工具结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/todos.go#L36-L100",
+          "locator": "internal/agent/tools/todos.go：NewTodosTool",
+          "lines": "L36-L100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 todos",
+          "note": "待办清单存在会话记录上，工具读出原清单再更新。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L697-L711",
+          "locator": "internal/agent/agent_dispatch.go：agent_send 找不到注册项时重建",
+          "lines": "L697-L711",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理（agent_dispatch）",
+          "note": "重启后按标签重建子代理注册项。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L859-L880",
+          "locator": "internal/agent/agent_dispatch.go：rehydrateDispatch",
+          "lines": "L859-L880",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理（agent_dispatch）",
+          "note": "子会话保有完整对话，重建为已结束的子代理后重新打开。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "preparePrompt 每次都插入一条“待办清单为空”的提醒（不管实际有没有待办），但 todos 工具和界面仍读回原清单，按判定记 task_plan。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "命令面板只有新会话、切换会话、摘要、切换型号和模式等，没有回退、撤销、分叉或编辑重发旧消息。files 表留有改前改后的文件版本，但只用于展示改动对比，没有恢复入口。恢复时对未完成的工具调用只补错误结果，不是查重；没有对工具调用的幂等去重。RunID 只关联用户提交的运行，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/dialog/commands.go#L456-L577",
+          "locator": "internal/ui/dialog/commands.go：内置命令清单",
+          "lines": "L456-L577",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（TUI）",
+          "note": "内置命令里没有回退、撤销或分叉。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/session.go#L123-L170",
+          "locator": "internal/ui/model/session.go：loadSessionFiles",
+          "lines": "L123-L170",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件版本历史",
+          "note": "文件版本只用于生成改动对比。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/settle.go#L137-L172",
+          "locator": "internal/agent/settle.go：repairInterruptedToolCalls",
+          "lines": "L137-L172",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "只修补历史，不按调用编号查重。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过命令面板、TUI 键位、history 服务的所有调用方（只有工具写入和 UI 展示），以及 settle.go、runid.go。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule"
+      ],
+      "facets": {
+        "default_edit": "review",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：permissions.allowed_tools（工具名或 工具:动作）免询问，options.disabled_tools 把内置工具从清单里去掉，另有 Normal、Yolo、Sysadmin 三种权限模式；询问框的“本会话允许”按工具、动作和目录（bash 按命令原文）自动记下。command_rule：permissions.blocked_commands、allowed_commands 增删危险命令表，safe_commands 按命令原文精确匹配免询问。默认效果：改工作区文件、写工作区外、运行命令都在询问框里等用户；命令联网（curl、wget、包管理器等）在询问框里标出危险原因，批准后执行，没有命令层断网。.crushignore 只把文件从列目录和搜索结果里隐去，不是读写许可规则。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L411-L431",
+          "locator": "internal/config/config.go：Permissions",
+          "lines": "L411-L431",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限配置",
+          "note": "allowed_tools、blocked_commands、allowed_commands、safe_commands 四个配置项。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/permission/permission.go#L279-L297",
+          "locator": "internal/permission/permission.go：Request",
+          "lines": "L279-L297",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "Yolo/Sysadmin 直接放行，否则查工具名或工具:动作名单，然后询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/bash.go#L258-L335",
+          "locator": "internal/agent/tools/bash.go：NewBashTool",
+          "lines": "L258-L335",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "非安全只读命令一律请求许可，危险原因随询问显示，批准后执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/write.go#L103-L110",
+          "locator": "internal/agent/tools/write.go：写入前请求许可",
+          "lines": "L103-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "写文件不论在工作目录内外都请求许可。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md#L573-L598",
+          "locator": "README.md：Allowing Tools、Disabling Built-In Tools",
+          "lines": "L573-L598",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限配置",
+          "note": "默认运行工具前询问；可按工具名允许或禁用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Normal 模式下 write、edit、multiedit、bash（非安全只读命令）、fetch、download、agentic_fetch、越出工作目录的 view、LSP 改名等在调用执行前停下，询问框提供允许、本会话允许、拒绝；一次批准只放行这次调用。“本会话允许”相当于新增规则。agentic_fetch 顶层批准后内部子会话自动批准。可选：计划模式（快捷键切换）结束时的计划交接框只是切换回编码模式，不在默认路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/permission/permission.go#L279-L297",
+          "locator": "internal/permission/permission.go：Request",
+          "lines": "L279-L297",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "工具调用发出执行前的许可请求入口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/dialog/permissions.go#L182",
+          "locator": "internal/ui/dialog/permissions.go：选项",
+          "lines": "L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口（TUI）",
+          "note": "询问框有允许、本会话允许、拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/bash.go#L281-L307",
+          "locator": "internal/agent/tools/bash.go：执行前请求许可",
+          "lines": "L281-L307",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "bash 在执行前请求一次许可，被拒则不执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "执行期阻断表在命令运行中拦下危险命令时直接拒绝、不询问，不算 specific_operation；fetch、download 只在调用前请求一次。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：权限服务按模式和名单决定放行或询问；bash 在执行前用危险命令表静态检查，运行中由解释器的执行期阻断表拦下未被认出的危险命令；view 越出工作目录时询问。没有 Seatbelt、Landlock、容器等系统级隔离，命令以用户权限运行。prompt_only＝present（部分兜底）：agent_dispatch 默认的 read 访问级子代理在提示里写明“不能编辑或写文件”，代码只去掉了编辑类工具，但它保留 bash，bash 不受只读检查（只走普通许可询问）；计划模式自己没有 bash，但它派出的只读子代理同样带 bash。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/permission/permission.go#L279-L297",
+          "locator": "internal/permission/permission.go：Request",
+          "lines": "L279-L297",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "框架代码在执行前决定放行或询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/bash.go#L311-L333",
+          "locator": "internal/agent/tools/bash.go：执行期阻断表",
+          "lines": "L311-L333",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "非 Sysadmin 模式下对未认出的命令启用执行期阻断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/templates/task.md.tpl#L8",
+          "locator": "internal/agent/templates/task.md.tpl：CanWrite 分支",
+          "lines": "L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "read 访问级子代理",
+          "note": "只读子代理在提示里被告知不能编辑或写文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L1139-L1141",
+          "locator": "internal/config/config.go：resolveTaskTools",
+          "lines": "L1139-L1141",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "read 访问级子代理",
+          "note": "只读子代理工具集是只读工具加 bash。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 核对清单：默认 Normal 模式——编辑和命令都有许可检查；不改设置可切换的模式——计划模式（工具集由代码限定为只读、无 bash，但其子代理带 bash）、Yolo、Sysadmin（放宽而非限制）；默认可调用的内置角色——task 子代理 read 访问级只靠提示约束 bash 写文件，write 访问级无限制交代；文档列出的限制设置——allowed_tools、disabled_tools、命令名单均有代码检查。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "记录在 SQLite messages 表：触发的用户消息、助手消息里与工具调用同行存放的文字和推理分片（intent），工具调用的编号、工具名和完整参数（actual_operation），工具结果按 tool_call_id 挂接、带内容、元数据和 is_error（result）。没有专门的审计账本。批准不落盘；被拒只留下“User denied permission”的错误结果，分不出人工批准和名单放行，不计 approval。没有账户身份字段，只有会话和型号编号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/message/content.go#L122-L142",
+          "locator": "internal/message/content.go：ToolCall、ToolResult",
+          "lines": "L122-L142",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认持久化",
+          "note": "调用存编号、工具名、参数；结果按调用编号挂接并带错误标志。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/db/models.go#L29-L65",
+          "locator": "internal/db/models.go：Message、Session",
+          "lines": "L29-L65",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认持久化",
+          "note": "消息与会话表字段，没有审批或账户字段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/tools.go#L80-L84",
+          "locator": "internal/agent/tools/tools.go：NewPermissionDeniedResponse",
+          "lines": "L80-L84",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "被拒时只留错误结果文字。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "permission.go 不写日志也不落盘决定；批准事件只经内存中的 pubsub 发给界面和钩子订阅者。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "交互 TUI 给主 coder 代理默认注册 agent_dispatch、agent_send、agent_status、agent_stop：agent_dispatch 为子代理建独立子会话，在后台跑一个能多步调用工具的 task 代理（只读或可写两种变体），协调器按父会话和标签登记、跟踪运行状态并把报告送回。默认工具 agentic_fetch 也在内部起一个带 web_fetch、web_search 等工具的子代理会话。子代理自己不能再派子代理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L953-L971",
+          "locator": "internal/agent/coordinator.go：effectiveToolNames",
+          "lines": "L953-L971",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 入口的工具清单",
+          "note": "交互模式给主代理 agent_dispatch/send/status/stop，去掉阻塞式 agent；子代理两类都不给。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L381-L478",
+          "locator": "internal/agent/agent_dispatch.go：agentDispatchTool",
+          "lines": "L381-L478",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "按标签登记 dispatchedAgent、建子会话、在后台运行 task 代理，立即返回“Started subagent”。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agentic_fetch_tool.go#L162-L198",
+          "locator": "internal/agent/agentic_fetch_tool.go：内部子代理",
+          "lines": "L162-L198",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 agentic_fetch",
+          "note": "agentic_fetch 用 NewSessionAgent 起一个带六个工具的子代理会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录对子代理工具的陈述与 effectiveToolNames 一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理都由主代理模型调用默认工具（agent_dispatch，或 agentic_fetch 在内部起子代理）创建；框架只按这次工具调用执行。MCP 通道事件和用户消息只是向主代理投一条提示，不直接起代理。可选：计划模式（用户切换）下的 plan 代理也能派只读子代理，同样由主代理调用工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L381-L478",
+          "locator": "internal/agent/agent_dispatch.go：agentDispatchTool",
+          "lines": "L381-L478",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "创建由主代理的 agent_dispatch 工具调用发起。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/dialog/commands.go#L456-L577",
+          "locator": "internal/ui/dialog/commands.go：命令面板条目",
+          "lines": "L456-L577",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户命令",
+          "note": "命令面板里没有直接派出子代理的命令（只有新会话、切换会话、压缩、初始化等）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "user：查了命令面板（commands.go）与自定义命令目录（commands.go L121-L136），没有直接起子代理的命令；event_scheduling：快照里没有定时器，MCP 通道事件经 AgentRunChannel 交给主代理；framework_internal：标题生成与压缩摘要是单次模型调用，没找到框架自动起的多步辅助代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个子代理有自己的子会话，只收到 prompt 参数作首条消息；agent_send 能给已派出的子代理（运行中或已结束）续发消息，保留它的会话接着做；task 子代理的工作目录就是项目工作目录，可写变体与主代理读写同一工作区（agentic_fetch 子代理用临时目录）。权限：dispatch 子代理走同一权限服务，普通模式下照常询问；agentic_fetch 内部会话自动批准。待办等结构化状态按会话存，子代理不读写主代理的待办，不记 shared_state。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L1833-L1885",
+          "locator": "internal/agent/coordinator.go：subAgentCall、runSubAgent",
+          "lines": "L1833-L1885",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理上下文构造",
+          "note": "为子代理建任务子会话，调用只带 Prompt，不复制父对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L539-L576",
+          "locator": "internal/agent/agent_dispatch.go：reopen（agent_send 调用）",
+          "lines": "L539-L576",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "续派消息",
+          "note": "agent_send 在子代理原会话上再跑一轮，保留其上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_tool.go#L118-L127",
+          "locator": "internal/agent/agent_tool.go：buildTaskAgent",
+          "lines": "L118-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理工作目录",
+          "note": "task 子代理的提示和工具都用 c.cfg.WorkingDir()，与主代理同一工作区。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "agent_dispatch（默认委派）立即返回，子代理在后台跑，完成后框架把报告作为新一轮送回父会话，期间可用 agent_status 查询：记 async_wait。agentic_fetch 前台阻塞等子代理结果，超过 60 秒才转后台按报告送回：前台阶段记 synchronous_return。取消：agent_dispatch 派出的子代理与发起回合脱钩，用户打断父回合不停它们（只在程序退出时一并停下，不写报告）；agentic_fetch 前台阶段父回合被取消时框架自动停掉子代理。两个取消子维度按这条路径填（默认委派路径没有取消传播）。agent_stop 是模型按标签停单个子代理的工具，不算传播。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L482-L515",
+          "locator": "internal/agent/agent_dispatch.go：runDispatched",
+          "lines": "L482-L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径的结果送回",
+          "note": "后台 goroutine 跑完后 reportDispatchResult 唤醒父会话送回报告。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L1548-L1568",
+          "locator": "internal/agent/coordinator.go：Cancel、CancelAll",
+          "lines": "L1548-L1568",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "取消父回合不停 dispatch 子代理；CancelAll（退出）才全部停下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_background.go#L54-L115",
+          "locator": "internal/agent/agent_background.go：runSubAgentMaybeBackground",
+          "lines": "L54-L115",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "agentic_fetch 路径",
+          "note": "前台等待子代理，60 秒后转后台；转后台前父回合 ctx 取消时 entry.stop 停掉子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 逐项（按 agentic_fetch 前台阶段）：打断当前回合——连带（agent_background.go L104-L110）；取消等待中的调用——TUI 没有单独取消某次调用的操作，默认路径上没有；取消父运行——没找到不退出程序就中止会话运行的方式（删除会话不停代理，backend/session.go L172-L178），按没有处理。默认委派路径 agent_dispatch 上三种都不连带；码本要求此时换用第一条有传播的路径，这样得出 all_ways 容易让人误读为整体都连带，口径值得再议。cancel_depth：子代理不能再派子代理，只有一层。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具（bash、edit、view、LSP 工具等）写在核心代码里注册；MCP 服务加一条配置（crushrc 的 mcp add 或 crush.json 的 mcp 节）即可把其工具交给模型。Go 单二进制，没有进程内插件接口，也没有把用户脚本注册成工具或嵌入方声明工具的接口（crush server 的 HTTP 接口里没有声明工具的端点）。默认没有配置 MCP。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L1060-L1096",
+          "locator": "internal/config/config.go：allToolNames",
+          "lines": "L1060-L1096",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置工具",
+          "note": "内置工具全表写在核心代码里。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md#L419-L441",
+          "locator": "README.md：MCPs",
+          "lines": "L419-L441",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部协议服务",
+          "note": "在 crushrc 里加一条 mcp add 即可接入 stdio、http、sse 三种 MCP 服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/server/endpoints.go#L374-L702",
+          "locator": "internal/server/endpoints.go：v1 端点",
+          "lines": "L374-L702",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入接口",
+          "note": "服务端接口能发消息、管会话、刷新 MCP，没有为会话声明工具的端点。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "项目规则：每个会话自动读入 AGENTS.md、CRUSH.md、CLAUDE.md 等上下文文件和全局 ~/.config/crush/CRUSH.md、~/.config/AGENTS.md（本配置仓库原无 AGENTS.md，初始化询问默认 Yep 会写出一份）。技能目录：自动发现全局和项目技能目录，另有三个内嵌技能。提示模板：~/.config/crush/commands、~/.crush/commands、.crush/commands 下的 Markdown 文件成为 user:/project: 命令，$NAME 形式的参数在调用时填入；MCP 服务的 prompts 也出现在命令面板。没有用户可定义的角色或工作流文件（coder、task、plan 三个代理写死在 SetupAgents）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L30-L47",
+          "locator": "internal/config/config.go：defaultContextPaths",
+          "lines": "L30-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目规则",
+          "note": "默认自动装载的上下文文件名清单。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md#L615-L698",
+          "locator": "README.md：Agent Skills、User-Invocable Skills",
+          "lines": "L615-L698",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能目录",
+          "note": "自动发现的技能目录；技能可按名从命令面板调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/commands/commands.go#L121-L136",
+          "locator": "internal/commands/commands.go：buildCommandSources",
+          "lines": "L121-L136",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自定义命令",
+          "note": "三个命令目录里的 .md 文件作为自定义命令装载。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/config/config.go#L1155-L1189",
+          "locator": "internal/config/config.go：SetupAgents",
+          "lines": "L1155-L1189",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "角色定义",
+          "note": "代理集合写死为 coder、task、plan，用户不能新增角色。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "自定义命令目录在 README 里没有介绍，只在源码里；F30 不按 R5 限文档，按代码记入。executable_items 判为 []：commands.go 只做 $NAME 参数替换，没有执行嵌入命令；skills 包里没有调用 shell 或挂钩子的代码。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "13 个钩子事件：TurnStart（每轮开始，归输入，仅观察）；PreToolUse（可放行、拒绝、改写输入、注入、终止）、PostToolUse（替换输出、注入、终止）、PostToolUseFailure、PermissionRequest、PermissionResult（归工具前后）；TurnEnd、StopFailure、Interrupt、SessionEnd（归结束，均仅观察）；PreCompact（可阻止压缩）、PostCompact（归上下文压缩）；SessionStart（新建或恢复会话，仅观察）。钩子只对顶层代理触发，子代理内部不触发。没有模型请求前后或保存事件。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/docs/hooks/README.md#L168-L236",
+          "locator": "docs/hooks/README.md：Events、What each control field does",
+          "lines": "L168-L236",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件与控制能力",
+          "note": "列出 13 个事件和各自可用的控制字段，标 observe 的忽略全部控制字段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/hooks/events.go#L5-L36",
+          "locator": "internal/hooks/events.go：事件名常量",
+          "lines": "L5-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "实现里的事件名与文档一致。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/turn_hooks.go#L21-L48",
+          "locator": "internal/agent/turn_hooks.go：fireTurnHook、turnEndEvent",
+          "lines": "L21-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合事件",
+          "note": "回合事件只运行钩子、不读返回值；子代理调用跳过。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Interrupt（用户取消回合）归入 end。配置记录写明无默认钩子，herdr 集成是编进核心的状态上报、不是钩子处理器，in_use_by_default 写 []。钩子配置每条自带命令，按 R2 算添加内容，故五个阶段都在所选入口直接开放。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "input",
+          "end",
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "crush run 子命令为有文档的非交互模式（参数或管道传入提示，结果写到标准输出，可 --session/--continue 续会话）。crush server 子命令以 HTTP、TCP 或 Unix 套接字提供服务，/v1/docs/ 给出 HTTP 文档和 OpenAPI 3.1 规格，可建工作区、会话并 POST 消息让代理运行。二者都要换子命令，所选入口 crush（交互 TUI）本身不加 run 时不读管道输入；TUI 默认在本进程运行，只有设 CRUSH_CLIENT_SERVER=1 才自动拉起后台服务。没有公共协议服务端、公开库或宿主扩展接口（Go 代码都在 internal/ 下，外部不能导入）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/run.go#L30-L66",
+          "locator": "internal/cmd/run.go：runCmd",
+          "lines": "L30-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "run 子命令的用法说明，支持参数与管道输入、重定向输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/server.go#L28-L47",
+          "locator": "internal/cmd/server.go：serverCmd",
+          "lines": "L28-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "服务模式",
+          "note": "server 子命令，说明在 /v1/docs/ 浏览 HTTP 接口文档与 OpenAPI 规格。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/server/endpoints.go#L382-L392",
+          "locator": "internal/server/endpoints.go：POST /v1/workspaces/{id}/agent",
+          "lines": "L382-L392",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "服务接口",
+          "note": "向代理发消息的接口，运行与请求连接脱钩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/root.go#L261-L265",
+          "locator": "internal/cmd/root.go：useClientServer",
+          "lines": "L261-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "只有 CRUSH_CLIENT_SERVER 环境变量为真时 TUI 才走客户端/服务端架构。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "service_api 的对外文档是服务运行时生成的 /v1/docs 页面和 server 子命令说明，README 只在“Sharing a workspace across clients”里提到共享后端，没有明说给第三方程序用；按“能由任意程序按文档建会话、发任务”记入，confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在 TUI 输入框发任务。API：crush run 与 crush server 的 HTTP 接口（同 F32）。外部事件：声明 claude/channel 能力的 MCP 服务可被启用为通道（MCP 条目里 channel_enabled 或隐藏参数 --channels），服务推送的 notifications/claude/channel 事件被注入会话，空闲时直接开始新一轮，没有会话时先建一个。没有原生定时器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go#L5579-L5622",
+          "locator": "internal/ui/model/ui.go：handleChannelMessage",
+          "lines": "L5579-L5622",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "通道消息到来时确保有会话，再用 AgentRunChannel 让代理跑一轮。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/schema.json#L416-L423",
+          "locator": "schema.json：MCP 配置 channel_enabled、channel_reply",
+          "lines": "L416-L423",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "官方配置模式里写明可把 MCP 服务启用为通道并自动回复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/run.go#L30-L66",
+          "locator": "internal/cmd/run.go：runCmd",
+          "lines": "L30-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API",
+          "note": "非交互模式从参数或管道接收新任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "external_event 的文档只有 schema.json 的字段说明（--channels 是隐藏参数，README 未提），照 R5 按官方有文档记入。via_default_entry 没收 external_event：添加的 MCP 条目自带命令，但通道还要另打开 channel_enabled 开关（或加 --channels），按 R2 视作改设置；若认为开关写在新增条目里算添加内容，则应进 via_default_entry，请主控定口径。schedule：快照里没有定时任务机制（cron 只出现在 bash 危险命令表）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "默认 crush 在当前终端进程内运行核心（AppWorkspace），退出时 CancelAll 停掉主代理和所有后台子代理。可选：设 CRUSH_CLIENT_SERVER=1 时自动拉起脱离终端的 crush server 进程（Setsid），或手动运行 crush server。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/root.go#L261-L265",
+          "locator": "internal/cmd/root.go：useClientServer",
+          "lines": "L261-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认启动方式",
+          "note": "默认不走客户端/服务端架构，核心在本进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L1561-L1568",
+          "locator": "internal/agent/coordinator.go：CancelAll",
+          "lines": "L1561-L1568",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "退出",
+          "note": "关停路径停掉全部运行，包括后台子代理（app.go L989 在关停时调用）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "会话忙时新提交的消息进 sessionAgent 的 messageQueue（进程内 Map），当前回合结束或下一步时并入或依次执行；后台子代理登记表也在内存里，重启后清空，原先在跑的子代理在父会话下一次运行时被报告为 interrupted，不会自动续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L775-L790",
+          "locator": "internal/agent/agent.go：sessionAgent.Run 忙时入队",
+          "lines": "L775-L790",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互输入队列",
+          "note": "会话忙时 enqueueCall 把调用排进队列，并入或排在当前回合之后。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L253",
+          "locator": "internal/agent/agent.go：messageQueue 字段",
+          "lines": "L253",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "队列存放",
+          "note": "队列是进程内的 csync.Map。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent_dispatch.go#L860-L865",
+          "locator": "internal/agent/agent_dispatch.go：rehydrateDispatch 注释",
+          "lines": "L860-L865",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重启后",
+          "note": "子代理登记表在内存，重启后清空，只按记录重建为已结束的子代理，要再续派才运行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "阻塞审批：普通模式下写、执行、联网工具调用前弹权限框等用户批准；question 工具（交互模式默认注册）让模型提问、等用户回答。消息通知：notifications 默认 auto，需要权限、提问等待和回合结束时发通知；macOS 本地选 OSC 99/777 终端通知序列（Linux 用系统通知），只在终端支持焦点上报且窗口失焦时发送。没有持久待办或结构化交接对象。可选：计划模式（用户切换）结束时有“开始编码／修改计划”的交接选择。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go#L1182-L1210",
+          "locator": "internal/ui/model/ui.go：权限请求与提问事件处理",
+          "lines": "L1182-L1210",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批、提问与通知",
+          "note": "权限请求和提问到来时弹出对话并发“Crush is waiting...”通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/ui/model/ui.go#L819-L825",
+          "locator": "internal/ui/model/ui.go：shouldSendNotification",
+          "lines": "L819-L825",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知条件",
+          "note": "未禁用且终端报告焦点、窗口失焦时才发送。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/README.md#L700-L712",
+          "locator": "README.md：Desktop notifications",
+          "lines": "L700-L712",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知默认值",
+          "note": "需要权限和回合结束时发桌面通知，默认 auto。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/question.go#L83",
+          "locator": "internal/agent/tools/question.go：NewQuestionTool",
+          "lines": "L83",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提问工具",
+          "note": "模型可调用的结构化提问工具，等用户回答。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 依赖终端支持焦点上报和 OSC 通知序列，按 R2 记入、confidence 取 medium。resumable_todo：todos 是代理自用计划，权限和提问不持久；structured_handoff：子代理报告只给父代理，没有给人看的固定字段交接对象。没找到到达回合或步数上限时停下问人的路径（循环检测是 StopWhen 条件，命中即结束本轮，agent.go L1232-L1234，不问人）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

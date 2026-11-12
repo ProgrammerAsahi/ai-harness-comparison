@@ -1,0 +1,2169 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "C02__openclaw__gateway-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "网关收到一条任务（渠道消息、Control UI 或连网关的 TUI）后由内置 OpenClaw 运行时跑 agent-core 的模型循环：模型回复里有工具调用就执行并把结果交回模型，直到模型不再请求工具（或 end_turn 未结束时续请求）。目标（goal）自动续跑是在回合之间由框架续发提示、每个回合内部仍是模型循环，按 scope_rule 算模型循环的外层，不另记。Code Mode（默认生效）下模型写的 JS 在一次 exec 调用内跑完或经 wait 续上，结果回到同一模型循环，按总则 R8 只在 F10 记 script_dispatch。可选：Lobster 类型化工作流（显式工作流运行时）由 lobster 插件提供，该插件不在默认启用名单里，要先 enable 才有。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/agent-loop.ts#L221-L345",
+          "locator": "packages/agent-core/src/agent-loop.ts：agent 主循环 while(true)/hasMoreToolCalls",
+          "lines": "L221-L345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口（内置运行时）",
+          "note": "模型消息带 toolCall 时执行工具并把结果交回，hasMoreToolCalls 决定是否继续下一回合。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L9-L24",
+          "locator": "docs/concepts/agent-loop.md：Entry points / Run sequence",
+          "lines": "L9-L24",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "网关 agent RPC → agentCommand → runEmbeddedAgent 的串行模型循环。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/goal.md#L184-L205",
+          "locator": "docs/tools/goal.md：Automatic continuation",
+          "lines": "L184-L205",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "目标仍为 active 时框架在回合结束后排队一条隐藏提示续跑，回合内部仍是普通运行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 逐入口判过（命令表 docs/tools/slash-commands.md 核心命令与插件命令、快速开始）：/goal——回合间续跑，属模型循环外层；/loop——建 cron 定时任务，属任务发起（F33）；/subagents、/acp、/steer、/tell、/queue、/send——派生或投递消息，子任务内部仍是模型循环；/btw、/side——附带提问，不进主线；/bash、/exec、/elevated、/approve——直接命令或权限，不经模型或不改推进方式；/skill、/learn——展开技能提示交给模型循环；/compact、/new、/reset、/model 等——会话管理。Lobster 工作流与 llm-task 插件默认不启用（manifest 无 enabledByDefault），只写可选。疑问：Code Mode 的 Swarm 能在脚本里派出一批收集型子代理并 wait 汇总，脚本仍在一次 exec（可挂起再 wait）里，按 R8 判为一次调用内跑完；若认为 wait 续跑算“脚本接管后续多步”，则应在 secondary_modes 记 explicit_workflow（模型现写）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "progress_card 工具在 full 档默认注册给主会话（tools.updatePlan 未设为 false 即注册）：保存有序步骤（pending/in_progress/completed，最多 50 步），网关持久保存并在界面展示，由模型自己决定何时调用。运行结束前若存过未完成的清单，框架最多追加一次完成自检回复，只提醒、不按条目推进或拦下动作，不算可执行流程约束。子代理不注册该工具。目标（goal）只是一个目标，不是计划条目。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.registration.ts#L81-L120",
+          "locator": "src/agents/openclaw-tools.registration.ts：shouldIncludeProgressCardToolForOpenClawTools",
+          "lines": "L81-L120",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "只在 tools.updatePlan === false 或策略拒绝时不注册 progress_card；full 档 allow 为 *。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-catalog.ts#L202-L207",
+          "locator": "src/agents/tool-catalog.ts：agents 组 progress_card 条目",
+          "lines": "L202-L207",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "progress_card 是核心工具目录里的条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/progress-card.md#L10-L75",
+          "locator": "docs/tools/progress-card.md：开头 / Update a card / Before an active run ends",
+          "lines": "L10-L75",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划工具",
+          "note": "有序步骤带状态、网关持久保存；未完成清单时最多一次完成自检，不保证做完。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "progress_card 的提示提醒只对非 main 会话且配了卡片渲染端时注入，但工具注册不依赖这一条；本配置主会话照样能调用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型不再请求工具（stopReason stop 且未要求续）或经消息工具确认发出最终回复时结束本轮。预算：agents.defaults.timeoutSeconds 默认 48 小时，作为每次模型尝试（含其中工具执行）的执行时长上限，到时中止该尝试，无配置的回退型号时本轮以超时失败结束（口径同 F12 time）。用户中断：/stop 命令与 Control UI 的 Stop 中止当前运行并取消排队的续跑。目标续跑：create_goal 默认注册、模型不经用户命令即可调用（工具说明写“只在用户或系统指令明确要求时创建”），按总则 R3 第一档算默认；模型调 update_goal 标 complete 后框架不再续发（model_end_signal）；token_budget 只在模型传参时才有，无默认阈值，不计 budget。不计 verification_condition：Swarm 收集型子代理带 outputSchema 时，structured_output 工具会拒收不合结构的结果并把错误交回子代理，至多一次重试；子代理不调用就结束时框架只把结果记为 failed，并不阻止它结束。progress_card 的完成自检只追加一次提醒。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/agent-loop.ts#L305-L345",
+          "locator": "packages/agent-core/src/agent-loop.ts：hasMoreToolCalls 判定",
+          "lines": "L305-L345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "无工具调用且非 end_turn:false 时退出循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/timeout.ts#L13-L29",
+          "locator": "src/agents/timeout.ts：DEFAULT_AGENT_TIMEOUT_SECONDS / resolveAgentTimeoutMs",
+          "lines": "L13-L29",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上限",
+          "note": "未配置时取 48*60*60 秒。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L166-L196",
+          "locator": "docs/concepts/agent-loop.md：Timeouts",
+          "lines": "L166-L196",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上限",
+          "note": "每次模型尝试的执行预算，到期中止；终止超时算失败回合。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/slash-commands.md#L235",
+          "locator": "docs/tools/slash-commands.md：Core commands：/stop",
+          "lines": "L235",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户中断",
+          "note": "/stop 中止当前运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/auto-reply/reply/goal-continuation.ts#L107-L145",
+          "locator": "src/auto-reply/reply/goal-continuation.ts：isGoalContinuationOutcome / enqueueGoalContinuation",
+          "lines": "L107-L145",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "只在正常结束、无错误无超时时续发；目标不再 active（含 complete）时不续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tools/structured-output-tool.ts#L113-L123",
+          "locator": "src/agents/tools/structured-output-tool.ts：structured_output 校验失败分支",
+          "lines": "L113-L123",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Swarm 子代理",
+          "note": "不合 schema 时抛错交回子代理重试一次，不阻止子代理结束。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "疑问：structured_output 的“拒收并交回重试一次”接近 verification_condition 的例子，但框架不拦结束、只把缺结构化结果记为失败，我按“只提醒、模型自己决定”不计；另，48 小时是每次尝试的时长，配置回退型号后每个候选各有一份。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：限流、过载、供应商临时故障时框架自动重发（限流每段故障最多 10 次，其余 90 秒窗口内 8 次），续用原记录。model_self_repair：参数校验失败、工具执行出错都作为 isError 的工具结果交回模型；同一工具同参数同错误连续三次时框架结束本轮并记错误（不进 F03）；压缩后守卫默认开，重复三元组时中止运行。framework_input_repair：执行前按 JSON Schema 做类型转换（如 \"2\"→2），按允许名单修整工具名，模型把调用写在普通文本里时提升为结构化调用（后者记 F10 text_parsing）。escalate_to_human：目标续跑路径（模型可用默认工具 create_goal 启动）里，回合以错误或超时结束时目标转 paused、停止续发，用户用 /goal resume 或界面 Resume 后带原目标和历史接着做。换型号重发记 F11 failover。exec 默认 ask=off，沙箱关，默认没有由框架发起的放行请求。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/retry.md#L34-L42",
+          "locator": "docs/concepts/retry.md：Model providers",
+          "lines": "L34-L42",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用出错",
+          "note": "自动恢复限流、过载、供应商故障，带次数与时间窗。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/agent-loop.ts#L1030-L1046",
+          "locator": "packages/agent-core/src/agent-loop.ts：validateToolCallForBatchAdmission",
+          "lines": "L1030-L1046",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用出错",
+          "note": "参数校验失败返回 immediateToolCallError（argument-validation），作为工具错误交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/llm-core/src/validation.ts#L380-L400",
+          "locator": "packages/llm-core/src/validation.ts：validateToolArguments / coerceWithJsonSchema",
+          "lines": "L380-L400",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "执行前修正",
+          "note": "按 schema 强制转换参数后再校验。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/run/attempt-tool-call-stream-normalization.ts#L52-L58",
+          "locator": "src/agents/embedded-agent-runner/run/attempt-tool-call-stream-normalization.ts：normalizeToolCallsInMessage",
+          "lines": "L52-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "执行前修正",
+          "note": "把模型给的工具名解析成允许名单里的确切名字后改写。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/loop-detection.md#L11-L28",
+          "locator": "docs/tools/loop-detection.md：开头",
+          "lines": "L11-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "循环守卫",
+          "note": "连续三次相同工具错误结束本轮；压缩后守卫默认开。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/goal.md#L100-L110",
+          "locator": "docs/tools/goal.md：Statuses",
+          "lines": "L100-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "运行以错误或超时结束时目标 paused，/goal resume 恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "escalate_to_human 只来自目标续跑路径：目标由模型调 create_goal 建（R3 第一档），出错暂停的状态写入代码我只在文档和续跑资格判定（goal-continuation.ts 不在出错时续发）里看到，没找到直接写 paused 的那行，故 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "所选入口是装成系统服务（LaunchAgent / systemd 用户单元）的常驻网关：模型循环和工具在网关进程里，Control UI、TUI、CLI、桌面应用都经 WebSocket（默认 127.0.0.1:18789）连同一个网关；消息渠道也由网关持有。其他入口：openclaw agent --local 等本地命令可在进程内跑，不属所选入口。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/architecture.md#L10-L14",
+          "locator": "docs/concepts/architecture.md：Overview",
+          "lines": "L10-L14",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "单个常驻网关；控制面客户端经 WebSocket 连接默认 127.0.0.1:18789。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L13-L22",
+          "locator": "docs/concepts/agent-loop.md：Entry points / Run sequence",
+          "lines": "L13-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "网关 RPC agent 驱动内嵌运行时 runEmbeddedAgent。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "文件工具（read/write/edit/apply_patch）在网关进程内执行（没有配对节点，placement 落在网关）。exec 在沙箱关、host=auto 时落在网关主机，经 shell 子进程跑命令。Code Mode（默认生效）的 JS 在网关进程的 worker 线程里跑，嵌套工具调用回到网关。browser 工具的控制服务在网关内，受控浏览器是另起的 Chrome 进程。目录里的 code_execution 是远端沙箱分析工具（云端执行，不计入本地基线；提供方与凭据未核）。可选：沙箱（docker 后端）默认关；配对节点（host=node）和 MCP 服务要另行添加。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/exec.md#L56-L57",
+          "locator": "docs/tools/exec.md：host 参数",
+          "lines": "L56-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "host 为 auto 且无沙箱运行时时解析为 gateway。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/sandboxing.md#L9",
+          "locator": "docs/gateway/sandboxing.md：开头",
+          "lines": "L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "沙箱默认关，网关进程始终在宿主机。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/code-mode.md#L51-L56",
+          "locator": "docs/tools/code-mode.md：开头",
+          "lines": "L51-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode",
+          "note": "JS 在 Node worker 线程（node:vm）里跑，经同一工具桥。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-catalog.ts#L91-L104",
+          "locator": "src/agents/tool-catalog.ts：fs / runtime 组",
+          "lines": "L91-L104",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "文件工具与 exec/process 是核心工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话状态由网关持有：会话行和对话记录存在每个代理的 SQLite（~/.openclaw/agents/<agentId>/agent/openclaw-agent.sqlite），界面客户端向网关查询；运行时写入经 activeWriterRunId 防护。SQLite 是网关进程内嵌的库，不是独立服务。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md#L10-L12",
+          "locator": "docs/concepts/session.md：开头",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口",
+          "note": "所有会话状态归网关，UI 客户端向网关查询。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md#L327-L331",
+          "locator": "docs/concepts/session.md：Where state lives",
+          "lines": "L327-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "存储",
+          "note": "运行时会话行与记录在每代理 SQLite。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L63",
+          "locator": "docs/concepts/agent-loop.md：Queueing and concurrency",
+          "lines": "L63",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "写入",
+          "note": "记录追加经写者声明校验，SQLite 写入队列按代理排序。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话按会话键（sessionKey/sessionId）分开存放；默认 dmScope=main，所有私信共用主会话。各会话共用代理工作区 ~/.openclaw/workspace，同一网关进程。可选：托管工作树（managed worktrees）要在新对话或任务里选择；沙箱（可按会话作用域起容器）默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md#L10-L12",
+          "locator": "docs/concepts/session.md：开头",
+          "lines": "L10-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话",
+          "note": "按来源路由到会话，状态归网关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md#L92-L97",
+          "locator": "docs/concepts/session.md：session.dmScope",
+          "lines": "L92-L97",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话",
+          "note": "默认 main：私信共用主会话；其余作用域按发送者等分会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/sandboxing.md#L9",
+          "locator": "docs/gateway/sandboxing.md：开头",
+          "lines": "L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "隔离",
+          "note": "沙箱默认关。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "内置 @openclaw/llm-core / ai 包为 openai-responses、openai-completions、anthropic-messages、google-generative-ai、bedrock-converse-stream、mistral-conversations 等多种接口协议各有请求与流适配，对应提供方插件默认启用（anthropic、google、amazon-bedrock、mistral 等），添加凭据即可用。钉住环境实际走 openai-responses（OPENAI_API_KEY、openai/gpt-6-astra）。适配实现在网关进程内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/llm-core/src/types.ts#L15-L27",
+          "locator": "packages/llm-core/src/types.ts：KnownApi",
+          "lines": "L15-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接入",
+          "note": "列出带一等请求/流适配的接口协议族。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/ai/src/transports/openai-responses-params-internal.ts#L195-L208",
+          "locator": "packages/ai/src/transports/openai-responses-params-internal.ts：Responses 请求参数构造",
+          "lines": "L195-L208",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境",
+          "note": "OpenAI Responses 协议的请求构造。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "text_parsing",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "native_structured：模型经接口原生工具调用字段发出调用，agent-core 取 toolCall 结构执行。text_parsing：所有提供方默认装上回退包装，把单独写在助手文本里的工具调用块提升为结构化调用（并隐藏 XML 形式的调用文本）。protocol_translation：内置 MCP 客户端，添加一条 mcp.servers 即把外部服务工具登记给模型（Code Mode 下归在 MCP 命名空间）。script_dispatch：tools.codeMode 未配置按 auto，gpt-6-astra 标 preferred，模型只见 exec/wait，写的 JS 在 worker 里按需调用隐藏目录里的工具（含 sessions_spawn），结果交回同一模型循环。解析失败：参数校验失败作为工具错误交回模型；提供方拒收畸形调用时可从当前记录续一次。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/agent-loop.ts#L305-L313",
+          "locator": "packages/agent-core/src/agent-loop.ts：remainingToolCalls",
+          "lines": "L305-L313",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "从助手消息的 toolCall 条目取调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/run/attempt-stream.ts#L319-L330",
+          "locator": "src/agents/embedded-agent-runner/run/attempt-stream.ts：installStreamWrapper 序列",
+          "lines": "L319-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口",
+          "note": "无条件装上 wrapStreamFnPromoteStandaloneTextToolCalls 与工具名修整。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-runtime.ts#L70",
+          "locator": "src/agents/code-mode-runtime.ts：tools.codeMode 缺省 auto",
+          "lines": "L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode",
+          "note": "未配置时 enabled 取 auto。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-runtime.ts#L139-L150",
+          "locator": "src/agents/code-mode-runtime.ts：isCodeModeEngagedForModel",
+          "lines": "L139-L150",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode",
+          "note": "auto 时型号 compat.codeMode 为 preferred 即启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/openai/openclaw.plugin.json#L100-L123",
+          "locator": "extensions/openai/openclaw.plugin.json：gpt-6-astra 条目",
+          "lines": "L100-L123",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住型号",
+          "note": "compat.codeMode 为 preferred。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/code-mode.md#L67-L96",
+          "locator": "docs/tools/code-mode.md：What it does",
+          "lines": "L67-L96",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode",
+          "note": "模型只见 exec/wait，脚本里调用隐藏工具目录，MCP 在 MCP 命名空间。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/mcp.md#L9-L20",
+          "locator": "docs/tools/mcp.md：开头 / Add a server from Settings",
+          "lines": "L9-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP",
+          "note": "OpenClaw 连接 MCP 服务并把工具提供给代理；加一条 mcp.servers 即可。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "docs/concepts/experimental-features.md 称 Code Mode 默认关闭，与代码和 docs/tools/code-mode.md 不一致，按代码记（R10）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "failover",
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role",
+          "failover"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主执行链默认用 openai/gpt-6-astra；未配置回退型号（引导不写 fallbacks）。failover：内置运行时默认开启 cyberFailover（mode auto），provider 为 openai 的回合收到结构化 cyber 类拒绝且回放安全时，本回合改用 openai/gpt-daybreak-blue-latest 重跑；触发取决于服务端返回的拒绝类别，故 medium。model_selected_delegation：sessions_spawn 带 model 与 thinking 参数，主模型可为子代理指定型号或推理强度；未指定时子代理继承调用方型号。自学习审阅代理（自动派生、多步调工具）锁定在被审会话的型号上，不另分配。其他环境：配置 agents.defaults.model.fallbacks 后有普通失败回退。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/embedded-cyber-failover.ts#L18-L31",
+          "locator": "src/agents/embedded-agent-runner/embedded-cyber-failover.ts：DEFAULT_EMBEDDED_CYBER_FAILOVER",
+          "lines": "L18-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认型号路由",
+          "note": "缺省 mode auto，目标 openai/gpt-daybreak-blue-latest。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/embedded-cyber-failover.ts#L58-L70",
+          "locator": "src/agents/embedded-agent-runner/embedded-cyber-failover.ts：isReplaySafeEmbeddedOpenAiCyberRefusal",
+          "lines": "L58-L70",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认型号路由",
+          "note": "条件：provider openai、内置 openclaw 运行时、可回放、拒绝类别 cyber。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L207-L215",
+          "locator": "docs/tools/subagents/tool-reference.md：sessions_spawn 参数 model / thinking",
+          "lines": "L207-L215",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "模型可覆盖子代理型号与推理强度。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/models.md#L61",
+          "locator": "docs/concepts/models.md：utilityModel",
+          "lines": "L61",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "未设时 OpenAI 取 gpt-5.6-luna 做标题、进度叙述、活动摘要；标题失败用主型号重试一次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/openai/openclaw.plugin.json#L65",
+          "locator": "extensions/openai/openclaw.plugin.json：defaultUtilityModel",
+          "lines": "L65",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "OpenAI 声明的小型号默认值 gpt-5.6-luna。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/experience-review.ts#L304-L310",
+          "locator": "src/skills/workshop/experience-review.ts：runSkillWorkshopReview 调用参数",
+          "lines": "L304-L310",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动派生代理",
+          "note": "审阅代理用被审会话的 provider/model。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 逐项：标题生成——utilityModel 自动取 gpt-5.6-luna（per_role），失败用主型号重试一次（failover）；上下文压缩——默认用当前会话型号；动作审核分类——无（exec ask=off，decisionModel 未设即关）；联网搜索——OpenAI Responses 型号在 provider 未设时用 OpenAI 原生 web search（托管工具，不计）；网页抓取——无模型调用（web-readability）；媒体理解——gpt-6-astra 收图，imageModel 只在主型号不收图时用；生成类——image_generate 按默认提供方 openai 推断图片型号（与主型号不同，归 per_role），具体型号未逐行核；dreaming 用代理默认型号、不带工具。memory_search 的 OpenAI 嵌入不在清单内，未计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "time"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "time"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：OpenAI Responses 请求取型号目录的 maxTokens（gpt-6-astra 为 128000）填 max_output_tokens；生成工具调用时到达输出上限或空 length 回复，内置运行时从已记录结果续跑（共用有界重试预算）。time：agents.defaults.timeoutSeconds 默认 172800 秒（48 小时），为每次模型尝试的执行预算，到时中止；子代理 runTimeoutSeconds 默认 0（不另限时），但仍受这份预算；自学习审阅代理同样取这份 48 小时。不计：目标 token_budget 只在模型传参时设、无默认阈值；子代理深度、并发与数量上限、Code Mode 每格待决工具调用上限（128）、重试迭代上限、循环守卫都不属本字段。可选：配置回退型号后每个候选各得一份时长预算。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/ai/src/transports/openai-responses-params-internal.ts#L204-L208",
+          "locator": "packages/ai/src/transports/openai-responses-params-internal.ts：effectiveMaxTokens",
+          "lines": "L204-L208",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境",
+          "note": "未传时取 model.maxTokens 填 max_output_tokens。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/openai/openclaw.plugin.json#L100-L106",
+          "locator": "extensions/openai/openclaw.plugin.json：gpt-6-astra maxTokens",
+          "lines": "L100-L106",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住型号",
+          "note": "maxTokens 128000。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L136-L147",
+          "locator": "docs/concepts/agent-loop.md：Compaction and retries",
+          "lines": "L136-L147",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "截断续写",
+          "note": "到输出上限时从已记录结果续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/timeout.ts#L13-L29",
+          "locator": "src/agents/timeout.ts：DEFAULT_AGENT_TIMEOUT_SECONDS",
+          "lines": "L13-L29",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上限",
+          "note": "48 小时默认执行时长。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-loop.md#L166-L169",
+          "locator": "docs/concepts/agent-loop.md：Timeouts 表",
+          "lines": "L166-L169",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认上限",
+          "note": "每次模型尝试的执行预算，到期中止该尝试。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L68",
+          "locator": "docs/tools/subagents/tool-reference.md：Run timeout",
+          "lines": "L68",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "未传且未配置时为 0（不另限时）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "time 的单位是“每次模型尝试”而非整个任务：配置回退型号或 cyber 回退时总时长可超过 48 小时。目标 token_budget 是工具参数、模型可自设，按 F12“默认带阈值”的口径没计入；如认为 R3 第一档的工具参数也算，应补 total_tokens（hard_stop：到额停止续发）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "typed_event_rebuild",
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次模型请求取内存中的 context.messages 顺序消息，经 transformContext 修整再转换发出；每次尝试开始时从 SQLite 会话树重建：以最近的重置或压缩边界定起点，按条目类型解释（系统提示重启标记之前的提示更新条目跳过，其余保留），再经清洗、校验、心跳过滤、回合数限制和上下文引擎（默认 legacy 直通）装入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/agent-stream-response.ts",
+          "locator": "packages/agent-core/src/agent-stream-response.ts streamAssistantResponse 构造请求",
+          "lines": "L149-L161",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "每次请求以 context.messages 为底，经 transformContext 和 convertToLlm 发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/harness/session/session.ts",
+          "locator": "packages/agent-core/src/harness/session/session.ts resolveSessionContextWindow / iterateSessionContextEntries / buildSessionContext",
+          "lines": "L20-L170",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "会话树按压缩、重置边界和系统提示重启标记逐类条目折叠成上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/session-prompt-state.ts",
+          "locator": "src/agents/embedded-agent-runner/session-prompt-state.ts persistSessionSystemPrompt",
+          "lines": "L256-L356",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "首回合、路由变化或压缩时代码自动写入带 restart 的系统提示条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/run/attempt-history-prepare.ts",
+          "locator": "src/agents/embedded-agent-runner/run/attempt-history-prepare.ts 历史准备流程",
+          "lines": "L133-L195",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "重建后的历史经清洗、校验、limitHistoryTurns 和上下文引擎再装入 agent.state.messages。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/context-engine.md",
+          "locator": "docs/concepts/context-engine.md「legacy engine」",
+          "lines": "L118-L130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "默认 legacy 引擎的 assemble 为直通。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "系统提示重启标记由代码自动写入，回合开始的折叠据此按类型跳过旧的提示更新条目；我把这一步算 typed_event_rebuild 层。若这类标记只算顺序消息的修整，layers 只剩 sequential_messages。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "每次请求前对单条和累计工具结果按字符预算截断；上下文溢出时恢复流程再截工具结果；web_fetch 超长输出截断并另存私有临时文件。自动压缩默认开启（safeguard 模式）生成摘要；OpenAI Responses 提供方默认走服务端 compact 端点，得到不透明的加密检查点，摘要内容在服务端。可选：/compact 手动压缩；cache-ttl 修剪及硬清除占位（非 Anthropic 提供方默认关闭）；maxActiveTranscriptBytes。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/tool-result-context-guard.ts",
+          "locator": "src/agents/embedded-agent-runner/tool-result-context-guard.ts truncateToolResultToChars / installToolResultContextGuard",
+          "lines": "L63-L345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "工具结果按字符预算截断的守卫，在 run/attempt-setup.ts L313 安装。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/run/attempt-prompt-build.ts",
+          "locator": "src/agents/embedded-agent-runner/run/attempt-prompt-build.ts truncateOversizedToolResultsInMessages",
+          "lines": "L495-L512",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "请求前按累计预算截断超长工具结果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/compaction.md",
+          "locator": "docs/concepts/compaction.md「How compaction works / Auto-compaction」",
+          "lines": "L11-L96",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "压缩把旧历史总结成摘要，默认 safeguard 模式，自动压缩默认开启。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/compaction.md",
+          "locator": "docs/concepts/compaction.md「OpenAI Responses compaction」",
+          "lines": "L335",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "OpenAI 提供方",
+          "note": "OpenAI Responses 提供方默认使用服务端 compact 端点。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session-pruning.md",
+          "locator": "docs/concepts/session-pruning.md「Smart defaults」",
+          "lines": "L28-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非 Anthropic 提供方",
+          "note": "cache-ttl 修剪默认只对 Anthropic 开启，本配置不在默认路径。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在 Control UI 附加图片或文件，或在提示文字里写本地图片路径，由运行时载入上下文。工具目录里没有框架自带的 grep/find 工具，模型只能自己用 exec 跑 rg；memory_search 默认只覆盖记忆文件，计入 F16。可选：memorySearch.extraPaths 把其他目录纳入检索。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-catalog.ts",
+          "locator": "src/agents/tool-catalog.ts 核心工具目录",
+          "lines": "L86-L240",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "核心工具为 ls/read/write/edit/apply_patch/exec/web_fetch/memory_search 等，没有关键词搜索工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/web/control-ui/chat.md",
+          "locator": "docs/web/control-ui/chat.md「Attachments」",
+          "lines": "L284-L295",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "聊天输入可附加图片和文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/embedded-agent-runner/run/images.ts",
+          "locator": "src/agents/embedded-agent-runner/run/images.ts detectImageReferences",
+          "lines": "L82-L83",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "提示文字中的本地图片路径会被识别并载入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/memory-search.md",
+          "locator": "docs/concepts/memory-search.md「Sources」",
+          "lines": "L256-L270",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "默认检索源只有 memory（MEMORY.md 与 memory/*.md）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "keyword：查了 tool-catalog.ts，无 grep/find 类工具，exec 跑 rg 属模型自行用命令，不计。semantic_retrieval：memory_search 默认只索引记忆文件，按 R8 计入 F16。structural_index：工具目录与 docs/concepts 未见代码库符号或结构索引。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "AGENTS.md、SOUL.md、USER.md、MEMORY.md 每次会话载入；压缩前自动记忆冲刷（默认开）和 dreaming 定时整理（默认 03:00）由模型把要点写进记忆文件；memory_search 以全文加向量混合检索记忆文件（默认 OpenAI 嵌入）。session-memory hook 在 /new 时摘录原文、不调模型，属用户触发；sessions_search 可全文检索其他会话记录。可选：standing intents 结构化记录（需已认证的渠道发送者，本配置无渠道）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-workspace.md",
+          "locator": "docs/concepts/agent-workspace.md「Workspace files」",
+          "lines": "L76-L109",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "工作区引导文件每次会话载入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/memory.md",
+          "locator": "docs/concepts/memory.md「Memory tools / Hybrid search」",
+          "lines": "L156-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "memory_search 混合检索记忆文件，默认 OpenAI 嵌入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/memory.md",
+          "locator": "docs/concepts/memory.md「Automatic memory flush / Dreaming」",
+          "lines": "L243-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "压缩前记忆冲刷与 dreaming 默认开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/auto-reply/reply/memory-flush-plan.ts",
+          "locator": "src/auto-reply/reply/memory-flush-plan.ts flush plan 开关",
+          "lines": "L35-L38",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "只有 enabled === false 时才跳过冲刷。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/memory-host-sdk/dreaming.ts",
+          "locator": "src/memory-host-sdk/dreaming.ts dreaming 默认配置",
+          "lines": "L350-L381",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "配置记录（dreaming 开启）",
+          "note": "dreaming 的默认调度与开关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/standing-intents.md",
+          "locator": "docs/concepts/standing-intents.md「Requirements」",
+          "lines": "L20-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "需渠道发送者",
+          "note": "intent 工具要求已认证的渠道和发送者。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "structured_records 只查到 standing intents，依赖渠道发送者，本配置无渠道，列为可选。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话以 SQLite 中的条目树持久化，条目除消息外还有 compaction、reset、model_change、thinking_level_change、branch_summary、custom 等控制条目；审计账本默认记录运行和工具事件。用户消息的媒体以路径或 URL 事实引用转录之外的文件，web_fetch 超长输出另存临时文件。重启恢复读取持久化的中断回合认领和子代理注册表。系统提示快照条目、skill 版本归档不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/harness/types.ts",
+          "locator": "packages/agent-core/src/harness/types.ts SessionTreeEntry",
+          "lines": "L72-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "会话树条目类型包含压缩、重置、型号切换等控制条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md",
+          "locator": "docs/concepts/session.md「Storage」",
+          "lines": "L327-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "会话存于 ~/.openclaw/agents/<agentId>/agent/openclaw-agent.sqlite。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/audit.md",
+          "locator": "docs/gateway/audit.md「Defaults」",
+          "lines": "L355-L363",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "run 与 tool 事件默认记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/media/media-facts.ts",
+          "locator": "src/media/media-facts.ts readPersistedMediaFacts / canonicalizePersistedUserMessageMedia",
+          "lines": "L96-L240",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "持久化的用户消息以 path/url 引用媒体文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md",
+          "locator": "docs/gateway/restart-recovery.md「What survives a restart」",
+          "lines": "L52-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "中断回合、SQLite 中的子代理运行、cron 和重启哨兵在重启后保留并被恢复流程读取。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "state_snapshot 的判定要求「工作区文件或执行状态的持久副本」；中断回合认领和子代理注册表是执行状态记录而非整体快照，算不算拿不准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "gateway 重启后按会话键回到同一会话，恢复流程自动重放中断的回合：保留已记录的工具调用与结果，丢弃未完成的工具调用，由模型重新决定下一步。默认不自动重置会话（reset mode none）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md",
+          "locator": "docs/concepts/session.md「Gateway restart recovery」",
+          "lines": "L246-L325",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "重启后重放中断回合，保留已完成的工具结果，丢弃未完成的调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md",
+          "locator": "docs/gateway/restart-recovery.md「What survives a restart」",
+          "lines": "L52-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "对话、中断回合、子代理运行与 cron 在重启后恢复。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md",
+          "locator": "docs/concepts/session.md「Reset」",
+          "lines": "L201-L215",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "默认重置模式为 none，/new、/reset 需手动。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "恢复对话与中断回合；已记录的工具结果随回合重放保留；goals 跨重启保留并继续推进；子代理运行记录在 SQLite，父会话可经 sessions_send 继续保留的子会话，已完成结果照常送达。工作区文件不恢复；已发生的外部副作用不回滚。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md",
+          "locator": "docs/gateway/restart-recovery.md「What survives a restart」",
+          "lines": "L52-L66",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "对话、中断回合、子代理运行、cron 与重启哨兵在重启后保留。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/session.md",
+          "locator": "docs/concepts/session.md「Gateway restart recovery」",
+          "lines": "L246-L325",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "重放回合保留已记录的工具调用与结果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/goal.md",
+          "locator": "docs/tools/goal.md「Overview」",
+          "lines": "L14-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "goal 跨重启保留并继续推进。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md",
+          "locator": "docs/gateway/restart-recovery.md「Subagents」",
+          "lines": "L964-L1060",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "父会话经 sessions_send 继续保留的子会话，已完成结果送达。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "Control UI 提供 Rewind to here 与 Fork from here，回退前的分支保留，可在 Versions 菜单切换（需 operator.admin/write，默认所有者具备）；回退不还原文件。没有工作区快照与补偿操作；幂等标识只用于消息提交去重和 PR 发布回执，不针对工具执行，不计。skill workshop 的撤销把版本存在工作区之外的 .archive，只覆盖 skill 文件。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/web/control-ui/chat.md",
+          "locator": "docs/web/control-ui/chat.md「Rewind and fork」",
+          "lines": "L493",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "Rewind 保留原分支并可切换版本，Fork 另开分支，文件不回退。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/web/control-ui/feature-reference.md",
+          "locator": "docs/web/control-ui/feature-reference.md「Chat actions」",
+          "lines": "L43",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "聊天消息提供 Fork 操作。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/skill-workshop.md",
+          "locator": "docs/tools/skill-workshop.md「Undo」",
+          "lines": "L205-L230",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "skill 撤销版本存于 <agentDir>/workshop-skills/.archive。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workspace_snapshot：skill workshop 的版本归档只覆盖 skill 文件且在工作区外，未计入；compensation：未见补偿流程；idempotency_key：只查到 sessionMessagesContainIdempotencyKey 与 PR 发布回执，不针对重复执行的工具调用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "工具按 profile 与 tools.allow/tools.deny 放行或拒绝；exec 有命令白名单规则（security=allowlist 时生效）；tools.fs.workspaceOnly 与会话权限模式限定文件路径；web_fetch 与 browser 有 SSRF 主机规则，但不管 exec 联网。默认 exec security=full、ask=off，sandbox 关，workspaceOnly 默认 false，write/edit 不限路径，故四项默认效果都是 allow；apply_patch 默认限于工作区。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/infra/exec-approvals-config.ts",
+          "locator": "src/infra/exec-approvals-config.ts DEFAULT_SECURITY / DEFAULT_ASK",
+          "lines": "L95-L97",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "exec 默认 security=full、ask=off、askFallback=deny。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/exec-approvals.md",
+          "locator": "docs/tools/exec-approvals.md「Allowlist」",
+          "lines": "L160-L180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "security=allowlist 时",
+          "note": "exec 命令白名单的模式写法。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/config-tools/tool-policy.md",
+          "locator": "docs/gateway/config-tools/tool-policy.md「Profiles / allow and deny」",
+          "lines": "L14-L184",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "按工具 profile 与 tools.allow/tools.deny 表达工具类别规则。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/schema.help.runtime.ts",
+          "locator": "src/config/schema.help.runtime.ts tools.fs.workspaceOnly / web_fetch ssrfPolicy",
+          "lines": "L592-L657",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "workspaceOnly 默认 false；web_fetch 有主机允许与私网拦截规则。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/tool-fs-policy.ts",
+          "locator": "src/agents/tool-fs-policy.ts workspaceOnly 判定",
+          "lines": "L22-L65",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "未设 workspaceOnly 时文件工具不受路径限制。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/permission-modes.md",
+          "locator": "docs/gateway/permission-modes.md「Session root and defaults」",
+          "lines": "L31-L43",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "没有额外设置或沙箱时默认 full access。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "配置记录钉住 exec ask=off、security=full，默认 full access；单次调用传 ask 参数在宿主 ask=off 且来自渠道（含内部 webchat）时被忽略；openclaw 工具的委托修改在 Full Access 下自动应用。可选：guarded/workspace 会话模式、exec ask=on-miss/always、strictInlineEval 会产生调用层审批。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/infra/exec-approvals-config.ts",
+          "locator": "src/infra/exec-approvals-config.ts DEFAULT_SECURITY / DEFAULT_ASK",
+          "lines": "L95-L97",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "默认不询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/bash-tools.exec-run.ts",
+          "locator": "src/agents/bash-tools.exec-run.ts trustedAsk",
+          "lines": "L330-L346",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "有 messageProvider 且宿主 ask=off 时不采信单次 ask 参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/utils/message-channel-constants.ts",
+          "locator": "src/utils/message-channel-constants.ts INTERNAL_MESSAGE_CHANNEL",
+          "lines": "L3",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "内部聊天的渠道名为 webchat。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/exec.md",
+          "locator": "docs/tools/exec.md「Parameters」",
+          "lines": "L62-L63",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "宿主 ask=off 时渠道来源调用的 ask 参数被忽略。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/permission-modes.md",
+          "locator": "docs/gateway/permission-modes.md「Delegated setup and repair」",
+          "lines": "L45-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "Full Access 下委托的设置与修复自动应用、不弹批准。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单：whole_task——未见任务开始前的整体批准；tool_call——exec ask=off，其他工具无 ask 钩子，单次 ask 参数在 webchat 来源被忽略；specific_operation——apply_patch 越界、SSRF 为直接拒绝，无申请通道。approver 判 []，因默认无放行环节。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "应用检查：apply_patch 默认限于工作区，web_fetch 与 browser 的 SSRF 守卫拦截私网目标。运行时沙箱：Code Mode 默认 Node 执行器在 node:vm 上下文中运行，客体 API 不暴露 fs、网络、进程和模块加载，官方说明它不是安全边界，只覆盖 Code Mode 单元，exec 不受其约束。可选：Docker 沙箱（os_isolation/container_policy），默认关闭。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/apply-patch.md",
+          "locator": "docs/tools/apply-patch.md「Workspace containment」",
+          "lines": "L49-L51",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "apply_patch 默认只能写工作区内。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/schema.help.runtime.ts",
+          "locator": "src/config/schema.help.runtime.ts browser ssrfPolicy",
+          "lines": "L59-L65",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "browser 的 SSRF 策略默认拦截私网目标。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/schema.help.runtime.ts",
+          "locator": "src/config/schema.help.runtime.ts tools.web.fetch ssrfPolicy",
+          "lines": "L650-L657",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "web_fetch 的 SSRF 策略默认拦截私网目标。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/code-mode/executors.md",
+          "locator": "docs/tools/code-mode/executors.md「Node executor」",
+          "lines": "L20-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode（配置记录开启）",
+          "note": "默认 Node node:vm 执行器，无 fs/net/process，不是安全边界；QuickJS 需显式选择。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-runtime.ts",
+          "locator": "src/agents/code-mode-runtime.ts readExecutor",
+          "lines": "L94-L101",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Code Mode（配置记录开启）",
+          "note": "执行器默认 node。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/sandboxing.md",
+          "locator": "docs/gateway/sandboxing.md「Overview」",
+          "lines": "L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "沙箱默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认 full 模式未声明限制；read-only/guarded/workspace 会话模式在代码中删去工具或拒绝 exec；self-learning reviewer 的工具白名单在代码中执行；记忆冲刷只追加写在代码中执行；未见 plan 模式或命名的只读角色。runtime_sandbox：node:vm 官方称不是安全边界，算不算运行时沙箱拿不准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "转录记录用户消息、模型文本与思考、带 id 名称参数的 toolCall，以及以 toolCallId 关联的 toolResult；审计账本默认记 run 与 tool 事件（toolCallId、toolName、状态，不含参数和结果），30 天或 10 万行保留。默认无逐次审批决定，approval 不计；actor 只分 agent/system，无渠道、单一所有者，identity 不计。可选：多用户或渠道发送者身份。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/llm-core/src/types.ts",
+          "locator": "packages/llm-core/src/types.ts ToolResultMessage",
+          "lines": "L549",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "工具结果消息以 toolCallId 关联对应调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/packages/agent-core/src/harness/types.ts",
+          "locator": "packages/agent-core/src/harness/types.ts SessionTreeEntry",
+          "lines": "L72-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "转录条目保存消息与控制条目。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/audit.md",
+          "locator": "docs/gateway/audit.md「Overview」",
+          "lines": "L12-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "审计账本只记元数据。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/audit.md",
+          "locator": "docs/gateway/audit.md「Defaults」",
+          "lines": "L355-L363",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "run 与 tool 事件默认记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/audit/audit-event-types.ts",
+          "locator": "src/audit/audit-event-types.ts AuditEvent",
+          "lines": "L66-L108",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认配置（内置运行时、gateway 服务）",
+          "note": "审计事件含 actorType agent/system、toolCallId、toolName，无参数与结果。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "approval：默认无审批，账本里审批另存且默认不用；identity：actorType 只有 agent/system，本配置单一所有者，未见操作者身份关联。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "主代理默认工具面（引导写入 tools.profile: full）含 sessions_spawn、sessions_yield、subagents；sessions_spawn 派出的子代理在自己的会话 agent:<id>:subagent:<uuid> 里运行，由原生子代理生命周期登记、可列出和停止。内置运行时下 Code Mode 默认生效（tools.codeMode 缺省为 auto，默认型号标为 preferred），模型在 exec 脚本里调用 sessions_spawn；Swarm 默认开，脚本可经 agents.run() 批量派出收集型子代理。另有框架自己起的技能工坊后台审阅代理（多步、限定工具）和定时任务 isolated 运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.ts#L630",
+          "locator": "src/agents/openclaw-tools.ts：createSessionsSpawnTool / createSessionsYieldTool / createSubagentsTool",
+          "lines": "L630-L665",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具注册",
+          "note": "非内嵌时注册 sessions_spawn，并注册 sessions_yield 与 subagents（列出、等待、取消子代理运行）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents.md#L12",
+          "locator": "docs/tools/subagents.md：Sub-agents",
+          "lines": "L12-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理",
+          "note": "子代理是从现有运行派生的后台代理运行，各有独立会话，由原生子代理生命周期跟踪。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/review-run.ts#L27",
+          "locator": "src/skills/workshop/review-run.ts：runSkillWorkshopReview",
+          "lines": "L27-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台审阅代理",
+          "note": "技能工坊后台审阅在登记的运行上下文里用 runEmbeddedAgent 跑一个 openclaw 运行时代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Code Mode 默认生效这一前提来自配置记录与 src/agents/code-mode-runtime.ts；docs/concepts/experimental-features.md 和 docs/tools/swarm.md L32-L34 仍称 Code Mode 需另开，与代码不一致，按代码。即使 Code Mode 不生效，sessions_spawn 作为直接工具同样默认可用，F25 结论不变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理逐次调用 sessions_spawn（Code Mode 下在 exec 脚本里调用）。workflow：Swarm 默认开，模型当场写的 Code Mode 脚本用 agents.run()/Promise.all 等控制流批量派出收集型子代理，数量和时机由脚本执行决定。event_scheduling：cron 默认开、automations 工具默认注册，模型或用户建的 isolated 定时任务到点由调度器直接在 cron:<jobId> 会话起代理回合；设成 main/current 的任务只向会话投提示，记 main_agent。framework_internal：skills.workshop.autonomous.mode 缺省 auto，同一会话累计 10 次模型迭代、空闲 30 秒后框架自动起后台审阅代理，能多步调用 read、web_fetch、skill_workshop 等工具。其他环境：/acp spawn 和 sessions_spawn runtime:\"acp\" 可由用户或主代理拉起外部代理进程（acpx 默认启用），但要本机装有并登录 Codex、Claude Code 等外部程序，环境前提没有这些凭据，不计入。dreaming 和心跳不另起能调工具的代理：前者是不带工具的单次补全（辅助调用），后者是主会话回合。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L25",
+          "locator": "docs/tools/subagents/tool-reference.md：Tool: sessions_spawn",
+          "lines": "L25-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派工具",
+          "note": "sessions_spawn 在派生会话的子代理队列上起一个子代理运行，结果经完成投递交回请求方。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/swarm.md#L12",
+          "locator": "docs/tools/swarm.md：Swarm / When to use Swarm",
+          "lines": "L12-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Swarm",
+          "note": "Swarm 默认开，由 Code Mode 脚本以普通 JavaScript 控制流派出并收集多个子代理，程序本身就是编排。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/code-mode-bridge.ts#L151",
+          "locator": "src/agents/code-mode-bridge.ts：isCodeModeSwarmAvailable",
+          "lines": "L151-L169",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Swarm 暴露条件",
+          "note": "Swarm 开启且 sessions_spawn 可执行时，在 Code Mode 里提供 Swarm。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/cron-jobs/payloads.md#L366",
+          "locator": "docs/automation/cron-jobs/payloads.md：Execution styles",
+          "lines": "L366-L370",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时任务",
+          "note": "isolated 定时任务在专属 cron:<jobId> 会话运行；有会话上下文时默认投到创建它的会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/review-run.ts#L27",
+          "locator": "src/skills/workshop/review-run.ts：runSkillWorkshopReview",
+          "lines": "L27-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台审阅代理",
+          "note": "框架起的后台审阅运行，走 openclaw 运行时的完整代理循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/skills/workshop/experience-review-scheduler.ts#L17",
+          "locator": "src/skills/workshop/experience-review-scheduler.ts",
+          "lines": "L17-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台审阅触发",
+          "note": "10 次迭代后排队、空闲 30 秒开跑。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Code Mode 下主代理在 exec 脚本里单次调用 sessions_spawn，算模型逐次决定（main_agent）；脚本循环或 agents.run 批量派生的按 workflow 记。两者边界在同一脚本里是连续的，按派生是否由脚本控制流批量决定来分。Code Mode 是否默认生效有文档冲突（见 F25），按代码。event_scheduling 依赖模型或用户先建 isolated 任务，按总则 R2 算添加内容。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：非线程派生默认 context: isolated，子代理在自己的会话转录里工作。messages：主代理默认有 sessions_send，可向已派出的子代理发 steer（运行中注入）或 followup（空闲后再起一轮），暂停的子代理也靠 sessions_send 续派。shared_files：同一代理的子代理使用目标代理的工作区（单代理模式下即主代理的 ~/.openclaw/workspace），与父代理读写同一目录；managed worktree 只在模型传 worktree: true 时启用。权限：子代理继承请求方的有效工具策略上限，默认去掉会话和消息类工具；定时 isolated 运行与后台审阅代理各自独立。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L10",
+          "locator": "docs/tools/subagents/tool-reference.md：Context modes",
+          "lines": "L10-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "上下文模式",
+          "note": "非线程原生子代理默认 isolated（全新子转录），fork 需显式请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L469",
+          "locator": "docs/tools/subagents/tool-reference.md：Tool: subagents（Messages and control）",
+          "lines": "L469-L485",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "消息通道",
+          "note": "sessions_send 的 steer 向运行中的目标注入指导，followup 起或排队另一轮；暂停的子代理可用 sessions.send 续派。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L266",
+          "locator": "docs/tools/subagents/tool-reference.md：visible / cwd 说明段",
+          "lines": "L266-L266",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作目录",
+          "note": "未给 cwd、projectId、worktree 的派生使用目标代理工作区；隐藏子代理可请求 worktree: true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.ts#L630",
+          "locator": "src/agents/openclaw-tools.ts：createSessionsSpawnTool({ workspaceDir: spawnWorkspaceDir })",
+          "lines": "L630-L646",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作目录",
+          "note": "sessions_spawn 以 spawnWorkspaceDir 作为子代理工作区。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents.md#L17",
+          "locator": "docs/tools/subagents.md：Goals",
+          "lines": "L17-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "隔离与权限",
+          "note": "子代理默认隔离；默认拿不到会话和消息工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shared_files 依据文档“其他派生使用目标代理工作区”和工具注册时传入的 spawnWorkspaceDir 推出同一目录，未逐行追到 spawnWorkspaceDir 的取值。shared_state 判过：Swarm 收集型子代理把结果写成供父代理等待的持久结果，不是多个代理都读写的共享表；未发现框架维护的共享任务表。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "async_wait：sessions_spawn 不阻塞父代理，子代理完成后经 announce 推回请求方；父代理可用 sessions_yield 结束本回合等待完成事件，或用 subagents action: \"wait\"、agents_wait（收集型）等待。cancel_propagation：父代理在会话里 /stop、对父运行的显式 Stop、/reset 或 sessions.reset 会取消其子代理树，含 Swarm 收集型子代理。cancel_coverage 判为 some_ways：父代理正常结束、yield 或超时都不会自动取消已接受的子代理，不带 runId 的 chat.abort 也不连带。定时 isolated 运行没有调用方，不参与本字段。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L291",
+          "locator": "docs/tools/subagents/tool-reference.md：Tool: sessions_yield",
+          "lines": "L291-L297",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "等待",
+          "note": "sessions_yield 结束当前回合，等子代理完成事件作为下一条消息到来。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/tool-reference.md#L446",
+          "locator": "docs/tools/subagents/tool-reference.md：Tool: subagents",
+          "lines": "L446-L467",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "等待与取消",
+          "note": "subagents 可 wait 指定 runIds；cancel 停止该运行及其后代。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/operations.md#L182",
+          "locator": "docs/tools/subagents/operations.md：Stopping",
+          "lines": "L182-L188",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "针对父运行的显式 Stop 取消其子代理及后代，包括 Swarm 收集型子代理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/operations.md#L253",
+          "locator": "docs/tools/subagents/operations.md：Stopping（末段）",
+          "lines": "L253-L278",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消范围",
+          "note": "/stop 取消请求方的活跃子代理树；不带 runId 的 chat.abort 不连带；父代理正常结束、yield、超时不自动取消子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/subagents/registry/subagent-control-kill.ts#L425",
+          "locator": "src/agents/subagents/registry/subagent-control-kill.ts：cascade / killSubagentRunTree",
+          "lines": "L425-L454",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消实现",
+          "note": "停止一个子代理运行后调用 killSubagentRunTree 级联停止其后代。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/subagents/nesting.md#L83",
+          "locator": "docs/tools/subagents/nesting.md：Reset a conversation / Cascade stop",
+          "lines": "L83-L91",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重置与级联",
+          "note": "原地重置会话取消未完成子代理；编排者被取消时级联到后代树。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "取消方式逐项：用户打断当前回合（/stop 或带 runId 的 Stop）——连带；取消等待中的调用（父代理 sessions_yield 后的等待被停止）——按 /stop 连带，但 yield 本身结束不连带；取消父运行（/reset、sessions.reset、会话级 sessions.abort）——连带。Control UI 停止按钮发的是否带 runId 的 chat.abort 未逐行核对；不带 runId 的 chat.abort 文档写明不连带，故记 some_ways。synchronous_return 判过：默认派生不阻塞，Code Mode 里 await agents.run() 也是 exec 返回待处理后由模型另用 wait/agents_wait 等，按异步记。shared_board 判过：未见框架维护的共享看板。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "whole_tree",
+        "cancel_coverage": "some_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：exec、read、sessions_spawn、ask_user、goal 等核心工具在 src/agents/openclaw-tools.ts 注册。plugin_api：插件经 api.registerTool 和 manifest contracts.tools 注册工具；默认在用的有 memory-core（记忆槽位默认插件，注册 memory_search、memory_get、intent）和 browser 等默认启用插件。external_protocol_service：用户在设置、CLI 或配置里加一条 MCP 服务器即可，工具在 Code Mode 的 MCP 命名空间里给模型。embedder_declared：/v1/chat/completions 与 /v1/responses 两个兼容端点接受调用方的 tools 定义作为客户端工具，模型调用时把 function_call 交回调用方；两个端点默认关，需改 gateway.http.endpoints.*.enabled。user_script 判过：未见把用户脚本注册成具名工具的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.ts#L553",
+          "locator": "src/agents/openclaw-tools.ts：createOpenClawTools",
+          "lines": "L553-L575",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "核心工具",
+          "note": "核心代码直接注册 goal 工具、ask_user、secrets 等。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/index.md#L123",
+          "locator": "docs/tools/index.md：Plugin-provided tools",
+          "lines": "L123-L128",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件工具",
+          "note": "插件经 api.registerTool(...) 与 manifest 的 contracts.tools 注册工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/memory-core/index.ts#L344",
+          "locator": "extensions/memory-core/index.ts：api.registerTool",
+          "lines": "L344-L358",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用插件",
+          "note": "memory-core 经 api.registerTool 注册记忆工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/mcp.md#L85",
+          "locator": "docs/tools/mcp.md：Configure a server directly",
+          "lines": "L85-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP",
+          "note": "可直接在配置里写 MCP 服务器条目接入外部工具服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/gateway/openresponses-http.ts#L256",
+          "locator": "src/gateway/openresponses-http.ts：clientTools",
+          "lines": "L256-L267",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "客户端工具",
+          "note": "/v1/responses 把请求里的 tools 转成 ClientToolDefinition 交给代理运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/openresponses-http-api.md#L9",
+          "locator": "docs/gateway/openresponses-http-api.md",
+          "lines": "L9-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "客户端工具",
+          "note": "OpenResponses 端点默认关闭，用 gateway.http.endpoints.responses.enabled 打开。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default：internal_code 与 plugin_api（memory-core 工具确认在用；browser 插件默认启用但未逐行核对其工具注册）。配置记录写明默认启用的插件，按代码以 memory-core 为准。via_default_entry：插件经产品自带的 plugins install 装入、MCP 加一条服务器，按总则 R2 算添加内容；embedder_declared 要改端点开关，不算。Code Mode 把非 MCP 工具藏进脚本全局函数，边界不变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "plugin_api"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：工作区 AGENTS.md（操作说明）、SOUL.md（人格语气）等引导文件每个会话装载。skill_directory：从 <workspace>/skills、<workspace>/.agents/skills、~/.agents/skills、<state-dir>/skills、工坊技能和随装技能发现 SKILL.md，按需读入；技能也可用 $name 或 /name 按名引用，展开为让模型先读该 SKILL.md 的指示，仍属技能装载。role_template：openclaw agents add [--role] 或 Control UI New agent 新增带自己工作区和 AGENTS.md/SOUL.md 的代理，可按名选用（openclaw agent --agent、渠道绑定），agents team create 预设协调者与专家角色；跨代理派给子代理需在 allowAgents 里列出，属改设置，写此说明。可选：Lobster 类型化工作流是可选插件，默认不装不启用，不记 workflow_definition。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/agent-workspace.md#L76",
+          "locator": "docs/concepts/agent-workspace.md：AGENTS.md / SOUL.md",
+          "lines": "L76-L80",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目规则",
+          "note": "AGENTS.md 每个会话开始时装载；SOUL.md 每个会话装载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/skills.md#L32",
+          "locator": "docs/tools/skills.md：Loading order",
+          "lines": "L32-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能目录",
+          "note": "技能按工作区、个人、托管、工坊、随装等目录发现，按优先级合并。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/skills.md#L285",
+          "locator": "docs/tools/skills.md：Reference a skill in a prompt",
+          "lines": "L285-L305",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "按名引用",
+          "note": "$name 引用让模型先读对应 SKILL.md；渠道上 /name 为独立命令，可声明 command-dispatch: tool 直接分派到工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/multi-agent.md#L69",
+          "locator": "docs/concepts/multi-agent.md：Agent helper",
+          "lines": "L69-L76",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "角色",
+          "note": "openclaw agents add 新增一个隔离代理，可带 --role 载入角色模板。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/multi-agent.md#L112",
+          "locator": "docs/concepts/multi-agent.md：Team preset",
+          "lines": "L112-L135",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "角色模板",
+          "note": "agents team create 预设协调者、研究、写作、审阅角色，角色说明写在各自 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/lobster.md#L77",
+          "locator": "docs/tools/lobster.md：Enable",
+          "lines": "L77-L79",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流",
+          "note": "Lobster 是可选插件工具，默认不安装不启用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "role_template 拿不准：新增代理靠 CLI 命令写配置加工作区文件，判为用户添加内容（带定义）而非改设置；主代理默认只能派给自己（allowAgents 缺省为请求方本身），所以“分派给子代理”这条要改设置，“按名选用”这条默认可用。prompt_template 判过：未见命令模板目录，技能的斜杠形式归技能装载。executable_items 判过：技能 command-dispatch: tool 只把参数交给已有工具执行，不装载代码；技能附带脚本由模型经 exec 运行，不算；角色模板只含文字；故 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "save",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "插件钩子（api.on）：input—before_dispatch、inbound_claim、before_agent_run（可拦）、before_prompt_build（加上下文）、before_agent_reply；model_call—before_model_resolve、提供方 wrapStreamFn 流装饰器（每次请求可改参数），另有仅观察的 llm_input/llm_output、model_call_started/ended；tool_before_after—before_tool_call（改参数、阻断、要审批）、after_tool_call；save—tool_result_persist、before_message_write（写入转录前改写或拦下）；end—before_agent_finalize（要求再跑一轮）、agent_end、session_end；context_compaction—before/after_compaction 仅观察，但上下文引擎插件的 compact() 由框架在压缩时调用并采用其结果；session_start—session_start 仅观察（上下文引擎 bootstrap() 每会话一次）。内部钩子（HOOK.md）另有 command:new/reset/stop、session:auto-reset、session:compact:before/after、agent:bootstrap（可改引导文件）、message:* 等。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/plugins/hooks/reference.md#L117",
+          "locator": "docs/plugins/hooks/reference.md：Hook catalog",
+          "lines": "L117-L190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件钩子目录",
+          "note": "列出各钩子及其 Modify/Gate/Observe 性质：before_prompt_build、before_tool_call、tool_result_persist、before_agent_finalize、session_start、before_compaction 等。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/plugins/sdk-provider-plugins.md#L538",
+          "locator": "docs/plugins/sdk-provider-plugins.md：Provider stream decorators",
+          "lines": "L538-L541",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用",
+          "note": "提供方流装饰器 wrapStreamFn 在请求时拿到请求上下文。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/context-engine.md#L237",
+          "locator": "docs/concepts/context-engine.md：lifecycle methods",
+          "lines": "L237-L239",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "上下文压缩",
+          "note": "上下文引擎插件的 compact() 负责摘要压缩，assemble() 为模型运行组装上下文。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/hooks/event-types.md#L22",
+          "locator": "docs/automation/hooks/event-types.md：Event types",
+          "lines": "L22-L36",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内部钩子",
+          "note": "内部钩子事件：command:new/reset、session:auto-reset、session:compact:*、agent:bootstrap、message:* 等。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/memory-core/index.ts#L369",
+          "locator": "extensions/memory-core/index.ts：api.on(\"before_prompt_build\")",
+          "lines": "L369-L372",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "默认记忆插件 memory-core 挂 before_prompt_build（仅用户触发的回合）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/extensions/openai/responses-stream.runtime.ts#L9",
+          "locator": "extensions/openai/responses-stream.runtime.ts：wrapStreamFn",
+          "lines": "L9-L97",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "默认启用的 openai 提供方插件为 Responses 请求挂流装饰器 wrapStreamFn。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/commands/onboard-hooks.ts#L4",
+          "locator": "src/commands/onboard-hooks.ts：enableDefaultOnboardingInternalHooks",
+          "lines": "L4-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "引导默认启用内部钩子 session-memory。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/hooks/bundled/session-memory/HOOK.md#L10",
+          "locator": "src/hooks/bundled/session-memory/HOOK.md",
+          "lines": "L10-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认在用",
+          "note": "session-memory 挂在 command:new、command:reset、session:auto-reset，把近期对话存到工作区 memory/。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default：input（memory-core 的 before_prompt_build，另有 dreaming.ts 里对 cron/heartbeat 回合的 before_agent_reply）、model_call（openai 插件 wrapStreamFn）、end（session-memory 在 /new、/reset、自动重置时触发，按旧会话结束归 end；也可看作输入命令事件，口径存疑）。memory-core 与 openai 都是可单独停用或替换的扩展包，session-memory 是默认配置里写好的钩子。observe_only 只写 session_start：插件 session_start 仅观察，上下文引擎 bootstrap() 是否能注入内容未核实。model_call 把 wrapStreamFn 当作框架在请求阶段调用并采用返回值的提供方方法，不是发请求的主方法本身，口径存疑。via_default_entry 按装插件算添加内容记全部；工作区 HOOK.md 是否需另行启用未核实，不影响结论。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "input",
+          "model_call",
+          "end"
+        ],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "save",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "service_api",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：openclaw acp 作 ACP（编辑器代理协议）服务端，经标准输入输出把任务转给网关会话；/v1/chat/completions 和 /v1/responses 是模型接口兼容端点，每个请求跑所选代理（两者默认关）。service_api：网关 WebSocket 协议加 RPC 方法（agent、agent.wait、sessions.*），有线协议文档，外部程序用网关共享令牌引导、设备配对后即可发任务；官方另发 @openclaw/gateway-client、@openclaw/gateway-protocol 客户端包，背后是有文档的线协议，不另记库。cli_subprocess：openclaw agent / agent exec 一次性运行，--json 输出稳定信封。openclaw mcp serve 只把渠道会话读写暴露为 MCP 工具，不让核心跑任务，不记。src/library.ts 注释称“Public library facade”，文档未把它列为公开接口，不记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/external-apps.md#L13",
+          "locator": "docs/gateway/external-apps.md：What is available today",
+          "lines": "L13-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入入口",
+          "note": "外部程序经网关 WebSocket 协议与 RPC 方法起代理运行、等待结果、取消；openclaw agent 适合一次性脚本集成。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/clients.md#L72",
+          "locator": "docs/gateway/clients.md",
+          "lines": "L72-L89",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "服务接口认证",
+          "note": "用网关共享令牌或密码做引导认证，配对后签发设备令牌。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/cli/acp.md#L14",
+          "locator": "docs/cli/acp.md：What this is not",
+          "lines": "L14-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP",
+          "note": "openclaw acp 让 OpenClaw 作 ACP 服务端，IDE 连入后转发到网关会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/openai-http-api.md#L8",
+          "locator": "docs/gateway/openai-http-api.md",
+          "lines": "L8-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接口兼容",
+          "note": "/v1/chat/completions 默认关闭，开启后按配置的代理运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/cli/agent.md#L36",
+          "locator": "docs/cli/agent.md",
+          "lines": "L36-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "CLI",
+          "note": "openclaw agent exec 可从文件或标准输入读任务并以 --json 输出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 只记 service_api：所选入口就是装成系统服务的网关，WebSocket 协议是它本身开放的接口，凭据是引导时写入配置的持久共享令牌（不是每次启动随机、只给自家前端的票据）；但新客户端仍要走设备配对，是否算“不另配凭据”拿不准。acp、agent 要换子命令，兼容端点要改设置，均不进。needs_official_package 为 []：客户端包只是线协议的封装，不必另装即可接入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：Control UI、TUI、已配置渠道里人发的消息。api：F32 各入口（网关 RPC、openclaw agent、ACP、兼容端点）。schedule：内置 automations/cron 调度器，cron.enabled 默认 true，模型可用 automations 工具建任务。external_event：stream 定时源让网关监管一条用户写的命令，把其输出行批量触发任务，默认可用（cron.triggers.enabled 才关），加一条源命令算添加内容；另有入站 webhooks（默认关，需 hooks.enabled 和令牌）、MCP Events 插件（可选）、Gmail/IMAP 接入。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/cron-jobs.md#L12",
+          "locator": "docs/automation/cron-jobs.md",
+          "lines": "L12-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "Automations 是内置调度器，持久保存任务并按时唤醒代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/config/cron-limits.ts#L1",
+          "locator": "src/config/cron-limits.ts",
+          "lines": "L1-L1",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "DEFAULT_CRON_ENABLED = true。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/cron-jobs/schedules.md#L44",
+          "locator": "docs/automation/cron-jobs/schedules.md：Stream sources",
+          "lines": "L44-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "stream 定时源在网关下常驻运行操作者写的命令，由其输出行触发任务，默认可用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/cron-jobs/webhooks.md#L14",
+          "locator": "docs/automation/cron-jobs/webhooks.md：Webhooks",
+          "lines": "L14-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "入站网关 HTTP 钩子可让外部服务唤醒代理或提交回合，默认关闭。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/external-apps.md#L13",
+          "locator": "docs/gateway/external-apps.md",
+          "lines": "L13-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API",
+          "note": "外部程序经网关协议发起代理运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 四项全记：api 照 F32 的 via_default_entry（service_api）进；external_event 依据 stream 定时源默认可用、加源命令属添加内容；webhooks 默认关不计入 via_default_entry 但不影响该项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule",
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "local_service",
+      "unknown_reason": null,
+      "value_note": "配置记录钉住的是 openclaw gateway install 之后的状态：macOS 装 LaunchAgent（RunAtLoad、KeepAlive），Linux 装 systemd 用户单元，由系统在登录时拉起、退出后重启。其他环境：Quick start 结束时网关留在终端前台（前台进程）。Control UI、TUI 只是连网关的界面，关掉界面网关和其中的运行继续。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/daemon/launchd-plist.ts#L19",
+          "locator": "src/daemon/launchd-plist.ts：LAUNCH_AGENT_POLICY",
+          "lines": "L19-L24",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "常驻方式",
+          "note": "LaunchAgent 策略 RunAtLoad: true、KeepAlive: true。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/start/getting-started.md#L83",
+          "locator": "docs/start/getting-started.md：Install the Gateway service",
+          "lines": "L83-L94",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "常驻方式",
+          "note": "快速开始下一步用 openclaw gateway install 装成 LaunchAgent／systemd 用户单元。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Linux systemd 单元的 Restart= 设置未逐行核对，按文档“systemd user unit”判。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "定时任务定义、运行状态存 SQLite，重启不丢，调度器开机重新布置并按规则补跑；Control UI 已接受的后续输入存每代理 SQLite 的待处理输入，浏览器重连时自动重新收进；崩溃时正在跑的主会话回合几秒后自动恢复；子代理记录落盘，中断的运行重启后结算。默认 steer 模式下运行中提交的消息先尝试并入当前回合，并不进去时排队等当前回合结束。sessions_send mode: notify 的通知只在进程内（durability: process），重启不保留。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md#L10",
+          "locator": "docs/gateway/restart-recovery.md",
+          "lines": "L10-L16",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重启恢复",
+          "note": "对话、定时任务、子代理记录、待发投递都在磁盘；工作中的主会话在重启或崩溃后自动恢复。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/gateway/restart-recovery.md#L53",
+          "locator": "docs/gateway/restart-recovery.md：What survives a restart",
+          "lines": "L53-L64",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重启恢复",
+          "note": "表列：Control UI 已接受的后续输入存 SQLite、浏览器重连后重新收进；定时任务存 SQLite、调度器开机重新布置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/automation/cron-jobs/how-it-works.md#L17",
+          "locator": "docs/automation/cron-jobs/how-it-works.md",
+          "lines": "L17-L22",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时任务",
+          "note": "任务定义和运行状态存共享 SQLite，重启不丢；启动时把过期任务重新排期。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/concepts/queue.md#L33",
+          "locator": "docs/concepts/queue.md",
+          "lines": "L33-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互队列",
+          "note": "默认 steer：运行中到达的提示注入当前运行，不能注入时等当前运行结束；followup/collect 排到下一轮。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "interactive_queue 记 persistent：依据 restart-recovery 表里“Accepted Control UI follow-ups”一行，重连即重新收进、不用再发消息；但它依赖浏览器端发件箱同时在，渠道消息则要看渠道是否走持久入站（Discord、Telegram 是），本配置未接渠道。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "persistent"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：ask_user 工具默认注册给主会话，模型可提一到三个结构化问题并等待回答（question）。默认 exec 模式 full（ask=off），普通命令不弹审批，permission 不计。resumable_todo：goal 工具（get_goal、create_goal、update_goal）默认注册，目标随会话存盘、跨重启保留；update_goal 标 blocked 或出错超时转 paused、到预算转 budget_limited 后，要人用 /goal resume 或 Control UI Resume 决定恢复（create_goal 说明限定在用户或系统指令明确要求时用，代码不拦）。可选：Control UI 浏览器推送通知默认只开审批类别，而默认设置下没有审批触发源；代理完成、代理提问等类别需用户在设置里另开，不记 message_notification。suggest_task 只登记一张卡、不跨网关重启保留，不记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/src/agents/openclaw-tools.ts#L553",
+          "locator": "src/agents/openclaw-tools.ts：createOpenClawTools",
+          "lines": "L553-L575",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具",
+          "note": "核心注册 goal 三个工具和 ask_user（主会话）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/ask-user.md#L9",
+          "locator": "docs/tools/ask-user.md",
+          "lines": "L9-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提问",
+          "note": "ask_user 让代理问人一到三个结构化问题并等待回答，只在主会话可用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/goal.md#L20",
+          "locator": "docs/tools/goal.md",
+          "lines": "L20-L23",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标",
+          "note": "目标是会话状态，跨进程重启保留。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/tools/goal.md#L100",
+          "locator": "docs/tools/goal.md：Statuses",
+          "lines": "L100-L115",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标状态",
+          "note": "paused、blocked、budget_limited 都要 /goal resume 才重新进行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/openclaw/openclaw/blob/b556fdf457b026574bf0f1e7b4914b15f3f179ce/docs/web/notifications.md#L52",
+          "locator": "docs/web/notifications.md：Choose what reaches each device",
+          "lines": "L52-L52",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知",
+          "note": "默认只开审批请求与结果通知，其他提醒类别需选择开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "block_kind 只记 question：full 模式下未查全是否还有“非普通”的显式人工审批（permission-modes.md 提到 existing binding checks and explicit human-approval requirements still apply），未逐个工具核对。resumable_todo 依据目标被标 blocked/paused 后等人恢复；代理自己持续推进的 active 目标不算。structured_handoff 判过：子代理完成交接元数据只在代理间传递，归 F28。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "question"
+        ]
+      }
+    }
+  }
+}

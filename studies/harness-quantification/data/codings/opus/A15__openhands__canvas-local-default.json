@@ -1,0 +1,2025 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "A15__openhands__canvas-local-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "Agent Server 里的 LocalConversation 主循环每步调模型、执行工具调用、把结果交回模型，直到模型给出纯文本回复或调用 finish（状态 FINISHED）、到上限或被中断。Canvas 只把用户消息发进会话、显示事件。可选：/goal 让框架在模型停下后按评审模型结论续发（每回合仍是模型循环）；/plan 切到另起的规划会话；工作流工具 workflow_tool_set 不在默认工具集。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2119-L2265",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：LocalConversation._run 主循环",
+          "lines": "L2119-L2265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "主循环每步调 agent.step；状态为 FINISHED 时（先跑 Stop 钩子）退出，PAUSED/STUCK 退出；每步后查费用上限与 max_iteration_per_run，到达即置 ERROR 并发 MaxBudgetReached/MaxIterationsReached 后停；认证失效置 ERROR 并抛出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L259-L281",
+          "locator": "openhands-sdk/openhands/sdk/agent/response_dispatch.py：_handle_content_response",
+          "lines": "L259-L281",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "模型回复只有文本、不带工具调用时，框架把状态置为 FINISHED，本轮结束、等待用户输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/constants.ts#L40-L120",
+          "locator": "src/utils/constants.ts：BUILT_IN_COMMANDS（/new、/btw、/model、/goal、/plan、/code）",
+          "lines": "L40-L120",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 内置命令表",
+          "note": "Canvas 内置斜杠命令：/new 新会话、/btw 附带提问、/model 切换 LLM 档案、/goal 带评审模型的目标续跑、/plan 切到计划模式、/code 切回编码模式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 逐项判过：内置命令表 /new（新开同类会话，仍是模型循环）、/btw（附带提问，不进主线，不算）、/model（换档案，不改推进方式）、/goal（框架在回合之间续发、内部仍是模型循环，按 scope_rule 算模型循环外层，不另记）、/plan 与 /code（规划会话仍是模型循环，只限工具）；启动参数 --frontend-only 等不改任务推进；快速开始只有直接对话这一条路径。自动化（cron、webhook）由调度器决定何时起一次运行，属于任务发起（F33），不记 event_scheduling；脚本型自动化不含模型调用。随包公共技能（@openhands/extensions 0.41.0）不在快照内，没能逐条看说明；默认工具里没有工作流执行器，技能只是展开成提示交模型循环执行，按此判不改变控制方式。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "默认工具集带 task_tracker：模型自己决定何时调用，维护带 todo/in_progress/done 状态的任务表，框架保存（事件，及可选的 TASKS.md）并在界面显示，但不按表推进或拦下偏离的动作。可选：/plan 进入计划模式（另起只读加写 PLAN.md 的规划会话，由用户命令进入，批准后不按条目检查执行）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/defaults.py#L26-L54",
+          "locator": "openhands-sdk/openhands/sdk/tool/defaults.py：DEFAULT_EXEC_TOOL_NAMES、resolve_tool_specs",
+          "lines": "L26-L54",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "tools 为 None 时默认工具为 terminal、file_editor、task_tracker（浏览器可用时加 browser_tool_set）和 switch_llm。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/task_tracker/definition.py#L166-L197",
+          "locator": "openhands-tools/openhands/tools/task_tracker/definition.py：TaskTrackerExecutor",
+          "lines": "L166-L197",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 task_tracker",
+          "note": "task_tracker 维护带 todo/in_progress/done 状态（L28-L29）的任务表，给了 save_dir 时持久化为 TASKS.md；不强制执行顺序。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L1340-L1407",
+          "locator": "src/api/agent-server-adapter.ts：规划会话启动请求（Plan mode）",
+          "lines": "L1340-L1407",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/plan 计划模式（可选路径）",
+          "note": "计划模式另起一个规划会话，只给 glob、grep 和只写 PLAN.md 的规划编辑器；由用户用 /plan 或界面进入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按判定顺序先查可执行流程约束：默认路径没有按计划条目推进或拦截的机制（/plan 是用户命令进入的另一会话，/goal 只按评审结论续发）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型回复不带工具调用或调用 finish 时框架置 FINISHED 结束本轮。预算：每次运行最多 500 步（Canvas DEFAULT_MAX_ITERATIONS，到达置 ERROR 停下）；本机子会话（launch_child_conversation）是独立会话，沿用父会话配置的 max_iterations。费用上限 max_budget_per_task 默认 null，可选：设置后到额即停。用户可在 Canvas 按停止按钮经 /interrupt 中断。可选：/goal 由评审模型判定完成、默认最多 10 轮；critic 迭代改进默认关；Stop 钩子要用户自己添加（load_user_hooks/load_project_hooks 默认开，但钉住环境没有任何钩子）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2119-L2265",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：LocalConversation._run 主循环",
+          "lines": "L2119-L2265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "主循环每步调 agent.step；状态为 FINISHED 时（先跑 Stop 钩子）退出，PAUSED/STUCK 退出；每步后查费用上限与 max_iteration_per_run，到达即置 ERROR 并发 MaxBudgetReached/MaxIterationsReached 后停；认证失效置 ERROR 并抛出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L259-L281",
+          "locator": "openhands-sdk/openhands/sdk/agent/response_dispatch.py：_handle_content_response",
+          "lines": "L259-L281",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "模型回复只有文本、不带工具调用时，框架把状态置为 FINISHED，本轮结束、等待用户输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L176-L180",
+          "locator": "src/api/agent-server-adapter.ts：DEFAULT_MAX_ITERATIONS、resolveMaxIterations",
+          "lines": "L176-L180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "Canvas 设置的 max_iterations 默认为 null 时，启动请求带 500。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1372-L1385",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：EventService 创建 LocalConversation",
+          "lines": "L1372-L1385",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 本机运行时",
+          "note": "Agent Server 在自身进程里建 LocalConversation，传入 persistence_dir、conversation_id、max_iteration_per_run=stored.max_iterations、max_budget_per_run、stuck_detection。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/hooks/mutation/conversation-mutation-utils.ts#L49-L58",
+          "locator": "src/hooks/mutation/conversation-mutation-utils.ts：interruptConversation",
+          "lines": "L49-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 停止按钮",
+          "note": "Canvas 的停止操作调用 Agent Server 的 /interrupt，立即取消在途的模型请求并停下当前运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_router.py#L381-L392",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_router.py：interrupt_conversation 路由",
+          "lines": "L381-L392",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server API",
+          "note": "POST /{conversation_id}/interrupt 立即中断正在运行的会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/settings.ts#L3-L57",
+          "locator": "src/services/settings.ts：DEFAULT_SETTINGS",
+          "lines": "L3-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "默认 confirmation_mode false、max_iterations null、max_budget_per_task null、run_router_at_conversation_start false、critic_enabled false、enable_iterative_refinement false、condenser 开 max_size 240、mcp_config 为空、title_llm_profile null。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "verification_condition 判为不在默认路径：Stop 钩子能拦住结束（run_stop），但默认没有钩子内容，按总则 R2“不可能出现触发来源”写可选；critic_enabled、enable_iterative_refinement 默认 false；/goal 由用户命令进入。卡住检测置 STUCK 停止归 F04，不进本字段。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "调用重试：连接错误、限流、5xx、超时、无响应时 LiteLLM 层自动重发，默认最多 5 次、退避 8 秒起；上下文超窗或历史畸形时先发压缩请求，压缩后下一步重发（压缩本身记 F14）。模型自修：工具执行出错转成 AgentErrorEvent 交回模型，函数调用校验失败作为消息交回，内容过滤拦截时注入改写提示，空回复注入纠正提示；Canvas 固定开 stuck_detection，连续动作错误先注入一次纠正提示，仍卡住则置 STUCK 结束本次运行。框架修正输入：执行前修正工具名别名和终端回退，把字符串形式的列表/对象参数解码、分块字符串拼回后照常执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/llm.py#L180-L188",
+          "locator": "openhands-sdk/openhands/sdk/llm/llm.py：LLM_RETRY_EXCEPTIONS",
+          "lines": "L180-L188",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 LLM 调用",
+          "note": "连接错误、502、限流、服务不可用、超时、500、无响应时自动重试；num_retries 默认 5（L379），退避 8 秒起（L381）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L831-L918",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：Agent._step 的模型调用与异常分支",
+          "lines": "L831-L918",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "FunctionCallValidationError 作为用户消息交回模型；内容过滤拦截时注入改写提示继续；上下文超窗或历史畸形时发 CondensationRequest、压缩后下一步重发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L1557-L1615",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：Agent._execute_action_event",
+          "lines": "L1557-L1615",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径工具执行",
+          "note": "工具执行抛 ValueError 时转成 AgentErrorEvent 交回模型，让模型自行改正。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L808-L831",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：_check_stuck_or_nudge",
+          "lines": "L808-L831",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径（Canvas 固定开 stuck_detection）",
+          "note": "动作连续出错时先注入一次纠正提示；之后判定卡住则置 STUCK 并结束本次运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L283-L312",
+          "locator": "openhands-sdk/openhands/sdk/agent/response_dispatch.py：_handle_no_content_response",
+          "lines": "L283-L312",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "模型只给推理或空回复时，框架注入纠正提示，循环继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L1413-L1452",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：Agent._get_action_event",
+          "lines": "L1413-L1452",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径工具调用解析",
+          "note": "执行前先 normalize_tool_call（别名与终端回退，utils.py L470 起）改正工具名，再用 fix_malformed_tool_arguments 按动作模式把字符串形式的列表/对象解码、把分块字符串拼回，照常执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/utils.py#L125-L165",
+          "locator": "openhands-sdk/openhands/sdk/agent/utils.py：fix_malformed_tool_arguments",
+          "lines": "L125-L165",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径工具调用解析",
+          "note": "说明：修复原生函数调用下把列表/对象写成 JSON 字符串、把字符串参数写成分块数组两种畸形参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2119-L2265",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：LocalConversation._run 主循环",
+          "lines": "L2119-L2265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "主循环每步调 agent.step；状态为 FINISHED 时（先跑 Stop 钩子）退出，PAUSED/STUCK 退出；每步后查费用上限与 max_iteration_per_run，到达即置 ERROR 并发 MaxBudgetReached/MaxIterationsReached 后停；认证失效置 ERROR 并抛出。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "escalate_to_human 按错误类型逐个过：认证失效（LLMAuthenticationError）只置 ERROR 并显示错误，没有等用户重登后接着走的分支；步数/费用上限置 ERROR 后结束；卡住置 STUCK 结束；权限被拒不存在（确认模式默认关）；Canvas 界面没有对运行错误给出重试/放弃选择（只对发送失败的消息有 Retry，那是消息投递，不是模型或工具调用）。request_secret 是模型自己调用的求助工具，按 scope_rule 不记。workflow_branch 默认路径没有流程。失败回退换型号（fallback_strategy）默认未设，记 F11 也不成立。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "agent-canvas 启动整套本机服务：浏览器里的 Canvas 前端经入口代理 :8000 用 HTTP API 与 WebSocket（/sockets/session/{id}）连接本机常驻的 Agent Server（uvx 起，:18000），模型循环在 Agent Server 进程里运行。Agent Server 由启动器拉起、随启动器退出，但通信走本地端口上的 API，不是标准输入输出管道。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-with-automation.mjs#L10-L21",
+          "locator": "scripts/dev-with-automation.mjs：文件头架构说明",
+          "lines": "L10-L21",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "agent-canvas 默认整套本机服务",
+          "note": "入口代理 :8000 把 /api/* 与 /sockets 转给 Agent Server（uvx 起，:18000），/api/automation/* 转给自动化后端，其余给前端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/websocket-url.ts#L98-L114",
+          "locator": "src/utils/websocket-url.ts：会话 WebSocket 地址",
+          "lines": "L98-L114",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 前端",
+          "note": "前端经 ws(s)://host/sockets/session/{conversationId} 连接 Agent Server 的会话事件流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/launch.py#L104-L106",
+          "locator": "openhands-agent-server/openhands/agent_server/launch.py：can_probe_tools",
+          "lines": "L104-L106",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 本机运行时",
+          "note": "conversation_runtime 不是 docker 时，会话就在 Agent Server 这个进程里运行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "前端指浏览器里运行的 Canvas 页面（承载界面逻辑并直接调 Agent Server API）。启动器 Node 进程只做编排和反向代理，不运行执行核心。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "执行核心是 Agent Server 进程（本机运行时下会话就在该进程里跑）。file_editor 在该进程内直接读写文件（main_process）；terminal 为命令起交互 shell 子进程（无 tmux 时 pty+Popen；装了 tmux 时 shell 跑在 libtmux 拉起的 tmux 会话里），技能正文里的 !`命令` 也经 shell 子进程执行。浏览器工具集只在本机探测到 Chromium/Playwright 时加入，加入后由浏览器子进程执行。Canvas 客户端工具（canvas_ui_control、launch_child_conversation、request_secret）由浏览器里的前端执行，Agent Server 只回确认。可选：MCP 服务要用户添加配置（stdio 服务随核心起子进程）；Docker 运行时或每会话容器要改设置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/launch.py#L104-L106",
+          "locator": "openhands-agent-server/openhands/agent_server/launch.py：can_probe_tools",
+          "lines": "L104-L106",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 本机运行时",
+          "note": "conversation_runtime 不是 docker 时，会话就在 Agent Server 这个进程里运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/file_editor/editor.py#L482-L490",
+          "locator": "openhands-tools/openhands/tools/file_editor/editor.py：FileEditor.write_file",
+          "lines": "L482-L490",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 file_editor",
+          "note": "文件编辑工具在执行核心进程里直接用 Python 读写文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/terminal/terminal/factory.py#L155-L185",
+          "locator": "openhands-tools/openhands/tools/terminal/terminal/factory.py：create_terminal_session 自动选择",
+          "lines": "L155-L185",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 terminal",
+          "note": "非 Windows 上有 tmux 用 TmuxTerminal，否则退回 SubprocessTerminal。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/terminal/terminal/subprocess_terminal.py#L157-L172",
+          "locator": "openhands-tools/openhands/tools/terminal/terminal/subprocess_terminal.py：SubprocessTerminal.initialize",
+          "lines": "L157-L172",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 terminal",
+          "note": "用 pty 加 subprocess.Popen 起一个交互 shell 子进程执行命令。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "tmux 分支下 shell 由常驻的 tmux 服务进程承载，口径上仍按为命令另起的子进程记 subprocess，没有另记 local_service。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "Agent Server（执行核心）在自身进程里建 LocalConversation，把 base_state.json 和事件按会话 ID 存进自己的 persistence_dir，恢复时由核心读回；Canvas 前端经 WebSocket/REST 取事件显示，只在浏览器本地存少量界面元数据（如工作区模式）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1372-L1385",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：EventService 创建 LocalConversation",
+          "lines": "L1372-L1385",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 本机运行时",
+          "note": "Agent Server 在自身进程里建 LocalConversation，传入 persistence_dir、conversation_id、max_iteration_per_run=stored.max_iterations、max_budget_per_run、stuck_detection。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/models.py#L162-L180",
+          "locator": "openhands-agent-server/openhands/agent_server/models.py：_ConversationInfoBase.persistence_dir、max_iterations",
+          "lines": "L162-L180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 会话",
+          "note": "会话状态和事件由 Agent Server 持久化到 persistence_dir（默认 workspace/conversations）；max_iterations 默认 500。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/state.py#L499-L515",
+          "locator": "openhands-sdk/openhands/sdk/conversation/state.py：ConversationState.create",
+          "lines": "L499-L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话状态",
+          "note": "执行核心创建新会话状态或从持久化目录（base_state.json 与事件目录）恢复。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个会话有框架分配的 ID，状态与事件按 ID 分目录存放；所有会话跑在同一个 Agent Server 进程里，默认工作区模式 local_repo 让会话共用同一个工作目录。可选：启动器选 new_worktree（或设置 default_runtime=worktree）时每会话新建 git worktree；设 Docker 运行时可每会话一个容器。模型用 launch_child_conversation 起的子会话默认切独立 worktree（建不了时退回共用目录），只覆盖这类子会话，不是每个新会话都有。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L420-L426",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：get_persistence_dir",
+          "lines": "L420-L426",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话状态",
+          "note": "持久化目录按会话 ID 分开（在 persistence_dir 下追加会话 ID）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/workspace-mode.ts#L5-L44",
+          "locator": "src/utils/workspace-mode.ts：DEFAULT_WORKSPACE_MODE、getDefaultWorkspaceMode",
+          "lines": "L5-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 启动器工作区模式",
+          "note": "默认工作区模式为 local_repo；new_worktree 由启动器选择或设置 default_runtime=worktree 才用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/conversation-service/agent-server-conversation-service.api.ts#L690-L710",
+          "locator": "src/api/conversation-service/agent-server-conversation-service.api.ts：启动请求的 worktree 参数",
+          "lines": "L690-L710",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 会话启动",
+          "note": "只有工作区模式为 new_worktree 时，启动请求才带 worktree: true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/settings/model.py#L1271-L1277",
+          "locator": "openhands-sdk/openhands/sdk/settings/model.py：ConversationSettings.default_runtime",
+          "lines": "L1271-L1277",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "default_runtime 默认 local：新会话在主机上的工作区里运行，不新建 worktree 或容器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L1619-L1628",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：start_conversation 的 worktree 规划",
+          "lines": "L1619-L1628",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 会话启动",
+          "note": "只有 request.worktree 为真时才为会话规划独立 git worktree。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/launch-child-conversation-client-tool.ts#L14-L59",
+          "locator": "src/api/launch-child-conversation-client-tool.ts：LAUNCH_CHILD_CONVERSATION_DESCRIPTION",
+          "lines": "L14-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 客户端工具",
+          "note": "模型可调用 launch_child_conversation 另开独立子会话，默认 isolation=worktree；结果不交回父代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "process 不成立：本机运行时所有会话在同一进程（launch.py can_probe_tools）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心进程内的 LLM 类按型号在 Responses API 与 Chat Completions 两条转换路径间选择，两条都经内嵌的 LiteLLM 库转成各提供方的接口格式（OpenAI、Anthropic 等消息格式不同），添加一条提供方配置即可启用。钉住环境 openai/gpt-5.6-sol 走 OpenAI Responses 路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/llm.py#L1688-L1712",
+          "locator": "openhands-sdk/openhands/sdk/llm/llm.py：LLM.generate",
+          "lines": "L1688-L1712",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 LLM 调用",
+          "note": "按 uses_responses_api 在 Responses 接口与 Chat Completions 接口两条转换路径之间选择（L2853-L2858）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/utils/model_features.py#L318-L327",
+          "locator": "openhands-sdk/openhands/sdk/llm/utils/model_features.py：RESPONSES_API_MODELS",
+          "lines": "L318-L327",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住型号 openai/gpt-5.6-sol",
+          "note": "gpt-5 系列走 Responses API 路径；其他型号走 Chat Completions。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/llm.py#L87-L103",
+          "locator": "openhands-sdk/openhands/sdk/llm/llm.py：litellm 导入（completion、responses）",
+          "lines": "L87-L103",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 LLM 调用",
+          "note": "核心进程内嵌 LiteLLM 库，Chat Completions 与 Responses 两条路径都经它转成各提供方的接口格式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "LiteLLM 作为库嵌在核心进程里，按 scope_rule 记 adapter_layer，不记 protocol_gateway。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认 native_tool_calling=True：每步把全部工具作为原生工具列表发出，从结构化调用条目取参数。MCP 扩展点默认开放（mcp_config 为空，添加一条服务配置即可），MCP 工具被包装成原生函数，调用时再转成 MCP call_tool 请求。解析失败时把错误交回模型（F04）。可选：native_tool_calling 设为 False 时改用提示转写加文本解析。Canvas 客户端工具也以原生函数暴露，Agent Server 把调用转为事件交给浏览器执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L831-L838",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：Agent._step 调 llm.generate",
+          "lines": "L831-L838",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "每步把 tools_map 里的全部工具作为原生工具列表随请求发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/llm.py#L555-L559",
+          "locator": "openhands-sdk/openhands/sdk/llm/llm.py：LLM.native_tool_calling",
+          "lines": "L555-L559",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 LLM 调用",
+          "note": "native_tool_calling 默认 True。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/base.py#L138-L140",
+          "locator": "openhands-sdk/openhands/sdk/agent/base.py：AgentBase.mcp_config",
+          "lines": "L138-L140",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 扩展点",
+          "note": "智能体带 mcp_config 字段，添加一条服务配置即可加载 MCP 工具；Canvas 默认值为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/mcp/tool.py#L291-L294",
+          "locator": "openhands-sdk/openhands/sdk/mcp/tool.py：MCPToolDefinition",
+          "lines": "L291-L294",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 扩展点",
+          "note": "把 MCP 服务的工具包装成代理的工具定义；to_openai_tool（L516-L525）把它转成模型的原生函数，调用时由 MCPToolExecutor 发 MCP call_tool（L100-L163）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/mixins/non_native_fc.py#L36-L56",
+          "locator": "openhands-sdk/openhands/sdk/llm/mixins/non_native_fc.py：should_mock_tool_calls、pre_request_prompt_mock",
+          "lines": "L36-L56",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非原生调用回退（可选）",
+          "note": "只有 native_tool_calling 为 False 时才把工具定义转写进提示、从文本里解析调用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "script_dispatch 不成立：默认工具里没有让脚本回调代理工具的执行器（terminal 跑的脚本不能调用代理工具）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用钉住档案的 openai/gpt-5.6-sol；模型起的本机子会话沿用父会话的智能体档案（同一型号）。默认工具 switch_llm 让模型切到另一个已保存的 LLM 档案，但钉住环境只有向导建的一个档案，按 model_selected_delegation 判定写进本说明、不记。可选：/model 命令切档案；路由档案（run_router_at_conversation_start 默认 false）；fallback_strategy 默认未设。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py#L22-L30",
+          "locator": "openhands-sdk/openhands/sdk/tool/builtins/switch_llm.py：SwitchLLMAction",
+          "lines": "L22-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 switch_llm",
+          "note": "switch_llm 让模型把本会话切到另一个已保存的 LLM 档案，下一次调用起生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/defaults.py#L26-L54",
+          "locator": "openhands-sdk/openhands/sdk/tool/defaults.py：DEFAULT_EXEC_TOOL_NAMES、resolve_tool_specs",
+          "lines": "L26-L54",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "tools 为 None 时默认工具为 terminal、file_editor、task_tracker（浏览器可用时加 browser_tool_set）和 switch_llm。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/settings/model.py#L313-L322",
+          "locator": "openhands-sdk/openhands/sdk/settings/model.py：LLMSummarizingCondenserSettings.build_condenser",
+          "lines": "L313-L322",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "上下文压缩",
+          "note": "压缩器 LLM 是主智能体 LLM 的拷贝（只改 usage_id），型号相同。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L2717-L2800",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：AutoTitleSubscriber",
+          "lines": "L2717-L2800",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动标题",
+          "note": "标题模型优先 title_llm_profile，未设时用主智能体 LLM，失败退化为截断文本。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/base.py#L602-L617",
+          "locator": "openhands-sdk/openhands/sdk/agent/base.py：默认内置工具附加逻辑",
+          "lines": "L602-L617",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "媒体理解",
+          "note": "只有主型号不支持视觉、且另有可用的视觉档案时才自动挂 vision_inspect。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/settings.ts#L3-L57",
+          "locator": "src/services/settings.ts：DEFAULT_SETTINGS",
+          "lines": "L3-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "默认 confirmation_mode false、max_iterations null、max_budget_per_task null、run_router_at_conversation_start false、critic_enabled false、enable_iterative_refinement false、condenser 开 max_size 240、mcp_config 为空、title_llm_profile null。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 逐项判过：标题生成用主智能体 LLM（title_llm_profile 默认 null）；上下文压缩用主 LLM 的拷贝（同型号）；动作审核分类：确认模式默认关，llm 安全分析器只读主模型在同一次调用里给的 security_risk，不另调模型；联网搜索与网页抓取：浏览器工具不调模型，无搜索工具；媒体理解：vision_inspect 只在主型号不支持视觉且另有视觉档案时挂，钉住环境只有一个档案，无；生成类工具：无。confidence 取 medium：钉住环境是否只存在一个 LLM 档案（后端模型目录是否另外预置档案）没能在快照里完全核实。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：未设 max_output_tokens 时框架按型号特例或 LiteLLM 型号信息表取默认输出上限，并在接口密钥模式下随 Responses 请求发出；gpt-5.6-sol 在表里的数值在快照之外（LiteLLM 依赖库），查不到。call_count：每次运行最多 500 步（Canvas 默认），到达即置 ERROR 停下；子会话沿用父会话的 max_iterations。可选：max_budget_per_task（金额）默认 null；/goal 默认最多 10 轮评审（用户命令进入）。没有到达阈值前的提醒。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/llm.py#L2722-L2745",
+          "locator": "openhands-sdk/openhands/sdk/llm/llm.py：effective_max_output_tokens 解析",
+          "lines": "L2722-L2745",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 LLM 调用",
+          "note": "未设 max_output_tokens 时，按型号名特例或 LiteLLM 型号信息表取输出上限，超过窗口时减半。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/options/responses_options.py#L30-L35",
+          "locator": "openhands-sdk/openhands/sdk/llm/options/responses_options.py：Responses 请求默认参数",
+          "lines": "L30-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住型号走 Responses 路径",
+          "note": "接口密钥（非订阅）模式下把 effective_max_output_tokens 作为 max_output_tokens 发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L176-L180",
+          "locator": "src/api/agent-server-adapter.ts：DEFAULT_MAX_ITERATIONS、resolveMaxIterations",
+          "lines": "L176-L180",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "Canvas 设置的 max_iterations 默认为 null 时，启动请求带 500。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L1206-L1238",
+          "locator": "src/api/agent-server-adapter.ts：buildStartConversationRequest 的 payload",
+          "lines": "L1206-L1238",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 会话启动请求",
+          "note": "openhands 档案的会话启动请求带三个客户端工具、确认策略、max_iterations（默认 500）、stuck_detection: true、autotitle: true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2119-L2265",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：LocalConversation._run 主循环",
+          "lines": "L2119-L2265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "主循环每步调 agent.step；状态为 FINISHED 时（先跑 Stop 钩子）退出，PAUSED/STUCK 退出；每步后查费用上限与 max_iteration_per_run，到达即置 ERROR 并发 MaxBudgetReached/MaxIterationsReached 后停；认证失效置 ERROR 并抛出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/settings.ts#L3-L57",
+          "locator": "src/services/settings.ts：DEFAULT_SETTINGS",
+          "lines": "L3-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "默认 confirmation_mode false、max_iterations null、max_budget_per_task null、run_router_at_conversation_start false、critic_enabled false、enable_iterative_refinement false、condenser 开 max_size 240、mcp_config 为空、title_llm_profile null。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "output_limit 计入的前提是钉住型号在 LiteLLM 表里有 max_output_tokens；表不在快照内，按总则 R10 机制照记、数值写说明，confidence 因此取 medium。卡住检测的重复判定归 F04，不记 call_count。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "typed_event_rebuild",
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每步 Agent.step 取 ConversationState.view（运行中增量维护的一份可发给模型的条目列表），经 condenser.condense 判定不需压缩时直接整份 events_to_messages 发出；这份列表里已不含控制条目，所以 value 记 sequential_messages。新事件到来时 View.append_event 按类型并入：Condensation 条目按 forgotten_event_ids 删去中间一段（保留开头 keep_first=2 条和尾部）并在 summary_offset 处插入摘要条目，CondensationRequest 只置标志，其余非 LLM 事件跳过；这一转换层按控制条目改动列表，Condensation 在默认开启的 LLM 摘要压缩下会自己产生，故 layers 另记 typed_event_rebuild。View.from_events 整份重建只在首次载入、切换分支或恢复会话时走，不另记。每轮把 view 现转成消息的那一步不跨轮保留，不另算一层。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/state.py#L383-L428",
+          "locator": "openhands-sdk/openhands/sdk/conversation/state.py：ConversationState.view",
+          "lines": "L383-L428",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "view 增量维护：线性追加时只回放新尾部（append_event），分支切换或首次载入才 View.from_events 整份重建。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/context/view/view.py#L111-L141",
+          "locator": "openhands-sdk/openhands/sdk/context/view/view.py：View.append_event",
+          "lines": "L111-L141",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "按事件类型并入：Condensation 调 apply 改写已存条目，CondensationRequest 置标志，非 LLM 事件跳过。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/event/condenser.py#L83-L96",
+          "locator": "openhands-sdk/openhands/sdk/event/condenser.py：Condensation.apply",
+          "lines": "L83-L96",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的压缩",
+          "note": "按编号删去被遗忘的条目并在指定位置插入摘要条目，属于按控制条目删去中间若干段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/utils.py#L600-L646",
+          "locator": "openhands-sdk/openhands/sdk/agent/utils.py：prepare_llm_messages",
+          "lines": "L600-L646",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环",
+          "note": "每步直接取缓存的 view.events，给压缩器判定后整份 events_to_messages。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "view 里存的是类型化事件对象（消息、动作、观察、错误、摘要条目），不是厂商消息，但其中已无控制条目，按“运行中维护列表、新事件按类型并入”记 sequential_messages。若把 view 本身当作“夹着控制条目的列表”，会判成 typed_event_rebuild；我按 append 时即已应用 Condensation 判为前者。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "summarization：Canvas 默认 enable_default_condenser=true、condenser_max_size=240，Agent Server 据此建 LLMSummarizingCondenser，条目数超过 240（或上下文超限触发 CondensationRequest）时调模型把中间一段改写成摘要，保留开头 2 条和尾部；多次失败还有 hard_context_reset 整段摘要。truncation：终端输出转给模型时超过 30000 字符截成首尾两段，全文另存会话目录下 observations/ 并留路径；任何工具文本结果超过 50000 字符再截一次；file_editor 查看结果上限 16000 字符。未见把旧工具结果整条换成占位的机制。界面上的 Compact context 是用户手动压缩，按 R3 第二档：可选。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/settings.ts#L3-L57",
+          "locator": "src/services/settings.ts：DEFAULT_SETTINGS",
+          "lines": "L3-L57",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "enable_default_condenser true、condenser_max_size 240。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/context/condenser/llm_summarizing_condenser.py#L55-L88",
+          "locator": "openhands-sdk/openhands/sdk/context/condenser/llm_summarizing_condenser.py：LLMSummarizingCondenser",
+          "lines": "L55-L88",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认压缩器",
+          "note": "用 LLM 摘要被遗忘的事件，max_size 240、keep_first 2，另有 hard_context_reset。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/terminal/definition.py#L176-L200",
+          "locator": "openhands-tools/openhands/tools/terminal/definition.py：TerminalObservation.to_llm_content",
+          "lines": "L176-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 terminal",
+          "note": "maybe_truncate 截到 MAX_CMD_OUTPUT_SIZE（30000），全文存 full_output_save_dir 并在提示里留路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/llm/message.py#L481-L489",
+          "locator": "openhands-sdk/openhands/sdk/llm/message.py：Message._maybe_truncate_tool_text",
+          "lines": "L481-L489",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所有工具结果",
+          "note": "工具文本结果超过 DEFAULT_TEXT_CONTENT_LIMIT（50000）时截短。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：Canvas 输入框可附图片（转 base64 直接附进消息）和文件（上传进工作目录，消息里附文件名清单）。默认工具集只有 terminal、file_editor、task_tracker、switch_llm（本机探测到浏览器时加 browser_tool_set）及 finish、think、有可调技能时的 invoke_skill，没有框架自带的内容搜索、语义检索或结构查询工具；代理只能经 terminal 自己跑 grep 等，不计。glob、grep 工具只在用户点“Create a Plan”进入的规划会话里注册（R3 第二档）：可选。浏览器访问不计。技能：用户技能、项目技能和内嵌公共技能的说明常驻、正文经 invoke_skill 按需读取；关键词触发的知识技能在用户消息命中触发词时把技能正文注入上下文，按“技能目录一类途径”写在这里，不计入 keyword。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/send-message-with-attachments.ts#L24-L72",
+          "locator": "src/utils/send-message-with-attachments.ts：sendMessageWithAttachments",
+          "lines": "L24-L72",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 聊天输入",
+          "note": "图片转 base64 随消息发送，其余文件上传到会话工作区并在提示里列出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/defaults.py#L24-L53",
+          "locator": "openhands-sdk/openhands/sdk/tool/defaults.py：DEFAULT_EXEC_TOOL_NAMES、resolve_tool_specs",
+          "lines": "L24-L53",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "标准集为 terminal、file_editor、task_tracker（可选浏览器）加 switch_llm，没有检索工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/conversations",
+          "locator": "Conversations：Image Attachments",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 聊天输入",
+          "note": "文档说明用户可以随消息上传图片。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "关键词触发的知识技能（用户消息里出现触发词就注入技能正文）算不算 keyword：判定说的是“按字面文本匹配材料内容”，这里匹配的是技能自己声明的触发词，我按技能途径写 value_note，未计入。文件上传只把文件放进工作区、内容不由框架读入，图片附件才是框架读入的那一条。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：Canvas 会话设 load_project_skills=true、load_user_skills=true，新会话开始时读入工作区（及 git 根）的 AGENTS.md、CLAUDE.md、.cursorrules 等第三方说明文件和 ~/.agents/skills、~/.openhands/skills 下的用户技能（环境前提的仓库里没有这类文件，扩展点默认开放）。默认系统提示的 <MEMORY> 段让模型把仓库知识写进 AGENTS.md，写入靠通用编辑工具，不计 auto_summary。可选：AgentContext.load_memory（默认 false，Canvas 不设）打开后会话开始注入 ~/.openhands/memory 与工作区 .openhands/memory 的 MEMORY.md，并提示模型在任务尾写日志。会话记录可从侧栏重新打开，属于恢复，不计。没有结构化记忆或检索库。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L907-L954",
+          "locator": "src/api/agent-server-adapter.ts：agent_context 构造",
+          "lines": "L907-L954",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 会话启动",
+          "note": "load_user_skills true、load_project_skills true，未设 load_memory。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/skills/skill.py#L1076-L1100",
+          "locator": "openhands-sdk/openhands/sdk/skills/skill.py：load_project_skills",
+          "lines": "L1076-L1100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目说明文件",
+          "note": "从工作目录和 git 根读入 AGENTS.md 等第三方说明文件和项目技能。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/context/agent_context.py#L143-L152",
+          "locator": "openhands-sdk/openhands/sdk/context/agent_context.py：AgentContext.load_memory",
+          "lines": "L143-L152",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "持久记忆开关",
+          "note": "load_memory 默认 False，MEMORY.md 记忆默认不载入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "Agent Server 把每个会话存在 ~/.openhands/agent-canvas/dev_conversations/<id>/ 下：events/ 里逐条写事件（消息、动作、观察之外还有 Condensation、CondensationRequest、PauseEvent、ConversationStateUpdateEvent、SecurityAnalysisEvent 等控制条目），记 event_log；base_state.json 存执行状态（execution_status、已激活技能、agent_state、统计、加密密钥等），恢复时读回，记 state_snapshot；同目录 TASKS.json 存任务清单，恢复时由 task_tracker 读回。终端超长输出另存 observations/terminal_output_<hash>.txt，但事件记录本身仍存全文，不算只存引用，不计 external_reference。上传文件放进工作目录、消息里只留文件名，属于用户材料，未计。bash_events 另有命令日志。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/state.py#L560-L600",
+          "locator": "openhands-sdk/openhands/sdk/conversation/state.py：ConversationState.create 恢复分支",
+          "lines": "L560-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话持久化",
+          "note": "恢复时读 base_state.json 并以 EventLog 打开 events 目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/event/condenser.py#L83-L110",
+          "locator": "openhands-sdk/openhands/sdk/event/condenser.py：Condensation、CondensationRequest",
+          "lines": "L83-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "事件类型",
+          "note": "压缩边界和压缩请求是独立事件类型，会改变回放时取哪些内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/config.py#L275-L300",
+          "locator": "openhands-agent-server/openhands/agent_server/config.py：conversations_path、bash_events_dir",
+          "lines": "L275-L300",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 存储",
+          "note": "会话和事件存盘目录；Canvas 启动器经 OH_CONVERSATIONS_PATH 指到状态目录下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-safe.mjs#L741-L793",
+          "locator": "scripts/dev-safe.mjs：conversationsPath、bashEventsDir",
+          "lines": "L741-L793",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机启动器",
+          "note": "会话目录默认是状态目录下的 dev_conversations。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "base_state.json 里有执行状态也有配置和统计，算 state_snapshot 还是“会话元数据”有口径空间；我按“执行状态的持久副本、恢复读回”计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "Agent Server 重启后从磁盘目录载入会话目录；状态为 RUNNING 的会话改成 ERROR，未完成的工具调用补一条“重启时中断”的错误事件，再由用户在侧栏打开会话发下一条消息，模型据重建的历史重新决定。暂停时的在途调用同样补合成错误。确认模式（非默认）下待批动作带回、获批后照原样执行，写这里不计。/goal 循环被标为 interrupted，界面给 Resume 按钮续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1442-L1494",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：EventService.start 崩溃恢复",
+          "lines": "L1442-L1494",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重启后载入会话",
+          "note": "RUNNING 改 ERROR，未配对的动作补 AgentErrorEvent，不再执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L2249-L2275",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：启动时载入目录并恢复 RUNNING 会话",
+          "lines": "L2249-L2275",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重启后载入会话",
+          "note": "启动时读会话目录，RUNNING 记录立即载入走崩溃恢复。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "conversation 与 tool_results：恢复时从 events 目录重建视图，消息、动作和观察都回到上下文。task_plan：task_tracker 默认注册，执行器用会话目录作 save_dir，创建时读回 TASKS.json；/goal 设立的目标状态随事件带回，重启后标为 interrupted，界面给 Resume 按钮续跑。workspace 不自动还原。subagent_links 不计：launch_child_conversation 起的子会话是独立会话，父代理只拿到编号和链接，没有默认工具给子会话发指令，结果也不回传。file_editor 的撤销历史存在进程临时目录，重启后不带回。外部副作用不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/task_tracker/definition.py#L251-L312",
+          "locator": "openhands-tools/openhands/tools/task_tracker/definition.py：_load_tasks、_save_tasks、TaskTrackerTool.create",
+          "lines": "L251-L312",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 task_tracker",
+          "note": "任务清单存会话目录 TASKS.json，工具创建时读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/state.py#L560-L600",
+          "locator": "openhands-sdk/openhands/sdk/conversation/state.py：ConversationState.create 恢复分支",
+          "lines": "L560-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复",
+          "note": "读回 base_state.json 与事件日志，重建对话和工具结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/components/features/chat/goal-status-content.tsx#L52-L60",
+          "locator": "src/components/features/chat/goal-status-content.tsx：Resume 按钮",
+          "lines": "L52-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "/goal 目标",
+          "note": "被中断的目标显示 Resume，后端从持久化的目标状态续跑。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "/goal 目标重启后变成 interrupted，要用户点 Resume 才再驱动代理；是否满足“恢复后仍驱动代理”有空间，task_plan 已由 TASKS.json 成立，不影响取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "session_branch：消息上的 Branch from here 经 Agent Server /fork 复制到该点为止的事件历史另开会话，原会话留在侧栏；从用户消息分叉相当于编辑后重发。分叉不复制工作区。workspace_snapshot：默认工具 file_editor 每次改文件前把原文存进进程临时目录的历史（每文件最多 10 条），模型可用 undo_edit 改回；只限 file_editor 的改动，终端里的改动不覆盖，进程结束即失。compensation 没有。idempotency_key 不计：重启时对无结果的调用只补错误事件、不再执行，属修补历史；step 开头执行未配对动作的路径只在确认模式下有待批动作时走到。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/conversations",
+          "locator": "Conversations：Branch From a Message、What Branching Preserves",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机 agent-server 后端",
+          "note": "从消息分叉出新会话，原会话保留在侧栏，两边独立。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L2013-L2035",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：fork_conversation",
+          "lines": "L2013-L2035",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话分叉",
+          "note": "深拷贝事件历史到 from_event_id，作为独立会话持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-tools/openhands/tools/file_editor/editor.py#L710-L722",
+          "locator": "openhands-tools/openhands/tools/file_editor/editor.py：undo_edit",
+          "lines": "L710-L722",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具 file_editor",
+          "note": "取出上次改动前的原文写回文件；历史由 FileHistoryManager(max_history_per_file=10) 在改动前保存。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：命名的 OpenHands 智能体档案可选 Choose tools，只给勾选的工具（去掉工具即拒绝该类动作），也可按 mcp_server_refs 限定 MCP 服务、关掉 switch_llm。其余只有确认模式总开关（关闭时 NeverConfirm；打开且分析器为 llm 时 ConfirmRisky 按模型自报的风险等级询问，否则全部询问），风险档位不是词表里的维度。没有用户可写的命令、路径或域名规则：browser 的 allowed_domains、file_editor 的 allowed_edits_files 只是构造工具时的参数，规划模式写死只准改 PLAN.md；钩子检查记 F31。默认 NeverConfirm、本机运行时无沙箱，四个动作都直接执行。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/agent-profiles",
+          "locator": "Agent Profiles：Choose a Profile's Tools、Scope a Profile to Specific MCP Servers",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "智能体档案设置",
+          "note": "档案可只给选中的工具，去掉的工具即失去该能力。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/constants/profile-tools.ts#L16-L62",
+          "locator": "src/constants/profile-tools.ts：readProfileTools、buildProfileToolsValue",
+          "lines": "L16-L62",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "智能体档案设置",
+          "note": "standard 模式存 null 取标准集，custom 模式只存选中的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/settings/model.py#L1404-L1415",
+          "locator": "openhands-sdk/openhands/sdk/settings/model.py：_build_confirmation_policy",
+          "lines": "L1404-L1415",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "confirmation_mode 默认 False 时返回 NeverConfirm，所有动作不询问。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "智能体档案的工具挑选是“改设置”，但本字段按可配置规则计维度，所以计 tool_category。确认模式只是全开或按风险询问的总开关，不单独构成维度。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认 confirmation_mode=false，确认策略 NeverConfirm，任何动作都不暂停等批准；客户端工具 launch_child_conversation、canvas_ui_control 由前端直接执行，request_secret 只是请用户填密钥的表单，不是审批。可选：打开确认模式后在一次模型回复的动作批次执行前进入 WAITING_FOR_CONFIRMATION，由用户批准或拒绝（调用层，按批次）；分析器为 llm 时只拦模型自报高风险的动作。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/settings/model.py#L1242-L1263",
+          "locator": "openhands-sdk/openhands/sdk/settings/model.py：confirmation_mode、security_analyzer",
+          "lines": "L1242-L1263",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "confirmation_mode 默认 False，security_analyzer 依赖它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L1237-L1245",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：_set_confirmation_status",
+          "lines": "L1237-L1245",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "只有确认策略对某风险返回需确认时才转入等待确认；NeverConfirm 一律不需要。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "默认本机运行时（conversation_runtime=local）下 Agent Server 以启动账户权限直接在宿主机执行，NeverConfirm 不拦任何动作；钩子默认会加载但默认没有任何钩子配置；没有 OS 隔离或运行时沙箱。可选：打开确认模式（应用检查）；配置 PreToolUse 钩子；改用 Docker 运行时或沙箱镜像（容器策略）。规划模式（用户点 Create a Plan，第二档）只注册 glob、grep 和只准改 PLAN.md 的 planning_file_editor，这是代码检查，但不在默认模式里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/config.py#L404",
+          "locator": "openhands-agent-server/openhands/agent_server/config.py：conversation_runtime",
+          "lines": "L404",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认运行时",
+          "note": "会话运行时默认 local，在宿主机进程内执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/overview",
+          "locator": "Agent Canvas Overview：本机安装与信任边界",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "npm 本机安装",
+          "note": "npm 本机安装直接在本机运行、可操作本机文件系统，隔离交给 Docker、VM 等运行时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L1350-L1365",
+          "locator": "src/api/agent-server-adapter.ts：本机规划会话的工具",
+          "lines": "L1350-L1365",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规划模式",
+          "note": "规划会话只给 glob、grep、planning_file_editor（plan_path 限定）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认模式没有交代任何限制；不改设置可切换的内置模式只有规划模式，“只做计划”由工具集和 planning_file_editor 的 allowed_edits_files 代码检查落实；默认会调用的子会话（launch_child_conversation）沿用父档案，没有交代限制，isolation=worktree 只是切出独立检出、未说成限制；文档列出的限制性设置（确认模式、安全分析器）都有代码检查。故记 absent。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "事件日志里 ActionEvent 带 thought、reasoning_content、thinking_blocks、tool_name、tool_call_id 和完整动作参数，ObservationEvent 以 action_id、tool_call_id 对上结果；触发它的用户 MessageEvent 在同一按序日志里。approval 不计：默认 NeverConfirm 没有逐次决定，SecurityAnalysisEvent 只记分析器名、策略名和模型自报风险。identity 不计：本机无账户，只有会话编号。没有专门的审计日志；另有 bash_events 命令记录。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/event/llm_convertible/action.py#L40-L90",
+          "locator": "openhands-sdk/openhands/sdk/event/llm_convertible/action.py：ActionEvent",
+          "lines": "L40-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话事件日志",
+          "note": "动作事件存思考、推理、工具名、tool_call_id 和动作参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/event/llm_convertible/observation.py#L23-L40",
+          "locator": "openhands-sdk/openhands/sdk/event/llm_convertible/observation.py：ObservationBaseEvent、ObservationEvent",
+          "lines": "L23-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话事件日志",
+          "note": "观察事件以 tool_call_id 与 action_id 对上动作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/agent.py#L1208-L1234",
+          "locator": "openhands-sdk/openhands/sdk/agent/agent.py：_analyze_for_confirmation",
+          "lines": "L1208-L1234",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "SecurityAnalysisEvent 只记分析器、策略和风险，默认策略 NeverConfirm 下无逐次批准。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认路径上有三条派出独立代理的路线：①Canvas 给 openhands 智能体的会话无条件挂上客户端工具 launch_child_conversation，模型不改设置就能另开一个子会话（独立上下文、能多步调用工具），Agent Server 以 parent_conversation_id 记录父子关系并在父会话信息里列出 sub_conversation_ids，界面能查看子会话状态；结果不交回父代理（不影响本字段，见 F28）。②用户在输入框用 /plan（或 Plan 按钮）时，框架为当前会话开一个规划子会话（planner，带 parent_conversation_id 与 plannerparent 标签），产出 PLAN.md 并在父会话界面显示预览。③随整套本机服务启动的 Automation Server 在定时或事件触发时直接起一次独立运行（提示词型带自己的会话），运行记录可查询状态。SDK 自带的 task_tool_set、workflow_tool_set 不在默认工具集，可选：在 agent profile 里改成自选工具才挂上。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L1217-L1230",
+          "locator": "src/api/agent-server-adapter.ts：buildStartConversationRequest 的 client_tools",
+          "lines": "L1217-L1230",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 openhands 智能体档案的会话启动请求",
+          "note": "agentProfileKind 为 openhands 时无条件声明 canvas_ui_control、launch_child_conversation、request_secret 三个客户端工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/launch-child-conversation-client-tool.ts#L14-L59",
+          "locator": "src/api/launch-child-conversation-client-tool.ts：LAUNCH_CHILD_CONVERSATION_DESCRIPTION",
+          "lines": "L14-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "工具另开独立的新会话并记为本会话的子会话；子会话不阻塞父代理，父代理看不到其输出，子会话也看不到父会话历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L683-L698",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：_children_index、_children_of",
+          "lines": "L683-L698",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 会话目录",
+          "note": "服务端按 parent_conversation_id 建父到子的索引，用于在会话信息里给出 sub_conversation_ids，即框架跟踪子会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/hooks/chat/use-plan-mode-interceptor.ts#L16-L29",
+          "locator": "src/hooks/chat/use-plan-mode-interceptor.ts：usePlanModeInterceptor",
+          "lines": "L16-L29",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户命令 /plan",
+          "note": "拦下 /plan [task]，切到规划模式；规划子会话尚不存在时以 task 作为新 planner 的首条消息创建它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/dispatcher.py#L1-L15",
+          "locator": "openhands/automation/dispatcher.py：模块说明",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "随 agent-canvas 启动的 Automation Server",
+          "note": "调度器轮询 PENDING 运行并派发到执行后端（本机 Agent Server），完成由运行内的 SDK 回报，即定时或事件直接起独立代理运行并记录状态。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录 subagents_enabled=true，与代码一致。自动化路线的侧栏入口取决于快照外的 @openhands/extensions 0.41.0 界面清单，但前两条路线已足以判 present。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "user：用户输入 /plan（或界面上的 Plan 切换）时，Canvas 直接为当前会话创建规划子会话（parent_conversation_id 指向父会话），不经主代理决定；它被列在父会话的 sub_conversation_ids 里，PLAN.md 预览显示在父会话界面，用户点 Build 后框架把执行指令发回父会话。main_agent：模型调用默认挂上的 launch_child_conversation 另开子会话（target=local 默认）。event_scheduling：用户（或代理经种进会话密钥的自动化接口）建好的定时（cron）或事件（webhook）自动化，到点或收到事件时由 Automation Server 直接起一次运行，不经当前对话里的代理。/new 只新开一个不挂父子关系的会话，不计。可选：task_tool_set、workflow_tool_set 需在 agent profile 里改成自选工具才有（改设置，R3 第三档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/conversation-service/agent-server-conversation-service.api.ts#L792-L830",
+          "locator": "src/api/conversation-service/agent-server-conversation-service.api.ts：createLocalPlanningConversation",
+          "lines": "L792-L830",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机后端的 /plan 路径",
+          "note": "规划子会话以 parentConversationId 创建，沿用父会话工作目录与智能体档案。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/constants.ts#L97-L107",
+          "locator": "src/utils/constants.ts：BUILT_IN_COMMANDS 的 plan 条目",
+          "lines": "L97-L107",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置斜杠命令",
+          "note": "/plan 是内置命令：切到 Plan 模式，或带任务立即开始规划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/child-conversation-launch.ts#L265-L330",
+          "locator": "src/services/child-conversation-launch.ts：launchLocalChild",
+          "lines": "L265-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用 launch_child_conversation（target=local）",
+          "note": "浏览器端按工具参数创建子会话：首条消息为 task，带 parentConversationId，沿用父会话档案。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/scheduler.py#L1-L9",
+          "locator": "openhands/automation/scheduler.py：模块说明",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Automation Server 定时触发",
+          "note": "进程内后台调度器轮询数据库里到期的已启用 cron 自动化并生成运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/automation-events",
+          "locator": "Event Sources：How It Works",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Automate → Events 自定义 webhook 事件源",
+          "note": "外部服务签名推送事件，匹配的自动化各自启动一次运行，负载放进代理提示。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "/plan 是用户命令（R3 第二档），但 F26 写明 user 项不按第二档排除，F25 也写明用户命令开出、被框架跟踪并交回汇总界面的会话算代理，故记 user。规划子会话的结果回到父会话靠用户点 Build，拿不准算不算“交回发起它的会话”，按“界面显示 PLAN 预览即汇总界面”判。自动化的界面入口依赖快照外的扩展包清单（hasAutomationInterface），文档写有 Automate 视图，按文档判开放。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：launch_child_conversation 开出的子会话、规划子会话和自动化运行都是独立的完整会话，看不到父会话历史。shared_files：模型可传 isolation=\"shared\" 让子会话在父会话的同一目录里工作（工具说明写明两代理会冲突）；默认 isolation=worktree 时子会话在从默认分支切出的独立 worktree 里工作（隔离副本，不计），但父会话工作区切不出 worktree 或建 worktree 失败时退回共用同一目录；规划子会话与父会话共用工作目录，靠 .agents_tmp/PLAN.md 交换计划，用户点 Build 后父会话按该文件执行。没有父代理向已派出子会话续发消息的通道，也没有框架维护的共享结构化状态。权限：本机子会话与规划子会话沿用父会话的智能体档案（含确认设置），自动化运行按自己的 LLM 档案；自动化运行彼此独立。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/launch-child-conversation-client-tool.ts#L14-L110",
+          "locator": "src/api/launch-child-conversation-client-tool.ts：描述与 parameters（task、isolation）",
+          "lines": "L14-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具",
+          "note": "task 作为子会话首条消息，子会话看不到父会话历史；isolation 可选 worktree（默认）或 shared（同一目录）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/child-conversation-launch.ts#L265-L330",
+          "locator": "src/services/child-conversation-launch.ts：launchLocalChild 的 worktree 回退",
+          "lines": "L265-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机子会话工作目录",
+          "note": "父工作区不能切 worktree 或建 worktree 失败时改用 shared，与父会话共用目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/hooks/use-handle-build-plan-click.ts#L10-L47",
+          "locator": "src/hooks/use-handle-build-plan-click.ts：useHandleBuildPlanClick",
+          "lines": "L10-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规划子会话到父会话",
+          "note": "Build 切回代码模式并向父会话发送“按 .agents_tmp/PLAN.md 执行计划”，计划经共享文件交换。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shared_files 来自模型可选的 isolation=shared 参数（R3 第一档）、worktree 失败回退（R2 失败分支）和规划子会话共用目录三处；本配置前提是已有提交的仓库，默认委派走 worktree。start_context 按默认委派路径（模型不传 isolation）判 task_brief。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认委派路径（launch_child_conversation）不等待也不交回结果：工具立即确认，随后只把子会话 id、URL、target 和初始状态作为一条消息贴回父会话，子会话之后的产出不回传，两种等待方式都不成立；父会话暂停、打断、删除都不连带子会话（Agent Server 删除父会话时只让子会话成为孤儿）。cancel_propagation 来自 F26 词表第一条有取消传播的路径（user 的规划子会话）：Canvas 删除父会话时先删除其规划子会话（关闭其运行）。规划子会话的结果经 PLAN.md 与父会话界面预览交给用户，不是父代理等待。自动化运行没有调用方，结果留在运行记录和 Activity Log。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/conversation-service/agent-server-conversation-service.api.ts#L1167-L1200",
+          "locator": "src/api/conversation-service/agent-server-conversation-service.api.ts：deleteConversation",
+          "lines": "L1167-L1200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机后端删除会话",
+          "note": "删除父会话前先逐个删除其规划子会话；注释写明 Agent Server 本身只孤立子会话、不级联。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L1799-L1880",
+          "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py：pause_conversation、interrupt_conversation、delete_conversation",
+          "lines": "L1799-L1880",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 取消与删除",
+          "note": "暂停、打断只作用于本会话；删除时关闭本会话的事件服务，子会话不级联（Children are orphaned, not cascaded）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/launch-child-conversation-client-tool.ts#L54-L59",
+          "locator": "src/api/launch-child-conversation-client-tool.ts：What comes back",
+          "lines": "L54-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派工具的返回",
+          "note": "工具立即确认，随后只回贴子会话 id、URL、target 和初始状态，不回传子会话结果。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式（按规划子会话路径）：用户打断父会话当前回合（Stop/interrupt）——不连带，interrupt_conversation 只作用于本会话；取消等待中的调用——默认路径上没有（不存在等待中的委派调用）；取消父运行（删除父会话）——连带删除规划子会话。故 some_ways。默认委派路径 launch_child_conversation 三种方式都不连带。把“删除会话”算作取消父运行，依据是定义里“父会话关闭或释放时框架把子代理的运行关掉也算”。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "some_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：terminal、file_editor、task_tracker、switch_llm、finish、invoke_skill 等写在 SDK/tools 核心里。plugin_api：SDK 的 register_tool 注册函数，以及 Agent Server 建会话时按 tool_module_qualnames 导入代码模块、模块导入时调用 register_tool 加入工具（官方文档 Custom Tools 与远程 Agent Server 自定义工具指南）；需另装 SDK 或调 Agent Server 接口，所选入口不直接开放。Canvas 的插件包只打包技能、MCP、钩子、命令和代理定义，自己不注册工具，按其内部边界记。external_protocol_service：MCP 服务，Canvas 的 MCP 设置页或插件的 .mcp.json 添加一条服务配置即可，默认 mcp_config 为空。embedder_declared：Agent Server 建会话请求里的 client_tools（JSON 声明、调用时经 WebSocket 交回客户端执行），Canvas 前端默认为每个 openhands 会话声明三个客户端工具，算在用。子维度未确认：内嵌公共技能（快照外的 @openhands/extensions 0.41.0）是否带 MCP 工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/defaults.py#L26-L39",
+          "locator": "openhands-sdk/openhands/sdk/tool/defaults.py：DEFAULT_EXEC_TOOL_NAMES 等",
+          "lines": "L26-L39",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "默认执行工具与浏览器、子代理、switch_llm 工具名写在核心代码里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/request.py#L309-L326",
+          "locator": "openhands-sdk/openhands/sdk/conversation/request.py：tool_module_qualnames、client_tools",
+          "lines": "L309-L326",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 建会话请求",
+          "note": "建会话可映射要导入的工具模块，也可用 client_tools 声明无服务端执行器、由客户端执行的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/client_tool.py#L1-L10",
+          "locator": "openhands-sdk/openhands/sdk/tool/client_tool.py：模块说明",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入方声明的工具",
+          "note": "Agent Canvas 这类前端经 POST /conversations 以 JSON 注册工具，调用时经 WebSocket 交客户端执行，SDK 立即回确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/registry.py#L130-L140",
+          "locator": "openhands-sdk/openhands/sdk/tool/registry.py：register_tool",
+          "lines": "L130-L140",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 构件库与 Agent Server 模块导入",
+          "note": "框架的工具注册函数，自定义工具模块在导入时调用它加入工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/custom-tools",
+          "locator": "Custom Tools：Understanding the Tool System",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 自定义工具",
+          "note": "官方文档说明以 Action、Observation、Executor 和 ToolDefinition 注册自定义工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/settings.ts#L26",
+          "locator": "src/services/settings.ts：DEFAULT_SETTINGS.mcp_config",
+          "lines": "L26",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 默认设置",
+          "note": "MCP 配置默认为空：接口开放、默认无服务在用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/plugins",
+          "locator": "Plugins in Agent Canvas",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 插件",
+          "note": "插件打包技能、MCP 服务、钩子、命令和代理定义；本身不注册进程内工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "SDK 的 register_tool 与 tool_module_qualnames 归 plugin_api 还是 embedder_declared 拿不准：工具由调用方代码定义、为某个 agent 列出，但执行器在框架进程里运行、不交回嵌入方，且经全局注册函数，按 plugin_api 例子（模块加载时调用注册函数）记。embedder_declared 只收 client_tools。embedder_declared 记进 in_use_by_default（官方前端经嵌入接口声明），但不记进 via_default_entry：所选入口里只有自家前端持有会话密钥，用户不另配凭据加不了自己的客户端工具，这一判断请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "embedder_declared"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：load_project_skills 为 true，从工作目录和 Git 仓库根读入 AGENTS.md、.cursorrules、claude.md、gemini.md 等第三方说明文件。skill_directory：项目 .agents/skills、.openhands/skills 与用户 ~/.agents/skills、~/.openhands/skills 下的技能，另有内嵌公共技能；有可调用的 SKILL.md 技能时自动挂 invoke_skill 按需装入，关键词触发的技能按关键词注入。role_template：Agent Profiles 可新建、按名在启动会话前选用，档案带 system prompt suffix、persona、工具、技能、LLM 等设置（界面里新增，不写代码）。prompt_template：插件 commands/ 目录里的命令文件转成以 /插件名:命令名 触发、带 $ARGUMENTS 的技能，用户按名调用时展开为提示。executable_items：invoke_skill 装入技能时，框架先在工作区执行正文代码块外的 !`命令` 并把输出替换进内容。workflow_definition 不记：自动化（含预置自动化）是按定时或事件起的独立运行，提示词型只投一条提示、脚本型由框架运行一次脚本，不由框架逐步推进；可选：SDK 的 workflow_tool_set 需改档案工具才挂上。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/skills/skill.py#L1076-L1130",
+          "locator": "openhands-sdk/openhands/sdk/skills/skill.py：load_project_skills",
+          "lines": "L1076-L1130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目技能与第三方说明文件",
+          "note": "从工作目录与仓库根加载 .agents/skills 等目录的技能，并先加载 AGENTS.md、.cursorrules 等第三方说明文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L938-L952",
+          "locator": "src/api/agent-server-adapter.ts：agent_context 的 load_* 开关",
+          "lines": "L938-L952",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas 会话启动",
+          "note": "load_public_skills false（前端内嵌公共技能），load_user_skills 与 load_project_skills 为 true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/base.py#L593-L606",
+          "locator": "openhands-sdk/openhands/sdk/agent/base.py：自动挂 InvokeSkillTool",
+          "lines": "L593-L606",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能按需装载",
+          "note": "有可直接调用的 AgentSkills 格式技能时自动把 invoke_skill 加进工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/builtins/invoke_skill.py#L118",
+          "locator": "openhands-sdk/openhands/sdk/tool/builtins/invoke_skill.py：render_content_with_commands 调用",
+          "lines": "L118",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能装入时执行的命令",
+          "note": "技能正文装入前由框架渲染其中的 !`命令`，属由框架执行的代码。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/plugin/types.py#L350-L380",
+          "locator": "openhands-sdk/openhands/sdk/plugin/types.py：CommandDefinition.to_skill",
+          "lines": "L350-L380",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件命令",
+          "note": "插件命令转成以 /插件名:命令名 为关键词触发、带 $ARGUMENTS 说明的技能。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/agent-profiles",
+          "locator": "Agent Profiles：Profile-Owned Settings、Choose an Agent Profile for a Conversation",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "智能体档案",
+          "note": "档案可新建并在启动会话前按名切换，档案自带 system prompt suffix、persona、工具等设置。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "role_template 依据 Agent Profiles：它是界面里新建的设置对象而不是用户写的文件，但带专门提示（system prompt suffix、persona）且能按名选用，按“用户不写代码、不另装包就能新增一个角色再按名选用”判入。插件 agents/ 目录的代理定义要靠不在默认集的 task_tool_set 才能派给子代理，不单独作为 role_template 依据。插件命令归 prompt_template 依据 R8“同一种文件两种用法分别记”；它最终以关键词技能注入，也可视为 skill_directory 的一种。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "skill_directory"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "钩子（.openhands/hooks.json 或用户目录 hooks.json，也可由插件 hooks/hooks.json 带入）：UserPromptSubmit（可拦下或补充上下文）→input；PreToolUse（可拒绝）、PostToolUse→tool_before_after；Stop（可阻止结束）、SessionEnd→end；SessionStart（可注入 additional_context）→session_start。事件流订阅（SDK Conversation 的 callbacks、Agent Server WebSocket）：Condensation 事件→context_compaction，仅观察；LLMCompletionLogEvent→model_call，仅观察，且只在 LLM 设了 log_completions 时由 Agent Server 推送（改设置，按 R5 仍计入）。没有找到会话记录写盘的事件点，save 不记。默认没有任何钩子文件，Canvas 也不默认写入钩子，in_use_by_default 为空；Agent Server 自己的标题生成订阅等编进核心，不算。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/hooks/types.py#L9-L17",
+          "locator": "openhands-sdk/openhands/sdk/hooks/types.py：HookEventType",
+          "lines": "L9-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "钩子事件为 PreToolUse、PostToolUse、UserPromptSubmit、SessionStart、SessionEnd、Stop。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/hooks/manager.py#L73-L199",
+          "locator": "openhands-sdk/openhands/sdk/hooks/manager.py：run_pre_tool_use … run_stop",
+          "lines": "L73-L199",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子能否干预",
+          "note": "PreToolUse、UserPromptSubmit 可阻断，UserPromptSubmit 可补上下文；PostToolUse、SessionEnd 不阻断；Stop 可阻止结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/hooks/conversation_hooks.py#L328-L360",
+          "locator": "openhands-sdk/openhands/sdk/hooks/conversation_hooks.py：run_session_start、inject_pending_additional_context",
+          "lines": "L328-L360",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话开始钩子",
+          "note": "SessionStart 钩子返回的 additional_context 收集后注入给代理，即可注入内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/hooks/config.py#L301-L313",
+          "locator": "openhands-sdk/openhands/sdk/hooks/config.py：HookConfig.load 的查找位置",
+          "lines": "L301-L313",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子文件位置",
+          "note": "从工作区 .openhands/hooks.json 与用户目录 hooks.json 加载钩子，用户放文件即可。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L240-L292",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：callbacks、token_callbacks",
+          "lines": "L240-L292",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 构件库事件回调",
+          "note": "调用方可订阅类型化事件流（含压缩事件）与流式增量，回调只接收事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1121-L1131",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：_setup_llm_log_streaming",
+          "lines": "L1121-L1131",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server 事件流",
+          "note": "LLM 开了 log_completions 时把每次模型调用记录作为 LLMCompletionLogEvent 推送给订阅方。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/hooks",
+          "locator": "Hooks：Hook Types",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子文档",
+          "note": "文档列出各钩子触发时点与能否以退出码 2 阻断。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Agent Server 的 WebSocket 事件流和 webhook 需要会话密钥，不进 via_default_entry；钩子文件属于添加内容，进 via_default_entry。observe_only 的 model_call 依据的是只在 log_completions 时推送的事件，构件库里没找到能改写模型请求的回调。默认安装若内嵌公共技能或预装插件带钩子，快照外看不到，按配置记录与 Canvas 代码（无默认 hook_config）写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "observe_only": [
+          "model_call",
+          "context_compaction"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "library",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：Agent Server 的 OpenAI 兼容 /v1/chat/completions 与 /v1/responses，每个请求在背后跑完整 OpenHands 代理，可用响应头续接同一会话。library：openhands-sdk（与 agent-server 同为 v1.61.0、同一提交），调用方进程内建 Conversation 运行代理循环，官方文档称远程与本地用同一 SDK 接口。service_api：Agent Server 有文档的 REST/WebSocket 接口（建会话、发消息、运行、暂停）；Automation Server 另有有文档的 REST 接口。所选入口自动拉起的 Agent Server 需 X-Session-API-Key，密钥由启动器生成存在状态目录里、交给自家前端，文档要求连接时填 API Key，外部程序须另取凭据，不算直接开放。没有找到同一发行版里有文档的非交互命令行任务入口（agent-canvas 只有启动服务的参数），cli_subprocess 不记；OpenHands CLI 是另一个仓库、不在本配置钉住的发行版里。Canvas Apps（beta）的宿主接口 host.agentServer.request 只是替扩展代发 Agent Server HTTP 请求，按背后边界归 service_api。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/openai/router.py#L132-L190",
+          "locator": "openhands-agent-server/openhands/agent_server/openai/router.py：/v1/chat/completions、/v1/responses",
+          "lines": "L132-L190",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Agent Server OpenAI 兼容网关",
+          "note": "兼容端点经 conversation_service 运行会话并返回 X-OpenHands-ServerConversation-ID。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/agent-server/openai-gateway",
+          "locator": "OpenAI-Compatible Endpoint：How It Works",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "公共协议服务端",
+          "note": "两端点是同一完整 OpenHands 代理的协议适配，不是裸模型转发。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/agent-server/overview",
+          "locator": "Agent Server overview",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK 与 Agent Server",
+          "note": "远程 Agent Server 用与本地相同的 SDK 接口；本地 Conversation 在调用方进程运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/backend-setup/local",
+          "locator": "Local backend：Connect the Frontend",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机后端连接",
+          "note": "连接本机后端需填写 Host 和 API Key。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-safe.mjs#L750-L761",
+          "locator": "scripts/dev-safe.mjs：sessionApiKey",
+          "lines": "L750-L761",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口自动拉起的本机服务",
+          "note": "会话密钥取 LOCAL_BACKEND_API_KEY 或持久化在状态目录的 api-key.txt，供 Agent Server 与前端共用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "所选入口的会话密钥不是每次随机生成，而是首次生成后持久化在状态目录；外部程序读这个文件算不算“另配凭据”拿不准，按“文档要求连接时填 API Key”判不直接开放，via_default_entry 为空。library 与所选程序不是同一个仓库，但配置记录钉住的执行端 agent-server 1.61.0 就是这份 SDK 提交，满足 R5 前提。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：Canvas 网页聊天输入。api：按 F32 的 OpenAI 兼容端点、Agent Server REST、SDK。schedule：随整套服务启动的 Automation Server 有 cron 定时自动化，用户在 Automate 视图建，代理也拿到种进会话的 OPENHANDS_AUTOMATION_API_KEY。external_event：Automate → Events 注册自定义 webhook 事件源，外部服务签名推送后匹配的自动化起新运行（或按 continue_conversation 续接先前会话）；本机后端须让外部服务能连到才收得到。via_default_entry：user_interaction、schedule、external_event（建自动化、注册事件源属添加内容）；api 因 F32 via_default_entry 为空不进。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-with-automation.mjs#L446-L456",
+          "locator": "scripts/dev-with-automation.mjs：launchAgentServer、launchAutomation",
+          "lines": "L446-L456",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "agent-canvas 默认启动",
+          "note": "不加 --frontend-only 时 Agent Server 与 Automation Server 随整套服务启动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/scheduler.py#L1-L9",
+          "locator": "openhands/automation/scheduler.py：模块说明",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时触发",
+          "note": "原生 cron 调度器轮询到期的已启用自动化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/event_router.py#L1-L12",
+          "locator": "openhands/automation/event_router.py：POST /v1/events/{org_id}/{source}",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "接收外部 webhook 事件并触发自动化。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/managing-automations",
+          "locator": "Managing automations：Browse and inspect automations、Create an automation with the setup assistant",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Canvas Automate 视图",
+          "note": "侧栏 Automate 视图管理定时、webhook、事件触发的自动化，可直接新建。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/agent-server/openai-gateway",
+          "locator": "OpenAI-Compatible Endpoint",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API 发起",
+          "note": "外部程序按 OpenAI 协议提交任务给 Agent Server。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Automate 侧栏入口在代码里取决于快照外的 @openhands/extensions 0.41.0 界面清单（hasAutomationInterface），文档写明 Automate 视图存在，按文档记 schedule、external_event 进 via_default_entry。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule",
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "agent-canvas 在启动它的终端里前台运行，拉起 Agent Server、Automation Server 等子服务（各在自己的进程组），收到 SIGINT、SIGTERM、SIGHUP 时把它们全部停掉；子服务意外退出时由前台启动器有限次重启。文档的停止方法是回到运行它的终端按 Ctrl+C，要在 SSH 断开后继续运行需自己用 tmux。没有注册系统服务。界面是浏览器页面：关掉浏览器标签页时，正在跑的会话由 Agent Server 在后台继续运行（run 在服务端后台任务里推进，WebSocket 断开只取消订阅）；关掉终端则整套服务结束。可选：Docker 镜像方式（另一种安装）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-with-automation.mjs#L1356-L1370",
+          "locator": "scripts/dev-with-automation.mjs：stopServices",
+          "lines": "L1356-L1370",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "agent-canvas 启动器",
+          "note": "子服务各在进程组里，启动器退出时逐个发 SIGTERM、再 SIGKILL。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-with-automation.mjs#L1456-L1458",
+          "locator": "scripts/dev-with-automation.mjs：信号处理",
+          "lines": "L1456-L1458",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "关闭终端",
+          "note": "SIGINT、SIGTERM、SIGHUP 都触发 shutdown，终端关闭即停服务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/openhands/usage/agent-canvas/setup",
+          "locator": "Install Agent Canvas：Stop Agent Canvas",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "npm 安装",
+          "note": "停止方式是回到运行 Agent Canvas 的终端按 Ctrl+C。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1545-L1565",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：EventService.run",
+          "lines": "L1545-L1565",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "退出浏览器界面后",
+          "note": "会话在服务端后台任务里运行、立即返回，不依赖浏览器连接。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“界面”取浏览器页面：关浏览器任务继续（yes），关启动终端则全部停止。若把启动终端也算界面，continues_after_ui_exit 应为 no，请复核口径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "取最强一层：随整套本机服务启动的 Automation Server 把自动化定义（含 cron 的下次触发时间）和待执行运行（PENDING）存进状态目录里的 SQLite 数据库；服务启动时在 lifespan 里起调度、派发和看门狗循环，调度器按数据库里到期的已启用 cron 生成运行，派发器轮询 PENDING 运行派给本机 Agent Server，因此进程重启后定时会继续触发、未派发的运行会被接着派发。交互层：运行中提交的消息经 Agent Server 写进会话事件记录，由运行中的循环在下一步读到；但进程崩溃后重载时，处于 RUNNING 的会话被改成 ERROR、只给中断的工具调用补一条错误观察，不自动接着执行，要用户再发消息，所以 interactive_queue 记 in_memory。/goal 目标续跑是用户命令（R3 第二档），重载后记为中断、可由用户恢复，不进取值。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/scheduler.py#L1-L9",
+          "locator": "openhands/automation/scheduler.py：模块说明",
+          "lines": "L1-L9",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Automation Server 定时",
+          "note": "调度器按数据库里到期的已启用 cron 自动化轮询生成运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/dispatcher.py#L1-L15",
+          "locator": "openhands/automation/dispatcher.py：模块说明",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Automation Server 运行队列",
+          "note": "派发器轮询 automation_runs 表里的 PENDING 运行并派给执行后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/app.py#L97-L175",
+          "locator": "openhands/automation/app.py：lifespan",
+          "lines": "L97-L175",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "服务启动",
+          "note": "服务每次启动都起 scheduler_loop、dispatcher_loop、watchdog_loop，重启后从数据库接着处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/scripts/dev-with-automation.mjs#L1308",
+          "locator": "scripts/dev-with-automation.mjs：AUTOMATION_DB_URL",
+          "lines": "L1308",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本机自动化存储",
+          "note": "本机启动时自动化数据库是状态目录旁的 SQLite 文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/event_service.py#L1443-L1449",
+          "locator": "openhands-agent-server/openhands/agent_server/event_service.py：EventService.start 的崩溃恢复",
+          "lines": "L1443-L1449",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互会话崩溃后",
+          "note": "从磁盘载入时处于 RUNNING 的会话改为 ERROR，不自动接着执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openhands.dev/sdk/guides/convo-send-message-while-running",
+          "locator": "Send Message While Running",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "运行中追加消息",
+          "note": "官方文档说明运行中可以继续发消息给会话。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "persistent 依据的是 Automation Server 这一层；源码写明调度靠数据库轮询、服务启动即起循环，但没有一句话直接写“重启后继续触发”，按代码推出，confidence 取 medium。interactive_queue 按“写进记录但重启后不自动执行”记 in_memory。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "message_notification",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "resumable_todo：模型可调用默认挂上的 request_secret，在对话里留一张索要密钥的卡片，不阻塞代理；待处理请求存进浏览器 localStorage，刷新或重启后重新显示，用户之后填写或取消后再把结果回给代理。message_notification：浏览器标签页标题按会话状态加前缀，完成或等待用户时为 ✅、出错或卡住时为 🔴，切到别的标签页也能看到（依赖浏览器显示标签页标题）。可选：提示音通知 enable_sound_notifications 默认 false。blocking_approval 不记：confirmation_mode 默认 false（NeverConfirm），默认工具里没有提问工具，到达 max_iteration_per_run（500）时直接记错误结束、不问人。structured_handoff 不记：finish 只有 message 一个字段；自动化运行的 task_outcome 是无固定字段的字典。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/stores/secret-request-store.ts#L21-L44",
+          "locator": "src/stores/secret-request-store.ts：useSecretRequestStore（persist 到 localStorage）",
+          "lines": "L21-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "request_secret 待处理请求",
+          "note": "待处理密钥请求持久化，刷新后重新打开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/components/features/conversation/secret-request-card.tsx#L23-L28",
+          "locator": "src/components/features/conversation/secret-request-card.tsx：SecretRequestCard 说明",
+          "lines": "L23-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "request_secret 卡片",
+          "note": "卡片不阻塞会话，代理继续工作，用户何时准备好再回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/utils/agent-state-emoji.ts#L1-L32",
+          "locator": "src/utils/agent-state-emoji.ts：getAgentStateEmoji",
+          "lines": "L1-L32",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "浏览器标签页标题",
+          "note": "完成或等待用户为 ✅、运行中为 🟢、出错或卡住为 🔴，用作标签页标题前缀。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/hooks/use-agent-notification.ts#L6-L40",
+          "locator": "src/hooks/use-agent-notification.ts：useAgentNotification",
+          "lines": "L6-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提示音",
+          "note": "提示音只在 enable_sound_notifications 为真时播放，默认设置为 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2226-L2247",
+          "locator": "openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py：max_iteration_per_run 分支",
+          "lines": "L2226-L2247",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "到达步数上限",
+          "note": "到达上限时把状态设为 ERROR 并发出 MaxIterationsReached 错误事件，不停下问人。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 依据浏览器标签页标题的状态前缀，类比定义里“表示需要人注意的终端状态序列”判入；若口径认为标题前缀只是界面状态显示，应去掉这一项。request_secret 按“代理发出后不停下等回答、留给人之后处理、持久保存”判 resumable_todo；持久化在浏览器 localStorage，换浏览器看不到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": null
+      }
+    }
+  }
+}

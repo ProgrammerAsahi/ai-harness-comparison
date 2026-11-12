@@ -1,0 +1,2206 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "A16__grok-build__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。主入口（交互式终端）的回合循环：模型请求工具、框架执行后把结果交回，没有工具调用时结束本轮。workflow 工具默认开启（GROK_WORKFLOWS 默认 true，服务端可强制关），模型可在循环里调用它运行现写的内联 Rhai 脚本或内置 deep-research 流程，由工作流运行时按脚本推进多步并派子代理，记 secondary_modes 的 explicit_workflow（模型现写或内置脚本）；用户也可用 /workflow、/deep-research 命令启用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs 回合循环（工具调用为空即 Completed）",
+          "lines": "L3623-L3631",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主执行链回合循环",
+          "note": "模型回复不再含工具调用时本轮以 EndTurn 结束，否则执行工具后继续循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs WorkflowSource（Name/Script/ScriptPath/Resume/Pause/Stop）",
+          "lines": "L24-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具输入",
+          "note": "模型可以按名称运行内置流程，或提交内联 Rhai 脚本交给工作流运行时执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-workflow/src/engine.rs",
+          "locator": "crates/codegen/xai-workflow/src/engine.rs register_host_fns（agent、parallel）",
+          "lines": "L486-L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流运行时",
+          "note": "脚本里的 agent()/parallel() 由运行时调起子代理，按脚本推进后续步骤。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/config.rs GROK_WORKFLOWS 开关 .default(true)",
+          "lines": "L2178-L2186",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 工具默认状态",
+          "note": "工作流功能本地默认开启，服务端可下发关闭。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/modes-and-commands",
+          "locator": "/build/modes-and-commands 「Workflows」",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流功能",
+          "note": "文档写明工作流默认开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "逐个入口判过（快照内 user-guide/04-slash-commands.md 与 docs 模式与命令页）：/workflow、/deep-research → explicit_workflow（已计）；/goal → 在模型循环外层续跑同一目标并做复核，仍是模型循环，不另计；/loop 与 scheduler 工具 → 到点各起一个子代理，属任务发起（F33 范围），不算任务内部的事件调度；/plan → 只读计划模式，属 F02；/btw → 附带提问，不进主线；/fork、/resume、/compact、/model 等 → 不改推进方式；headless（-p）与 ACP 服务入口 → 同一模型循环。explicit_workflow 由模型调用工具进入，按 R3 属模型不经用户命令就能提出的路径，记为默认开放的其他控制方式。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。默认核心工具集注册 todo_write（条目带状态），模型自行决定何时调用，框架保存并在界面展示，不强制按表推进。并存：模型可自行调用 enter_plan_mode 进入只读计划模式（单看属 prompt_text_only）；TodoGate 提醒默认关（服务端可改：todo_gate_enabled）。可选：用户 /plan 进入计划模式；/goal 目标续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/config.rs grok_build_core_toolset",
+          "lines": "L253-L288",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认核心工具集",
+          "note": "默认工具集包含 TodoWriteTool 等计划相关工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/todo/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/todo/mod.rs TodoWrite 工具（条目与状态）",
+          "lines": "L1-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "待办工具",
+          "note": "待办条目带 pending/in_progress/completed 等状态，由框架保存展示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/builder.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/builder.rs ensure_plan_mode_tools",
+          "lines": "L103-L120",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具注册",
+          "note": "默认补上 enter_plan_mode、exit_plan_mode、ask_user_question，模型可自行进入计划模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/system_reminder.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/system_reminder.rs TodoGate 配置",
+          "lines": "L50-L76",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "待办门控",
+          "note": "按待办强制推进的门控本地默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按判定顺序：可执行流程约束——TodoGate 默认 false（cli.rs L724-728 写明内置默认 false，远端 todo_gate_enabled 可开），不计；workflow 脚本由运行时推进，但约束来自脚本而非计划条目，已在 F01 记 explicit_workflow，这里不当作计划约束（口径疑问：模型现写的工作流脚本是否也算 executable_flow_constraint）。结构化任务表——命中。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。模型结束信号：回复无工具调用即结束本轮。验证条件：workflow 脚本里 agent() 带 output_schema 时，子代理最终消息须满足输出契约，不满足由框架把它恢复继续并要求重交（SCHEMA_CONTRACT_RETRIES=1），仍不满足标记失败；只查结构，范围是工作流派生的子代理，需模型在脚本里传参数启用（R3 第一档）。预算：scheduler 循环任务 7 天到期后不再触发即被移除（时长）。用户中断：Ctrl+C 取消当前回合。可选：/goal 的复核与 --budget token 预算、用户配置的 stop hook、--max-turns。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs 回合结束判定",
+          "lines": "L3623-L3631",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主循环结束",
+          "note": "没有工具调用时以 Completed(EndTurn) 结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/workflow/schema_contract.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/workflow/schema_contract.rs SCHEMA_CONTRACT_RETRIES",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流子代理输出契约",
+          "note": "输出契约不满足时重试一次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs 输出契约校验与恢复子代理",
+          "lines": "L672-L693",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流子代理结束检查",
+          "note": "校验失败时以「did not satisfy the output contract」恢复子代理继续，超次数标记失败。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/types.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/types.rs RECURRING_TASK_TTL_DAYS",
+          "lines": "L234-L271",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时循环任务",
+          "note": "循环任务默认 7 天后到期。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs 到期任务移除",
+          "lines": "L312-L341",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时循环任务",
+          "note": "到期任务直接移除，不再触发。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/background-tasks",
+          "locator": "/build/features/background-tasks 「Scheduled prompts」",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时提示",
+          "note": "文档写明循环任务 7 天后到期。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/03-keyboard-shortcuts.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/03-keyboard-shortcuts.md Ctrl+C 取消回合",
+          "lines": "L100-L144",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互式终端按键",
+          "note": "Ctrl+C 取消正在进行的回合。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "子代理交回：task 工具子代理以最终消息交回，未见框架拦下结束；workflow agent() 的输出契约是唯一的结束检查。stationarity 硬停按重复判定，记 F04 不记这里。口径疑问：scheduler 7 天到期是否算 budget（整条循环任务的时长上限），与 F12 time 对应。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "workflow_branch",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。调用重试：采样器默认最多重试 15 次并退避（GROK_MAX_RETRIES 可改），另有压缩后重发、刷新认证后重发等恢复分支。模型自修：工具错误作为结果回传；动作停滞检测先注入纠正提示，持续停滞再硬停结束本轮。流程分支：内置 deep-research 流程在规划失败时改为直接研究原问题，失败分片记为覆盖说明。升级人工：认证失效且无法自愈时，框架暂存当前提示并提示重新登录，用户 /login 后自动重发原提示接着做（额度用尽也有类似暂存）。框架修正输入：工具参数按模式宽松解析，把字符串数字转成整数。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampler/src/retry.rs",
+          "locator": "crates/codegen/xai-grok-sampler/src/retry.rs DEFAULT_MAX_RETRIES",
+          "lines": "L9-L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用重试",
+          "note": "默认重试 15 次并退避。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/types.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/types.rs SamplerFailureRecovery",
+          "lines": "L41-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "采样失败恢复",
+          "note": "列出压缩后重发、刷新认证后重发、瞬时错误重试三种恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs action stationarity 处理",
+          "lines": "L2746-L2815",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "重复动作检测",
+          "note": "先注入纠正提示，持续停滞则以 StationarityEnded 结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/workflows/deep_research.rhai",
+          "locator": "crates/codegen/xai-grok-shell/src/session/workflows/deep_research.rhai 规划失败回退与失败分片记录",
+          "lines": "L48-L153",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置 deep-research 流程",
+          "note": "规划失败时转研究原问题，失败分片写成覆盖说明。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/dispatch/auth.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/app/dispatch/auth.rs 重新登录后重发暂存提示",
+          "lines": "L344-L355",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "认证失效处理",
+          "note": "登录后显示 Re-authenticated. Retrying… 并自动重发暂存的提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/dispatch/prompt.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/app/dispatch/prompt.rs 暂存提示",
+          "lines": "L1655-L1668",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "认证失效处理",
+          "note": "需要重新认证时暂存待发提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/types/schema.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/types/schema.rs 宽松整数解析",
+          "lines": "L45-L68",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具参数解析",
+          "note": "把字符串形式的数字转换成整数再执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按错误类型过：限流/超时/网络 → call_retry；上下文过长 → 压缩后重发（记 call_retry，value_note 已写）；认证失效 → 401 parking 默认开（flags.rs L8-17，remote.unwrap_or(true)）只用于可自愈情形，手动登录情形停下等 /login 后自动重发 → escalate_to_human（口径疑问：恢复需用户输入 /login 命令，按判定里“补上凭据”记入）；权限被拒 → 作为工具结果回模型；doom-loop 恢复提示由服务端上报触发（sampler/doom_loop_recovery.rs L22），归 model_self_repair。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。默认终端界面在同一进程的后台线程里起 GrokShell 执行核心，经内存通道上的 ACP 通信。服务端可改：leader 模式（本地默认关，仅发行构建读取远端 leader_mode）改为经 Unix 套接字连接本机常驻核心。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/acp/spawn.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/acp/spawn.rs spawn_grok_shell",
+          "lines": "L1-L4",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "前端与核心连接",
+          "note": "文件说明只支持进程内 GrokShell 模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/acp/spawn.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/acp/spawn.rs spawn_grok_shell",
+          "lines": "L267-L272",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "前端与核心连接",
+          "note": "在后台线程里启动 GrokShell 代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/acp/mod.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/acp/mod.rs connect（Entrypoint::Embedded）",
+          "lines": "L177-L225",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认连接路径",
+          "note": "非 leader 模式下以嵌入方式连接并调用 spawn_grok_shell。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/mod.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/app/mod.rs resolve_leader_mode",
+          "lines": "L495-L538",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "leader 模式开关",
+          "note": "优先级末端为默认关闭，远端设置仅在 release-dist 构建生效。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。文件读写在执行核心进程里经 tokio::fs 完成（main_process）；终端命令和 grep（rg）另起子进程（subprocess）。可选：MCP stdio 服务器、LSP（默认关）、hooks 需用户配置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/computer/local/file_system.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/computer/local/file_system.rs LocalFs",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "本地文件工具",
+          "note": "文件系统操作基于 tokio::fs，在核心进程内执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/computer/local/terminal.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/computer/local/terminal.rs 终端后端起进程",
+          "lines": "L769-L770",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "命令执行",
+          "note": "用 tokio::process::Command 为命令起子进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/rg_runner.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/rg_runner.rs rg 子进程",
+          "lines": "L57-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "搜索工具",
+          "note": "grep 工具起 rg 子进程执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "未见默认容器或本地工具服务：沙箱与 MCP 需配置。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。执行核心把会话写成本机 JSONL（{root}/sessions/{编码后的 cwd}/{session_id}/），恢复时由核心读回；默认存储模式 Local。服务端可改：Writeback 模式（CLI、环境变量或远端 writeback_enabled，且需 grok.com 登录）在本地之外再经 HTTP 同步一份，权威副本仍是本地，不记 state_service。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/storage/jsonl/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/storage/jsonl/mod.rs JSONL 存储布局",
+          "lines": "L27-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "会话按目录写成本机 JSONL 文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/config/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/config/mod.rs StorageMode（Local 默认）",
+          "lines": "L819-L854",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "存储模式",
+          "note": "默认 Local；Writeback 为本地加 HTTP 同步。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/init.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/init.rs Writeback 需登录",
+          "lines": "L437-L446",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "存储模式",
+          "note": "Writeback 只在 grok.com 认证下启用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。会话按 session_id 分目录存放历史与状态。可选：-w/--worktree 启动参数、/fork --worktree、子代理 isolation: \"worktree\"（模型参数，默认 none）可为会话或子代理分配独立工作树。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/storage/jsonl/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/storage/jsonl/mod.rs 按 session_id 分目录",
+          "lines": "L27-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话隔离",
+          "note": "每个会话一个以会话编号命名的目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/cli.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/app/cli.rs -w/--worktree",
+          "lines": "L586-L589",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作树启动参数",
+          "note": "工作树隔离需用户加启动参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/common/xai-tool-types/src/task.rs",
+          "locator": "crates/common/xai-tool-types/src/task.rs isolation 参数",
+          "lines": "L62-L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理隔离",
+          "note": "子代理工作树隔离为可选参数，默认不隔离。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "process：同一进程可 /new、/fork 开新会话，不计；working_directory：默认不建专用目录，只在可选路径；filesystem、container：未见默认实现。口径疑问：子代理 isolation 由模型传参数开启，按 R3 可算默认，但 F08 问独立会话，子代理不计，写在此处备查。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。采样器在核心里把统一请求转换为 Chat Completions、Responses、Messages 三种接口协议，各有流式实现；钉住环境的默认型号走 responses 后端。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampling-types/src/types.rs",
+          "locator": "crates/codegen/xai-grok-sampling-types/src/types.rs enum ApiBackend",
+          "lines": "L1104-L1112",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接口后端",
+          "note": "定义 ChatCompletions（默认）、Responses、Messages 三种后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md api_backend",
+          "lines": "L70-L78",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自定义模型",
+          "note": "文档列出三种后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-models/default_models.json",
+          "locator": "crates/codegen/xai-grok-models/default_models.json 默认型号目录",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认型号",
+          "note": "默认型号使用 responses 后端。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "三种实现位于 xai-grok-sampler/src/stream/ 的 chat_completions.rs、responses.rs、messages.rs。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。原生结构化：Responses 与 Chat Completions 流中按 function call 字段取参数。协议转换：MCP 服务器的工具被包装成模型原生函数，由分派器转发（MCP 服务器需用户配置，转换层默认存在）。脚本分派：workflow 工具默认开启，模型提交内联 Rhai 脚本，脚本里的 agent()/parallel() 由宿主接到与 task 工具同一子代理后端（只能派生子代理；agent_budget 默认 128）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampler/src/stream/responses.rs",
+          "locator": "crates/codegen/xai-grok-sampler/src/stream/responses.rs ResponseFunctionCallArguments",
+          "lines": "L47-L48",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "原生工具调用",
+          "note": "按接口的函数调用参数事件解析调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampler/src/stream/chat_completions.rs",
+          "locator": "crates/codegen/xai-grok-sampler/src/stream/chat_completions.rs delta.tool_calls",
+          "lines": "L182-L182",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "原生工具调用",
+          "note": "按 tool_calls 字段解析调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/mcp_dispatcher.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/mcp_dispatcher.rs MCP 分派器",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 工具",
+          "note": "把模型发出的调用转发给 MCP 服务器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs SubagentBackend 复用",
+          "lines": "L540-L548",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流宿主函数",
+          "note": "脚本里的 agent() 接到与 spawn_subagent 相同的子代理后端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-workflow/src/lib.rs",
+          "locator": "crates/codegen/xai-workflow/src/lib.rs DEFAULT_AGENT_BUDGET、MAX_HOST_CALLS",
+          "lines": "L10-L19",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流运行时",
+          "note": "默认子代理预算 128、宿主调用上限 10000。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "text_parsing：在 sampler 流解析中未见从普通文本识别工具调用的回退，不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。task 工具带 model 参数，TaskModelSelection 默认 Selectable（服务端可改为 Inherited），工具说明要求只在用户直接要求时才指定；workflow 脚本的 agent() 也可传 model 与 effort。内置 general-purpose、explore、plan 子代理继承主型号。辅助调用：回合摘要固定 grok-4.5（effort Low）；提示建议固定 grok-4-1-fast-non-reasoning（默认开）；图片描述与联网搜索取编译默认 grok-4.6（钉住主型号为 grok-4.7，型号由服务端目录决定）；图片生成用 grok-imagine-image-quality；标题与压缩用会话型号。未见失败回退（fallback_model_id 只用于会话前选型）。免费档可选型号数未查到。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/common/xai-tool-types/src/task.rs",
+          "locator": "crates/common/xai-tool-types/src/task.rs model 参数说明",
+          "lines": "L94-L104",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理型号",
+          "note": "主模型可为子代理指定型号，说明限定在用户直接要求时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/model_policy.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/model_policy.rs TaskModelSelection",
+          "lines": "L25-L32",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理型号策略",
+          "note": "默认 Selectable，远端可锁为 Inherited。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/config.rs 内置子代理 ModelOverride::Inherit",
+          "lines": "L1440-L1545",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置子代理",
+          "note": "内置子代理默认继承主型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/util/config/resolve/turn_summary.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/util/config/resolve/turn_summary.rs TURN_SUMMARY_MODEL_DEFAULT",
+          "lines": "L4-L5",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合摘要",
+          "note": "回合摘要固定用 grok-4.5。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/util/config/resolve/prompt_suggest.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/util/config/resolve/prompt_suggest.rs NON_REASONING_PROMPT_SUGGEST_MODEL",
+          "lines": "L210-L211",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提示建议",
+          "note": "提示建议固定用非推理快速型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/config/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/config/mod.rs ModelOverrideConfig",
+          "lines": "L502-L521",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助型号槽位",
+          "note": "联网搜索、图片描述各取独立型号槽位，会话摘要默认用当前型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/image_gen/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/image_gen/mod.rs XAI_IMAGINE_MODEL",
+          "lines": "L33-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "图片生成",
+          "note": "图片生成固定用 grok-imagine 型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "辅助清单逐项：标题生成 → 会话型号；压缩或摘要 → 会话型号（session_summary 为 None 时用当前型号），回合摘要 → grok-4.5（per_role）；动作审核分类 → auto 模式分类器非默认，无；联网搜索 → 独立槽位 grok-4.6（per_role，后端搜索为托管服务不计）；网页抓取 → web_fetch 默认关；媒体理解 → 图片描述独立槽位 grok-4.6（per_role）；生成类 → 图片生成 grok-imagine（per_role）。口径疑问：联网搜索与图片描述的槽位型号来自编译默认，钉住版本由服务端目录下发，可能与主型号相同。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "time"
+      ],
+      "facets": {
+        "hard_stop": [
+          "time"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "替身快照：源码为 1.0.45（固定提交 2bdd1d6），配置钉住 1.0.77（总则 R10）。时间：scheduler 循环任务默认 7 天到期，到期后不再触发（硬止，范围为定时循环任务）。主链未设客户端输出上限（默认型号目录无 max_output_tokens）。服务端可改：截断续写（length salvage）与长推理提醒默认关；型号目录下发的 max_completion_tokens。可选：/goal --budget token 预算、--max-turns 或代理定义的 max_turns（默认 None）、workflow agent() 的 max_output_tokens。联网搜索工具内部模型 max_completion_tokens 8192 属辅助调用。workflow agent_budget 128 计的是子代理数，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/types.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/types.rs RECURRING_TASK_TTL_DAYS",
+          "lines": "L234-L271",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时循环任务",
+          "note": "循环任务设 7 天到期时间。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs 到期移除",
+          "lines": "L312-L341",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时循环任务",
+          "note": "到期任务移除且不再触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/length_salvage.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/length_salvage.rs length salvage 开关",
+          "lines": "L1-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "输出截断处理",
+          "note": "截断续写默认关闭，需游标、环境变量或远端开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/agent_ops.rs max_turns 解析",
+          "lines": "L4550-L4556",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合上限",
+          "note": "回合上限只来自 CLI 覆盖或代理定义，默认无。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/long_reasoning_reminder.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/long_reasoning_reminder.rs 长推理提醒开关",
+          "lines": "L43-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "推理时长提醒",
+          "note": "长推理提醒默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "逐维：output_limit → 主链无默认上限，续写处理默认关，不计；total_tokens → 只有 /goal --budget（可选）；call_count → max_turns 默认 None，workflow MAX_HOST_CALLS/agent_budget 计子代理派生，不计；time → scheduler TTL；money → 未见。口径疑问：7 天 TTL 是循环任务的存续期限，是否算“一次任务的总时长上限”。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每轮由 build_conversation_request 从内存中的 Vec<ConversationItem>（System/User/Assistant/ToolResult/BackendToolCall/Reasoning，无控制条目类型）克隆出请求；只在加载或恢复会话时从 chat_history.jsonl 重建这份列表。压缩用摘要替换列表，回退用快照截断列表；图片预算与 pruning 是在同一层上的裁剪，不另成一层。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-chat-state/src/actor/request_builder.rs",
+          "locator": "crates/codegen/xai-chat-state/src/actor/request_builder.rs build_conversation_request",
+          "lines": "L23-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每轮主模型请求构造",
+          "note": "请求从 self.state.conversation 克隆，经图片预算和 pruning 后交 ModelRequestHistory::from_raw 包装发送。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-chat-state/src/actor/state.rs",
+          "locator": "crates/codegen/xai-chat-state/src/actor/state.rs ChatState.conversation",
+          "lines": "L130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话内存状态",
+          "note": "请求的出发数据是内存中的 Vec<ConversationItem>。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampling-types/src/conversation.rs",
+          "locator": "crates/codegen/xai-grok-sampling-types/src/conversation.rs enum ConversationItem",
+          "lines": "L71-L88",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话条目类型",
+          "note": "条目只有消息、工具结果和推理几类，没有压缩边界等控制条目。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "truncation：bash 输出超限按头尾截断并给出完整日志路径（会话目录 terminal/<tool_call_id>.log），read_file 默认 1000 行、输出默认 40KB 上限，MCP 输出截断后存文件，超长用户提示写入 prompts/prompt_n.txt 只给摘录，pruning 对超过 4000 字符的旧工具结果做头尾各 1500 字符软截断。summarization：上下文用量达到窗口的 85% 自动压缩（默认 Segments 模式：摘要加 compaction/ 目录下分段 markdown，模型可自行 read_file 读回），也可 /compact 手动触发；窗口大小随服务端和型号。tool_result_replacement：pruning 在总 token 超过窗口一半时，把 10 轮以前的工具结果换成占位符“[Tool result omitted — too old]”（最近 3 轮不动）；PruningConfig 默认开启，服务端 remote 配置可以关掉。另有图片预算会移除旧图片。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-chat-state/src/actor/request_builder.rs",
+          "locator": "crates/codegen/xai-chat-state/src/actor/request_builder.rs HARD_CLEAR_PLACEHOLDER / should_prune / prune_conversation",
+          "lines": "L14-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主请求 pruning",
+          "note": "超过窗口一半时旧工具结果换占位符，长结果头尾软截断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-chat-state/src/actor/request_builder.rs",
+          "locator": "crates/codegen/xai-chat-state/src/actor/request_builder.rs HARD_CLEAR_PLACEHOLDER / should_prune / prune_conversation",
+          "lines": "L128-L177",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主请求 pruning",
+          "note": "超过窗口一半时旧工具结果换占位符，长结果头尾软截断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/memory.rs",
+          "locator": "crates/codegen/xai-grok-config-types/src/memory.rs PruningConfig default / resolve",
+          "lines": "L544-L571",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "pruning 默认开关",
+          "note": "PruningConfig 默认 enabled true，解析顺序为配置、remote pruning_enabled、默认值。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/memory.rs",
+          "locator": "crates/codegen/xai-grok-config-types/src/memory.rs PruningConfig default / resolve",
+          "lines": "L960-L964",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "pruning 默认开关",
+          "note": "PruningConfig 默认 enabled true，解析顺序为配置、remote pruning_enabled、默认值。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/util/config/resolve/compaction.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/util/config/resolve/compaction.rs DEFAULT_AUTO_COMPACT_THRESHOLD_PERCENT",
+          "lines": "L2",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动压缩阈值",
+          "note": "默认 85% 触发自动压缩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/compaction.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/compaction.rs generate_session_compact / should_auto_compact",
+          "lines": "L157",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动压缩",
+          "note": "调用模型生成会话摘要并替换对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/compaction.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/compaction.rs generate_session_compact / should_auto_compact",
+          "lines": "L2095-L2115",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自动压缩",
+          "note": "调用模型生成会话摘要并替换对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs output truncation",
+          "lines": "L364-L369",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "bash 工具输出",
+          "note": "超限输出头尾截断并注明完整输出所在日志文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs output truncation",
+          "lines": "L403-L405",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "bash 工具输出",
+          "note": "超限输出头尾截断并注明完整输出所在日志文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：用户在输入框用 @ 引用文件附入上下文；项目规则文件的装载记在 F16。keyword：默认工具集含 grep 工具（封装 ripgrep），模型可直接调用。web_search 等联网工具只记此处说明，不另成项。可选：LSP 工具默认关闭、服务端可改；memory_search 随记忆功能默认关闭。code_nav（xai-codebase-graph）是客户端界面能力 x.ai/codeNavigation，不是注册给模型的工具，不计 structural_index。代理自己在 shell 里跑 rg 不计。Skills 按需加载说明文件，只记此处。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/config.rs grok_build_core_toolset_with",
+          "lines": "L256-L267",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具集",
+          "note": "默认工具集注册 GrepTool。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/mod.rs GrepTool",
+          "lines": "L3",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "grep 工具",
+          "note": "grep 工具封装 ripgrep 做关键词检索。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/grep/mod.rs GrepTool",
+          "lines": "L64",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "grep 工具",
+          "note": "grep 工具封装 ripgrep 做关键词检索。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/01-getting-started.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/01-getting-started.md @ file references",
+          "lines": "L111-L123",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户附文件",
+          "note": "用户可用 @ 引用文件把内容附入提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/code_nav.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/code_nav.rs code navigation capability",
+          "lines": "L1-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代码导航",
+          "note": "代码导航是客户端能力，不是模型工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每次会话按目录树装载 ~/.grok/ 全局规则和从仓库根到工作目录的 AGENTS.md、CLAUDE.md 等及 .grok/rules/*.md（兼容 .claude/rules、.cursor/rules），由用户维护；被 .gitignore 忽略的文件跳过，受文件夹信任约束。可选：跨会话记忆（自动捕获、整理与检索）默认关闭，[memory] enabled 或 GROK_MEMORY=1 开启后才有，不记入取值。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/project-rules",
+          "locator": "/build/features/project-rules · Discovery",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目规则装载",
+          "note": "官方文档说明每次会话自动装载各级 AGENTS.md 等规则文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/13-memory.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/13-memory.md Memory overview",
+          "lines": "L16",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "跨会话记忆默认开关",
+          "note": "快照内指南写明记忆为实验功能、默认关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-config-types/src/memory.rs",
+          "locator": "crates/codegen/xai-grok-config-types/src/memory.rs legacy_enabled default",
+          "lines": "L675-L680",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "记忆默认开关",
+          "note": "记忆开关默认 false。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "messages：chat_history.jsonl 存对话条目（无控制条目）。event_log：updates.jsonl 存 ACP 更新与 xAI 扩展事件，含 CompactionCheckpoint、RewindMarker 等控制条目，重放时按 RewindMarker 过滤被回退的区间。state_snapshot：rewind_points.jsonl 存每个回退点的文件原文，回退时读回。external_reference：超限 bash 输出写 terminal/<id>.log、超长提示写 prompts/prompt_n.txt、MCP 输出转存文件、压缩分段写 compaction/ 目录，记录中只留路径；这些只在超限或压缩时出现（总则 R2）。另有 events.jsonl（回合、工具与审批事件）、resources_state.json（待办、定时器等工具状态）、plan.json、workflows/<run_id>/journal.jsonl，同属会话目录。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md Storage layout",
+          "lines": "L30-L41",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储目录",
+          "note": "会话目录含 chat_history.jsonl、updates.jsonl、rewind_points.jsonl 等文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/extensions/notification.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/extensions/notification.rs CompactionCheckpoint / RewindMarker",
+          "lines": "L719-L722",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "updates.jsonl 控制条目",
+          "note": "updates 记录里有压缩检查点和回退标记两类控制条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/storage/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/storage/mod.rs filter_rewind_lines",
+          "lines": "L1655",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "记录重放",
+          "note": "重放时按回退标记剔除被回退的区间。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/session/file_state.rs",
+          "locator": "crates/codegen/xai-grok-workspace/src/session/file_state.rs rewind points load/save",
+          "lines": "L326-L364",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退点文件快照",
+          "note": "回退点保存文件原文并在回退时读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-workspace/src/session/file_state.rs",
+          "locator": "crates/codegen/xai-grok-workspace/src/session/file_state.rs rewind points load/save",
+          "lines": "L449-L506",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退点文件快照",
+          "note": "回退点保存文件原文并在回退时读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/bash/mod.rs terminal log path",
+          "lines": "L2004-L2006",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限输出外置",
+          "note": "bash 输出完整写入会话目录 terminal/<tool_call_id>.log。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "facets": null,
+      "unknown_reason": null,
+      "value_note": "grok --resume [id]、-c、/resume 和 --fork-session 从 chat_history.jsonl 等重建会话，再由用户发新消息继续；被中断的回合只记一条“已保留已提交的工具结果”的提醒给模型，不按步骤重放或续跑执行中的调用。workflow 有 journal 可在同一进程内续跑，但工具说明写明进程重启造成的中断为终止，不计 checkpoint_resume。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/sessions",
+          "locator": "/build/features/sessions · Resuming",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复入口",
+          "note": "官方文档列出 --resume、-c 和 /resume 恢复会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs PersistedInfo load / interrupted turn",
+          "lines": "L1056-L1067",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "恢复时读回对话历史、计划模式、目标与 workflow 运行，并记录被中断的回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs PersistedInfo load / interrupted turn",
+          "lines": "L1570-L1610",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复流程",
+          "note": "恢复时读回对话历史、计划模式、目标与 workflow 运行，并记录被中断的回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/interrupted_turn.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/interrupted_turn.rs interrupted turn notice",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "中断回合处理",
+          "note": "中断回合只给模型提醒，已提交工具结果保留，不重新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs workflow tool description",
+          "lines": "L43-L47",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 中断",
+          "note": "进程重启造成的中断对暂停中的运行是终止性的。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：chat_history.jsonl 重建对话和工具结果。task_plan：待办由 resources_state.json 读回，持续目标由 GoalTracker::from_snapshot 恢复，计划模式状态也读回（plan_state 本身被丢弃）。subagent_links：模型可以用 spawn_subagent 的 resume_from 按原编号续接子代理，框架从磁盘 subagents/<id>/meta.json 找到它并继承原记录、工具状态和型号。工作区不会自动带回；定时器状态也会读回，属调度，只记此处。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_setup.rs PersistedInfo",
+          "lines": "L1056-L1067",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复读回的数据",
+          "note": "恢复读回对话历史、计划模式状态、目标状态和 workflow 运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/registry/types.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/registry/types.rs resources_state.json load",
+          "lines": "L1187-L1206",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具状态恢复",
+          "note": "注册工具时读回 resources_state.json 里的待办等状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/spawn.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/spawn.rs GoalTracker::from_snapshot",
+          "lines": "L710-L719",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标恢复",
+          "note": "恢复时从快照还原持续目标。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/types.rs",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/types.rs resume_from",
+          "lines": "L84-L87",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理续接",
+          "note": "resume_from 继承原子代理的记录、工具状态和型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/subagent/mod.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/subagent/mod.rs durable_resume_source_for",
+          "lines": "L1439-L1451",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理续接",
+          "note": "进程重启后从磁盘 meta.json 找回子代理来源。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "session_branch：/fork [--worktree] 与 --fork-session 从当前会话分出新会话，原会话保留。workspace_snapshot：回退点保存文件原文，后端 RewindMode 默认 All（文件与对话一起回退）；当前官方文档写回退会恢复文件并截断对话，按文档计。出入：快照 1.0.45 的 TUI 发送 conversation_only，旧版指南也写回退不恢复文件。idempotency_key：范围只限 workflow 宿主调用，journal 按 seq 与 req_hash 在重入时返回已记录结果、不一致报错；其他工具调用没有去重。回退截断对话本身不算分支。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/sessions",
+          "locator": "/build/features/sessions · Forking / Rewinding",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "分支与回退",
+          "note": "官方文档说明 /fork 分出会话，回退恢复全部文件并截断对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_types.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_types.rs RewindMode",
+          "lines": "L323-L349",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退模式默认值",
+          "note": "后端回退模式有 All、ConversationOnly、FilesOnly，默认 All。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/effects/mod.rs",
+          "locator": "crates/codegen/xai-grok-pager/src/app/effects/mod.rs REWIND_MODE_WIRE",
+          "lines": "L5541-L5550",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "TUI 回退请求",
+          "note": "快照中的 TUI 发送 conversation_only，与当前文档有出入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/rewind.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/rewind.rs handle_rewind",
+          "lines": "L121-L129",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退实现",
+          "note": "回退处理含按回退点恢复文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/rewind.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/rewind.rs handle_rewind",
+          "lines": "L241-L270",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回退实现",
+          "note": "回退处理含按回退点恢复文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-workflow/src/journal.rs",
+          "locator": "crates/codegen/xai-workflow/src/journal.rs JournalEntry / replay",
+          "lines": "L7-L13",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 重入",
+          "note": "按 seq 与 req_hash 返回已记录结果或报分歧错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-workflow/src/journal.rs",
+          "locator": "crates/codegen/xai-workflow/src/journal.rs JournalEntry / replay",
+          "lines": "L174-L193",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 重入",
+          "note": "按 seq 与 req_hash 返回已记录结果或报分歧错误。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "F20 回退文件恢复按 R10 照当前官方文档计，实现与文档有出入；idempotency_key 只覆盖 workflow 宿主调用，读者可再看。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "review",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "[permission] 规则按工具类别（bash/read/edit/grep/mcp/webfetch/websearch）写 allow/ask/deny，deny > ask > allow；Bash 按命令前缀或 glob 匹配，Read/Edit 按路径 glob，WebFetch 按 domain: 匹配域名（只约束网页抓取工具，粒度为域名）。另有 Ask 等内置模式、计划模式和永久授权记录 permission.toml。默认模式 Ask：未放行的编辑和命令都先问用户；沙箱默认关闭，命令联网不另行拦截，跟随命令本身的审批。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md Permission rules / matching",
+          "lines": "L236-L276",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则语法",
+          "note": "规则可按工具、命令模式、路径 glob 和域名书写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md Permission rules / matching",
+          "lines": "L312-L380",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则语法",
+          "note": "规则可按工具、命令模式、路径 glob 和域名书写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-permission-rules/src/types.rs",
+          "locator": "crates/codegen/xai-grok-permission-rules/src/types.rs PermissionRule",
+          "lines": "L107-L131",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "规则结构",
+          "note": "规则含 action、tool、pattern 和 Glob/Domain 匹配方式。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/permissions",
+          "locator": "/build/features/permissions · Modes",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "官方文档写 Ask 为默认，未放行的操作都会询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/sandbox",
+          "locator": "/build/features/sandbox · Overview",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "沙箱默认",
+          "note": "沙箱默认关闭，需要用户开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "default_outside_write 与 default_edit 同走 Ask 审批；default_network 因沙箱默认关闭，按命令审批计 review。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call",
+          "whole_task"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "Ask 模式下每次未放行的工具调用执行前询问用户：允许一次、拒绝、开启全部放行、本会话放行全部编辑（只存内存），或把命令、MCP、域名授权写入 permission.toml。计划模式结束时整份计划给用户审阅，只在界面层记 whole_task，不改变之后的放行方式。可选：Auto 模式的分类器只在功能开启时出现。沙箱默认关闭，没有运行中按具体操作拦截的 specific_operation。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md Interactive approvals / authorization order",
+          "lines": "L119-L137",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批流程",
+          "note": "工具调用执行前按钩子、规则、已记住授权、只读放行、模式策略依次判定并询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md Interactive approvals / authorization order",
+          "lines": "L387-L425",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批流程",
+          "note": "工具调用执行前按钩子、规则、已记住授权、只读放行、模式策略依次判定并询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/permissions",
+          "locator": "/build/features/permissions · Modes",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "Ask 为默认，Auto 只在功能开启时出现。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/plan-mode",
+          "locator": "/build/features/plan-mode · Overview",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划审阅",
+          "note": "计划模式结束时把计划交给用户审阅。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：权限引擎在调用前按钩子、规则和模式放行或拒绝；计划模式下编辑门拒绝非计划文件的编辑；read_file、search_replace 按 .gitignore 过滤；explore/plan 子代理按只读工具集注册。runtime_sandbox：workflow 脚本在 Rhai 引擎里运行，限额、禁用 eval，只能调用 agent、budget、complete 等宿主函数；workflow 默认开启，服务端可关。prompt_only present：计划模式只拦编辑工具，提示写“不要做任何编辑或写入”，但 bash 仍可借重定向写文件，这一部分只靠提示。可选：os_isolation 沙箱（Seatbelt/Landlock）默认关闭。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/tool_calls.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/tool_calls.rs plan_mode_edit_gate",
+          "lines": "L178-L198",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式编辑门",
+          "note": "计划模式下拒绝计划文件以外的编辑，Bash 不在拦截范围。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/plan_mode.rs",
+          "locator": "crates/codegen/xai-grok-shell/src/session/plan_mode.rs plan mode prompt",
+          "lines": "L293-L295",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式提示",
+          "note": "提示要求不做任何编辑或写入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/plan-mode",
+          "locator": "/build/features/plan-mode · Overview",
+          "lines": null,
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式边界",
+          "note": "官方文档写计划模式只拦编辑工具，bash 仍可借重定向写入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-workflow/src/engine.rs",
+          "locator": "crates/codegen/xai-workflow/src/engine.rs rhai::Engine setup",
+          "lines": "L119-L127",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "workflow 脚本运行时",
+          "note": "workflow 脚本在受限 Rhai 引擎里执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs",
+          "locator": "crates/codegen/xai-grok-agent/src/config.rs explore/plan toolsets",
+          "lines": "L357-L385",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置子代理",
+          "note": "explore 与 plan 子代理只注册只读工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项核对：计划模式（编辑门有代码、bash 写入只靠提示，判 present）；explore/plan 子代理（工具集代码限制）；Ask 模式（权限引擎代码检查）；沙箱（默认关）。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {
+        "unresolved": [
+          "approval"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "chat_history.jsonl 的 AssistantItem 存内容、tool_calls（工具名与参数）和型号，ToolResultItem 按 tool_call_id 存结果，推理条目也持久化，因此意图、实际操作和结果能按调用编号对上。events.jsonl 记 PermissionRequested/PermissionResolved（Allow/Deny/Cancelled/Followup），但只带工具名、不带调用编号，放进 unresolved。没有专门的审计账本；summary.json 没有用户或账户字段，不计 identity。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-sampling-types/src/conversation.rs",
+          "locator": "crates/codegen/xai-grok-sampling-types/src/conversation.rs AssistantItem / ToolResultItem",
+          "lines": "L265-L298",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录条目",
+          "note": "助手条目存工具调用，工具结果按 tool_call_id 存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-session-events/src/types.rs",
+          "locator": "crates/codegen/xai-grok-session-events/src/types.rs PermissionRequested / PermissionResolved",
+          "lines": "L1-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批事件",
+          "note": "审批事件只带工具名和决定，没有调用编号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md Storage layout",
+          "lines": "L30-L41",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话存储",
+          "note": "chat_history.jsonl 等记录默认写入会话目录。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "approval 疑似：events.jsonl 有批准和拒绝事件，但只能按工具名和时间顺序对上调用。快照 2bdd1d6（树内版本 1.0.45）代替钉住的 1.0.77 判读，confidence 不高于 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。子代理默认启用（subagents.enabled 默认 true），子代理不能再派子代理（深度上限 1）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L1-L5",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md Subagents 概述",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认子代理开关",
+          "note": "子代理是有自己上下文的独立子会话，设置未写时默认启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs#L585-L660",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs spawn_subagent 工具执行",
+          "lines": "L585-L660",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册的委派工具",
+          "note": "主代理调用委派工具后由协调器创建并跟踪子代理（owner Task、parent_prompt_id）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/config.rs#L2171-L2186",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/config.rs workflows 默认开启",
+          "lines": "L2171-L2186",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流功能默认值",
+          "note": "工作流功能默认开启，可派生多个子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow",
+        "user"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。主代理经 spawn_subagent 派生；工作流（默认开启，模型可调 workflow 工具，用户用 /workflow、/deep-research）按脚本派子代理；用户可在默认启用的代理面板直接派出新会话并跟踪。可选：/goal 进入后框架内部起分类、规划子代理，要用户先输命令，不记 framework_internal。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L146-L160",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md Spawning Subagents",
+          "lines": "L146-L160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "主代理委派",
+          "note": "模型调用 spawn_subagent 派生子代理，默认后台运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs#L541-L567",
+          "locator": "crates/codegen/xai-grok-shell/src/session/workflow/host_service.rs workflow 派生子代理",
+          "lines": "L541-L567",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流运行时",
+          "note": "工作流运行按脚本派出子代理，owner 为 workflow(run_id)。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs#L26-L60",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/workflow/mod.rs WorkflowSource",
+          "lines": "L26-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流工具",
+          "note": "模型可直接调用的 workflow 工具，按名称或脚本启动、续跑、暂停、停止工作流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/23-dashboard.md#L1-L20",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/23-dashboard.md Agent Dashboard",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户在面板里派代理",
+          "note": "面板列出全部顶层会话，可直接派出新代理并跟踪状态，默认启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs#L572-L790",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs fire_as_loop_subagent",
+          "lines": "L572-L790",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时触发（快照）",
+          "note": "快照里每次定时触发直接起一个 general-purpose 后台子代理，不经主代理决定。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/background-tasks",
+          "locator": "/build/features/background-tasks 小节 Scheduled prompts",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时触发（钉住版本文档）",
+          "note": "当前文档写 /loop 每次触发是一个新的代理回合，没说起子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "event_scheduling 放进 unresolved：快照源码与快照文档都写定时任务每次触发起独立后台子代理（应记事件调度），但 1.0.77 文档改写为“each firing is a new agent turn”，看不出是否仍起子代理，按 R10 文档措辞含糊处理。用户面板派出的是独立顶层会话，算作用户发起的被框架跟踪的代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "unresolved": [
+          "event_scheduling"
+        ]
+      }
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。默认 isolation=none，子代理与父代理共用工作目录读写文件；每个子代理有独立对话上下文，启动时只带任务提示。可选：isolation=worktree 隔离；resume_from 让新子代理带上已完成子代理的记录（不是消息通道）；send_subagent_message 默认关闭（GROK_ACTIVE_AGENT_MESSAGES 或 [features] active_agent_messages 开启），故不记 messages。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L47-L55",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md How Subagents Work",
+          "lines": "L47-L55",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理上下文",
+          "note": "每个子代理有自己的上下文，结束时只把摘要交回父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/common/xai-tool-types/src/task.rs#L52-L90",
+          "locator": "crates/common/xai-tool-types/src/task.rs TaskToolInput.run_in_background / isolation / resume_from",
+          "lines": "L52-L90",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派参数默认值",
+          "note": "isolation 默认 none（共用工作区），worktree 为可选；resume_from 可接续已完成子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L161-L172",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md Sending messages to subagents",
+          "lines": "L161-L172",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代理间消息",
+          "note": "send_subagent_message 默认关闭，要设开关才开放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs#L640-L660",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs SubagentRequest fork_context: false",
+          "lines": "L640-L660",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "启动时上下文",
+          "note": "默认委派不复制父对话（fork_context false），子代理只带任务说明启动。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "messages 判过：唯一的代理间消息工具默认关闭，按 R3 不计。shared_state 判过：查过委派参数、协调器和 MCP 继承，没有供多个代理读写的框架内共享结构。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。默认后台派生（异步等待，结果经等待工具或自动唤醒交回）；run_in_background=false 时同步返回。连带取消：前台委派工具被取消、回合软取消或到回合上限、关闭或删除会话；不连带：用户中断时默认弹窗询问（[ui].cancel_subagents_on_turn_cancel 未设），默认后台路径上结束等待不会停子代理。kill_command_or_subagent 是显式停止，不算传播。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/common/xai-tool-types/src/task.rs#L52-L68",
+          "locator": "crates/common/xai-tool-types/src/task.rs TaskToolInput.run_in_background",
+          "lines": "L52-L68",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认等待方式",
+          "note": "run_in_background 默认 true，设 false 时同步等子代理结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L18-L31",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md Getting Output / Killing Background Tasks",
+          "lines": "L18-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "异步等待",
+          "note": "后台子代理用 get_command_or_subagent_output 等待取结果，完成后可自动唤醒会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs#L585-L610",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs cancellation_forwarder",
+          "lines": "L585-L610",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "前台委派取消",
+          "note": "仅在 run_in_background=false 时把工具取消转给子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs#L1398-L1403",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/turn.rs TurnOutcome::Cancelled / MaxTurnsReached",
+          "lines": "L1398-L1403",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合软取消与超限",
+          "note": "回合被软取消或到回合上限时取消本回合派出的子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/dispatch/turn.rs#L167-L196",
+          "locator": "crates/codegen/xai-grok-pager/src/app/dispatch/turn.rs 用户中断时的 CancelTurnView",
+          "lines": "L167-L196",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户中断",
+          "note": "用户中断回合且有运行中的子代理、偏好未设时，弹窗问用户是否一并取消。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_lifecycle.rs#L99-L114",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/mvp_agent/session_lifecycle.rs hard_stop_resident",
+          "lines": "L99-L114",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "关闭会话",
+          "note": "会话关闭或删除时发 Cancel{cancel_subagents: true}，取消全部非工作流子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L399-L401",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md Depth Limits",
+          "lines": "L399-L401",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消深度",
+          "note": "子代理不能再派子代理，取消只涉及直接子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 判 some_ways，三种取消方式逐个判过：①用户中断（Esc/Ctrl+C）：偏好未设时弹窗由用户选，不自动连带；②取消等待：默认后台路径上 get_command_or_subagent_output 结束不停子代理，前台委派被取消才转发；③关闭会话：hard_stop_resident 带 cancel_subagents=true，连带。shared_board 判过：没有框架级共享看板，任务面板只供人看。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "some_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。默认安装只有内置工具在用；MCP 服务要用户添加配置，所选 TUI 入口直接开放；嵌入方声明工具只经 ACP 入口（grok agent stdio）配合官方 SDK 使用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs#L585-L600",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/task/mod.rs 内置工具实现",
+          "lines": "L585-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置工具",
+          "note": "内置工具在核心 crate 里实现并注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L218-L231",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md MCP inheritance",
+          "lines": "L218-L231",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP 服务",
+          "note": "框架作为 MCP 客户端接入外部服务，子代理默认继承全部 MCP 服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_mcp.rs#L1-L10",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_mcp.rs ACP 进程内 SDK 工具",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "嵌入方工具",
+          "note": "官方 grok-agent-sdk 可经 session/new 的 _meta x.ai/mcp/servers 声明宿主进程内工具，经反向 x.ai/mcp/sdk_call 调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md#L398-L428",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md 插件内容",
+          "lines": "L398-L428",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件边界",
+          "note": "插件只打包技能、命令、代理、钩子、MCP、LSP，没有进程内工具代码接口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单：plugin_api 没有（插件格式只含 skills/commands/agents/hooks/MCP/LSP，查过 09-plugins.md 与 26-config-reference.md）；user_script 没有（配置参考里没有把用户脚本注册成工具的设置，钩子不是工具）。embedder_declared 只在快照源码注释里点名 grok-agent-sdk，用户指南没有成段说明，故 medium。ACP session/new 传入 mcpServers 记在 external_protocol_service。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "workflow_definition",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。项目规则自动装载；技能目录按名或自动调用；代理定义（含 persona）可按名派生；Rhai 工作流脚本按名运行；commands 目录的扁平 md 文件展开为一条提示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/12-project-rules.md#L15-L27",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/12-project-rules.md Supported File Names",
+          "lines": "L15-L27",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "项目规则",
+          "note": "从仓库根到当前目录自动装载 AGENTS.md、CLAUDE.md 等规则文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/08-skills.md#L15-L31",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/08-skills.md 技能目录",
+          "lines": "L15-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能与命令目录",
+          "note": "从约定目录发现技能；.grok/commands 等目录的单个 md 文件成为用户可调用的斜杠命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md#L59-L110",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/16-subagents.md Built-in Agent Types / Personas",
+          "lines": "L59-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "角色模板",
+          "note": "项目和用户目录里的代理定义增加可派生的子代理类型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-agent/src/config.rs#L696-L754",
+          "locator": "crates/codegen/xai-grok-agent/src/config.rs AgentDefinition.hooks",
+          "lines": "L696-L754",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代理定义里的钩子",
+          "note": "代理定义可附带 hooks。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/agent/subagent/handle_request.rs#L1334-L1350",
+          "locator": "crates/codegen/xai-grok-shell/src/agent/subagent/handle_request.rs 注册代理定义内联钩子",
+          "lines": "L1334-L1350",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代理定义可执行项",
+          "note": "非插件代理定义的内联钩子在派生时注册执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/04-slash-commands.md#L277-L331",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/04-slash-commands.md /workflow /workflows",
+          "lines": "L277-L331",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流定义",
+          "note": "工作流以 .grok/workflows/*.rhai 等文件保存，按名调用，由框架执行脚本推进并派子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "executable_items：role_template 因代理定义可带内联钩子（由框架执行的命令），workflow_definition 因 Rhai 脚本由框架执行。prompt_template 与 skill_directory 的界线：commands/*.md 经技能发现流程装载，但只展开为一条用户提示、不单独定义技能，按 R8 记 prompt_template；若视作技能目录的一种用法则应去掉这一项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "role_template",
+          "workflow_definition"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。UserPromptSubmit 可阻断（input）；PreToolUse 可拒绝或改写输入、PostToolUse 可替换输出（tool_before_after）；Stop/SubagentStop 可阻止结束（end）；PreCompact/PostCompact 与 SessionStart 只能观察。默认安装没有注册任何钩子。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/10-hooks.md#L85-L107",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/10-hooks.md 事件表",
+          "lines": "L85-L107",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件点",
+          "note": "文档列出 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop、SubagentStop、PreCompact、PostCompact、SessionEnd、Notification 等事件及能否阻断。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/10-hooks.md#L60-L83",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/10-hooks.md Hook locations",
+          "lines": "L60-L83",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子来源",
+          "note": "钩子来自用户目录、项目（需信任）、配置和插件；默认安装没有已注册的钩子。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/hooks",
+          "locator": "/build/features/hooks 小节 Events",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住版本文档",
+          "note": "1.0.77 文档的事件表同样列出这些事件点。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单：model_call 没有（事件表里没有模型请求前后的事件，查过 10-hooks.md 与钉住版本文档 Events）；save 没有（没有会话记录或检查点保存时的事件）。SessionEnd 归入 end，与 Stop 合并后 end 可干预。in_use_by_default 判 []：默认目录与配置都无钩子，内置插件也未带钩子。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "context_compaction",
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。无头 -p 与 ACP 都要换参数或子命令，所选 TUI 入口不直接开放。grok agent serve 仍是 ACP（WebSocket 传输），不另记 service_api。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md#L1-L17",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md Headless Mode",
+          "lines": "L1-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "无头命令行",
+          "note": "grok -p 等参数进入无头模式，可输出 json 或流式 json，供宿主当子进程调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md#L1-L32",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md Agent Mode",
+          "lines": "L1-L32",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP 服务端",
+          "note": "grok agent stdio 以 ACP 协议经标准输入输出服务宿主，grok agent serve 走 WebSocket。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_mcp.rs#L1-L10",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_mcp.rs grok-agent-sdk",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "官方 SDK",
+          "note": "源码注释提到官方 grok-agent-sdk，经 ACP 传输与核心交互。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/cli/reference",
+          "locator": "/build/cli/reference 小节 Subcommands",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住版本文档",
+          "note": "1.0.77 文档列出 grok agent stdio 作为 ACP 代理入口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "library 放进 unresolved：快照源码与钩子文档提到官方 grok-agent-sdk，但快照里没有这个包，看不出它是在宿主进程里跑核心循环，还是只经 ACP 驱动 grok 子进程（acp_mcp.rs 写 transport=acp，倾向后者）。host_extension_api 判过：没有编辑器扩展接口的文档。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [],
+        "unresolved": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。TUI 入口直接开放用户输入、定时（scheduler 工具与 /loop）与 monitor 监视；api 经无头或 ACP 入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L144-L168",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md The Scheduler",
+          "lines": "L144-L168",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时任务",
+          "note": "模型可用 scheduler_create 建定时任务，用户可用 /loop，每次触发在后台运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L90-L140",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md The monitor Tool",
+          "lines": "L90-L140",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "monitor 工具监视外部命令输出，每行作为通知送进会话，可唤醒空闲会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/tools/notification_bridge.rs#L724-L780",
+          "locator": "crates/codegen/xai-grok-shell/src/tools/notification_bridge.rs ToolNotification::MonitorEvent",
+          "lines": "L724-L780",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "事件注入",
+          "note": "监视事件逐条以 InjectNotification 送进会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md#L1-L17",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/14-headless-mode.md Headless Mode",
+          "lines": "L1-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API 触发",
+          "note": "外部程序可用 grok -p 提交任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "external_event 按定义判：monitor 是专门的监视机制，事件源头在框架外（日志、CI、文件变化），逐条送进会话并能唤醒空闲会话；订阅由模型或用户设立不影响判定。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule",
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。默认 TUI 中核心随前台进程运行，退出界面任务即停。远端下发的 leader_mode 在发行版构建中可开启 leader 进程（按 R10 以本地默认值判）。可选：grok agent serve 或 --leader。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/app/mod.rs#L493-L530",
+          "locator": "crates/codegen/xai-grok-pager/src/app/mod.rs resolve_leader_mode",
+          "lines": "L493-L530",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "leader 模式默认值",
+          "note": "--leader/--no-leader、本地 use_leader 与远端 leader_mode 决定是否用 leader 进程，本地默认关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md#L224-L225",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/02-authentication.md leader mode",
+          "lines": "L224-L225",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "leader 模式",
+          "note": "文档写 leader 模式默认关闭。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md#L1-L32",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/15-agent-mode.md Agent Mode",
+          "lines": "L1-L32",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "可选服务入口",
+          "note": "grok agent serve 为可选的长驻入口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。最强一层是定时任务：定义随会话存盘，重新打开会话后不用再发消息就按计划继续触发（scheduler_create 的 durable=true 还能跨会话）。工作流运行被进程重启打断后不续跑；用户排队的后续消息只在内存。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs#L1495-L1546",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs recurring_task_survives_restart_and_rearms",
+          "lines": "L1495-L1546",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时任务重启后",
+          "note": "非 durable 的循环任务随会话资源存盘，重启恢复会话后重新登记并继续触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs#L855-L882",
+          "locator": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs 恢复后重新公告",
+          "lines": "L855-L882",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时任务恢复",
+          "note": "恢复后重新公告并按计划触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session_impl/prompt_queue.rs#L450-L453",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session_impl/prompt_queue.rs broadcast_queue_changed",
+          "lines": "L450-L453",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互输入队列",
+          "note": "提示队列只在内存，从不存盘。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-shell/src/session/acp_session.rs#L383-L383",
+          "locator": "crates/codegen/xai-grok-shell/src/session/acp_session.rs pending_inputs: VecDeque<InputItem>",
+          "lines": "L383-L383",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互输入队列",
+          "note": "运行中提交的输入排在内存队列里。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.x.ai/build/features/background-tasks",
+          "locator": "/build/features/background-tasks 小节 Prompt queue",
+          "lines": "",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住版本文档",
+          "note": "运行中提交的提示排队，不丢弃。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "钉住版本 1.0.77，按源码快照 2bdd1d6（1.0.45）编码。默认 Ask 权限模式下工具调用等待批准（permission），ask_user_question 提问等待回答（question）。终端通知依赖终端支持 OSC 9/99/777 或 BEL，且只在终端失焦时发出。可选：/goal 设立的目标要用户先输命令，不记 resumable_todo。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md#L458-L481",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md [ui.notifications]",
+          "lines": "L458-L481",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知默认值",
+          "note": "默认在终端失焦时对回合完成和等待审批发 OSC 9/99/777 或 BEL 通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/src/notifications/config.rs#L24-L60",
+          "locator": "crates/codegen/xai-grok-pager/src/notifications/config.rs NotificationsConfig Default",
+          "lines": "L24-L60",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知默认值",
+          "note": "默认事件 TurnComplete、ApprovalRequired，条件 Unfocused。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md#L16-L40",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/22-permissions-and-safety.md Permission modes",
+          "lines": "L16-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认权限模式",
+          "note": "交互 TUI 默认 ask 模式，只读以外的工具调用要等用户批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md#L228-L250",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md [toolset.ask_user_question]",
+          "lines": "L228-L250",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "阻塞提问",
+          "note": "ask_user_question 工具让代理暂停向用户提问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/03-keyboard-shortcuts.md#L105-L150",
+          "locator": "crates/codegen/xai-grok-pager/docs/user-guide/03-keyboard-shortcuts.md Question card",
+          "lines": "L105-L150",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提问卡片",
+          "note": "提问卡片等待用户回答。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "resumable_todo 判过：待办列表只是会话内状态，没有持久的人工待办表；structured_handoff 判过：没有固定字段的交接格式。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

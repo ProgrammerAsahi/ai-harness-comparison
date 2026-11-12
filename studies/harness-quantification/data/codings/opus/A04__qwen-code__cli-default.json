@@ -1,0 +1,2200 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.6",
+  "synthetic": false,
+  "round": "batch-2",
+  "config_id": "A04__qwen-code__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-12"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-12",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认入口直接描述任务后由模型循环推进：模型请求工具、框架执行后交回，直到模型不再调用工具。目标续跑（/goal 或模型经 propose_goal 提议、需用户批准）在回合之间自动续发，每回合内部仍是模型循环，按 scope_rule 算外层不另记。secondary_modes 的 explicit_workflow：随包 /review 技能（用户命令，模型也可经 skill 工具自行调用）会为本会话注册 workflow 工具，由 `qwen review emit-workflow` 确定性生成脚本、经 workflow 运行时按脚本并行派发审阅代理。可选：tools.workflowsEnabled 或 QWEN_CODE_ENABLE_WORKFLOWS=1 打开通用 Workflow 工具（模型现写脚本）与 /workflows mode。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/agent-loop.ts",
+          "locator": "packages/core/src/core/agent-loop.ts：runAgentLoop / AgentLoopStopReason（同文件另见 L195-L246）",
+          "lines": "L40-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口主循环",
+          "note": "主循环发请求、执行模型请求的工具、把结果交回模型，直到模型不再调用工具（completed）；另有 cancelled、max_session_turns、session_token_limit 等停止原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/hooks/use-llm-stream.ts",
+          "locator": "packages/cli/src/ui/hooks/use-llm-stream.ts：import runModelRound from core agent-loop",
+          "lines": "L97-L101",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 入口",
+          "note": "交互界面的流处理钩子直接导入 core 的 agent-loop 函数驱动回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/skill-utils.ts",
+          "locator": "packages/core/src/tools/skill-utils.ts：随包 review 技能调用后 enableReviewWorkflow",
+          "lines": "L510-L516",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "随包技能 /review",
+          "note": "调用随包 review 技能时框架为本会话注册 workflow 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：enableReviewWorkflow / isWorkflowsEnabled（同文件另见 L11287-L11302）",
+          "lines": "L11066-L11074",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Workflow 开关",
+          "note": "workflow 工具默认关（settings、环境变量或 review 技能才开）；review 技能在未显式关闭时注册 workflow 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/skills/bundled/review/SKILL.md",
+          "locator": "packages/core/src/skills/bundled/review/SKILL.md：Step 3 dispatch through workflow",
+          "lines": "L394-L396",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "随包技能 /review",
+          "note": "review 用 `review emit-workflow` 生成固定脚本，经一次前台 workflow 调用按脚本 parallel() 派发各审阅代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核对清单（docs/users/features/commands.md 命令表与 1.5 随包技能、快速开始）：/goal 目标续跑——回合间续跑，内部仍是模型循环，不另记；/plan 计划模式——审批模式切换，仍模型循环；/fork、/branch——新开代理或会话，仍模型循环；/arena——多型号并行会话，各自模型循环；/btw、/advisor、/recap、/summary——附带一次性问答或摘要，不算任务路径；/loop 与 cron_create、loop_wakeup——按时间往会话投提示，属任务发起（F33），下一步仍由模型定，不记 event_scheduling；/review——经 workflow 运行时按生成脚本推进，记 explicit_workflow；/coordinate、/simplify、/autofix-pr、/goal-draft——技能提示展开给模型循环执行，不算；/batch-api 与 qwen batch 子命令——需配置 batch.model（改设置），且是批处理提交，不计；/workflows——需先开 tools.workflowsEnabled，可选；Agent Team 默认关。疑问：review 技能注册 workflow 工具的前提是 workflowsEnabled 未被显式设为 false；CLI 以 settings.tools?.workflowsEnabled 传值，若设置加载时把 schema 默认值 false 合并进来，则 review 也开不了 workflow，我未追到设置合并代码，按 SKILL.md L396 的说法（只有显式关闭才优先）记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "value_note": "enter_plan_mode 在交互会话默认注册、默认权限 allow，模型不经用户就能进入只读的计划模式；exit_plan_mode 提交一段 Markdown 计划请用户批准并存档文本，之后不按条目检查执行。工具说明写着只在用户要求时使用，但代码不拦（总则 R3）。可选：todo_write（tools.todoWrite.enabled 默认 false）带条目与状态的待办表；/plan 用户命令进入计划模式。目标续跑的目标文本是完成条件，不是计划。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：enter_plan_mode / exit_plan_mode 注册",
+          "lines": "L13917-L13928",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "交互（非 SDK）会话注册 enter_plan_mode 与 exit_plan_mode。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/enterPlanMode.ts",
+          "locator": "packages/core/src/tools/enterPlanMode.ts：EnterPlanModeTool.getDefaultPermission / execute（同文件另见 L78-L100）",
+          "lines": "L35-L46",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式",
+          "note": "工具说明要求只在用户要求时用，但默认权限为 allow，执行时把审批模式切到 PLAN（只读出计划）；代码不检查用户是否要求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/exitPlanMode.ts",
+          "locator": "packages/core/src/tools/exitPlanMode.ts：plan 参数 / savePlanBestEffort（同文件另见 L415-L418）",
+          "lines": "L45-L73",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "计划模式",
+          "note": "退出计划模式时提交一段 Markdown 计划文本请用户批准，并把文本存档；没有条目与状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：tools.todoWrite.enabled",
+          "lines": "L3222-L3243",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认工具清单",
+          "note": "todo_write 默认关闭（opt-in），默认会话不注册给模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "系统提示是否另有“先写计划”的硬性要求未逐段核对；计划模式这一条已够判 prompt_text_only，且没有找到按计划条目推进或拦下偏离的机制（exitPlanMode 只存文本，approvedPlan 只用于脱敏显示）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "model_end_signal：模型不再调用工具时本轮 completed。user_interrupt：Esc 取消当前回合（目标续跑中也使目标暂停）。verification_condition：目标续跑路径（模型经 propose_goal 提议、需用户批准；或 /goal）里模型用 update_goal 提议完成或受阻后，独立验证器模型按会话记录判定，不接受就把理由交回并续发下一回合。budget：目标默认 3000 万 Token 额度，用完给一个收尾回合后停；fork 子代理默认 200 回合；回合后自动起的记忆提取代理 5 回合、2 分钟，记忆整理代理 8 回合、5 分钟（范围：这些子代理）。会话级 maxSessionTurns、maxWallTimeSeconds、maxToolCalls、sessionTokenLimit 默认不设（可选）。普通命名子代理（general-purpose 等）默认无回合或时间上限。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/agent-loop.ts",
+          "locator": "packages/core/src/core/agent-loop.ts：runAgentLoop / AgentLoopStopReason（同文件另见 L195-L246）",
+          "lines": "L40-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认入口主循环",
+          "note": "主循环发请求、执行模型请求的工具、把结果交回模型，直到模型不再调用工具（completed）；另有 cancelled、max_session_turns、session_token_limit 等停止原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：registerGoalWorkerTools",
+          "lines": "L13606-L13629",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "主会话注册 get_goal、update_goal；交互会话且未关闭模型提议目标时注册 propose_goal（子代理不注册）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/goals.md",
+          "locator": "docs/users/features/goals.md：Goals / Approve a Goal the model proposes（同文件另见 L84-L86）",
+          "lines": "L3",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "目标由 /goal 设定，或由模型经 propose_goal 提出、用户在批准对话框里批准；模型提议完成或受阻时独立验证器据记录判定，接受才停。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-runtime.ts",
+          "locator": "packages/core/src/goals/goal-runtime.ts：verifier 判定与 verifier_reject 续发",
+          "lines": "L764-L803",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "完成或受阻的提议交验证器；被拒时 queueContinuation('verifier_reject') 继续下一目标回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-protocol.ts",
+          "locator": "packages/core/src/goals/goal-protocol.ts：GOAL_DEFAULT_TOKEN_BUDGET / goalTokenBudgetReason",
+          "lines": "L36-L49",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "每个新目标默认 3000 万 Token 自主额度，用完即停，需用户恢复才另给一个窗口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/fork-subagent.ts",
+          "locator": "packages/core/src/tools/agent/fork-subagent.ts：FORK_DEFAULT_MAX_TURNS",
+          "lines": "L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "fork 子代理",
+          "note": "模型用 subagent_type: \"fork\" 派生的分叉子代理默认最多 200 回合（agent.ts L2243-L2248 传入 max_turns）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/extractionAgentPlanner.ts",
+          "locator": "packages/core/src/memory/extractionAgentPlanner.ts：managed-auto-memory-extractor",
+          "lines": "L434-L450",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台记忆代理",
+          "note": "回合后自动起的记忆提取代理可多步调用 read_file、grep、glob、write_file 等，默认 maxTurns 5、maxTimeMinutes 2。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/dreamAgentPlanner.ts",
+          "locator": "packages/core/src/memory/dreamAgentPlanner.ts：MAX_TURNS / MAX_TIME_MINUTES（同文件另见 L184-L185）",
+          "lines": "L33-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台记忆代理",
+          "note": "自动记忆整理代理默认最多 8 回合、5 分钟。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/agents/runtime/agent-core.ts",
+          "locator": "packages/core/src/agents/runtime/agent-core.ts：runReasoningLoop 终止判定",
+          "lines": "L1056-L1074",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理与后台代理",
+          "note": "子代理循环在取消、maxTurns、maxTimeMinutes 到达时以 CANCELLED、MAX_TURNS、TIMEOUT 结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：maxSessionTurns / maxWallTimeSeconds / maxToolCalls / sessionTokenLimit（同文件另见 L1942-L1950、L1971-L1978）",
+          "lines": "L1874-L1893",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话级上限",
+          "note": "会话回合数、墙钟时长、工具调用数默认 -1（不限），sessionTokenLimit 默认不设。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "verification_condition 只在目标续跑路径上成立；按 F03 scope_rule 与总则 R3，模型能用默认注册的 propose_goal 提出、用户只在对话框批准，算默认并写“需用户批准”。置信度给 medium，因为这一路径要用户批准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：模型请求出错按退避自动重发（默认最多 7 次，限流另有流式重试）；配额耗尽快速失败。model_self_repair：工具出错作为带 error 的结果交回模型。escalate_to_human：Auto 模式下分类器调用不可用时框架把这次调用转人工审批（批准后接着走）；目标续跑中回合失败、验证器无法判定、连续三回合无进展时框架把目标置为 paused，用户 /goal resume 后带原历史继续。framework_input_repair：工具参数 JSON 解析失败时 jsonrepair 修复、流式参数缺尾引号自动补全后照常执行（写文件类工具对修补过的参数拒收）。另：普通回合出错时显示“Press Ctrl+Y to retry”，由用户按键重发；认证失效弹出认证对话框，不自动续接。可选：modelFallbacks（默认空）容量错误换型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/utils/retry.ts",
+          "locator": "packages/core/src/utils/retry.ts：DEFAULT_RETRY_OPTIONS / retryWithBackoff（同文件另见 L408-L428）",
+          "lines": "L100-L105",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型调用出错",
+          "note": "模型请求出错默认按退避自动重发，最多 7 次；配额耗尽类错误快速失败、不换型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/coreToolScheduler.ts",
+          "locator": "packages/core/src/core/coreToolScheduler.ts：createErrorResponse",
+          "lines": "L1235-L1262",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具出错",
+          "note": "工具出错时构造带 error 的 functionResponse 交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts",
+          "locator": "packages/core/src/permissions/autoMode.ts：classifier unavailable → fallback",
+          "lines": "L640-L650",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Auto 审批",
+          "note": "分类器调用不可用时返回 fallback（classifier_unavailable），由框架转人工审批这次调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-runtime.ts",
+          "locator": "packages/core/src/goals/goal-runtime.ts：noProgressLimitReached → paused",
+          "lines": "L1290-L1305",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "连续 GOAL_NO_PROGRESS_TURN_LIMIT（=3，goal-protocol.ts L27）个回合没有进展时把目标置为 paused。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/goals.md",
+          "locator": "docs/users/features/goals.md：Interrupting a Goal",
+          "lines": "L29-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "Esc 中断使目标暂停；回合失败、验证器无法判定、连续三回合无进展等都会暂停，需 /goal resume 才继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/utils/safeJsonParse.ts",
+          "locator": "packages/core/src/utils/safeJsonParse.ts：safeJsonParse（jsonrepair 回退）",
+          "lines": "L10-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用参数",
+          "note": "工具调用参数 JSON 解析失败时用 jsonrepair 修复后再解析；openaiContentGenerator/converter.ts L1500 对工具参数调用它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/openaiContentGenerator/streamingToolCallParser.ts",
+          "locator": "streamingToolCallParser：自动补全未闭合字符串",
+          "lines": "L319-L330",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用参数",
+          "note": "流式工具参数缺尾引号时自动补全并标记 repaired；incomplete-tool-call-args.ts 让写文件类工具拒收这种修补，其余工具照常执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "循环检测：skipLoopDetection 默认 true，启发式循环检测默认跳过，只剩 always-on 安全检查，命中时本轮以 loop_detected 结束，未见注入纠正提示，未计入 model_self_repair。分类器不可达转人工这一项算不算“失败后”的处理有些边界：它是辅助调用失败后由框架发起的审批，按 escalate_to_human 判定里的“由框架规则触发的审批”记。Ctrl+Y 重试需要用户按键，未单独据此记 escalate_to_human。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "终端 CLI 的界面（ink，或可用时的 OpenTUI）与执行核心在同一 Node 进程：界面钩子直接调用 core 的 agent-loop。启动器可能为调整内存参数把整个 CLI 重启为子进程，但界面与核心仍同在那个进程内。qwen serve、ACP、IDE 伴随扩展等是其他入口，不在本配置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/llm.tsx",
+          "locator": "packages/cli/src/llm.tsx：relaunchAppInChildProcess / startInteractiveUI(config, …)（同文件另见 L1552-L1560）",
+          "lines": "L895-L915",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 入口",
+          "note": "启动器可能以新内存参数重启自身为子进程，但界面（ink 或 OpenTUI）与 core 的 Config、LlmClient 在同一进程内启动并直接调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/hooks/use-llm-stream.ts",
+          "locator": "packages/cli/src/ui/hooks/use-llm-stream.ts：import runModelRound from core agent-loop",
+          "lines": "L97-L101",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互 TUI 入口",
+          "note": "交互界面的流处理钩子直接导入 core 的 agent-loop 函数驱动回合。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "文件读写、搜索、编辑等工具在核心进程内经 node:fs 执行；shell 与 monitor 等命令类工具经 node-pty 或 child_process 起子进程。web_search 走订阅的托管搜索后端（云端，不计本地基线）。可选：用户添加的 MCP 服务（stdio 由核心拉起为子进程）、LSP（默认关）、Docker/Podman/Seatbelt 与 Linux bwrap/Landlock 沙箱（默认关）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/fileSystemService.ts",
+          "locator": "packages/core/src/services/fileSystemService.ts：writeTextFile → atomicWriteFile",
+          "lines": "L537-L550",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件工具",
+          "note": "文件写入在核心进程内用 node:fs 完成。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/shellExecutionService.ts",
+          "locator": "packages/core/src/services/shellExecutionService.ts：pty spawn / child_process spawn（同文件另见 L1995）",
+          "lines": "L996",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "shell 工具",
+          "note": "shell 命令经 node-pty 或 child_process 另起子进程执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话历史由 core 的 LlmChat 持有并据此构造请求，core 的 ChatRecordingService 追加写 JSONL，恢复时由 core 的 SessionService 读回；界面层只显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatRecordingService.ts",
+          "locator": "packages/core/src/services/chatRecordingService.ts：ChatRecordingService",
+          "lines": "L1210-L1235",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话记录",
+          "note": "core 的记录服务把消息、工具调用与结果追加写成 JSONL。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/sessionService.ts",
+          "locator": "packages/core/src/services/sessionService.ts：会话文件按 sessionId 命名 / loadSession（同文件另见 L1024、L3280-L3283）",
+          "lines": "L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话恢复",
+          "note": "会话文件为 <sessionId>.jsonl，恢复由 core 的 SessionService 读回。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个会话以 sessionId 区分，历史存为 <sessionId>.jsonl；同一进程可 /clear、/resume、/branch 换会话，不换进程，也不自动分配工作目录。文件历史备份按会话号分目录，只是备份，不是工作目录。可选：agent 工具的 isolation: worktree、enter_worktree 工具（模型调用、按需建工作树，不是每个会话默认给一份）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/sessionService.ts",
+          "locator": "packages/core/src/services/sessionService.ts：会话文件按 sessionId 命名 / loadSession（同文件另见 L1024、L3280-L3283）",
+          "lines": "L515",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话恢复",
+          "note": "会话文件为 <sessionId>.jsonl，恢复由 core 的 SessionService 读回。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "跨会话消息为每个会话绑定本地 socket，属通信端点，不算隔离资源。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "core 内置 OpenAI Chat Completions、OpenAI Responses、Anthropic Messages、Gemini/Vertex 等几种接口协议的生成器，按 authType 选用；Qwen 订阅、DashScope、OpenAI 兼容提供方共用 OpenAI 兼容协议，只差地址与认证。钉住环境（Qwen 账户订阅）实际走 OpenAI 兼容协议。辅助侧查询走同一套生成器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/contentGenerator.ts",
+          "locator": "packages/core/src/core/contentGenerator.ts：createContentGenerator",
+          "lines": "L516-L600",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型接入",
+          "note": "按 authType 动态加载 OpenAI Chat Completions、OpenAI Responses、Qwen 订阅（OpenAI 兼容）、Anthropic、Gemini/Vertex 等内置生成器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/qwen/subscription-content-generator.ts",
+          "locator": "packages/core/src/qwen/subscription-content-generator.ts：SubscriptionProvider（同文件另见 L36-L50、L119）",
+          "lines": "L7-L14",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钉住环境",
+          "note": "Qwen 订阅认证走 OpenAIContentGenerator（OpenAI 兼容协议）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "text_parsing",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "native_structured：工具定义以原生 function 工具发出，按结构化 tool_calls 取参数。text_parsing：模型把调用写成 XML 风格文本、没有结构化调用时，框架从正文恢复为函数调用（回退）。protocol_translation：MCP 服务的工具登记为模型函数、调用时转成 MCP 请求，用户在 mcpServers 加一条即可（默认无服务）。tool_search/tool_call 桥接工具只是让模型按名调用延迟声明的工具，同一协议。解析失败的参数先 jsonrepair，修不好则把错误交回模型。可选：exec（Code Mode，tools.codeModeOnly 默认 false）脚本里调用其他工具；Workflow 工具默认关，review 技能会为会话打开它，但 review 跑的是程序生成的脚本，未记 script_dispatch。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/openaiContentGenerator/converter.ts",
+          "locator": "packages/core/src/core/openaiContentGenerator/converter.ts：tools type 'function' / tool_calls 解析（同文件另见 L575、L1500）",
+          "lines": "L501",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用解析",
+          "note": "工具定义转成原生 function 工具，回复中的 tool_calls 按结构化字段取参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/llm-chat.ts",
+          "locator": "packages/core/src/core/llm-chat.ts：XML tool call fallback",
+          "lines": "L7537-L7552",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工具调用解析",
+          "note": "没有结构化 tool_calls 但正文含 XML 风格调用时，用 tryRecoverXmlToolCalls 从文本恢复为函数调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/mcp-tool.ts",
+          "locator": "packages/core/src/tools/mcp-tool.ts：DiscoveredMCPTool / callTool（同文件另见 L1273）",
+          "lines": "L1090",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP",
+          "note": "外部 MCP 服务的工具登记为模型可调用的函数，调用时转成 MCP callTool 请求；用户在 mcpServers 加一条配置即可。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：registerExecIfEnabled",
+          "lines": "L13631-L13637",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "代码执行工具",
+          "note": "exec（Code Mode）只在 tools.codeModeOnly 为真时注册，默认 false（settingsSchema.ts L3041-L3050）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环、内置子代理（general-purpose、Explore 默认 inherit）、fork 子代理和回合后自动起的记忆代理都用主会话型号；agent 工具没有型号参数，modelFallbacks 默认空，advisor 默认关。钉住环境的主型号由订阅网关目录第一项决定（源码常量 qwen3.8-max），型号由服务端决定。可选：/model 切换、fastModel、compactionModel、modelFallbacks、advisorModel、Explore 的 exploreModel。辅助调用全部走侧查询默认，fastModel 未配时都用主会话型号；web_search 用托管搜索后端，型号客户端无从选择，不计入。其他环境：主型号是纯文本型号时，收到图片会经视觉桥接自动选同提供方视觉型号转写（per_request_routing）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：AgentTool 参数模式",
+          "lines": "L889-L970",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "派子代理",
+          "note": "agent 工具参数只有描述、提示、类型、fork 选项、后台、隔离、工作目录，没有型号或推理强度参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：modelFallbacks / visionModel / advisorModel / agents.builtin.exploreModel（同文件另见 L1792-L1801、L3899-L3907）",
+          "lines": "L1733-L1752",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "型号分配",
+          "note": "modelFallbacks 默认空；advisorModel 空即关闭；visionModel 空则自动选同提供方视觉型号；Explore 子代理默认 inherit。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/utils/sideQuery.ts",
+          "locator": "packages/core/src/utils/sideQuery.ts：resolveDefaultModel",
+          "lines": "L143-L150",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "侧查询（标题、压缩、分类器、web_fetch 摘要、验证器、建议等）默认用 fast model，未配则用主会话型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：getFastModel / resolveFastModelSelector",
+          "lines": "L7276-L7279",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "辅助调用",
+          "note": "fastModel 为空时返回 undefined。settingsSchema.ts L1625-L1634 fastModel 默认空串。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/modalityDefaults.ts",
+          "locator": "packages/core/src/core/modalityDefaults.ts：qwen3.8-max 模态表",
+          "lines": "L56-L59",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "媒体理解",
+          "note": "qwen3.8-max 标为支持图像，视觉桥接（只在文本型主型号收到图片时触发）在钉住型号下不触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/web-fetch.ts",
+          "locator": "packages/core/src/tools/web-fetch.ts：post-fetch summarization side query",
+          "lines": "L704-L716",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "网页抓取",
+          "note": "web_fetch 抓取后用 runSideQuery（purpose web-fetch）摘要，型号按侧查询默认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/fork-subagent.ts",
+          "locator": "packages/core/src/tools/agent/fork-subagent.ts：FORK_DEFAULT_MAX_TURNS",
+          "lines": "L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "fork 子代理",
+          "note": "模型用 subagent_type: \"fork\" 派生的分叉子代理默认最多 200 回合（agent.ts L2243-L2248 传入 max_turns）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "辅助调用清单：标题生成——session-title 侧查询，主型号；上下文压缩或摘要——chat-compression 侧查询，compactionModel 默认空，主型号；动作审核分类——permission_classifier 两段侧查询，主型号；联网搜索——托管 MCP 搜索后端，不计；网页抓取——web-fetch 侧查询，主型号；媒体理解——vision-bridge 只在文本型主型号收到图片时触发，钉住的 qwen3.8-max 支持图像，不触发；生成类工具——image_gen 需配置图像型号，默认不注册，无。另有目标验证器、后续输入建议、会话回顾等侧查询，同样用主型号。记忆提取与整理是能多步调用工具的代理，按总则 R4 计入 value，不记进 auxiliary_models。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "total_tokens",
+        "call_count",
+        "time"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "total_tokens",
+          "call_count",
+          "time"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：未设用户上限时自动输出请求截到 64000 Token，截断时升到该上限重试一次、再截断注入续写提示最多 3 次。total_tokens：目标续跑（需用户批准）每个新目标默认 3000 万 Token，用完给一个收尾回合后停，等用户恢复。call_count：fork 子代理默认 200 回合；记忆提取代理 5 回合、记忆整理代理 8 回合。time：记忆提取代理 2 分钟、记忆整理代理 5 分钟。到达上限时子代理以 MAX_TURNS 或 TIMEOUT 结束。可选：maxSessionTurns、maxWallTimeSeconds、maxToolCalls 默认 -1，sessionTokenLimit、goalMaxTurns、goalMaxActiveMinutes 默认不设；advisorMaxUses 只在启用 advisor 后相关。无金额上限。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/tokenLimits.ts",
+          "locator": "packages/core/src/core/tokenLimits.ts：ESCALATED_MAX_TOKENS / OUTPUT_TOKEN_CEILING",
+          "lines": "L25-L35",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "单次输出",
+          "note": "未由用户设定时，自动输出请求上限截到 64000，截断时升到同一上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/llm-chat.ts",
+          "locator": "packages/core/src/core/llm-chat.ts：MAX_TOKENS escalation 与 MAX_OUTPUT_RECOVERY_ATTEMPTS（同文件另见 L4306-L4326、L5482-L5511）",
+          "lines": "L916-L920",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "单次输出",
+          "note": "回复因 MAX_TOKENS 截断时先以升高的上限重试一次，仍截断则注入续写提示，最多 3 次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-protocol.ts",
+          "locator": "packages/core/src/goals/goal-protocol.ts：GOAL_DEFAULT_TOKEN_BUDGET / goalTokenBudgetReason",
+          "lines": "L36-L49",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "每个新目标默认 3000 万 Token 自主额度，用完即停，需用户恢复才另给一个窗口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：model.goalTokenBudget / goalMaxTurns / goalMaxActiveMinutes",
+          "lines": "L1894-L1930",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "目标续跑",
+          "note": "goalTokenBudget 未设时用内置 3000 万；到额度给一个收尾回合后停下，等用户恢复；回合数与活跃时长窗口默认不设。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/fork-subagent.ts",
+          "locator": "packages/core/src/tools/agent/fork-subagent.ts：FORK_DEFAULT_MAX_TURNS",
+          "lines": "L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "fork 子代理",
+          "note": "模型用 subagent_type: \"fork\" 派生的分叉子代理默认最多 200 回合（agent.ts L2243-L2248 传入 max_turns）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/extractionAgentPlanner.ts",
+          "locator": "packages/core/src/memory/extractionAgentPlanner.ts：managed-auto-memory-extractor",
+          "lines": "L434-L450",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台记忆代理",
+          "note": "回合后自动起的记忆提取代理可多步调用 read_file、grep、glob、write_file 等，默认 maxTurns 5、maxTimeMinutes 2。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/dreamAgentPlanner.ts",
+          "locator": "packages/core/src/memory/dreamAgentPlanner.ts：MAX_TURNS / MAX_TIME_MINUTES（同文件另见 L184-L185）",
+          "lines": "L33-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "后台记忆代理",
+          "note": "自动记忆整理代理默认最多 8 回合、5 分钟。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/agents/runtime/agent-core.ts",
+          "locator": "packages/core/src/agents/runtime/agent-core.ts：runReasoningLoop 终止判定",
+          "lines": "L1056-L1074",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理与后台代理",
+          "note": "子代理循环在取消、maxTurns、maxTimeMinutes 到达时以 CANCELLED、MAX_TURNS、TIMEOUT 结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：maxSessionTurns / maxWallTimeSeconds / maxToolCalls / sessionTokenLimit（同文件另见 L1942-L1950、L1971-L1978）",
+          "lines": "L1874-L1893",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "会话级上限",
+          "note": "会话回合数、墙钟时长、工具调用数默认 -1（不限），sessionTokenLimit 默认不设。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "soft_notice 写 []：目标每回合都报告已花的额度，但那是每回合固定附带，不是到达阈值时的提醒；收尾回合属于到达后停下的一部分。call_count 与 time 只来自子代理和回合后自动起的记忆代理（按总则 R4 计入）；主循环本身默认不限。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次请求由 LlmChat.getRequestHistoryForRoute/getRequestHistory 从运行中维护的 this.history（Content[] 消息数组）出发：extractCuratedHistory 去掉无效模型输出、合并相邻用户消息，按阈值把旧内联图片换成引用，再经 slimCompactionInput 修整后发出；用户消息在发送前 push 进同一数组。自动记忆目录快照是带标记的消息，按开关保留或剔除，算消息元数据。压缩、微压缩（清旧工具结果）后用 setHistory 换掉这份数组，之后各轮仍直接取它。会话记录里的 chat_compression 等控制条目只在恢复会话时由 buildSessionHistoryFromConversation 折叠成消息列表，不是每轮都走，不记进 layers。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/llm-chat.ts",
+          "locator": "packages/core/src/core/llm-chat.ts：getRequestHistory / getRequestHistoryForRoute",
+          "lines": "L2892-L2960",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环每次请求",
+          "note": "请求内容取自 this.history，经 curated、图片引用替换与 slim 修整后发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/llm-chat.ts",
+          "locator": "packages/core/src/core/llm-chat.ts：extractCuratedHistory",
+          "lines": "L1794-L1823",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环每次请求",
+          "note": "只按消息角色和有效性修整，没有按控制条目取舍。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/llm-chat.ts",
+          "locator": "packages/core/src/core/llm-chat.ts：sendMessageStream：this.history.push(userContent)",
+          "lines": "L4097-L4100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认路径主循环每次请求",
+          "note": "新用户消息追加进运行中维护的同一数组。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "恢复时折叠 chat_compression 记录那一层只在载入旧会话时走，按 layers 规则未记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：工具输出超过 truncateToolOutputThreshold 时 truncateToolOutput 截短并把全文写进项目临时目录、上下文留预览和路径；调度器对未自截短的大结果另有一道持久化闸门（maybePersistLargeToolResult → persistAndTruncateToolResult），同样留预览加路径；read_file 自己分页。summarization：自动压缩默认开（按窗口比例 DEFAULT_PCT=0.85 等三档阈值），调模型生成 <state_snapshot> 摘要替换旧历史；/compress 手动触发属可选。tool_result_replacement：微压缩默认开（context.clearContextOnIdle：空闲 60 分钟或工具结果总字符超阈值时），把较早的工具结果整条换成 '[Old tool result content cleared]'，保留最近 5 条；旧内联媒体也换成占位。另：请求构造时图片数超过阈值会把旧内联图片换成引用（imagePayloadStore），内容是媒体不限工具结果。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/truncation.ts",
+          "locator": "packages/core/src/tools/truncation.ts：truncateToolOutput / persistAndTruncateToolResult",
+          "lines": "L352-L400",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认安装，工具结果进入上下文时",
+          "note": "按阈值截短工具输出，余下另存文件留路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/coreToolScheduler.ts",
+          "locator": "packages/core/src/core/coreToolScheduler.ts：maybePersistLargeToolResult",
+          "lines": "L8055-L8090",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认安装，工具结果交回主循环前",
+          "note": "统一闸门：超过阈值加余量的结果另存并截成预览。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatCompressionService.ts",
+          "locator": "packages/core/src/services/chatCompressionService.ts：DEFAULT_PCT / COMPRESSION_REQUEST_DIRECTIVE / ChatCompressionService.compress",
+          "lines": "L102-L112",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的自动压缩",
+          "note": "自动压缩阈值默认为窗口的 85%，压缩请求让模型产出 state_snapshot 摘要。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/microcompaction/microcompact.ts",
+          "locator": "packages/core/src/services/microcompaction/microcompact.ts：MICROCOMPACT_CLEARED_MESSAGE / microcompactHistory",
+          "lines": "L14-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的微压缩",
+          "note": "旧工具结果被整条换成固定占位文字。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：context.clearContextOnIdle",
+          "lines": "L2335-L2380",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "空闲阈值默认 60 分钟、保留最近 5 条、另有总字符阈值，默认值非空即默认开启。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：输入里 @<路径> 由 atCommandProcessor 解析并经 readManyFiles 读入请求；QWEN.md 里的 @ 引用在加载说明文件时展开。keyword：默认注册的 grep 工具（ripgrep 或内置实现）按正则搜文件内容；glob 只按文件名匹配。可选：LSP 工具（lsp.enabled 默认 false）提供结构查询，开了才算 structural_index。zvec-grep-install 技能设了 disable-model-invocation，只能用户调用，且要另装程序，可选。web_fetch、web_search（订阅登录时自动启用）属网页访问，不计；技能目录常驻说明、正文按需读取，不计；tool_search 检索的是延迟声明的工具，不是外部材料。search_memory 与记忆召回归 F16。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/hooks/atCommandProcessor.ts",
+          "locator": "packages/cli/src/ui/hooks/atCommandProcessor.ts：handleAtCommand / readManyFiles",
+          "lines": "L214-L230",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口：终端交互输入",
+          "note": "解析输入中的 @<path> 并读入文件内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/grep.ts",
+          "locator": "packages/core/src/tools/grep.ts：GrepTool",
+          "lines": "L684-L705",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册的工具",
+          "note": "模型给出正则，在文件内容里搜索。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：registerCoreTools：read_file、记忆工具与 Grep/RipGrep 注册",
+          "lines": "L13826-L13845",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册的工具",
+          "note": "grep 工具在核心工具注册段注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：lspEnabled 默认值",
+          "lines": "L3575-L3575",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "lsp.enabled 缺省为 false，结构查询工具默认不开。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "semantic_retrieval：查过 tools 目录与记忆文档，项目文件没有默认语义检索；外部 context_search 是需另装的 MCP 服务，可选。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：~/.qwen/QWEN.md、项目 QWEN.md、.qwen/QWEN.local.md 及 AGENTS.md 每次会话自动读入。auto_summary：memory.enableManagedAutoMemory 默认 true，回合结束后由 scheduleExtract 起后台提取，把用户偏好、反馈、项目背景写成 ~/.qwen/projects/<项目>/memory/ 下的 Markdown 主题文件并重建 MEMORY.md 索引；enableManagedAutoDream 默认 true，定期整理去重。manage_memory 工具与 /remember、/forget 也能写。retrieval_store：每轮用户查询时 beginManagedAutoMemoryRecall 扫描记忆主题文件，用旁路模型选择器（selectRelevantAutoMemoryDocumentsByModel，至多 5 篇）按当前查询挑出相关条目再注入，默认 legacy 模式即如此。可选：memory.enableStructuredRecall（默认关）换成分层记忆树与带类别、关键词的结构化前置字段，并让 search_memory 按需取回；团队记忆、团队记忆 git 同步默认关；外部 context_search（Mem0、deja-vu）要另装 MCP 服务。主题文件带 type 一类前置字段，但默认召回按名称和描述挑选，未按 structured_records 记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/memory.md",
+          "locator": "docs/users/features/memory.md：QWEN.md: Where to create QWEN.md",
+          "lines": "L27-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认安装",
+          "note": "列出全局、项目、本地三处 QWEN.md 并说明每次会话都加载，AGENTS.md 同样读入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/memory.md",
+          "locator": "docs/users/features/memory.md：Auto-memory / Where it's stored / Periodic cleanup",
+          "lines": "L75-L100",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认开启的自动记忆",
+          "note": "每次对话后在后台保存要点到项目记忆目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：memory.enableManagedAutoMemory / enableManagedAutoDream",
+          "lines": "L2530-L2550",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "两项默认都是 true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/client.ts",
+          "locator": "packages/core/src/core/client.ts：scheduleExtract 调用",
+          "lines": "L3450-L3460",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "回合结束后",
+          "note": "框架在回合结束时调度后台记忆提取。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/client.ts",
+          "locator": "packages/core/src/core/client.ts：beginManagedAutoMemoryRecall",
+          "lines": "L1615-L1660",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "每个用户回合",
+          "note": "按当前查询调用记忆管理器 recall。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/recall.ts",
+          "locator": "packages/core/src/memory/recall.ts：resolveRelevantAutoMemoryPromptForQuery：模型选择器",
+          "lines": "L826-L835",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认 legacy 召回模式",
+          "note": "由旁路模型从记忆主题文件里挑出相关条目再载入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "event_log：会话写成 <会话号>.jsonl，条目类型含 user/assistant/tool_result/system，system 子类型有 chat_compression（压缩边界）、session_model、session_approval_mode、rewind、branch_checkpoint、file_history_snapshot 等控制条目。state_snapshot：交互会话默认开文件历史，edit、write_file 改动前的原文存到用户目录 file-history/<会话号>/，/rewind 读它还原文件。external_reference：超限工具结果另存到项目临时目录 tool-results/ 等处，记录里只留预览和路径；这些文件跨进程保留，由 cleanupOldToolResults 按年龄清理（触发条件：结果超过截短阈值）。另：子代理各有自己的 jsonl 与 meta 旁挂文件；会话标题旁挂文件、用量统计不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatRecordingService.ts",
+          "locator": "packages/core/src/services/chatRecordingService.ts：ChatRecord.type / subtype",
+          "lines": "L413-L470",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录",
+          "note": "记录是含多种控制子类型的事件流，消息只是其中几类。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatRecordingService.ts",
+          "locator": "packages/core/src/services/chatRecordingService.ts：ensureConversationFile",
+          "lines": "L1478-L1483",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录",
+          "note": "每个会话一个 jsonl 文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/fileHistoryService.ts",
+          "locator": "packages/core/src/services/fileHistoryService.ts：FILE_HISTORY_DIR / FileHistoryService.rewind",
+          "lines": "L137-L137",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互会话默认开启的文件历史",
+          "note": "改文件前的备份存于 file-history，rewind 读回（rewind 实现见同文件 L995 起）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：fileCheckpointingEnabled 默认值",
+          "lines": "L3654-L3656",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互会话",
+          "note": "非 SDK 的交互会话默认开启文件检查点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/utils/toolResultCleanup.ts",
+          "locator": "packages/core/src/utils/toolResultCleanup.ts：cleanupOldToolResults",
+          "lines": "L16-L50",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "超限工具结果文件",
+          "note": "按 maxAge 清理各项目临时目录下的 tool-results，说明文件跨进程保留。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "qwen --continue 继续最近会话、--resume 或会话内 /resume 选择会话；载入 jsonl 后由 buildSessionHistoryFromConversation 折叠出 API 历史（按 chat_compression 记录取压缩后历史），再等用户下一句或新一次模型调用。中断时未完成的工具调用不由框架接着执行。同时带回目标状态与暂停的后台子代理，见 F19。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/common-workflow.md",
+          "locator": "docs/users/common-workflow.md：Resume previous conversations",
+          "lines": "L330-L381",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口：CLI 启动参数",
+          "note": "--continue/--resume 恢复会话，整段消息历史和工具结果回到上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/session-api-history.ts",
+          "locator": "packages/core/src/services/session-api-history.ts：buildApiHistoryFromConversation / buildSessionHistoryFromConversation",
+          "lines": "L574-L582",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复会话",
+          "note": "从记录重建 API 消息历史。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过 session-api-history 的 interrupted_prompt 分类，只用于修整历史，没看到恢复时框架直接续跑中断调用的路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：恢复时消息历史连同 functionCall/functionResponse 一起回到上下文。task_plan：目标（Goal，由 /goal 或模型的 propose_goal 设立）记为 goal_state 记录，恢复时 goal-runtime.prepareRestore 读回最新快照，active 的目标继续驱动后续回合；todo_write 默认关，不涉及。subagent_links：恢复时 loadPausedBackgroundAgents 把运行中断的后台子代理登记为 paused、已完成的登记为 completed，并提示模型用 list_agents 查看、send_message 按 task_id 继续，子代理按原记录接着跑。不带回：工作区文件（要 /rewind，归 F20）。会话级定时任务属调度，未计。外部副作用不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/common-workflow.md",
+          "locator": "docs/users/common-workflow.md：Resume previous conversations：How it works",
+          "lines": "L376-L381",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口的恢复",
+          "note": "消息历史与工具使用结果在恢复时保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-runtime.ts",
+          "locator": "packages/core/src/goals/goal-runtime.ts：prepareRestore",
+          "lines": "L1035-L1068",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复会话",
+          "note": "从 goal_state 记录恢复目标快照。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/agents/background-agent-resume.ts",
+          "locator": "packages/core/src/agents/background-agent-resume.ts：buildRecoveredModelNotice / loadPausedBackgroundAgents",
+          "lines": "L445-L500",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "恢复会话",
+          "note": "读回子代理 meta，提示模型用 send_message 继续原子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/AppContainer.tsx",
+          "locator": "packages/cli/src/ui/AppContainer.tsx：resumedSessionData → loadPausedBackgroundAgents",
+          "lines": "L1286-L1292",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口：交互式恢复",
+          "note": "交互入口恢复会话时载入暂停的后台子代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "task_plan 依据目标恢复代码与 goals.md 的说明，未逐行核实恢复后目标立即自动续跑还是等下一回合，按“恢复后仍驱动代理”记；目标要求受信任工作区，本配置信任功能关、按受信任处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：/branch 把当前会话复制成新会话，原会话保留在会话列表可切回。/rewind（/rollback）对话部分在原会话里回到某一回合，属裁掉后续，不另计；/fork 起的是继承对话的后台代理。workspace_snapshot：交互会话默认开文件历史，回合边界拍下 edit、write_file 涉及文件的快照，/rewind 选“恢复代码”或“代码和对话”即改回；只覆盖这两个工具，shell 改动不在内；备份按 general.cleanupPeriodDays 保留。/restore 在文件检查点开启时同样可用。compensation、idempotency_key：未见。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/commands/branchCommand.ts",
+          "locator": "packages/cli/src/ui/commands/branchCommand.ts：branchCommand",
+          "lines": "L11-L58",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口：会话内命令",
+          "note": "把当前对话分叉成新会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/components/RewindSelector.tsx",
+          "locator": "packages/cli/src/ui/components/RewindSelector.tsx：RestoreOption",
+          "lines": "L19-L143",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "所选入口：/rewind 对话框",
+          "note": "提供恢复代码和对话、只恢复对话、只恢复代码三种选择。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：fileCheckpointingEnabled 默认值",
+          "lines": "L3654-L3656",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互会话",
+          "note": "文件检查点在交互会话默认开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/commands/restoreCommand.ts",
+          "locator": "packages/cli/src/ui/commands/restoreCommand.ts：restoreCommand",
+          "lines": "L461-L476",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "文件检查点开启时",
+          "note": "按工具调用前的检查点还原文件和对话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "idempotency_key：查过 coreToolScheduler、client.ts、llm-chat.ts、sessionService.ts，只有 client.ts 按调用编号配对结果来挑最近用过的工具名（L3558-L3600），不是执行前查重。compensation：没有对外部副作用登记反向步骤的代码或文档。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "permissions.allow/ask/deny（deny>ask>allow），格式 ToolName 或 ToolName(specifier)：整工具名（含 Read、Edit 元类别、mcp__server）算 tool_category；Bash(git *) 按命令前缀匹配算 command_rule；Read/Edit 路径模式算 file_path；WebFetch(domain:…) 算 network_target，且文档称 Read/Edit/WebFetch 规则对 cat、curl、wget 等等价 shell 命令也生效。另有五种审批模式（plan、default、auto-edit、auto、yolo）和 tools.disabled。默认效果（Auto 模式，无规则）：工作区内编辑直接放行（写 .qwen/、QWEN.md、package.json、.git/ 等自修改与持久化位置时转分类器）；非只读 shell 命令先经 LLM 分类器，分类器拦下即拒、连续拦截三次或不可达时转人工，记 review；写工作区外在分类器之前直接转人工，记 review；命令联网没有单独网络控制，作为 shell 命令走分类器，记 review。其他环境：文件夹信任开启且目录不受信任时降为 Ask Permissions。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/configuration/settings.md",
+          "locator": "docs/users/configuration/settings.md：permissions：Rule syntax examples / Path pattern prefixes / Shell command bypass prevention",
+          "lines": "L486-L540",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户可写的权限配置",
+          "note": "规则按工具名、命令前缀、路径模式与域名表达。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/rule-parser.ts",
+          "locator": "packages/core/src/permissions/rule-parser.ts：parseRule 注释",
+          "lines": "L459-L474",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限规则解析",
+          "note": "命令 glob、路径匹配、domain: 匹配均有实现。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/auto-mode.md",
+          "locator": "docs/users/features/auto-mode.md：How it works",
+          "lines": "L11-L45",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式 Auto",
+          "note": "工作区内编辑直接放行，shell、网页抓取、工作区外编辑交分类器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts",
+          "locator": "packages/core/src/permissions/autoMode.ts：external_write / external_directory 转人工",
+          "lines": "L911-L939",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式 Auto",
+          "note": "工作区外写入在分类器之前直接要求人工审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：tools.approvalMode 默认 AUTO",
+          "lines": "L3370-L3386",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "默认审批模式为 auto。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "default_command 与 default_network 记 review 的依据是分类器作为自动批准者；分类器放行时不经用户。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "whole_task",
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "whole_task",
+          "tool_call"
+        ],
+        "approver": [
+          "user",
+          "auto_reviewer"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "tool_call：Auto 模式下 shell、web_fetch、派子代理、MCP、受保护路径写入在调用执行前交两段式 LLM 分类器（自动审核器）放行或拦截；工作区外写入、以工作区外目录为 cwd 的 shell 调用、分类器不可达或连续拦截达阈值时转用户逐次批准。批准对话框里的“总是允许”相当于新增规则。whole_task：enter_plan_mode 默认注册且不需确认，模型可自行进入计划模式；exit_plan_mode 把整份计划交用户审批，用户选择的结果同时决定后续权限模式（恢复原模式、auto-edit 或逐项询问），需用户批准。批准者先后：先规则，再分类器，分类器不可用或拦截过多时转用户。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/coreToolScheduler.ts",
+          "locator": "packages/core/src/core/coreToolScheduler.ts：L5 最终决定：Auto 模式强制审核",
+          "lines": "L3920-L3940",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式 Auto",
+          "note": "调度器在执行前按审批模式决定放行或送审。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts",
+          "locator": "packages/core/src/permissions/autoMode.ts：external_write / external_directory / skipClassifierReason",
+          "lines": "L911-L939",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式 Auto",
+          "note": "部分调用跳过分类器直接转人工。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/exitPlanMode.ts",
+          "locator": "packages/core/src/tools/exitPlanMode.ts：计划确认：RestorePrevious / ProceedAlways / ProceedOnce",
+          "lines": "L175-L216",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "模型自行进入的计划模式",
+          "note": "批准计划时一并选定后续审批模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/enterPlanMode.ts",
+          "locator": "packages/core/src/tools/enterPlanMode.ts：getDefaultPermission",
+          "lines": "L77-L83",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认注册的计划工具",
+          "note": "进入计划模式总是放行，无需确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：enter/exit_plan_mode 注册",
+          "lines": "L13917-L13928",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互入口",
+          "note": "交互会话默认注册两种计划工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "whole_task 依据：模型不经用户命令即可进入计划模式并经 exit_plan_mode 提交计划，按总则 R3 第一档计入；若主控认为计划模式应算用户切换的内置模式，则 whole_task 应移出 value、只留 ui_layers。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：权限引擎（permissions 规则、审批模式）、Auto 模式的路径分流与 LLM 分类器、denialTracking 回退，都在执行前由框架代码放行、送审或拒绝。可选：Docker/Podman/Seatbelt 沙箱、Linux bwrap/Landlock 工具执行沙箱均默认不启用（tools.sandbox 默认 undefined）。code mode 的 exec 只在 CodeModeOnly 下注册，默认不开。prompt_only：内置 Explore 子代理在提示里写明只读、禁止改文件，工具清单去掉了 edit/write_file，但保留 shell，shell 调用只走与主会话相同的分类器、没有只读检查，部分兜底。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/coreToolScheduler.ts",
+          "locator": "packages/core/src/core/coreToolScheduler.ts：L5 最终决定",
+          "lines": "L3920-L3940",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式",
+          "note": "执行前按权限与模式判定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts",
+          "locator": "packages/core/src/permissions/autoMode.ts：Auto 模式分流",
+          "lines": "L911-L939",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认审批模式 Auto",
+          "note": "工作区外写入等转人工的代码检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：tools.sandbox",
+          "lines": "L3061-L3072",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认设置",
+          "note": "沙箱默认不启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/subagents/builtin-agents.ts",
+          "locator": "packages/core/src/subagents/builtin-agents.ts：Explore",
+          "lines": "L71-L125",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认可派的内置子代理",
+          "note": "提示写明只读，工具清单仍含 shell。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 核对：默认 Auto 模式有代码检查；plan 模式在调度器里对 shell/monitor 另有处理（coreToolScheduler L3922 起），算有代码检查；auto-edit、default、yolo 为按动作类别放行的模式，有代码实现；Explore 子代理只读靠提示、shell 未管到，记 present；statusline-setup、review-agent 未声称只读。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话 jsonl：assistant 记录存模型这一步的文字与 functionCall（工具名、参数、调用编号），tool_result 记录存对应 functionResponse 与状态，按调用编号对上；用户消息在前一条记录。approval：工具调用完成时 logToolCall 把 ToolCallEvent（含 call_id、function_args、decision）作为 ui_telemetry 记录写进同一会话文件；decision 取自用户确认结果（accept、reject、modify、auto_accept），未经用户确认的自动放行（规则或分类器放行）decision 为空，能分出人工批准与自动放行。没有专门的审计账本。identity：记录只有会话号等编号，没看到账户字段，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatRecordingService.ts",
+          "locator": "packages/core/src/services/chatRecordingService.ts：recordAssistantTurn / recordToolResult",
+          "lines": "L3170-L3345",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录",
+          "note": "模型回复与工具结果分别落盘。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/telemetry/types.ts",
+          "locator": "packages/core/src/telemetry/types.ts：ToolCallEvent：call_id、function_args、decision",
+          "lines": "L191-L258",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录中的 ui_telemetry",
+          "note": "decision 只在有用户确认结果时设置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/telemetry/loggers.ts",
+          "locator": "packages/core/src/telemetry/loggers.ts：logToolCall → recordUiTelemetryEventToChat",
+          "lines": "L318-L332",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录",
+          "note": "工具调用事件写入会话文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/chatRecordingService.ts",
+          "locator": "packages/core/src/services/chatRecordingService.ts：recordUiTelemetryEvent",
+          "lines": "L3798-L3812",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认会话记录",
+          "note": "以 system/ui_telemetry 条目追加到会话 jsonl。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/telemetry/tool-call-decision.ts",
+          "locator": "packages/core/src/telemetry/tool-call-decision.ts：getDecisionFromOutcome",
+          "lines": "L1-L40",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户确认结果",
+          "note": "确认结果映射为 accept/reject/modify/auto_accept。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "分类器自身的放行或拦截决定是否另有落盘记录未查到；approval 按“能分出人工批准和自动放行、批准与拒绝都落盘”计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认注册 agent 工具，主代理不改设置即可派出带独立上下文、能多步调用工具的子代理（默认 general-purpose，后台运行，经后台任务登记表跟踪、/tasks 可查）；另有 /fork 用户命令和回合结束后框架自动起的记忆提取／整理代理。Auto 模式下派子代理先经分类器。可选：Agent Team（experimental.agentTeam）、Workflow 工具（tools.workflowsEnabled）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：Fork Subagent",
+          "lines": "L42-L44",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "不传 subagent_type 时派 general-purpose 子代理，顶层普通子代理默认后台运行、经完成通知交回；fork 需显式选择并继承父对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：How Subagents Work / Background Agent Continuation",
+          "lines": "L141-L160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派与续派",
+          "note": "主代理可自动委派；后台运行经完成通知交回，前台内联返回；list_agents 列出可寻址的后台代理，send_message 按 task_id 给运行中、暂停或已完成的代理续发消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：AgentTool 描述（run_in_background 规则）",
+          "lines": "L1099",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "顶层普通子代理 run_in_background 显式值 > 定义 background > agents.defaultBackground（默认 true）；模型可传 false 改为前台等待；嵌套代理只在前台运行并交回直接父代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "本机跨会话消息（send_message 寻址同机其他会话）是互不由本会话创建的独立会话之间的通道，不作为本会话派出的代理计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：模型调用 agent 工具派子代理（含 /review、/coordinate 等随包技能展开后由模型委派）。user：/fork <directive> 直接走 Agent 工具后台路径；/arena start 也由用户命令直接起多个代理。framework_internal：回合结束后框架起记忆提取代理（managed-auto-memory-extractor，读写记忆目录，最多 5 轮），并定期起整理代理（dreamer）。定时任务（cron_create、/loop）到点把提示投给主会话，再由主代理决定，记 main_agent 不记 event_scheduling。可选：Workflow 工具（tools.workflowsEnabled 默认 false）、Agent Team（experimental.agentTeam）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：AgentTool 描述（run_in_background 规则）",
+          "lines": "L1099",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "顶层普通子代理 run_in_background 显式值 > 定义 background > agents.defaultBackground（默认 true）；模型可传 false 改为前台等待；嵌套代理只在前台运行并交回直接父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/commands/forkCommand.ts",
+          "locator": "packages/cli/src/ui/commands/forkCommand.ts：/fork action",
+          "lines": "L108-L130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "用户命令",
+          "note": "/fork <directive> 直接构造 AgentParams（subagent_type fork、run_in_background true）走 Agent 工具的后台路径，不经主代理模型决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/core/client.ts",
+          "locator": "packages/core/src/core/client.ts：memoryManager.scheduleExtract",
+          "lines": "L3450-L3456",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "框架内部",
+          "note": "回合结束时由框架调用 scheduleExtract 起记忆提取任务，用户和主代理都未发出请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/extractionAgentPlanner.ts",
+          "locator": "packages/core/src/memory/extractionAgentPlanner.ts：runForkedAgent('managed-auto-memory-extractor')",
+          "lines": "L434-L455",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "框架内部",
+          "note": "回合结束后的自动记忆提取以 forked agent 运行，带 read_file/grep/glob/write_file/edit，maxTurns 默认 5。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/memory/dreamAgentPlanner.ts",
+          "locator": "packages/core/src/memory/dreamAgentPlanner.ts：runForkedAgent('managed-auto-memory-dreamer')",
+          "lines": "L174-L185",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "框架内部",
+          "note": "定期记忆整理也以多轮 forked agent 运行（带只读 shell）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/scheduled-tasks.md",
+          "locator": "docs/users/features/scheduled-tasks.md：开头",
+          "lines": "L5-L7",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "终端会话的定时任务在当前进程里按时重跑提示，属于向主会话投递提示。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "/arena 命令在 BuiltinCommandLoader 无条件注册，判为默认开放的用户路径，但只读了文档开头未细看实现。记忆提取代理每回合由框架内部条件触发，按 framework_internal 判定记入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认委派（不传可选参数）派 general-purpose 命名子代理：从空白历史开始、只带任务说明，在自己的对话里工作。messages：send_message 可按 task_id 给运行中、暂停或已完成的子代理续发消息，已完成的复用常驻运行时或从保留记录复活。shared_files：子代理默认与主代理同一工作目录，isolation:'worktree' 为模型可选参数。权限：子代理默认继承父会话的审批模式，后台代理需要确认的调用默认自动拒绝。模型可传 subagent_type:'fork' 复制父对话（parent_copy）；记忆提取代理也带入父历史副本。可选：Agent Team 的共享任务表（experimental.agentTeam）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：How Fork Differs from Named Subagents",
+          "lines": "L101-L110",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理上下文",
+          "note": "命名子代理从无父对话历史开始、用自己的系统提示；fork 继承父对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：How Subagents Work / Background Agent Continuation",
+          "lines": "L141-L160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派与续派",
+          "note": "主代理可自动委派；后台运行经完成通知交回，前台内联返回；list_agents 列出可寻址的后台代理，send_message 按 task_id 给运行中、暂停或已完成的代理续发消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/send-message.ts",
+          "locator": "packages/core/src/tools/send-message.ts：SendMessageTool 参数",
+          "lines": "L559-L590",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "消息通道",
+          "note": "send_message 的 task_id 可指向运行中、恢复的暂停任务或要续派的已完成任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：isolation / working_dir 参数",
+          "lines": "L956-L965",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作目录",
+          "note": "isolation:'worktree' 与 working_dir 都是可选参数；不传时子代理在当前工作目录工作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：Security Considerations",
+          "lines": "L874-L876",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "权限继承",
+          "note": "子代理默认继承父会话的权限模式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "shared_state 只在 Agent Team（默认关闭）里有共享任务表，默认路径不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "async_wait：顶层普通子代理默认后台运行，完成后经通知队列交回主会话；synchronous_return：模型可传 run_in_background:false 前台等待，结果作为工具结果内联返回，嵌套代理总在前台。cancel_propagation 只在前台路径上成立：父回合被 ESC 中止时连带中止前台子代理并沿嵌套前台代理逐层传下；默认后台路径不连带，父回合取消后后台代理继续，/clear 或恢复会话在有运行中的后台代理时直接拒绝，需要用户先用 /tasks 或 task_stop 停掉。cancel_depth 和 cancel_coverage 按前台委派路径填。进程退出时关闭全部后台任务，不算一种取消方式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：AgentTool 描述（run_in_background 规则）",
+          "lines": "L1099",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "默认委派路径",
+          "note": "顶层普通子代理 run_in_background 显式值 > 定义 background > agents.defaultBackground（默认 true）；模型可传 false 改为前台等待；嵌套代理只在前台运行并交回直接父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：后台路径 bgAbortController",
+          "lines": "L3884-L3887",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "后台代理用独立的 AbortController，父回合被 ESC 取消时后台代理继续运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/agent/agent.ts",
+          "locator": "packages/core/src/tools/agent/agent.ts：Foreground (synchronous) execution path",
+          "lines": "L4823-L4835",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "前台路径为子代理建子 AbortController 并监听父 signal：父回合中止（ESC）时连带中止子代理；子代理单独取消不向上传。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/commands/clearCommand.ts",
+          "locator": "packages/cli/src/ui/commands/clearCommand.ts：hasBlockingBackgroundWork 检查",
+          "lines": "L49-L79",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "有运行中的后台任务时 /clear 直接报错要求用户先停掉，不自动取消；通过检查后才 abortAll。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/utils/backgroundWorkUtils.ts",
+          "locator": "packages/cli/src/ui/utils/backgroundWorkUtils.ts：hasBlockingBackgroundWork",
+          "lines": "L16-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "取消",
+          "note": "/clear 与恢复会话的阻断条件包括运行中的后台代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：How Subagents Work / Background Agent Continuation",
+          "lines": "L141-L160",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "委派与续派",
+          "note": "主代理可自动委派；后台运行经完成通知交回，前台内联返回；list_agents 列出可寻址的后台代理，send_message 按 task_id 给运行中、暂停或已完成的代理续发消息。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "取消方式逐项判（前台委派路径）：用户打断当前回合（ESC）——连带，见 agent.ts L4823-L4835；取消等待中的调用——终端里就是同一个 ESC 中止，连带；取消父运行（不退出程序结束会话，如 /clear）——前台委派进行中父回合正在运行，没有找到能在这时单独结束会话的入口，判为默认路径上没有，这一项拿不准。默认后台路径上三种方式都不连带（后台用独立 AbortController；/clear 被阻断而非自动取消）。按卡里“默认委派路径上没有取消传播的”规则，改按第一条有取消传播的路径填子维度：F26 的 user 路径（/fork）是后台不连带，main_agent 的前台变体有连带；把模型可选参数切出的前台变体当作同一条 main_agent 路径用于填子维度，这一处口径可能需要码本明确。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "whole_tree",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "user_script",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：read_file、edit、shell、agent 等内置工具在核心 config 里注册。external_protocol_service：settings 的 mcpServers 或 qwen mcp add 添加 MCP 服务，扩展包也可带 MCP 服务。user_script：tools.discoveryCommand 输出的每个工具注册成 DiscoveredTool，经 tools.callCommand 执行（添加一条发现命令算添加内容）。embedder_declared：官方 TypeScript SDK（另装 @qwen-code/sdk）的 tool() 与 createSdkMcpServer 为会话声明进程内工具，调用交回 SDK 宿主执行。默认无 MCP 服务、无扩展、无发现命令，只有内置工具在用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：核心工具 registerLazy",
+          "lines": "L13890-L13912",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "内置工具",
+          "note": "write_file、shell、report_findings、ask_user_question 等内置工具在核心代码里注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/mcp.md",
+          "locator": "docs/users/features/mcp.md：Quick start",
+          "lines": "L18-L25",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "MCP",
+          "note": "从 settings.json 的 mcpServers 加载 MCP 服务，可手工配置或用 qwen mcp add。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/tool-registry.ts",
+          "locator": "packages/core/src/tools/tool-registry.ts：DiscoveredTool",
+          "lines": "L188-L200",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "发现命令",
+          "note": "按 tools.discoveryCommand 发现的工具注册为独立的 DiscoveredTool。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/configuration/settings.md",
+          "locator": "docs/users/configuration/settings.md：tools.discoveryCommand / tools.callCommand",
+          "lines": "L425-L426",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "发现命令",
+          "note": "发现命令列出工具声明，调用命令按工具名执行并经 stdin/stdout 交换 JSON。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/developers/sdk-typescript.md",
+          "locator": "docs/developers/sdk-typescript.md：With SDK-Embedded MCP Servers",
+          "lines": "L422-L460",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK",
+          "note": "SDK 用 tool 与 createSdkMcpServer 在 SDK 应用进程内声明工具，暴露给模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/extension/mods.md",
+          "locator": "docs/users/extension/mods.md：Supported subset 之后的说明",
+          "lines": "L147-L151",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "插件",
+          "note": "实验性 Mods 不支持工具注册；扩展清单（introduction.md L265-L316）只带 MCP、命令、技能、代理、工作流、渠道。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "plugin_api 不记：原生扩展和 Agent Plugins v1 只打包 MCP 服务、命令、技能、代理定义，渠道插件是进程内代码但只接消息平台、不注册工具；实验性 Mods 明写未实现工具注册。in_use_by_default 按配置记录“MCP 服务：无默认配置；扩展：无默认安装”判。web_search 走订阅后端，但工具本身写在核心 web-search.ts 里，记 internal_code。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service",
+          "user_script"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：~/.qwen/QWEN.md、项目 QWEN.md、.qwen/QWEN.local.md 及已有的 AGENTS.md 每个会话自动装载。skill_directory：.qwen/skills、~/.qwen/skills（及 .agents/skills）按需装载，SKILL.md 可在 frontmatter 声明 hooks（由框架执行）。role_template：.qwen/agents、~/.qwen/agents 的子代理定义可按名派给子代理；~/.qwen/output-styles 可新增输出风格；.qwen/fork-profiles 给 fork 套工具与提示。prompt_template：.qwen/commands、~/.qwen/commands 的 .md/.toml 变成斜杠命令，支持 {{args}}，!{command} 由框架执行后把输出注入提示。可选：workflow_definition（工作流脚本，tools.workflowsEnabled 默认 false）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/memory.md",
+          "locator": "docs/users/features/memory.md：Where to create QWEN.md",
+          "lines": "L27-L37",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "说明文件",
+          "note": "启动会话时装载用户、项目、本地三级 QWEN.md，并读取已有的 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/skills.md",
+          "locator": "docs/users/features/skills.md：Personal / Project Skills",
+          "lines": "L70-L94",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能",
+          "note": "个人与项目技能目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/skills.md",
+          "locator": "docs/users/features/skills.md：Optional: enforce a rule deterministically (hooks:)",
+          "lines": "L199-L216",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "技能",
+          "note": "SKILL.md frontmatter 的 hooks 由框架作为代码运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：Storage Locations",
+          "lines": "L213-L218",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "子代理定义",
+          "note": "项目级 .qwen/agents/ 与用户级 ~/.qwen/agents/。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/commands.md",
+          "locator": "docs/users/features/commands.md：Custom Commands / Parameter Processing",
+          "lines": "L541-L612",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "自定义命令",
+          "note": "命令目录文件映射为斜杠命令；!{command} 注入 shell 执行结果，执行前需确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/workflow-mode.md",
+          "locator": "docs/users/workflow-mode.md",
+          "lines": "L11-L13",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "工作流",
+          "note": "Workflow 工具需开启 tools.workflowsEnabled 或环境变量，默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "executable_items：prompt_template 因 !{...} 嵌入命令由框架执行；skill_directory 因用户级和随包技能的 hooks: 由框架执行（项目技能的 hooks 需显式文件夹信任，用户级不需要）。输出风格和 fork 配置文件都归 role_template，未单独区分。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "skill_directory",
+          "prompt_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "设置文件里的钩子（command、http、prompt 三种执行器）可挂：UserPromptSubmit、UserPromptExpansion（input）；UserPromptSubmit 也在 ToolResult 续发等受支持的模型调用前触发、可追加上下文，另有 MessageDisplay 随回复流式触发（model_call）；PreToolUse、PostToolUse、PostToolUseFailure、PostToolBatch、PermissionRequest、PermissionDenied、SubagentStart、TodoCreated/Completed（tool_before_after）；Stop、StopFailure、SessionEnd、SubagentStop（end）；PreCompact、PostCompact（context_compaction）；SessionStart（session_start）。实验性 Mods（experimental.mods，默认关）另有 turn.start、prompt.submit、tool.call、session.start 等，没有新增阶段；SDK 的 canUseTool 属工具前后。没有以写盘为本义的 save 事件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：Hook Events 表",
+          "lines": "L373-L397",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "列出全部钩子事件与触发时点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：UserPromptSubmit Purpose",
+          "lines": "L750-L752",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "在受支持的模型调用前执行，覆盖 UserQuery、ToolResult、Hook 发送，可校验、阻断或补充输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：UserPromptSubmit Output Options",
+          "lines": "L832-L838",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "可返回 block 决定或 additionalContext 追加到提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：Stop Output Options",
+          "lines": "L999-L1016",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "Stop 钩子可 block，使模型继续工作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：PreCompact Output Options",
+          "lines": "L1153-L1156",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "PreCompact 可提供压缩前要带上的 additionalContext。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/hooks.md",
+          "locator": "docs/users/features/hooks.md：SessionStart Output Options",
+          "lines": "L906-L909",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "钩子事件",
+          "note": "SessionStart 可注入 additionalContext。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/extension/mods.md",
+          "locator": "docs/users/extension/mods.md：开头",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "Mods",
+          "note": "Mods 需要 experimental.mods 显式开启，默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "model_call 依据是 UserPromptSubmit 在工具结果续发的模型调用前也会触发并能追加上下文，按“输入和模型请求共用一个事件、处理器能改写模型请求的，两项都记”判；它不能改写回复，MessageDisplay 只观察回复，这一项有口径疑问。Notification（permission_prompt、idle_prompt）、InstructionsLoaded、FileChanged、SessionDelete 未能对应到词表阶段，没有单独计入。in_use_by_default 为 []：配置记录写明无默认钩子和扩展，随包技能都没有 hooks:；技能系统内部用的 function hook 编进核心，不计。observe_only 为 []：六个阶段各有可阻断或注入的事件。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": []
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "public_protocol",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "cli_subprocess：-p/--prompt 非交互模式，或不加参数从管道读入；--output-format json/stream-json、--input-format stream-json（标为供 SDK 集成）；TypeScript、Python、Java SDK 默认拉起捆绑的 CLI 子进程，按背后边界归入这一项。public_protocol：--acp 启动 Agent Client Protocol 服务端，供 Zed、JetBrains 等编辑器驱动。service_api：qwen serve 守护进程提供有公开文档的 REST/SSE 接口（OpenAPI 3.1 契约），可建会话、发任务；TypeScript SDK 的 DaemonClient 包装这套接口。所选入口直接开放的只有管道输入进入非交互模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/headless.md",
+          "locator": "docs/users/features/headless.md：Direct Prompts / Stdin Input",
+          "lines": "L18-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "-p 或管道输入 echo ... | qwen 进入无界面模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/headless.md",
+          "locator": "docs/users/features/headless.md：Input Format",
+          "lines": "L258-L265",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "非交互模式",
+          "note": "stream-json 输入用于 SDK 集成的双向 JSON 协议。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/config.ts",
+          "locator": "packages/cli/src/config/config.ts：--acp 选项",
+          "lines": "L667-L671",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP",
+          "note": "--acp 以 ACP 模式启动代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/integration-zed.md",
+          "locator": "docs/users/integration-zed.md",
+          "lines": "L3-L10",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "ACP",
+          "note": "Zed 经 Agent Client Protocol 使用 Qwen Code。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/developers/daemon-rest-api-reference.md",
+          "locator": "docs/developers/daemon-rest-api-reference.md：开头与 OpenAPI",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "服务模式",
+          "note": "qwen serve 的公开 REST/SSE 接口，供自带界面的集成使用；L58 起列出 POST /session 等。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/developers/sdk-typescript.md",
+          "locator": "docs/developers/sdk-typescript.md：Requirements",
+          "lines": "L15-L18",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "SDK",
+          "note": "SDK 默认使用捆绑的 CLI，是对 CLI 子进程的包装。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "library 不记：三种 SDK 都包装 CLI 子进程或守护进程 HTTP 接口，核心循环不在调用方进程。host_extension_api 不记：packages/vscode-ide-companion/src/extension.ts 的 activate 没有返回对外 API。没有找到模型接口兼容（chat/completions）端点，也没有把整套代理当 MCP 服务对外提供的入口。qwen serve 是同一安装里的子命令，needs_official_package 为 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "cli_subprocess"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：终端输入框。api：F32 的非交互模式、ACP、qwen serve REST，以及持续集成里调用 CLI。schedule：cron_create、cron_list、cron_delete、loop_wakeup 默认注册（experimental.cron 默认 true），模型或 /loop 可建定时任务，到点把提示投给主会话。external_event：默认注册的 monitor 工具拉起长驻命令，逐行输出作为 task-notification 在会话空闲时送入模型、开启新一轮；渠道的 webhook 触发任务需守护进程和渠道配置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：isCronEnabled 时注册 cron 工具",
+          "lines": "L13983-L14000",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "cron_create、cron_list、cron_delete、loop_wakeup 在 isCronEnabled() 为真时注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/scheduled-tasks.md",
+          "locator": "docs/users/features/scheduled-tasks.md：Tip",
+          "lines": "L11",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "定时任务默认启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/monitor.ts",
+          "locator": "packages/core/src/tools/monitor.ts：文件头说明",
+          "lines": "L7-L17",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "monitor 拉起长驻 shell 命令，把每行 stdout 作为 task-notification 在空闲时交给代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/sub-agents.md",
+          "locator": "docs/users/features/sub-agents.md：Notification Queue",
+          "lines": "L161-L163",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "后台代理、shell、monitor、workflow 的通知共用一个队列，会话空闲时进入一轮模型调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/channels/overview.md",
+          "locator": "docs/users/features/channels/overview.md：webhooks",
+          "lines": "L69",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "外部事件",
+          "note": "守护进程管理的渠道可配 webhook 源触发任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/headless.md",
+          "locator": "docs/users/features/headless.md",
+          "lines": "L18-L34",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "API",
+          "note": "非交互模式可由脚本提交任务。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "monitor 由模型用默认工具设立订阅，按 external_event 判定“不论订阅由模型、用户还是配置设立”记入并进 via_default_entry。cron 在终端会话里只向主会话投提示，F26 记 main_agent。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule",
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "在项目目录运行 qwen，主循环在当前终端进程里；退出时 Config 关闭流程中止全部后台代理、monitor、后台 shell 和工作流。可选：qwen serve / qwen daemon start 起常驻守护进程，或用 systemd、launchd 模板注册服务（需换子命令或另做配置）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：shutdown 清理",
+          "lines": "L8541-L8561",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "进程生命周期",
+          "note": "关闭时 backgroundTaskRegistry、monitorRegistry、backgroundShellRegistry、workflowRunRegistry 全部 abortAll。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/qwen-serve.md",
+          "locator": "docs/users/qwen-serve.md：Deployment and security notes",
+          "lines": "L28",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "进程生命周期",
+          "note": "后台常驻要用 qwen daemon start 或系统服务模板，属另外的子命令或配置。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是 Goal：状态写进会话记录（goal_state），恢复会话时处于 active 的 Goal 由框架自动接着跑，不需要用户再发消息；模型可用 propose_goal 提议、用户在对话框批准（总则 R3 第一档）。其余各层在内存：运行中输入的消息（Enter 并入当前回合，Ctrl+Q 排到下一轮）存在 React 状态里；终端会话的定时任务不写盘，退出即失；通知队列最多 20 条；恢复会话时后台代理重新列入名单，但不自动续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：Goal runtime restore",
+          "lines": "L12760-L12780",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "持久队列",
+          "note": "注释写明恢复的 active Goal 会接着跑它的回合；restore 后调用 activateRestoredWork。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/goals/goal-runtime.ts",
+          "locator": "packages/core/src/goals/goal-runtime.ts：activateRestoredWork",
+          "lines": "L1098-L1130",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "持久队列",
+          "note": "恢复准备完成后广播状态并 queueContinuation，排上 Goal 的续跑回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/headless.md",
+          "locator": "docs/users/features/headless.md：Run a Persistent Goal",
+          "lines": "L63",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "持久队列",
+          "note": "Goal 状态随会话保存，可从后续进程用 --continue/--resume 接着控制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/ui/hooks/useMessageQueue.ts",
+          "locator": "packages/cli/src/ui/hooks/useMessageQueue.ts：queuedMessages state",
+          "lines": "L212-L213",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互输入队列",
+          "note": "排队的用户消息和 Goal 回合存在 React useState 里，只在进程内存中。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/reference/keyboard-shortcuts.md",
+          "locator": "docs/users/reference/keyboard-shortcuts.md：Enter / Ctrl+Q",
+          "lines": "L30-L31",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交互输入队列",
+          "note": "运行中 Enter 引导当前回合，Ctrl+Q 排到下一轮，回到空闲后执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/scheduled-tasks.md",
+          "locator": "docs/users/features/scheduled-tasks.md",
+          "lines": "L7",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "定时",
+          "note": "终端创建的定时任务只在当前进程里，不写盘。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Goal 归入持久队列的依据是 config.ts 注释和 activateRestoredWork 的代码；交互界面恢复会话后 Goal 回合怎样真正被宿主拉起只追到 bindHost/queueContinuation，没有逐行跟到界面层。崩溃时如果 Goal 正在 active，记录里的状态仍是 active，所以判为能撑过崩溃。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification",
+        "resumable_todo",
+        "structured_handoff"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：Auto 模式下工作区外写入、分类器拦截或不可达时转人工审批；交互会话默认注册 ask_user_question 提问工具。message_notification：general.terminalBell 默认 true、notificationMode 默认 all，终端失焦时在审批提示和任务完成时响铃或发系统通知，依赖终端支持。resumable_todo：Goal 被打断、到达预算、核验失败或受阻时转为 paused 并随会话持久保存，等用户 /goal resume 或清除。structured_handoff：默认注册的 report_findings 工具以固定字段（severity、file、summary、failureScenario 及 outcome）把审阅结论交给界面逐条显示，框架校验 outcome 必须全有或全无。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts",
+          "locator": "packages/core/src/permissions/autoMode.ts",
+          "lines": "L911-L939",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "审批",
+          "note": "工作区外写入与工作区外 cwd 的 shell 调用在分类器前直接转人工审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts：ask_user_question 注册",
+          "lines": "L13907-L13912",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "提问",
+          "note": "非 headless 交互模式注册 ask_user_question。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts：terminalBell / notificationMode",
+          "lines": "L702-L727",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "通知",
+          "note": "terminalBell 默认 true，notificationMode 默认 all：失焦终端在每次审批提示和任务完成时响铃或发系统通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/docs/users/features/goals.md",
+          "locator": "docs/users/features/goals.md：Interrupting a Goal",
+          "lines": "L29-L33",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "待办",
+          "note": "取消 Goal 回合即暂停，需 /goal resume 才继续；每次暂停写明原因。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/tools/report-findings.ts",
+          "locator": "packages/core/src/tools/report-findings.ts：ReportFindingsTool",
+          "lines": "L346-L453",
+          "retrieved_at": "2026-11-12",
+          "configuration_scope": "交接",
+          "note": "固定字段的审阅结论交给宿主界面渲染，outcome 部分缺失时拒绝。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "structured_handoff 拿不准：report_findings 是审阅结论的固定字段对象，由框架校验并交给人看的界面，但它面向审阅场景，不是通用的任务交接单，按判定“固定字段、框架校验、交给人看”记入。resumable_todo 依据 Goal 暂停后持久保存并等人决定是否恢复；Goal 由模型经 propose_goal 提议、用户只在对话框批准，按总则 R3 第一档算默认开放。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}
