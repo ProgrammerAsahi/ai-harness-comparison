@@ -10,22 +10,25 @@
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端命令行：hermes（不带参数启动经典 CLI，即 prompt_toolkit REPL；display.interface 出厂默认 cli）。执行位置：这个终端进程只是前端，不在本进程里建代理、跑工具或写 state.db；启动时先发现或拉起本机该 profile 的网关守护进程（客户端自动拉起、没有服务托管的那种，空闲 gateway.unmanaged_idle_exit_seconds=600 秒后自行退出，已有常驻网关则直接接上），经本地 WebSocket 建立或恢复会话，每个回合在网关进程里执行；经典 CLI 的代理类固定为网关代理，没有回退到进程内执行的分支，需要进程内代理的选项（如 --image、--worktree）直接被拒绝，--safe-mode 与 --ignore-user-config 同样在进程外跑。关闭终端只是断开，已接受的工作在网关里继续。这条本机网关后端不同于下一句所说的“消息网关”用法（接聊天渠道）。快速开始的顺序是装好后先 hermes setup 选提供方，再在终端里完成第一次对话；消息网关（hermes gateway setup / start）是 CLI 跑通之后的“下一层”，hermes --tui（Ink 前端，经 tui_gateway JSON-RPC 接同一 Python 运行时）是快速开始标为 recommended 的另一种终端界面，均不作本配置入口。",
   "install_method": "command: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash（Linux / macOS / WSL2，仅命令行，不含 Hermes Desktop；脚本即仓库 scripts/install.sh，在线版与提交 3b421578 处文件 sha256 相同 abf33860…）；脚本 clone 官方仓库后按默认 stable 通道取 GitHub releases/latest 的标签（此日为 v0.23.1）检出，再用固定版本的 uv 和 PM 装 Python 3.14、Node.js、ripgrep、FFmpeg，默认还装固定版本的 Chromium 与 cua-driver（computer-use 驱动），并复制随包技能到 ~/.hermes/skills；之后 hermes update 沿 stable 通道按发行版更新。windows: iex (irm https://hermes-agent.nousresearch.com/install.ps1)；快速开始在 macOS、Windows 上把 Hermes Desktop 安装包标为 recommended（macOS 安装包只支持 Apple Silicon，捆绑版不随 v0.23.1 更新）；source: https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/getting-started/quickstart.md#L53-L79（只作记录，未执行）",
-  "permission_mode": "approvals.mode = smart（默认）：读文件、写文件（write_file / patch）一般不经审批，只受受保护路径黑名单约束（只有命中硬黑名单才直接报错、没有审批提示；下面两类例外是先审批）；例外一：默认 security.protected_instruction_files=true，写入受保护的代理指令文件要先人工审批——任意目录下文件名为 AGENTS.md、CLAUDE.md、SOUL.md、.cursorrules（不分大小写，符号链接按真实路径也算），以及项目内 .hermes/ 目录下的文件（~/.hermes 自身不在此列），另可用 protected_instruction_extra_patterns 追加文件名通配；每次只批准这一次写入，不提供本会话或永久放行，--yolo 也不放行，一个多文件 patch 只要含一个这类文件就整体等批；无人能应答时（如 -q 单次、定时任务、后台线程）、审批超时或被拒都不写入，直接报错；例外二：写 ~/.ssh/config（SSH 客户端配置，可带 ProxyCommand 等会执行命令的指令）不是硬拒绝，而是走和终端命令同一套审批，可选一次、本会话或永久，--yolo 会放行；没有人能应答时（如 ACP 文件桥、-q 单次、定时任务）按拒绝处理，~/.ssh 下的私钥、authorized_keys 等其余文件仍是硬黑名单；终端命令先过不可绕过的硬黑名单，再按危险命令模式匹配，命中的交辅助模型判断：低风险自动放行（仅本条），明显危险自动拒绝，拿不准的升级为人工审批提示（超时 300 秒按拒绝处理）；未命中危险模式的命令直接在本机以启动账户权限执行。联网：终端命令不受限；web/browser/vision 等工具默认拒绝私网与回环地址（云元数据地址始终拒绝）。终端后端默认 local，无隔离；改用 docker、modal、daytona、vercel_sandbox 等容器类后端时危险命令检查整体跳过。子代理内的审批一律非交互处理，默认自动拒绝（delegation.subagent_auto_approve=false）。",
-  "operating_system": "macOS（Apple Silicon；Intel Mac 不在支持平台内）、Linux、WSL2、原生 Windows（PowerShell 安装器或 MSIX 包）、Android/Termux（单独 APT 源）；源码安装需 Git、curl、tar 与 SHA-256 工具，运行时由安装器提供 Python 3.14。",
+  "permission_mode": "approvals.mode = smart（默认）：读文件、写文件（write_file / patch）一般不经审批，只受受保护路径黑名单约束（只有命中硬黑名单才直接报错、没有审批提示；下面两类例外是先审批）；例外一：默认 security.protected_instruction_files=true，写入受保护的代理指令文件要先人工审批——任意目录下文件名为 AGENTS.md、CLAUDE.md、SOUL.md、.cursorrules（不分大小写，符号链接按真实路径也算），以及项目内 .hermes/ 目录下的文件（~/.hermes 自身不在此列），另可用 protected_instruction_extra_patterns 追加文件名通配；每次只批准这一次写入，不提供本会话或永久放行，--yolo 也不放行，一个多文件 patch 只要含一个这类文件就整体等批；无人能应答时（如 -q 单次、定时任务、后台线程）、审批超时或被拒都不写入，直接报错；例外二：写 ~/.ssh/config（SSH 客户端配置，可带 ProxyCommand 等会执行命令的指令）不是硬拒绝，而是走和终端命令同一套审批，可选一次、本会话或永久，--yolo 会放行；没有人能应答时（如 ACP 文件桥、-q 单次、定时任务）按拒绝处理，~/.ssh 下的私钥、authorized_keys 等其余文件仍是硬黑名单；终端命令先过不可绕过的硬黑名单，再按危险命令模式匹配，命中的交辅助模型判断：低风险自动放行（仅本条），明显危险自动拒绝，拿不准的升级为人工审批提示（超时 300 秒按拒绝处理）；未命中危险模式的命令直接在本机以启动账户权限执行。联网：终端命令不受限；web 抽取、vision 的 URL 拉取，以及云端或外接 CDP 浏览器默认拒绝私网与回环地址；local 后端下的本地 Chromium 可以打开这些地址，云浏览器的私网 URL 默认（browser.auto_local_for_private_urls=true）也自动改由本机 sidecar Chromium 打开；云元数据地址在浏览器各路线都始终拒绝。终端后端默认 local，无隔离；改用 docker、modal、daytona、vercel_sandbox 等容器类后端时危险命令检查整体跳过。子代理内的审批一律非交互处理，默认自动拒绝（delegation.subagent_auto_approve=false）。",
+  "operating_system": "macOS（Apple Silicon；Intel Mac 也可走命令行安装并运行 hermes desktop，但没有官方 Intel 桌面捆绑包，Hermes-Setup.dmg 引导安装器与桌面更新源只支持 Apple Silicon）、Linux、WSL2、原生 Windows（PowerShell 安装器或 MSIX 包）、Android/Termux（单独 APT 源）；源码安装需 Git、curl、tar 与 SHA-256 工具，运行时由安装器提供 Python 3.14。",
   "model_policy": "架构层不绑定模型；适配记录另存",
-  "evidence_cutoff": "2026-11-11",
-  "note": "版本：GitHub releases/latest = v0.23.1（2026-11-10T01:42:15Z，非预发布；发布说明称发布日 November 9, 2026，按提交 3b421578588 统计，自 v0.23.0 起合入约 618 个 PR）；annotated tag b65acf3f… 解引用到 3b421578…（提交日期 2026-11-10T00:24:33Z）。官方安装脚本 BRANCH=main，但对官方仓库默认走 stable 通道，取 api.github.com releases/latest 的 tag_name 检出，故默认安装得到 v0.23.1，与 releases/latest 一致；main 分支此时已前进到 3bcd0712…（2026-11-11），只有 --channel main 才会装到。PyPI 上同名包 hermes-agent 停在 0.19.0，不是官方默认安装方式，不采用。发布说明写明 .dmg/.exe 安装的 Desktop 捆绑版“no change in this release”，要等下一个捆绑发行版才更新，所以走 Desktop 安装包得到的版本可能低于 v0.23.1（本记录未核实捆绑版的确切版本）。；入口：快速开始“fastest path”表第一行是 hermes setup → 跑通一次对话，网关排在 CLI 跑通之后；第 3 步并列 hermes（classic CLI）与 hermes --tui（标 recommended），而 display.interface 出厂值是 cli、TUI 文档写明“classic CLI remains the shipped default”，本记录取不带参数的 hermes（研究负责人 2026-11-11 确认）。；提供方：快速开始让用户用 hermes model / hermes setup 在多家里任选，官方把 Nous Portal 标为“Easiest path”“recommended fast path”，本记录按它填（hermes setup 选 Quick Setup，或 hermes setup --portal）；Nous Portal 登录后还会打开 Tool Gateway（web 搜索、图像生成、TTS、云浏览器经订阅路由），这只对付费订阅开放，另有免费档只给免费模型、部分账户有少量免费工具额度。其他提供方（ChatGPT 订阅登录、Anthropic、OpenRouter 等）本配置不取（研究负责人 2026-11-11 确认）。；默认型号：全新安装 model 为空，hermes setup 的 Nous 选型器光标停在列表第一项（current_model 为空时 index 0）；列表 = 精选目录（远端 model-catalog.json，取不到时用仓库内快照，二者 2026-11-09 版的 nous 第一项都是 anthropic/claude-fable-5.2）+ Portal 的 paidRecommendedModels 追加在后 + 正在打折的模型；“窗口计划”账户会把该计划的 featured 型号排到最前，按 Enter 得到的型号随账户而变。目录里 nous 标 default:true 的是 z-ai/glm-5.3，只在用户从未选过型号时使用。；子代理：delegate_task 在 hermes-cli 工具包的核心工具里，delegation 不在默认关闭的工具集名单中，所以默认可派子代理（默认扁平一层 max_spawn_depth=1，单批并发上限 10，子代理继承父代理已启用的工具集、不能再派孙代理）。；执行后端：内置 local、docker、ssh、modal、daytona、vercel_sandbox 六种，另有 singularity、sprites 等插件后端；默认 terminal.backend=local，快速开始把 docker、ssh 放在可选的“Sandboxed terminal”一节。；文档在仓库 website/docs（Docusaurus，491 个条目，另有 zh-Hans 译文），站点 https://hermes-agent.nousresearch.com/docs/ ；全文导出 https://hermes-agent.nousresearch.com/llms-full.txt 可打开，content-length 6,242,234 字节（/docs/llms-full.txt 返回同样大小）。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。",
+  "evidence_cutoff": "2026-11-12",
+  "note": "版本：GitHub releases/latest = v0.23.1（2026-11-10T01:42:15Z，非预发布；发布说明称发布日 November 9, 2026，按提交 3b421578588 统计，自 v0.23.0 起合入约 618 个 PR）；annotated tag b65acf3f… 解引用到 3b421578…（提交日期 2026-11-10T00:24:33Z）。官方安装脚本 BRANCH=main，但对官方仓库默认走 stable 通道，取 api.github.com releases/latest 的 tag_name 检出，故默认安装得到 v0.23.1，与 releases/latest 一致；main 分支此时已前进到 3bcd0712…（2026-11-11），只有 --channel main 才会装到。PyPI 上同名包 hermes-agent 停在 0.19.0，不是官方默认安装方式，不采用。发布说明写明 .dmg/.exe 安装的 Desktop 捆绑版“no change in this release”，要等下一个捆绑发行版才更新，所以走 Desktop 安装包得到的版本可能低于 v0.23.1（本记录未核实捆绑版的确切版本）。；入口：快速开始“fastest path”表第一行是 hermes setup → 跑通一次对话，网关排在 CLI 跑通之后；第 3 步并列 hermes（classic CLI）与 hermes --tui（标 recommended），而 display.interface 出厂值是 cli、TUI 文档写明“classic CLI remains the shipped default”，本记录取不带参数的 hermes（研究负责人 2026-11-11 确认）。；提供方：快速开始让用户用 hermes model / hermes setup 在多家里任选，官方把 Nous Portal 标为“Easiest path”“recommended fast path”，本记录按它填（hermes setup 选 Quick Setup，或 hermes setup --portal）；Nous Portal 登录后还会打开 Tool Gateway（web 搜索、图像生成、TTS、云浏览器经订阅路由），这只对付费订阅开放，另有免费档只给免费模型、部分账户有少量免费工具额度。其他提供方（ChatGPT 订阅登录、Anthropic、OpenRouter 等）本配置不取（研究负责人 2026-11-11 确认）。；默认型号：全新安装 model 为空，hermes setup 的 Nous 选型器光标停在列表第一项（current_model 为空时 index 0）；列表 = 精选目录（远端 model-catalog.json，取不到时用仓库内快照，二者 2026-11-09 版的 nous 第一项都是 anthropic/claude-fable-5.2）+ Portal 的 paidRecommendedModels 追加在后 + 正在打折的模型；“窗口计划”账户会把该计划的 featured 型号排到最前，按 Enter 得到的型号随账户而变。目录里 nous 标 default:true 的是 z-ai/glm-5.3，只在用户从未选过型号时使用。；子代理：delegate_task 在 hermes-cli 工具包的核心工具里，delegation 不在默认关闭的工具集名单中，所以默认可派子代理（默认扁平一层 max_spawn_depth=1，单批并发上限 10，子代理继承父代理已启用的工具集、不能再派孙代理）。；执行后端：内置 local、docker、ssh、modal、daytona、vercel_sandbox 六种，另有 singularity、sprites 等插件后端；默认 terminal.backend=local，快速开始把 docker、ssh 放在可选的“Sandboxed terminal”一节。；文档在仓库 website/docs（Docusaurus，491 个条目，另有 zh-Hans 译文），站点 https://hermes-agent.nousresearch.com/docs/ ；全文导出 https://hermes-agent.nousresearch.com/llms-full.txt 可打开，content-length 6,242,234 字节（/docs/llms-full.txt 返回同样大小）。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。；2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5），改了：permission_mode 的私网概括（本地 Chromium 与云浏览器的 sidecar 路线可开私网地址，云元数据始终拒绝）、operating_system 与 environment_premises.host_os 的 Intel Mac 说法（命令行版可装，只是没有官方桌面捆绑包）、enabled_extensions 里延迟加载工具清单与桥接工具、回合后记忆／技能审阅、自动会话标题三条默认机制；版本与提交仍是原来钉的 v0.23.1／3b421578，没有改。默认联网：模型目录与 models.dev 元数据在启动时读缓存并后台刷新（model_catalog.enabled=true，TTL 20 分钟），updates.check=true 做被动版本检查，shared_metrics 遥测的采集与上传默认关闭。OpenAI 兼容的 API server 默认不启动：要在 profile 的 .env 里设置强度合格的 API_SERVER_KEY（至少 16 个字符、非占位）才启动；官方文档另写要设 API_SERVER_ENABLED=true，网关的启用逻辑不读这个变量。",
   "synthetic": false,
   "subagents_enabled": true,
   "enabled_extensions": [
-    "默认工具集 hermes-cli（全部核心工具）：web_search, web_extract, terminal, process_manage, read_file, write_file, patch, search_files, vision_analyze, image_generate, skills_list, skill_view, skill_manage, browser_exec, browser_cdp, browser_dialog, browser_vault（默认延迟加载）, text_to_speech, todo_list, memory, session_search, clarify, execute_code, delegate_task, cronjob_manage, computer_use, manage_connections；kanban_* 工具所在的 kanban 工具集默认关闭；部分工具另由各自的可用性检查决定是否注册（如 computer_use、web/图像/TTS 需有可用后端）",
+    "默认工具集 hermes-cli（全部核心工具）：web_search, web_extract, terminal, process_manage, read_file, write_file, patch, search_files, vision_analyze, image_generate, skills_list, skill_view, skill_manage, browser_exec, browser_cdp, browser_dialog, browser_vault, text_to_speech, todo_list, memory, session_search, clarify, execute_code, delegate_task, cronjob_manage, computer_use, manage_connections；kanban_* 工具所在的 kanban 工具集默认关闭；部分工具另由各自的可用性检查决定是否注册（如 computer_use、web/图像/TTS 需有可用后端）",
     "默认关闭的工具集：spotify, discord, discord_admin, video, video_gen, x_search, a2a, kanban",
+    "渐进式工具披露（tools.tool_search.enabled=auto，默认开）：computer_use、session_search、image_generate、todo_list、process_manage、cronjob_manage、browser_vault 以及相应的 Desktop 界面工具默认延迟加载，模型默认看到的是 tool_search / tool_describe / tool_call 三个桥接工具，按需取得原工具定义再调用",
     "Nous Portal Tool Gateway（按快速开始推荐路径登录付费订阅后打开）：web 搜索/抽取、图像生成、TTS、云浏览器经 Nous 订阅路由",
     "安装器默认装好的本地工具：固定版本 Chromium（供 browser_exec 本地浏览）、cua-driver（computer-use 驱动，macOS 与 glibc Linux）",
     "技能：全新安装把仓库 skills/ 下随包技能（约 44 个 SKILL.md）复制到 ~/.hermes/skills；agent 可自建、修改技能",
     "插件：随包插件可被发现，但一般插件默认不加载（需写进 plugins.enabled）",
     "MCP 服务：无默认配置（mcp_servers 为空）",
-    "默认开启的内置机制：持久记忆（memory.memory_enabled=true，写入不需审批）、coding_context=auto（在代码仓库里交互使用时把编码说明与 git/工作区快照加进系统提示）、上下文文件（AGENTS.md 等）加载前做提示注入扫描；checkpoints 默认关闭"
+    "默认开启的内置机制：持久记忆（memory.memory_enabled=true，写入不需审批）、coding_context=auto（在代码仓库里交互使用时把编码说明与 git/工作区快照加进系统提示）、上下文文件（AGENTS.md 等）加载前做提示注入扫描；checkpoints 默认关闭",
+    "回合后自我改进审阅（auxiliary.background_review.enabled=true，默认开）：每满 10 个用户回合（memory.nudge_interval）审阅记忆、每满 10 次工具迭代（skills.creation_nudge_interval）审阅技能，回合交付后在后台用主模型另发请求（回放整段对话，约 3 万 token 量级），可直接写入记忆和技能（memory.write_approval 与 skills.write_approval 默认都关）；一次性 -q 回合不触发",
+    "自动会话标题（auxiliary.title_generation.enabled 与 model_upgrade_enabled 默认都开）：首个可命名回合先给出即时标题，再在后台线程里调用模型升级标题"
   ],
   "evidence": [
     {
@@ -361,12 +364,174 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "子代理",
       "note": "子代理继承父代理已启用的工具集，模型不能给子代理加能力；叶子子代理默认不能再调用 delegate_task。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/browser_url_policy.py#L123-L150",
+      "locator": "tools/browser_url_policy.py",
+      "lines": "L123-L150",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "云元数据 URL 对各浏览器路线无条件拒绝；私网地址只在非 local 后端、未走 sidecar、未放行时才拒绝，所以 local 后端的本地 Chromium 与 sidecar 不受私网限制。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/security.md#L829-L848",
+      "locator": "website/docs/user-guide/security.md",
+      "lines": "L829-L848",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "按表面列出私网 URL 的处置：web_extract、vision 拉取、云端或 CDP 浏览器拒绝；云浏览器配 auto_local_for_private_urls=true（默认）改由本机 sidecar 打开；本地 Chromium 配本地终端后端可打开；终端无 URL 限制；云元数据除终端外处处拒绝。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1748-L1750",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L1748-L1750",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "security.allow_private_urls 默认 False，注释写明它管 web/vision/媒体与云端、CDP 浏览器，不管本地 sidecar Chromium；browser.auto_local_for_private_urls 在 L434-L435 默认 True。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1965-L2005",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L1965-L2005",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "tools.tool_search.enabled 默认 auto，defer 默认清单含 computer_use、session_search、image_generate、todo_list、process_manage、cronjob_manage、browser_vault 与若干 Desktop 界面工具，由三个桥接工具替代。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/tools/tool_search.py#L1-L7",
+      "locator": "tools/tool_search.py",
+      "lines": "L1-L7",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "模块说明：被延迟的工具换成 tool_search / tool_describe / tool_call 三个桥接工具；只要存在可延迟工具就激活桥接。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L785-L795",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L785-L795",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "auxiliary.background_review.enabled 默认 True；注释写明回合后的记忆／技能审阅默认用主模型回放整段对话，约 3 万 token 量级。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_context.py#L819-L828",
+      "locator": "agent/turn_context.py",
+      "lines": "L819-L828",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "记忆审阅计数：每个用户回合加一，达到 memory.nudge_interval（默认 10，config_defaults.py L1306）触发。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/turn_finalizer.py#L591-L616",
+      "locator": "agent/turn_finalizer.py",
+      "lines": "L591-L616",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "回合交付后（未被打断、有最终回复、未设 skip_background_review）在后台启动记忆／技能审阅。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/api-server.md#L862-L875",
+      "locator": "website/docs/user-guide/features/api-server.md",
+      "lines": "L862-L875",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "技能审阅在本回合工具迭代数达到 skills.creation_nudge_interval（默认 10）且 skill_manage 可用时触发，随后一并交给 _mirror_turn_to_memory。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/background_review.py#L230-L276",
+      "locator": "agent/background_review.py",
+      "lines": "L230-L276",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "审阅分支默认沿用父代理的提供方与型号；一次性 chat -q 回合不启动审阅。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L1295-L1309",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L1295-L1309",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "memory.write_approval 默认 False，nudge_interval 默认 10；skills.write_approval 默认 False（L1463-L1466）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L758-L771",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L758-L771",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "auxiliary.title_generation.enabled 与 model_upgrade_enabled 默认都为 True。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/agent/title_generator.py#L147-L177",
+      "locator": "agent/title_generator.py",
+      "lines": "L147-L177",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "标题生成与模型升级两个开关的读取，缺省都按开启处理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/getting-started/platform-support.md#L52-L63",
+      "locator": "website/docs/getting-started/platform-support.md",
+      "lines": "L52-L63",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "安装",
+      "note": "Intel Mac 可装命令行版并运行 hermes desktop；Hermes-Setup.dmg 引导安装器与桌面更新源只支持 Apple Silicon，不构建 Intel 桌面捆绑包。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_cli/config_defaults.py#L2016-L2049",
+      "locator": "hermes_cli/config_defaults.py",
+      "lines": "L2016-L2049",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "model_catalog.enabled 默认 True（TTL 20 分钟，网关后台刷新）；models.dev 元数据启动时读缓存并由后台守护刷新；updates.check 默认 True（L2328-L2330，被动版本检查）；telemetry.shared_metrics 的 enabled 与 send 默认 False（L2312-L2316）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/config_env.py#L121-L129",
+      "locator": "gateway/config_env.py",
+      "lines": "L121-L129",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "API server 只在环境里的 API_SERVER_KEY 通过可用性检查（至少 16 个字符且非占位）时才启用；启用逻辑不读 API_SERVER_ENABLED。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/gateway/platforms/api_server.py#L3942-L3962",
+      "locator": "gateway/platforms/api_server.py",
+      "lines": "L3942-L3962",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "启动时 API_SERVER_KEY 缺失、过短或为占位值，适配器报配置错误并不启动（不重试）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/website/docs/user-guide/features/api-server.md#L19-L35",
+      "locator": "website/docs/user-guide/features/api-server.md",
+      "lines": "L19-L35",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "官方文档快速开始让在 ~/.hermes/.env 里同时写 API_SERVER_ENABLED=true 与 API_SERVER_KEY；仓库代码里没有 Python 读取 API_SERVER_ENABLED。"
     }
   ],
   "environment_premises": {
     "account_tier": "Nous Portal 付费订阅，用 hermes setup 选 Quick Setup (Nous Portal)（等同 hermes setup --portal），浏览器 OAuth 登录，令牌存 ~/.hermes/auth.json。Hermes 没有自己的账户，快速开始让用户任选提供方；Nous Portal 是官方标为推荐的那条，本配置取它（研究负责人 2026-11-11 确认）。资料没有列出各付费档名称，取最低一档付费订阅；免费档只能选免费型号、不开 Tool Gateway",
     "default_model": "anthropic/claude-fable-5.2（Nous 选型器在全新安装时光标停在精选目录第一项，按 Enter 即得；2026-11-09 版 model-catalog.json）。不确定处：运行时读远端目录，窗口计划账户会把计划的 featured 型号排到最前；目录里标 default:true 的 z-ai/glm-5.3 只在从未选过型号时使用",
-    "host_os": "macOS 或 Linux（不含 Windows；macOS 只支持 Apple Silicon）",
+    "host_os": "macOS 或 Linux（不含 Windows；本研究的 macOS 取 Apple Silicon 机型，Intel Mac 走命令行安装也可用，只是没有官方桌面捆绑包）",
     "workspace": "已有提交的 Git 仓库，在仓库根目录启动。仓库里不带项目级的代理配置（AGENTS.md、.mcp.json 和各工具自己的项目配置目录或文件）",
     "trust": "没有按目录的信任提示；仓库里的 AGENTS.md 等上下文文件直接加载，加载前做提示注入扫描。首次 hermes setup 若发现 ~/.claude、~/.codex、~/.openclaw、~/.cursor 会先提议导入设置，本前提下没有这些目录、不导入",
     "credentials": "只有 Nous Portal 的 OAuth 登录；~/.hermes/.env 与环境里没有 OPENROUTER_API_KEY、OPENAI_API_KEY、ANTHROPIC_API_KEY 等其他提供方或工具的密钥",

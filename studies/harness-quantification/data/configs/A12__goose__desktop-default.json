@@ -14,15 +14,17 @@
   "permission_mode": "Auto（Completely Autonomous，产品默认的 goose mode）：读文件、写改删文件、执行 shell 命令、调用扩展工具都不请求批准；没有沙箱，shell 以启动账户的系统权限运行，联网不另设关卡（出站检查器只记录日志）。提示注入检测（SECURITY_PROMPT_ENABLED）默认关闭，对抗审查（~/.config/goose/adversary.md）要建文件才启用；Smart Approve 的风险判定只在 smart_approve 模式下生效。桌面版每个会话各有模式，新会话取设置里的默认模式，默认就是 auto。",
   "operating_system": "macOS（Apple Silicon、Intel）、Linux（.deb / .rpm 桌面包）、Windows（安装包与 CUDA 版）；CLI 另有三平台二进制",
   "model_policy": "架构层不绑定模型；适配记录另存",
-  "evidence_cutoff": "2026-11-11",
+  "evidence_cutoff": "2026-11-12",
   "subagents_enabled": true,
   "enabled_extensions": [
     "内置扩展（bundled MCP）默认启用：developer（写改文件、执行 shell）；computercontroller、autovisualiser、memory、tutorial 随包提供但默认关闭",
     "平台扩展 default_enabled=true：analyze、apps、extensionmanager、summon（load / delegate，子代理入口）、developer、tom（Top Of Mind）、skills；scheduler 为隐藏的默认启用项（桌面版以 --enable-scheduler 启动）",
     "平台扩展默认关闭：todo、chatrecall、summarize、code_execution（Code Mode）",
-    "技能：skills 扩展默认启用，自动发现 ~/.agents/skills、项目 .agents/skills 及兼容目录（.goose/skills、.claude/skills 等）里的技能；未发现随包默认启用的具体技能",
+    "技能：skills 扩展默认启用，并默认提供编译进二进制的内置技能 web-search、goose-doc-guide；同时自动发现 ~/.agents/skills、项目 .agents/skills 及兼容目录（.goose/skills、.claude/skills 等）里的技能",
+    "插件：自动发现项目 .agents/plugins 与用户插件目录里的插件，配置里没有记录的新插件按 enabled: true 写入并加载，其技能、MCP 服务随之生效；空白安装没有插件",
     "外部 MCP 服务：无默认配置",
-    "上下文文件：工作目录到 Git 根之间的 .goosehints 与 AGENTS.md 默认加载（CONTEXT_FILE_NAMES 可改）"
+    "上下文文件：工作目录到 Git 根之间的 .goosehints 与 AGENTS.md 默认加载（CONTEXT_FILE_NAMES 可改）",
+    "后台任务：桌面服务默认不禁用会话命名，用户消息写入后会在后台用当前提供方和型号额外发起一次性模型补全生成会话名（定时任务会话跳过，recipe 会话直接用标题）"
   ],
   "environment_premises": {
     "account_tier": "Tetrate Agent Router Service 账户：快速开始明确让用户在这一步选 Agent Router by Tetrate，由浏览器登录或新注册；经 goose 首次自动认证可得 10 美元赠送额度，因此最低够用的是免费注册账户加赠送额度。goose 本身没有账户",
@@ -276,7 +278,43 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
       "note": "全局 ~/.agents/skills 与项目 .agents/skills，兼容 .goose/skills、.claude/skills 等；文档未提加载前的信任确认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/skills/mod.rs#L442-L468",
+      "locator": "crates/goose/src/skills/mod.rs",
+      "lines": "L442-L468",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "discover_skills_with_config 在文件系统技能之外追加内置技能（路径 builtin://skills/<名>）；crates/goose/src/skills/builtin.rs 用 include_dir 把 crates/goose/src/skills/builtins/ 下的 Markdown 编进二进制，其中是 web-search 与 goose-doc-guide 两个技能；platform_extensions/mod.rs L209 用 SkillsClient::default()，不排除内置技能（client.rs L24-L43）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/plugins/discovery.rs#L48-L152",
+      "locator": "crates/goose/src/plugins/discovery.rs",
+      "lines": "L48-L152",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "发现项目 .agents/plugins 与用户插件目录的子目录；filter_by_config 对配置里没有记录的插件写入 enabled: true 并加载；crates/goose/src/acp/server.rs L626-L641 把启用插件的 MCP 服务并入会话扩展。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/agents/services.rs#L931-L953",
+      "locator": "crates/goose/src/agents/services.rs",
+      "lines": "L931-L953",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "用户消息写入后，未禁用会话命名时 tokio::spawn 后台任务调用 maybe_update_name；crates/goose/src/session/session_manager.rs L658-L690 跳过用户已命名和定时任务会话、recipe 会话用标题，其余走 session_naming.rs 的一次性补全；crates/goose/src/acp/server_factory.rs L71-L77 读取 disable_session_naming，缺省 false。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/aaif-goose/goose/blob/5d03ef6ed07ba59826328f1aff18d9a754ff8ad2/crates/goose/src/model_catalog.rs#L5-L31",
+      "locator": "crates/goose/src/model_catalog.rs",
+      "lines": "L5-L31",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "goose 二进制默认特性含 online-model-meta（crates/goose-cli/Cargo.toml L93-L112），main.rs 启动时调用 model_catalog::initialize，后台请求 https://models.dev/api.json 并缓存到数据目录；这是模型元数据请求，不是模型推理。"
     }
   ],
-  "note": "入口按官方快速开始的默认标签取 goose Desktop，不取 CLI；两者共用同一 goose 核心与配置（~/.config/goose），默认 goose mode、默认扩展和子代理行为相同，差别在交互外壳、首次引导和默认工作目录。版本：GitHub releases/latest、stable 滚动发布的资产、Homebrew cask/formula 三方都是 1.59.0（v1.59.0 → 5d03ef6e，提交说明为 release 分支的版本号提交）。本仓库来源记录钉的是旧提交 91a5789b；该提交引用的 crates/goose/src/agents/agent.rs 在 v1.59.0 已不存在（代理核心拆到 crates/goose-agent 与 crates/goose/src/agents/state_machine 等处）。文档在仓库 documentation/ 下（文档站 https://goose-docs.ai），站点有 llms.txt（5588 字节），没有 llms-full.txt（404）。桌面版 Tetrate 登录：TETRATE_API_KEY 标为 oauth_flow，桌面引导走通用 OAuth 路径（acp/server/providers.rs 调 provider.configure_oauth），但 tetrate.rs 里没有找到 configure_oauth 的实现；CLI 的 goose configure 有专门的 Tetrate 登录项（handle_tetrate_auth）。桌面版 Tetrate 登录能否走通未核实，未运行。入口取桌面版而不取命令行版，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。"
+  "note": "入口按官方快速开始的默认标签取 goose Desktop，不取 CLI；两者共用同一 goose 核心与配置（~/.config/goose），默认 goose mode、默认扩展和子代理行为相同，差别在交互外壳、首次引导和默认工作目录。版本：GitHub releases/latest、stable 滚动发布的资产、Homebrew cask/formula 三方都是 1.59.0（v1.59.0 → 5d03ef6e，提交说明为 release 分支的版本号提交）。本仓库来源记录钉的是旧提交 91a5789b；该提交引用的 crates/goose/src/agents/agent.rs 在 v1.59.0 已不存在（代理核心拆到 crates/goose-agent 与 crates/goose/src/agents/state_machine 等处）。文档在仓库 documentation/ 下（文档站 https://goose-docs.ai），站点有 llms.txt（5588 字节），没有 llms-full.txt（404）。桌面版 Tetrate 登录：TETRATE_API_KEY 标为 oauth_flow，桌面引导走通用 OAuth 路径（acp/server/providers.rs 调 provider.configure_oauth），但 tetrate.rs 里没有找到 configure_oauth 的实现；CLI 的 goose configure 有专门的 Tetrate 登录项（handle_tetrate_auth）。桌面版 Tetrate 登录能否走通未核实，未运行。入口取桌面版而不取命令行版，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。 2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5）：把 enabled_extensions 里“未发现随包默认启用的具体技能”改为默认提供内置技能 web-search、goose-doc-guide；按源码补记插件自动发现与后台会话命名两条默认机制；另在此补一句联网行为：默认编译路线含模型目录后台刷新，启动时向 https://models.dev/api.json 请求模型元数据并缓存。版本与提交仍是原来钉的 5d03ef6ed07ba59826328f1aff18d9a754ff8ad2。"
 }

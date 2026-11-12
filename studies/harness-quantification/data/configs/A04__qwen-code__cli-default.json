@@ -10,19 +10,22 @@
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "终端 CLI/TUI：在项目目录运行 qwen（monorepo 中的 packages/cli，包名 @qwen-code/qwen-code，bin 名 qwen）。同一产品另有 Web UI（qwen serve，实验性）、编辑器集成和聊天渠道入口，不在本配置内",
   "install_method": "command: curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.sh | bash（README 与快速开始标为推荐；默认 --method detect：有对应平台的独立归档就装归档，否则退回 npm 全局安装，npm 源默认 registry.npmmirror.com；默认装到 ~/.local，并改 shell rc 的 PATH）；windows: irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.ps1 | iex；alternative: npm install -g @qwen-code/qwen-code@latest（需 Node.js 22+），brew install qwen-code；source: https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/README.md#L34-L65（只作记录，未执行）",
-  "permission_mode": "Auto（自动审批，tools.approvalMode 默认值 auto；源码注释称这是普通会话的内置默认）：读文件、搜索、列目录等只读和元数据工具直接放行；工作区内的编辑和写文件直接放行，但写到 .qwen/、QWEN.md、AGENTS.md、.git/、package.json、.github/workflows/ 等自修改或持久化位置时交给分类器；被识别为只读的 shell 命令（ls、cat、git status 等）直接放行，其余 shell 命令、web_fetch 等联网调用、派子代理、工作区外编辑和 MCP 工具都先经 LLM 分类器（两段式，默认用主会话型号，配了 fast model 时用 fast model）判定放行或拦截；分类器不可达时拦截，连续两次不可达或连续三次拦截后退回人工审批。permissions.deny 仍先于分类器生效。文件夹未受信任时强制降为 Ask Permissions（逐次询问编辑和 shell），但文件夹信任功能默认关闭，所有目录都按受信任处理。默认没有沙箱，以启动账户的系统权限在本机执行。",
+  "permission_mode": "Auto（自动审批，tools.approvalMode 默认值 auto；源码注释称这是普通会话的内置默认）：读文件、搜索、列目录等只读和元数据工具直接放行；工作区内的编辑和写文件直接放行，但写到 .qwen/、QWEN.md、AGENTS.md、.git/、package.json、.github/workflows/ 等自修改或持久化位置时交给分类器；被识别为只读的 shell 命令（ls、cat、git status 等）直接放行，工作区外的写入，以及以工作区外目录为 cwd 的 shell 类调用，在分类器之前直接要求人工审批；其余 shell 命令、web_fetch 等联网调用、派子代理和 MCP 工具先经 LLM 分类器（两段式，默认用主会话型号，配了 fast model 时用 fast model）判定放行或拦截。分类器不可达时，当前调用立即转人工审批；连续两次不可达后，后续调用跳过已知不可用的分类器直接转人工；连续三次拦截时，达到第三次的那次调用转人工。这些回退只作用于当次调用，不自动切换会话的 Auto 模式。permissions.deny 仍先于分类器生效。文件夹未受信任时强制降为 Ask Permissions（逐次询问编辑和 shell），但文件夹信任功能默认关闭，所有目录都按受信任处理。默认没有沙箱，以启动账户的系统权限在本机执行。",
   "operating_system": "macOS、Linux、Windows（独立安装脚本覆盖三者；npm 方式需 Node.js 22+）。Linux 另有可选的 bwrap/Landlock 工具执行沙箱，macOS 有可选 Seatbelt，二者默认都不启用。",
   "model_policy": "架构层不绑定模型；适配记录另存",
-  "evidence_cutoff": "2026-11-11",
-  "note": "版本：GitHub releases/latest 返回的是 sdk-typescript-v0.1.32（TypeScript SDK 的发布，不是 CLI），不能用来判定 CLI 版本；CLI 的正式版标签是 v0.27.2（2026-11-10T19:22:00Z 发布，tag 直接指向提交 f42fe0f3），npm latest=0.27.2 且 gitHead 为同一提交，官方托管的独立安装脚本把默认版本写死为 0.27.2（QWEN_INSTALL_VERSION 默认值），三者一致。同日 2026-11-11T03:55:44Z 另有预发布 v1.0.0-preview，不是默认安装得到的版本，不取。仓库内同提交的 scripts/installation/install-qwen-standalone.sh 默认版本写作 latest，与托管脚本的写法不同，但当天解析结果相同。本仓库来源清单里的 qwen-code 快照钉在旧提交 99bf4ce8，本记录改钉 f42fe0f3。文档冲突：快速开始 L147 仍说“always asks for permission before modifying files”，与当前源码和 approval-mode.md（默认 Auto）不符，本记录按源码。认证：首次启动的认证菜单第一项（默认高亮）是 Qwen Account with Subscription（Qwen 账户 OAuth，用 chat.qwen.ai Plus/Pro 订阅），README 快速开始也直接让用户选它；但 auth.md 与 quickstart.md 把 QwenCloud（Token Plan 或按量 API Key）标为“official recommended setup”。本记录取前者（研究负责人 2026-11-11 确认）。项目快照本地 docs/ 下有完整用户文档，文档站 qwenlm.github.io/qwen-code-docs 由仓库 docs-site 生成。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。",
+  "evidence_cutoff": "2026-11-12",
+  "note": "版本：GitHub releases/latest 返回的是 sdk-typescript-v0.1.32（TypeScript SDK 的发布，不是 CLI），不能用来判定 CLI 版本；CLI 的正式版标签是 v0.27.2（2026-11-10T19:22:00Z 发布，tag 直接指向提交 f42fe0f3），npm latest=0.27.2 且 gitHead 为同一提交，官方托管的独立安装脚本把默认版本写死为 0.27.2（QWEN_INSTALL_VERSION 默认值），三者一致。同日 2026-11-11T03:55:44Z 另有预发布 v1.0.0-preview，不是默认安装得到的版本，不取。仓库内同提交的 scripts/installation/install-qwen-standalone.sh 默认版本写作 latest，与托管脚本的写法不同，但当天解析结果相同。本仓库来源清单里的 qwen-code 快照钉在旧提交 99bf4ce8，本记录改钉 f42fe0f3。文档冲突：快速开始 L147 仍说“always asks for permission before modifying files”，与当前源码和 approval-mode.md（默认 Auto）不符，本记录按源码。认证：首次启动的认证菜单第一项（默认高亮）是 Qwen Account with Subscription（Qwen 账户 OAuth，用 chat.qwen.ai Plus/Pro 订阅），README 快速开始也直接让用户选它；但 auth.md 与 quickstart.md 把 QwenCloud（Token Plan 或按量 API Key）标为“official recommended setup”。本记录取前者（研究负责人 2026-11-11 确认）。项目快照本地 docs/ 下有完整用户文档，文档站 qwenlm.github.io/qwen-code-docs 由仓库 docs-site 生成。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。 2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5），改了四处：ls 默认关闭、默认注册工具清单补全、工作区外写入与分类器回退的描述、Workflow 设置键名；另补记跨会话消息、后台模型机制、文件检查点三项默认机制和默认联网行为；版本与提交仍是原来钉的 f42fe0f3。默认联网行为：启动时自动更新检查与安装（general.enableAutoUpdate 默认 true）、models.dev 型号目录至多每 24 小时后台下载一次（model.catalogRefresh 默认 true）。",
   "synthetic": false,
   "subagents_enabled": true,
   "enabled_extensions": [
-    "默认注册的核心工具（名称取源码 ToolNames 常量的含义）：read_file、write_file、edit、notebook_edit、ls、glob、grep、shell、monitor、web_fetch、agent（派子代理）、list_agents、send_message、task_stop、skill、manage_memory、search_memory、zoom_image、display_image、report_findings、ask_user_question、enter/exit_plan_mode、enter/exit_worktree、read_mcp_resource、cron_create、cron_list、cron_delete、loop_wakeup（定时／循环类工具，experimental.cron 默认 true），以及 tool_search 与 tool_call 两个桥接工具（部分工具默认延迟声明，经 tool_search 取用）",
+    "默认注册的核心工具（名称取源码 ToolNames 常量的含义）：read_file、write_file、edit、notebook_edit、glob、grep、shell、monitor、web_fetch、agent（派子代理）、list_agents、send_message、task_stop、skill、manage_memory、search_memory、zoom_image、display_image、report_findings、ask_user_question、enter/exit_plan_mode、enter/exit_worktree、read_mcp_resource、cron_create、cron_list、cron_delete、loop_wakeup（定时／循环类工具，experimental.cron 默认 true），目标类工具 get_goal、update_goal（另有 propose_goal，仅在未关闭模型提议目标、且有交互界面或宿主支持时注册），experimental.artifact 默认 true 带来的 artifact 与 record_artifact（交互、非沙箱、非 SDK 会话；默认发布到本机 file:// 页面，artifact.autoOpen 默认 true 会打开浏览器），autofix_pr，以及 tool_search 与 tool_call 两个桥接工具（部分工具默认延迟声明，经 tool_search 取用；延迟声明不等于未注册）。list_directory（ls）默认关闭，需 tools.listDirectory.enabled=true 或在 coreTools 中明列才注册",
     "web_search：Qwen 账户订阅登录时自动启用，走订阅的 MCP 搜索后端（api.qwen.ai）；QwenCloud、ModelStudio Token Plan 或标准 API Key 登录时也自动启用，其他提供方需另配后端",
     "内置子代理：general-purpose（默认类型）、Explore、statusline-setup、review-agent；另有 claude-code、codex 两个外部执行器代理，需要本机另装对应工具才能用；也可 fork 当前会话",
     "随包技能（bundled skills，默认加载）：agent-delegation、autofix-pr、batch、batch-api、coordinate、dataviz、extension-creator、goal-draft、loop、new-app、qc-helper、review、simplify、stuck、workflow-authoring、workflow-creator、zvec-grep-install；其中 batch-api、coordinate、zvec-grep-install 设了 disable-model-invocation，只能由用户调用；各技能是否另受功能开关约束未逐个核实",
-    "默认关闭：todo_write 工具（tools.todoWrite.enabled 默认 false，不注册给模型）、Workflow 工具（tools.workflows 默认 false）、LSP、Agent Team、沙箱",
+    "默认关闭：todo_write 工具（tools.todoWrite.enabled 默认 false，不注册给模型）、Workflow 工具（tools.workflowsEnabled 默认 false）、LSP、Agent Team、沙箱",
+    "本机跨会话消息：agents.crossSessionMessaging 默认 true，普通交互会话绑定每会话本地 socket 并可被同机其他会话发现，模型可经 send_message 寻址其他会话；--bare 和 --safe-mode 下关闭",
+    "默认开启、会自己发起模型请求或后台任务的机制：后台记忆提取与定期整理（memory.enableManagedAutoMemory、enableManagedAutoDream 默认 true；自动技能审查 enableAutoSkill 默认 false）；后续输入建议（ui.enableFollowupSuggestions 默认 true，回合结束后额外调用模型，未配 fast model 时用主会话型号）；顶层普通子代理默认后台运行（agents.defaultBackground 默认 true，结果经完成通知返回；claude-code、codex 外部执行器为前台例外）",
+    "文件检查点：交互会话默认开启文件历史（回合边界拍快照，之后 edit、write_file 更新该快照），备份存在用户目录 file-history/<会话号>/ 下，/rewind 可回滚；只覆盖这两个工具改过的文件，shell 或手工修改不在内",
     "MCP 服务：无默认配置；扩展：无默认安装"
   ],
   "evidence": [
@@ -242,6 +245,87 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
       "note": "文件夹信任默认关闭，此时所有目录都算受信任，不弹信任提示；项目 MCP 服务和项目 hooks 首次出现时仍单独请求批准。设置项默认值见 settingsSchema.ts L3671-L3690（security.folderTrust.enabled=false）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/autoMode.ts#L911-L939",
+      "locator": "packages/core/src/permissions/autoMode.ts",
+      "lines": "L911-L939",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "工作区外的写入（L921 external_write）与以工作区外目录为 cwd 的 shell 类调用（L932 external_directory）在分类器之前直接转人工；skipClassifierReason（L938）让已知分类器不可用时的后续调用直接转人工。分类器首次不可达时当前调用立即转人工，见同文件 L640-L650。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/permissions/denialTracking.ts#L8-L45",
+      "locator": "packages/core/src/permissions/denialTracking.ts",
+      "lines": "L8-L45",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "连续拦截上限 3、连续不可达上限 2、总数上限 20；达到阈值的那次调用转人工，会话保持 Auto。docs/users/features/auto-mode.md L213-L236 的回退一节同此。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L3200-L3218",
+      "locator": "packages/cli/src/config/settingsSchema.ts",
+      "lines": "L3200-L3218",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "tools.listDirectory.enabled 默认 false，描述写明 list_directory 默认禁用，列入 coreTools 时才重新启用；core config.ts L13820 仅在 isLsToolEnabled() 为真时注册 ls。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/config/config.ts#L13606-L13628",
+      "locator": "packages/core/src/config/config.ts",
+      "lines": "L13606-L13628",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "registerGoalWorkerTools：get_goal、update_goal 注册；propose_goal 在未禁用模型提议目标且有交互界面或宿主支持时注册。同文件 L13948-L13967 注册 artifact、record_artifact，L14004-L14007 注册 autofix_pr；artifact 受 L10835-L10869 的 isArtifactEnabled() 限制（沙箱、SDK、非交互会话关闭）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L3435-L3447",
+      "locator": "packages/cli/src/config/settingsSchema.ts",
+      "lines": "L3435-L3447",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Workflow 工具的设置键是 tools.workflowsEnabled，默认 false；packages/cli/src/config/config.ts L3000 以此键传入。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L3910-L3918",
+      "locator": "packages/cli/src/config/settingsSchema.ts",
+      "lines": "L3910-L3918",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "agents.crossSessionMessaging 默认 true：会话绑定本地 socket、可被同机会话发现，模型可经 send_message 寻址；--bare、--safe-mode 关闭（packages/cli/src/peerMessaging/enabled.ts L77-L93）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/config.ts#L3029-L3056",
+      "locator": "packages/cli/src/config/config.ts",
+      "lines": "L3029-L3056",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "memory.enableManagedAutoMemory 与 enableManagedAutoDream 默认 true（后台记忆提取与整理），enableAutoSkill 默认 false；ui.enableFollowupSuggestions 默认 true（settingsSchema.ts L1241-L1250）；agents.defaultBackground 默认 true（settingsSchema.ts L3977-L3985）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/core/src/services/fileHistoryService.ts#L137-L137",
+      "locator": "packages/core/src/services/fileHistoryService.ts",
+      "lines": "L137-L137",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文件历史目录名 file-history，备份路径为用户目录下 file-history/<会话号>/（L259-L265）；快照在 UserQuery 回合边界由 packages/core/src/core/client.ts L4834-L4867 创建，交互会话默认开启（core config.ts L3654-L3656）；只覆盖 edit、write_file（本文件 L629-L638）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/QwenLM/qwen-code/blob/f42fe0f3251172c1174d00382ece522eafb3c6c2/packages/cli/src/config/settingsSchema.ts#L567-L575",
+      "locator": "packages/cli/src/config/settingsSchema.ts",
+      "lines": "L567-L575",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "general.enableAutoUpdate 默认 true（启动时更新检查与安装）；model.catalogRefresh 默认 true（models.dev 目录后台至多每 24 小时下载一次，L1864-L1872）。"
     }
   ],
   "environment_premises": {

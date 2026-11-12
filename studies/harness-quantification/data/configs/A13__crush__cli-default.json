@@ -20,6 +20,10 @@
     "LSP 工具：auto_lsp 默认开启，按项目根标记自动配置语言服务器，并加载 lsp_diagnostics、lsp_references、lsp_restart、lsp_symbols、lsp_definition、lsp_call_hierarchy、lsp_rename、lsp_replace_symbol（实际可用取决于本机是否装有对应语言服务器）",
     "内置技能（嵌入二进制，默认可用）：crush-config、crush-hooks、jq；另自动发现全局目录（~/.config/agents/skills、~/.config/crush/skills、~/.agents/skills、~/.claude/skills）与项目目录（.agents/skills、.crush/skills、.claude/skills、.cursor/skills）里的技能",
     "MCP 服务：无默认配置（Docker MCP 只在用户配置后启用）；配置了 MCP 时才加载 list_mcp_resources、read_mcp_resource",
+    "agentic_fetch 的内部子代理会话另注册 web_fetch、web_search（不注册给主 coder），与 glob、grep、sourcegraph、view 一起交给小模型；顶层 agentic_fetch 先询问，内部会话随后自动批准",
+    "后台模型请求（会话标题）：每个会话的第一条真实用户提示（或第一条直接执行的 shell 命令）会在后台额外发一次模型请求生成会话标题，先试小模型，失败或输出达到长度上限时再用大模型",
+    "bash 自动转后台：同步命令默认运行满 60 秒后自动转为后台任务，默认最多同时运行 50 个后台任务，用 job_output、job_kill 查看和结束",
+    "文件版本历史（默认开启）：write、edit、multiedit 以及 LSP 重命名、替换符号在改文件时，按会话把改前与改后的完整内容存为版本，写入数据目录下的 SQLite 库（默认 .crush/crush.db）",
     "钩子：无默认钩子"
   ],
   "environment_premises": {
@@ -31,7 +35,7 @@
     "credentials": "只有 Charm Hyper 的 OAuth 登录凭据（或 HYPER_API_KEY 二选一）；环境里没有 ANTHROPIC_API_KEY、OPENAI_API_KEY 等其他提供方密钥，也没有 AWS、VertexAI 等环境凭据（Crush 会按环境变量自动启用对应提供方，可能改变默认型号）",
     "other": "provider 自动更新保持默认开启（会联网取 Catwalk 与 Hyper 目录）；不连 crush serve 共享后端，单个 TUI 在本机进程中运行"
   },
-  "evidence_cutoff": "2026-11-11",
+  "evidence_cutoff": "2026-11-12",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -301,7 +305,70 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "环境前提",
       "note": "Yep 发送初始化提示并记已初始化；Nope 只记已初始化。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agentic_fetch_tool.go#L164-L172",
+      "locator": "internal/agent/agentic_fetch_tool.go",
+      "lines": "L164-L172",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "agentic_fetch 内部工具集。内部子代理会话的工具为 web_fetch、web_search、glob、grep、sourcegraph、view；会话建好后自动批准（L197）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/agent.go#L924-L934",
+      "locator": "internal/agent/agent.go",
+      "lines": "L924-L934",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "首条用户提示后台生成标题。没有用户文本消息时在 goroutine 里生成标题，Run 不等待；生成函数先试小模型再试大模型（L1902-L1993）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/bash.go#L53-L56",
+      "locator": "internal/agent/tools/bash.go",
+      "lines": "L53-L56",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "自动转后台。DefaultAutoBackgroundAfter=60 秒；L403 取默认值；后台任务上限默认 50 见 internal/config/config.go L489-L498。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/tools/write.go#L136-L155",
+      "locator": "internal/agent/tools/write.go",
+      "lines": "L136-L155",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文件版本历史。写入后调用历史服务保存旧内容与新内容的版本；edit.go L252-L256、multiedit.go L218 同样保存；库文件 crush.db 见 internal/db/connect.go L83-L99。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/app/app.go#L200-L201",
+      "locator": "internal/app/app.go",
+      "lines": "L200-L201",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "启动时后台检查更新。每次启动异步检查更新；internal/update/update.go L15 的默认客户端请求 GitHub releases/latest。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/cmd/root.go#L951-L961",
+      "locator": "internal/cmd/root.go",
+      "lines": "L951-L961",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "指标上报开关。未设 CRUSH_DISABLE_METRICS、DO_NOT_TRACK 且未配置 disable_metrics 时开启指标上报（L372-L374 初始化），端点 internal/event/event.go L16-L18 为 data.charm.land。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/charmbracelet/crush/blob/c7854d54a8fc2eef37f5c31ee4e829318b1ea13c/internal/agent/coordinator.go#L1164-L1168",
+      "locator": "internal/agent/coordinator.go",
+      "lines": "L1164-L1168",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "Hyper 余额刷新。Hyper 模型被包装，每次请求结束后后台向 /v1/credits 取余额（internal/agent/hyper_credits.go L14-L19、L79）。"
     }
   ],
-  "note": "单仓库 Go 项目，入口 crush。版本：GitHub releases/latest、npm latest、Homebrew tap 均为 v0.100.0（2026-11-05 发布），注释标签解引用到 c7854d54；本仓库来源记录里 crush 仍钉在 72654940（2026-09-22 采集），比本记录旧。官方快速开始的默认路径是 Hyper（Charm 自家提供方），不是用户任选；Hyper 的默认型号来自线上目录，2026-11-11 为 prism，内嵌目录为 qwen3.8-max，二者不同，编码时以线上读数为准并注意它会随时变化。配置格式：crushrc（Bash 写法）为主，crush.json 已标为弃用但仍支持。官方文档在仓库内（README.md、docs/config、docs/hooks、schema.json），charm.land/crush 只跳转到 GitHub 仓库，没有 llms-full.txt 全文导出（charm.land/llms-full.txt 返回的是站点 HTML 首页）。许可证 FSL-1.1-MIT（LICENSE.md）。提供方取 Charm Hyper、默认型号按 2026-11-11 线上目录的读数，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。"
+  "note": "单仓库 Go 项目，入口 crush。版本：GitHub releases/latest、npm latest、Homebrew tap 均为 v0.100.0（2026-11-05 发布），注释标签解引用到 c7854d54；本仓库来源记录里 crush 仍钉在 72654940（2026-09-22 采集），比本记录旧。官方快速开始的默认路径是 Hyper（Charm 自家提供方），不是用户任选；Hyper 的默认型号来自线上目录，2026-11-11 为 prism，内嵌目录为 qwen3.8-max，二者不同，编码时以线上读数为准并注意它会随时变化。配置格式：crushrc（Bash 写法）为主，crush.json 已标为弃用但仍支持。官方文档在仓库内（README.md、docs/config、docs/hooks、schema.json），charm.land/crush 只跳转到 GitHub 仓库，没有 llms-full.txt 全文导出（charm.land/llms-full.txt 返回的是站点 HTML 首页）。许可证 FSL-1.1-MIT（LICENSE.md）。提供方取 Charm Hyper、默认型号按 2026-11-11 线上目录的读数，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。 2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，再由 Claude Sonnet 5.5（claude-sonnet-5-5）核实和落实：原有说法均与快照一致，仅补入四类默认机制（agentic_fetch 内部工具集、后台生成会话标题、bash 自动转后台、文件版本历史）；另据快照，默认联网行为有启动时向 GitHub 检查更新、向 data.charm.land 上报指标（可用 CRUSH_DISABLE_METRICS、DO_NOT_TRACK 或 disable_metrics 关闭）、Hyper 模型每次请求后向 Hyper 接口取余额。版本与提交仍是原来钉的 c7854d54（发布号 v0.100.0 无法从快照核实，沿用 2026-11-11 的线上读数）。"
 }

@@ -11,17 +11,18 @@
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "本机浏览器界面 Agent Canvas（OpenHands 当前主产品形态）：终端运行 agent-canvas 启动整套本机服务（Canvas 前端与入口代理 :8000、Agent Server :18000、Automation Server :18001，后两者由 uvx 从 PyPI 拉起），浏览器打开 http://localhost:8000；默认智能体为 OpenHands 自带的 CodeActAgent（不选 ACP 第三方智能体）",
   "install_method": "command: npm install -g @openhands/agent-canvas，然后 agent-canvas（README Quickstart 的 Option 1: Without a Sandbox，文档站 Install Agent Canvas 的 Quick Start）；prerequisites: Node.js 24+、uv（uvx 按 config/defaults.json 的钉版从 PyPI 取 agent-server 1.61.0 与 automation 1.31.0，Python 请求 >=3.12,<3.15）；alternatives: npx @openhands/agent-canvas、Docker 镜像 ghcr.io/openhands/agent-canvas（Option 2 沙箱）、OH_CONVERSATION_RUNTIME=docker（Option 3 每会话一个容器）、桌面版预览安装包、源码 npm ci && npm run dev；source: https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/README.md#L62-L78（只作记录，未执行）",
-  "permission_mode": "无审批：confirmation_mode 默认 false，确认策略为 NeverConfirm，读文件、写文件、执行命令都直接执行，不弹确认；security_analyzer 默认值为 \"llm\"，但它只在打开确认模式后才决定是否暂停（ConfirmRisky 只拦高风险动作）。本机安装形态下 Agent Server 以启动账户的权限直接在宿主机运行（conversation_runtime 默认 local），可访问整个文件系统；没有网络隔离或联网审批，浏览器工具和公共技能拉取都可以直接联网。官方把隔离交给 Docker、VM 等运行时。",
+  "permission_mode": "无审批：confirmation_mode 默认 false，确认策略为 NeverConfirm，读文件、写文件、执行命令都直接执行，不弹确认；security_analyzer 默认值为 \"llm\"，但它只在打开确认模式后才决定是否暂停（ConfirmRisky 只拦高风险动作）。本机安装形态下 Agent Server 以启动账户的权限直接在宿主机运行（conversation_runtime 默认 local），可访问整个文件系统；没有网络隔离或联网审批，浏览器工具可以直接联网。官方把隔离交给 Docker、VM 等运行时。",
   "subagents_enabled": true,
   "enabled_extensions": [
     "默认工具（标准集，agent profile 的 tools 为空即取此集）：terminal、file_editor、task_tracker、switch_llm，外加每个智能体都有的内置 finish。Canvas 前端另给 openhands 类型的智能体默认挂上三个客户端工具，由浏览器里的 Canvas 页面执行（Agent Server 只回确认）：canvas_ui_control 把右侧面板切到相关文件、预览或终端、浏览器等标签页；request_secret 在对话里弹表单请用户填入所需密钥，存为用户密钥并以环境变量提供给本会话；launch_child_conversation 另开子会话（见下方子代理一条）",
     "browser_tool_set：Agent Server 的 enable_browser 默认 true，但本机运行时只在探测到可用的 Chromium/Playwright 时才加入；全新 macOS/Linux 机器上是否加入取决于本机环境",
-    "子代理：Canvas 前端给 OpenHands 智能体的会话无条件挂上客户端工具 launch_child_conversation，模型不改设置就能调用它另开一个子会话。默认 target=local：在同一台机器上、沿用父会话的智能体档案和工作区，默认切出自己的 git worktree 和分支（从默认分支切，看不到父会话的改动）；target=cloud 需已连 OpenHands Cloud 后端。子会话是独立运行的完整会话，看不到父会话历史；父代理只收到子会话的 id、链接和初始状态，看不到子会话的输出，结果不交回父代理。这个工具由浏览器里的 Canvas 页面执行，Agent Server 只回确认。执行端 SDK 自带的委派工具 task_tool_set、workflow_tool_set 已注册但不在默认集，默认档案下不挂，需在 agent profile 里改成自选工具才会挂上",
-    "技能：会话启动时自动合并公共技能（从 GitHub OpenHands/extensions 拉取，约 40 条）与用户技能；工作区里的 AGENTS.md 等仓库指引按工作区加载",
+    "子代理：Canvas 前端给 OpenHands 智能体的会话无条件挂上客户端工具 launch_child_conversation，模型不改设置就能调用它另开一个子会话。默认 target=local：在同一台机器上、沿用父会话的智能体档案和工作区，默认切出自己的 git worktree 和分支（从默认分支切，看不到父会话的改动）；父会话的工作区是没有提交的临时目录、或建 worktree 失败时，退回与父会话共用同一目录，并在返回里说明；target=cloud 需已连 OpenHands Cloud 后端。子会话是独立运行的完整会话，看不到父会话历史；父代理只收到子会话的 id、链接和初始状态，看不到子会话的输出，结果不交回父代理。这个工具由浏览器里的 Canvas 页面执行，Agent Server 只回确认。执行端 SDK 自带的委派工具 task_tool_set、workflow_tool_set 已注册但不在默认集，默认档案下不挂，需在 agent profile 里改成自选工具才会挂上",
+    "技能：Canvas 把 @openhands/extensions 0.41.0 包里的公共技能作为构建期内嵌快照（源码注释称约 60 条，包内容不在快照内，实际条数核不了）直接放进会话的技能列表，并自动加载用户技能与项目技能；load_public_skills 设为 false，会话启动时不从 GitHub 克隆公共技能。工作区里的 AGENTS.md 等仓库指引按工作区加载。有可调用的 SKILL.md 技能时自动挂上 invoke_skill；模型用它装入技能时，框架先在工作区用 shell 执行正文里代码块外的 !`命令`、把输出替换进内容（无开关，单条 10 秒超时）；关键词触发的自动注入和 AGENTS.md 原样进上下文，不执行",
     "钩子：load_user_hooks、load_project_hooks 默认 true",
     "上下文压缩：默认开启 LLM 摘要压缩（condenser max_size 240）",
     "MCP 服务：无默认配置（mcp_config 为空）",
-    "随整套本机服务启动的 Automation Server（openhands-automation 1.31.0）：agent-canvas 启动器除 --frontend-only 外都会拉起它，并把本机 Agent Server 地址交给它。用户建好定时（cron）或事件（webhook 等）自动化后，每次触发由它经 Agent Server 起一次独立的运行（提示词型带自己的会话，脚本型不建会话），不经过当前对话里的代理。界面路由里有 /automations 一组页面；侧栏入口是否显示取决于钉住的 @openhands/extensions 0.41.0 是否发布并通过自动化界面清单，该包不在快照内。自动化服务自身的源码不在快照内。另有内置 VS Code 编辑器入口（/vscode）；默认带 PostHog 遥测（首次的同意对话框默认勾选）"
+    "自动标题：Canvas 的会话启动请求固定带 autotitle: true，第一条用户消息到达后在后台再调一次模型生成会话标题。默认 title_llm_profile 为空，用主智能体的 LLM（配置的标题档案加载不了时也退回它），生成失败再退化为截断文本",
+    "随整套本机服务启动的 Automation Server（openhands-automation 1.31.0）：agent-canvas 启动器除 --frontend-only 外都会拉起它，并把本机 Agent Server 地址交给它。用户建好定时（cron）或事件（webhook 等）自动化后，每次触发由它经 Agent Server 起一次独立的运行（提示词型带自己的会话，脚本型不建会话），不经过当前对话里的代理。界面路由里有 /automations 一组页面；侧栏入口是否显示取决于钉住的 @openhands/extensions 0.41.0 是否发布并通过自动化界面清单，该包不在快照内。快照含 Automation 1.31.0 的源码，可据其核对调度、事件派发与运行记录。另有内置 VS Code 编辑器入口（/vscode）；默认带 PostHog 遥测（首次的同意对话框默认勾选）"
   ],
   "operating_system": "macOS、Linux、Windows（PowerShell 或 WSL2）；需 Node.js 24+ 与 uv；桌面版预览另有 macOS、Windows x64、Linux 安装包。Termux 等移动端 Linux 不是主要支持目标。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -34,7 +35,7 @@
     "credentials": "环境里只有 OPENAI_API_KEY，在向导里填入；没有 OpenHands Cloud 密钥、ChatGPT 订阅登录，也没有已登录的 Claude Code、Codex、Gemini CLI 等 ACP 智能体",
     "other": "执行运行时取快速开始默认的本机进程（README Option 1: Without a Sandbox；Agent Server 的 conversation_runtime 默认 local），不用 Docker 沙箱、每会话容器、VM、Modal 或 OpenHands Cloud 后端。编码要同时读两个仓库：OpenHands/OpenHands@e14b76cc（Canvas 前端、启动器、默认设置与版本钉）和 OpenHands/software-agent-sdk@a2ffb6ec（v1.61.0：智能体循环、工具、确认策略、子代理、技能、Agent Server）"
   },
-  "evidence_cutoff": "2026-11-11",
+  "evidence_cutoff": "2026-11-12",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -207,7 +208,7 @@
       "lines": "L435-L460",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "扩展",
-      "note": "profile 技能取用户技能与公共技能合并，load_public、load_user 均为 True；公共技能来自注册的插件市场或 GitHub OpenHands/extensions。"
+      "note": "profile 技能取用户技能与公共技能合并，load_public、load_user 均为 True；公共技能来自注册的插件市场或 GitHub OpenHands/extensions。 这是 Agent Server 自己的 profile 技能发现路径；Canvas 另把公共技能内嵌进会话并把 load_public_skills 设为 false（见后面的内嵌快照小卡），公共技能不走这里的 GitHub 拉取。"
     },
     {
       "evidence_kind": "official_doc",
@@ -315,7 +316,7 @@
       "lines": "L265-L341",
       "retrieved_at": "2026-11-11",
       "configuration_scope": "子代理",
-      "note": "本机子会话沿用父会话的工作目录和智能体档案（parentProfileLaunch），首条消息是 task，带 parentConversationId；isolation=worktree 时切新 worktree，失败退回共用目录。"
+      "note": "本机子会话沿用父会话的工作目录和智能体档案（parentProfileLaunch），首条消息是 task，带 parentConversationId；isolation=worktree 时切新 worktree，失败退回共用目录。 L294-L317：父会话工作区切不出 worktree（没有提交的临时目录）或创建 worktree 失败时，改用 shared 重试，并把原因写进返回的说明。"
     },
     {
       "evidence_kind": "source_path",
@@ -397,7 +398,124 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "扩展",
       "note": "Agent Server 对客户端工具调用立即确认，实际动作在浏览器端处理：canvas_ui 动作切换界面，launch_child_conversation 发起子会话，request_secret 弹出密钥表单并在保存或取消后回贴结果。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/package.json#L27",
+      "locator": "package.json",
+      "lines": "L27",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "依赖钉 @openhands/extensions 0.41.0，公共技能目录和自动化界面清单都来自这个包；包内容不在快照内。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/skills-service.ts#L26-L40",
+      "locator": "src/api/skills-service.ts",
+      "lines": "L26-L40",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "公共技能来自 @openhands/extensions 包，是构建期内嵌的不可变快照；设置页列技能时只向 Agent Server 要用户和项目技能（load_public 为 false）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L907-L954",
+      "locator": "src/api/agent-server-adapter.ts",
+      "lines": "L907-L954",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "会话的 agent_context 里直接放入内嵌的公共技能（注释称约 60 条，另有允许名单过滤），并设 load_public_skills false、load_user_skills true、load_project_skills true：前端是公共技能的唯一来源，Agent Server 不再克隆 extensions 仓库。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/skills/execute.py#L29-L119",
+      "locator": "openhands-sdk/openhands/sdk/skills/execute.py",
+      "lines": "L29-L119",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "render_content_with_commands：在代码块之外执行 !`命令`（shell=True，工作目录为传入的工作区），输出替换进正文；单条默认超时 10 秒，输出上限 50KB；没有关闭开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/tool/builtins/invoke_skill.py#L118",
+      "locator": "openhands-sdk/openhands/sdk/tool/builtins/invoke_skill.py",
+      "lines": "L118",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "模型通过 invoke_skill 装入技能时，对技能正文调用 render_content_with_commands 后再返回给模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/agent/base.py#L593-L608",
+      "locator": "openhands-sdk/openhands/sdk/agent/base.py",
+      "lines": "L593-L608",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "agent_context 里有可直接调用（未设 disable_model_invocation）的 AgentSkills 格式技能时，自动把 InvokeSkillTool 加进默认工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-sdk/openhands/sdk/context/agent_context.py#L559-L576",
+      "locator": "openhands-sdk/openhands/sdk/context/agent_context.py",
+      "lines": "L559-L576",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "关键词触发的技能把 skill.content 原样作为召回知识注入，不经过命令渲染。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/pyproject.toml#L1-L7",
+      "locator": "pyproject.toml",
+      "lines": "L1-L7",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "快照含 openhands-automation 1.31.0 的源码包，与记录钉住的自动化服务版本一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/automation/blob/4f1b706b986fbaa28b5e3539bba74d280e54636e/openhands/automation/dispatcher.py#L1-L15",
+      "locator": "openhands/automation/dispatcher.py",
+      "lines": "L1-L15",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "调度器轮询运行记录表里的待处理项，派发给执行后端（云端沙箱或本机 Agent Server）；完成由执行环境里的 SDK 回调上报。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/api/agent-server-adapter.ts#L1235-L1236",
+      "locator": "src/api/agent-server-adapter.ts",
+      "lines": "L1235-L1236",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "会话启动请求固定带 stuck_detection: true 和 autotitle: true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/software-agent-sdk/blob/a2ffb6ec21a6216edc9fc4b4739c076847f87e04/openhands-agent-server/openhands/agent_server/conversation_service.py#L2717-L2800",
+      "locator": "openhands-agent-server/openhands/agent_server/conversation_service.py",
+      "lines": "L2717-L2800",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "AutoTitleSubscriber：第一条用户消息触发后台标题任务；标题模型优先取 title_llm_profile，取不到用主智能体 LLM，生成失败退化为截断文本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/hooks/use-telemetry.ts#L68-L89",
+      "locator": "src/hooks/use-telemetry.ts",
+      "lines": "L68-L89",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "首次挂载即调用 trackInstall，不等遥测同意；代码注释写明发送内容为浏览器 platform、user agent、referrer、origin 和 embedded 状态，可由 VITE_DO_NOT_TRACK 或浏览器 DNT 阻止。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/OpenHands/OpenHands/blob/e14b76cca01a71597cee242c202eed730e745ce3/src/services/telemetry.ts#L736-L792",
+      "locator": "src/services/telemetry.ts",
+      "lines": "L736-L792",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "trackInstall：DNT 关闭且 localStorage 未记录时向 PostHog 发一次 canvas_install 事件，随后记录已发送；未同意时把客户端恢复为退出采集状态。"
     }
   ],
-  "note": "产品形态已变：OpenHands/OpenHands 仓库现在是 Agent Canvas（自托管的浏览器控制台，可驱动 OpenHands 自带智能体或经 ACP 驱动 Claude Code、Codex、Gemini CLI、Pi、OpenCode），文档站把它列为推荐运行方式；旧的 Docker Local GUI 和 openhands serve（旧 CLI 的 GUI 服务）标为 Legacy，独立 CLI 仓库 OpenHands/OpenHands-CLI 最近发布是 2026-05-08 的 1.16.0。代码分在三个仓库：本记录 version_or_commit 第一个 SHA 是 Canvas 仓库 e14b76cc（入口、启动器、默认设置、版本钉），智能体循环、工具、确认策略、子代理、技能与 Agent Server 在 OpenHands/software-agent-sdk 的 v1.61.0（a2ffb6ec），这是 Canvas 1.38.0 的 config/defaults.json 钉住的版本；PyPI 与 SDK releases/latest 当天已到 1.62.0，默认安装不取。自动化服务在 OpenHands/automation 1.31.0（4f1b706b），与编码关系较远。官方文档在独立仓库 OpenHands/docs（本记录钉在 cb84784b），站点 docs.openhands.dev 由 Mintlify 托管，有 llms.txt 与 llms-full.txt 全文导出。默认型号有两处来源不一致：源码与仓库内验证手册指向 OpenAI 提供方的 openai/gpt-5.6-sol，文档站说提供方默认 OpenHands；向导还会优先用后端模型目录里标为 default 的 OpenHands 型号，本记录没有核实本机后端是否返回这个标记。browser_tool_set 是否加入取决于本机能否探测到 Chromium，未运行验证。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。"
+  "note": "产品形态已变：OpenHands/OpenHands 仓库现在是 Agent Canvas（自托管的浏览器控制台，可驱动 OpenHands 自带智能体或经 ACP 驱动 Claude Code、Codex、Gemini CLI、Pi、OpenCode），文档站把它列为推荐运行方式；旧的 Docker Local GUI 和 openhands serve（旧 CLI 的 GUI 服务）标为 Legacy，独立 CLI 仓库 OpenHands/OpenHands-CLI 最近发布是 2026-05-08 的 1.16.0。代码分在三个仓库：本记录 version_or_commit 第一个 SHA 是 Canvas 仓库 e14b76cc（入口、启动器、默认设置、版本钉），智能体循环、工具、确认策略、子代理、技能与 Agent Server 在 OpenHands/software-agent-sdk 的 v1.61.0（a2ffb6ec），这是 Canvas 1.38.0 的 config/defaults.json 钉住的版本；PyPI 与 SDK releases/latest 当天已到 1.62.0，默认安装不取。自动化服务在 OpenHands/automation 1.31.0（4f1b706b），与编码关系较远。官方文档在独立仓库 OpenHands/docs（本记录钉在 cb84784b），站点 docs.openhands.dev 由 Mintlify 托管，有 llms.txt 与 llms-full.txt 全文导出。默认型号有两处来源不一致：源码与仓库内验证手册指向 OpenAI 提供方的 openai/gpt-5.6-sol，文档站说提供方默认 OpenHands；向导还会优先用后端模型目录里标为 default 的 OpenHands 型号，本记录没有核实本机后端是否返回这个标记。browser_tool_set 是否加入取决于本机能否探测到 Chromium，未运行验证。入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。 2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5），改了五处：公共技能改为 Canvas 内嵌 @openhands/extensions 0.41.0 的构建期快照（会话启动不再从 GitHub 克隆，同步删去权限说明里“公共技能拉取”联网的说法）；自动化服务源码在快照内；补自动标题会在后台多调一次模型；Canvas 页面首次挂载时会在遥测同意之前向 PostHog 发一次匿名 canvas_install 事件（含浏览器 platform、user agent、referrer、origin 和 embedded 状态，localStorage 去重，浏览器 DNT 或禁用遥测开关可阻止）；另据此前的事实回查补了技能一句（invoke_skill 自动挂上、!`命令` 渲染执行及其边界）。版本和提交仍是原来钉的。同日 Claude Fable 5（claude-fable-5-2）对照快照复看后，在子代理一条里补上子会话 worktree 隔离退回共用目录的两种情形。"
 }

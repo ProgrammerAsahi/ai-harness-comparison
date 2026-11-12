@@ -16,13 +16,17 @@
   "model_policy": "架构层不绑定模型；适配记录另存",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "内置工具默认启用（enabled_tools、disabled_tools 默认为空）：read_file, edit, write_file, bash, todo, skill, ask_user_question。配置里仍认 grep、task 两个名字，但默认入口走的 Unified Harness 不运行这两个工具，也不读它们的设置：没有 grep 工具，模型按内容搜索项目靠在 bash 里跑 rg 或 grep；子代理改由 tools.agents.spawn 派出。联网搜索和打开网页不走内置 web_search、web_fetch 工具，而是 Mistral 托管的内置连接器 web_search（run_typescript 里的 tools.web_search.web_search、open_url），需 enable_connectors（默认 true）且能取到 Mistral 凭据才可用",
+    "内置工具默认启用（enabled_tools、disabled_tools 默认为空）：read_file, edit, write_file, bash, todo, skill, ask_user_question。配置里仍认 grep、task 两个名字，但默认入口走的 Unified Harness 不运行这两个工具，也不读它们的设置：没有 grep 工具，模型按内容搜索项目靠在 bash 里跑 rg 或 grep；子代理改由 tools.agents.spawn 派出。联网搜索和打开网页不走内置 web_search、web_fetch 工具，而是 Mistral 托管的内置连接器 web_search（连接器组名统一加 connector_ 前缀，在 run_typescript 里分别调用 tools.connector_web_search.web_search 和 tools.connector_web_search.open_url），需 enable_connectors（默认 true）且能取到 Mistral 凭据才可用",
     "Unified Harness 经 run_typescript 提供的能力：tools.agents.*（spawn、send_message、list、interrupt；enable_subagents 默认 true，最多 32 个子代理；该设置的说明文字仍写旧名 tools.subagent）。子代理是独立会话，派出后不阻塞父代理，结束后结果作为新输入回到父代理（父代理可用 wait 等待）；另有 tools.process 后台进程（enable_background_processes 默认 true）",
     "内置子代理 explore（只读：grep、read_file、skill）在默认入口不向模型公布：Unified Harness 只公布 ~/.vibe/agents、.vibe/agents 和插件里定义的子代理类型，都没有时模型派的是通用子代理（沿用父代理的配置和工具，不带父代理的指令，由派出时的消息交代任务）；另有可选安装的 lean 代理，默认不装",
     "内置插件 vibe 总是加载，带技能 /vibe:create-plugin、/vibe:import、/vibe:skill-creator、/vibe:vibe、/vibe:worktree",
     "Connectors（Mistral 托管集成）：enable_connectors 默认 true，各连接器需单独连接或登录；实验性的 document_library、Mistral MCP 连接器默认关",
     "MCP 服务：enable_mcp 默认 true，但没有默认配置的服务（需 vibe mcp add 或写进 config.toml）",
-    "遥测：enable_telemetry 默认 true；服务端 GrowthBook 实验可改默认代理、系统提示变体、默认型号路由、模型目录与托管 shell 工具"
+    "遥测：enable_telemetry 默认 true；服务端 GrowthBook 实验可改默认代理、系统提示变体、默认型号路由、模型目录与托管 shell 工具",
+    "默认还注册两个由 Vibe 提供的直接工具：cron（模型可建持久化的定时或周期提示，最多 50 个，只在会话开着且空闲时触发，默认直接放行）和 unified_harness_scratchpad（读写每会话私有的工作笔记目录，位于会话存储下 unified/<会话 ID>/scratchpad，默认放行）",
+    "默认合并一个内置的 AGENTS.md 延迟注入钩子（读取子目录文件时才发现并注入 AGENTS.md），本配置前提是仓库里没有这类文件，钩子存在但没有内容可注入",
+    "默认开启后台会话标题生成（session_logging.generate_titles 默认 true，CLI 入口属于启用范围）：会另发一次模型请求，未配置标题模型时用当前模型",
+    "默认开启按回合的文件快照用于回退（rewind）：在回合边界记录 write_file、edit 涉及文件的磁盘状态，快照只存在进程内存里，不写磁盘；shell 命令首次改动的文件没有改前状态，子代理的写入也不记录"
   ],
   "environment_premises": {
     "account_tier": "Mistral 账户，首启设置向导选推荐的 Launch browser 在浏览器登录，用账户所在方案的包含额度；文档说同一把钥匙在 Free 模式、付费方案和按量付费下都能用，最低档取 Free（具体额度与速率限制按方案而定，未核实 Free 档的 Vibe Code 额度数字）",
@@ -33,7 +37,7 @@
     "credentials": "只有 Mistral 账户的浏览器登录凭据（设置向导自动生成并存入系统钥匙串，没有钥匙串时存 ~/.vibe/.env）；环境里没有其他提供方的密钥，也没有 OpenRouter 等第三方配置",
     "other": "快速开始默认在本机进程里运行（Rust TUI vibe-rs 加本机 vibe-app-server 子进程），工具直接在本机执行；Vibe Code Web 的云端沙箱、VS Code 扩展和 --worktree 工作树都不在本配置内"
   },
-  "evidence_cutoff": "2026-11-11",
+  "evidence_cutoff": "2026-11-12",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -237,7 +241,60 @@
       "retrieved_at": "2026-11-11",
       "configuration_scope": "权限",
       "note": "非 auto-approve、非 smart-approve 时（L1940-L1946 为 PROMPT），连接器和 MCP 等外部提供的工具一律 ask；_unified_permissions.py L594-L613 对这类工具按其设置决定，未设置时默认 ask。_rust_tool_modes（L3079 起）只给 _unified_permissions.py L86-L97 列出的文件、shell、skill、process 工具定审批模式，agents.* 不在其中，执行层对没有模式的内置工具按 allow 处理（harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_local_actions.py L785-L788）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_connector_naming.py#L189-L194",
+      "locator": "harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_connector_naming.py",
+      "lines": "L189-L194",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "连接器组名为 connector_ 加别名（_group_names）；L61 起工具以 programmatic_name 生成描述；同目录 _host.py L5367-L5388 把连接器工具以 programmatic 方式注册。因此内置 web_search 连接器的工具调用路径是 connector_web_search.web_search、connector_web_search.open_url，与 vibe/cli-rust/src/server/connector_web.rs L1-L9 一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_provided_tools.py#L160-L226",
+      "locator": "vibe/app_server/_provided_tools.py",
+      "lines": "L160-L226",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Vibe 提供的工具组：cron 与 unified_harness_scratchpad 只受空的 enabled/disabled 过滤器约束（_passes_tool_filters），默认注册；scratchpad 审批模式 allow，cron 经 vibe/app_server/_unified_permissions.py L79-L84 的 _ALLOWED_BY_DEFAULT 默认放行。cron 说明见 vibe/app_server/_cron.py L13-L24，scratchpad 目录见 vibe/app_server/_unified_scratchpad.py L13-L21。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L2325-L2329",
+      "locator": "vibe/app_server/_runtime.py",
+      "lines": "L2325-L2329",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "每个 Unified 会话都执行 merge_agents_md_hook，合并内置的 AGENTS.md 延迟注入钩子（实现见 vibe/app_server/_agents_md_hooks.py L239）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_runtime.py#L490-L503",
+      "locator": "vibe/app_server/_runtime.py",
+      "lines": "L490-L503",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "_auto_titles_enabled：generate_titles 为真且入口是 cli、desktop、acp 时开启后台标题；L1887-L1894 标题模型未配置时取当前模型；vibe/core/config/models.py L109-L122 中 generate_titles 默认 true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/mistralai/mistral-vibe/blob/b20313e01d6926d4191da89c32d5da11e3a0a060/vibe/app_server/_unified_harness_snapshots.py#L1-L31",
+      "locator": "vibe/app_server/_unified_harness_snapshots.py",
+      "lines": "L1-L31",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "按回合的文件快照用于 rewind 恢复：快照只在内存里，shell 首次改动的文件无改前状态，子代理写入不记录；vibe/app_server/_unified_harness_backend_adapter.py L7550-L7553 在没有沙箱时创建 RewindFileSnapshots（本配置默认没有沙箱）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.mistral.ai/vibe/code/cli/configuration-reference",
+      "locator": "Configuration reference：enable_update_checks 与 enable_auto_update 说明（.md 版）；Install and setup：Update the CLI 一节",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "enable_update_checks 默认 true，每天检查一次新版本并在下次启动时提示安装；enable_auto_update 已无效。"
     }
   ],
-  "note": "登录取浏览器登录，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。"
+  "note": "登录取浏览器登录，入口、登录方式和环境前提（含工作仓库不带项目级代理配置）经研究负责人 2026-11-11 确认。 2026-11-12 由第二位读者（Kimi K3.1 Pro，经编排器配置 k3-1-pro 调用）对照源码快照复核，其复核没有做完，逐项核对表第 6、7 项由核实和落实者（Claude Sonnet 5.5，claude-sonnet-5-5）补核；改了一处（联网搜索与打开网页在 run_typescript 里的连接器命名空间），并在 enabled_extensions 补了四条默认存在的机制（cron 与 scratchpad 工具、AGENTS.md 延迟注入钩子、后台会话标题、按回合的文件快照）；另补一条联网行为：默认每天检查一次新版本并在下次启动时提示安装（enable_update_checks 默认 true），连接器目录在启动时向 Mistral 取内置连接器清单，实际返回内容快照里核不了。版本和提交仍是原来钉的（v3.1.2，b20313e0），PyPI 与 GitHub 的 latest 以及 wheel 与源码提交是否一致，快照里核不了。"
 }
