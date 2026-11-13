@@ -11,19 +11,21 @@
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
   "entrypoint": "A0 Launcher（官方桌面启动器 v1.9）创建并运行本地 Docker 实例，镜像 agent0ai/agent-zero:latest，保持默认版本和持久工作区，Open UI 后用网页界面；Host access 保持默认关闭。直接用 docker run -d -p 127.0.0.1:5080:80 -v a0_usr:/a0/usr agent0ai/agent-zero 得到同一个镜像和同一个容器内运行方式，官方把它列在“其他安装方式”。",
   "install_method": "官方快速开始：下载 A0 Launcher v1.9（macOS 为 .dmg，Apple Silicon 或 Intel 各一）→ 按提示配 Docker → Create an Instance（Download Agent Zero 或 Run Agent Zero，保持 latest 与持久工作区，点 Create）→ 等 Running → Open UI → 在欢迎界面发第一条消息，被拦下后在向导里连接模型。无 Launcher 时：macOS/Linux 用 A0 Install 脚本 curl -fsSL https://bash.agent-zero.ai | bash，或已有 Docker 时 docker run -d -p 127.0.0.1:5080:80 -v a0_usr:/a0/usr agent0ai/agent-zero。source: https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/README.md#L30-L100 （只作记录，未执行）",
-  "permission_mode": "无权限或审批层：代理在容器内以 root 用本地终端执行命令（ssh_enabled=auto，容器内不走 SSH），读写文件、联网都不需要用户确认；tool_access 默认 allow；唯一的注入检查 infection_check 默认关闭。隔离靠 Docker 容器本身：docker run 路径把网页界面只绑到主机回环（127.0.0.1:5080），Launcher 创建实例时的端口绑定未读其源码；用户数据挂在 /a0/usr。Launcher 的 Host access（用主机的文件、终端、浏览器、Computer Use）默认关闭，开启后命令在主机上执行且不限于所选文件夹。",
+  "permission_mode": "没有逐条命令的用户审批：代理在容器内以 root 用本地终端执行命令（ssh_enabled=auto，容器内不走 SSH），读写文件、联网都不需要用户确认。另有始终启用的工具访问策略层（tool_access），初始配置继承、默认 allow、无阻止项，所以默认全部放行，策略一旦设了阻止项就会在执行前拒绝对应调用；可选的注入检查 infection_check 默认关闭。隔离靠 Docker 容器本身：docker run 路径把网页界面只绑到主机回环（127.0.0.1:5080），Launcher 创建实例时的端口绑定未读其源码；用户数据挂在 /a0/usr。Launcher 的 Host access（用主机的文件、终端、浏览器、Computer Use）默认关闭，开启后命令在主机上执行且不限于所选文件夹。",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "代码在哪里跑：官方镜像里 supervisord 起 run_ui（root），网页服务、代理循环、命令执行都在 Docker 容器内；code_execution_tool 在容器里用本地终端（ssh_enabled=auto 在 dockerized 时不走 SSH），不经 SSH 或别的方式去别处。别处执行只有两条非默认路：Launcher 的 Host access（默认关）和用户自装并连接的 A0 CLI（此时才出现 code_execution_remote 等四个远程工具）。容器里 sshd 随 supervisor 启动，但快速开始命令只映射 80 端口（容器 EXPOSE 22 不等于发布）。",
+    "代码在哪里跑：官方镜像里 supervisord 起 run_ui（root），网页服务、代理循环、命令执行都在 Docker 容器内；code_execution_tool 在容器里用本地终端（ssh_enabled=auto 在 dockerized 时不走 SSH），不经 SSH 或别的方式去别处。别处执行只有两条非默认路：Launcher 的 Host access（默认关）和用户自装并连接的 A0 CLI（连接后按各自的授权才出现 code_execution_remote 等四个远程工具，授权条件见证据）。容器里 sshd 随 supervisor 启动，但快速开始命令只映射 80 端口（容器 EXPOSE 22 不等于发布）。",
     "插件总规则：仓库 plugins/ 下 47 个内置插件，其中 15 个 always_enabled（不可关）；其余按“默认全开，有 .toggle-0 才关”，只有 _infection_check 带 .toggle-0（默认关），_chat_compaction 带 .toggle-1（默认开）。所以其余 31 个可开关插件默认都是开的。“启用”不等于已配置可用：Telegram、WhatsApp、邮件集成默认没有 bot、号码或邮箱配置，等于不连通。",
-    "默认注册给模型的工具（按 prompts/ 与各插件 prompts/ 下 agent.system.tool.*.md 的名字，主代理 profile agent0）：response、call_subordinate、parallel、skills_tool；code_execution_tool、input、text_editor、browser、search_engine、memory 工具组（memory_load、memory_save、memory_delete、memory_forget）、document_query、scheduler、wait、goal、notify_user、behavior_adjustment、a2a_chat、office_artifact。tools/ 下另有 vision_load 和 unknown，vision_load 是否出现取决于主模型是否支持图像（未核实）。tool_access 默认全部允许（default: allow）。",
+    "默认注册给模型的工具（按 prompts/ 与各插件 prompts/ 下 agent.system.tool.*.md 的名字，主代理 profile agent0）：response、call_subordinate、parallel、skills_tool；code_execution_tool、input、text_editor、browser、search_engine、memory（一个工具，用 action 参数分 load、save、delete、forget 四个动作；旧的 memory_load 等四个调用名仍兼容）、document_query、scheduler、wait、goal、notify_user、behavior_adjustment、a2a_chat、office_artifact。tools/ 下另有 vision_load 和 unknown，vision_load 的说明在配置了独立视觉模型或主模型配置 vision=true 时才加进提示（随包兜底预设 Default 为 vision:true；只看配置，不验证模型能否真看图）。tool_access 默认全部允许（default: allow）。",
     "子代理默认可用：call_subordinate 与 parallel 默认列在工具说明里，profile 取自 agents/（agent0、default、developer、hacker、researcher 等），不改设置即可派。",
-    "没有权限或审批层：命令、读写文件、联网默认不需要用户确认；唯一的拦截类机制是默认关闭的 infection_check（用工具模型审查代理输出里的注入和凭据外传）。容器是它的隔离边界，容器内以 root 运行，/a0/usr 是持久挂载。",
-    "默认会自发的模型请求：聊天自动命名（工具模型，automatic_naming 默认 true）；每轮结束自动记忆提取与整合（工具模型）；每 3 次循环的记忆召回走本地嵌入向量检索（查询改写、结果过滤两个会调用工具模型的开关默认关）；临界异常重试 1 次；behavior_adjustment 被调用时用工具模型合并行为规则。对话历史压缩用哪个模型未核实。",
+    "没有逐条命令的用户审批：命令、读写文件、联网默认不需要用户确认。有始终启用的工具访问策略层（tool_access），按工具及动作过滤提示和 schema，并在执行前拒绝被禁止的调用；初始配置继承、默认 allow、无阻止项，本配置未改，因此默认不拦。此外有默认关闭的 infection_check（用工具模型审查代理输出里的注入和凭据外传）。容器是主要的隔离边界，容器内以 root 运行，/a0/usr 是持久挂载。",
+    "默认会自发的模型请求：聊天自动命名（工具模型，automatic_naming 默认 true）；每轮结束自动记忆提取与整合（工具模型）；每 3 次循环的记忆召回走本地嵌入向量检索（查询改写、结果过滤两个会调用工具模型的开关默认关）；临界异常重试 1 次；behavior_adjustment 被调用时用工具模型合并行为规则。对话历史超过预算时，核心每轮结束会在后台安排历史整理，用工具模型做摘要，下一轮仍超预算就等待或同步整理，未超预算不因整理请求模型；另有默认启用的 chat_compaction 整段压缩，只由用户在界面点击触发（聊天运行中拒绝，不足 1000 token 不做），默认用主聊天模型，可改用工具模型或指定预设，替换历史前会把原聊天备份到 /a0/usr/chats/<context_id>/backups/。",
     "嵌入模型 sentence-transformers/all-MiniLM-L6-v2 由 huggingface 提供方在容器内本地运行，不需要嵌入用的 API 密钥（镜像构建时 preload.py 预加载，未读其内容）。",
     "联网相关默认：update_check_enabled=true，用户从界面发消息后向 api.agent-zero.ai 发送版本号和匿名 id；首次启动无预设文件时联网取 agent0ai/a0-presets 的预设；search_engine 经容器内 SearXNG 向外部搜索引擎发请求。MCP 服务器、A2A 服务器默认关；网页界面默认无登录保护（见 environment_premises）。",
-    "容器内的其他默认面：Playwright 浏览器（runtime_backend=container）、Linux Desktop（Xpra/Xfce）、本地 SearXNG、LibreOffice 的 office 工件、Kokoro 与 Whisper 语音插件（是否主动调用未核实）、记忆、技能（active_skills 默认空，随仓库有 skills/ 7 个与插件内 18 个 SKILL.md）、调度器（scheduler 工具与任务界面；默认任务为空，未核实）、orchestrator（按需加载的技能，用来调用外部无头命令行代理 Codex、Claude Code 等，镜像里没有这些命令则不可用，未核实）。",
-    "a0_acp（连接 ACP 编辑器）插件默认启用，但依赖本机 A0 CLI 连接，官方 Docker 路径下没有连接；agent_editor、migrate_agents、plugin_installer、plugin_scan、plugin_validator 为界面和插件管理类，不向模型注册工具（未逐个核实）。"
+    "容器内的其他默认面：Playwright 浏览器（runtime_backend=container）、Linux Desktop（Xpra/Xfce）、本地 SearXNG、LibreOffice 的 office 工件、Kokoro 与 Whisper 语音插件（是否主动调用未核实）、记忆、技能（active_skills 默认空，随仓库有 skills/ 7 个与插件内 18 个 SKILL.md）、调度器（scheduler 工具与任务界面；容器里网页服务启动后常驻每 60 秒一次的任务循环；全新数据目录默认任务为空，已有的持久任务会重新载入）、orchestrator（按需加载的技能，用来调用外部无头命令行代理 Codex、Claude Code 等，镜像里没有这些命令则不可用，未核实）。",
+    "a0_acp（连接 ACP 编辑器）插件默认启用，但依赖本机 A0 CLI 连接，官方 Docker 路径下没有连接；agent_editor、migrate_agents、plugin_installer、plugin_scan、plugin_validator 为界面和插件管理类，不向模型注册工具（未逐个核实）。",
+    "默认文件快照：Time Travel 插件默认启用，启动时注册文件监视，工作区文件变化（包括文本编辑写入与补丁、界面文件管理操作）和代码执行完成后排队拍快照（不含 output 轮询；默认合并窗口 10 秒），写进 /a0/usr/.time_travel/workspaces/<workspace_id>/repo.git 的影子 Git 仓库，只覆盖 /a0/usr 内的工作区（默认 /a0/usr/workdir）和项目，树没变不建新提交，不是整个容器或模型状态的快照；默认每 6 小时一次清理检查，历史不因年龄删除。",
+    "Context Doctor 插件默认启用：在模型回复处理前修复文本形式的工具调用 JSON（本地逻辑，不另调模型）；原生函数调用已有时跳过，没提取到动作时保留输出并加一条继续提示。"
   ],
   "operating_system": "macOS、Linux、Windows（Launcher 有三平台安装包，运行靠 Docker Desktop 或 Docker Engine；macOS 上 Docker Desktop 需在 Settings → Advanced 打开“Allow the default Docker socket to be used”）；容器内是 Linux。",
   "model_policy": "架构层不绑定模型；适配记录另存",
@@ -283,12 +285,12 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_compaction/plugin.yaml#L1-L5",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_compaction/plugin.yaml#L1-L4",
       "locator": "plugins/_chat_compaction/plugin.yaml",
-      "lines": "L1-L5",
+      "lines": "L1-L4",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "聊天压缩插件：把整个对话历史压成一条摘要；plugins/_chat_compaction/.toggle-1（空文件）显式默认开启。何时触发（手动还是自动）未核实。"
+      "note": "聊天压缩插件：把整个对话历史压成一条摘要；plugins/_chat_compaction/.toggle-1（空文件）显式默认开启。由用户在界面点击触发，聊天运行中拒绝，默认用主聊天模型（见 plugins/_chat_compaction/default_config.yaml、api/compact_chat.py）。"
     },
     {
       "evidence_kind": "source_path",
@@ -324,7 +326,7 @@
       "lines": "L1-L5",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "权限",
-      "note": "工具可见性与执行策略默认 mode: inherit、default: allow、mcp_default: allow，也就是默认全部允许；插件 always_enabled。"
+      "note": "工具可见性与执行策略默认 mode: inherit、default: allow、mcp_default: allow、blocked 为空，也就是默认全部允许；插件 always_enabled，是始终启用的策略层，只是初始策略放行。"
     },
     {
       "evidence_kind": "source_path",
@@ -333,7 +335,7 @@
       "lines": "L1-L8",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "code_execution_remote、text_editor_remote、input_remote、computer_use_remote 四个远程工具只在已连接的 A0 CLI 声明支持远程执行时才出现（用户在 CLI 里按 F4 打开）；官方 Docker 路径默认没有 CLI 连接，所以不在默认工具里。"
+      "note": "四个远程工具只在已连接的 A0 CLI 会话授权后才出现在提示里：code_execution_remote 与 input_remote 看远程执行授权（CLI 里按 F4 切换），text_editor_remote 看远程文件授权，computer_use_remote 另看 Computer Use 的支持、启用且状态不是 rearm required；官方 Docker 路径默认没有 CLI 连接，所以都不在默认工具里。"
     },
     {
       "evidence_kind": "source_path",
@@ -382,12 +384,12 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/tools/memory_save.py#L1-L5",
-      "locator": "plugins/_memory/tools/memory_save.py",
-      "lines": "L1-L5",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/prompts/agent.system.tool.memory.md#L1-L4",
+      "locator": "plugins/_memory/prompts/agent.system.tool.memory.md",
+      "lines": "L1-L4",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "记忆工具由 memory_load、memory_save、memory_delete、memory_forget 四个文件注册（目录 plugins/_memory/tools/）。"
+      "note": "默认注册给模型的是一个 memory 工具，用 action 参数分 load、save、delete、forget 四个动作；plugins/_memory/tools/ 下的 memory_load 等四个文件只是兼容入口（memory_load.py 直接引入统一的 MemoryTool）。"
     },
     {
       "evidence_kind": "source_path",
@@ -505,7 +507,97 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "环境前提",
       "note": "账户登录路线（Account）：本地 OAuth 桥，首个提供方是 Codex / ChatGPT 账户。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_tool_access/extensions/python/tool_execute_before/_10_enforce_tool_policy.py#L5-L8",
+      "locator": "plugins/_tool_access/extensions/python/tool_execute_before/_10_enforce_tool_policy.py",
+      "lines": "L5-L8",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "工具执行前总调用 ensure_tool_allowed；被策略禁止的调用会被拒绝（helpers/tool_policy.py L264-L297 抛出被拦截的错误），默认策略放行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/tools/memory.py#L11-L22",
+      "locator": "plugins/_memory/tools/memory.py",
+      "lines": "L11-L22",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "统一的 MemoryTool 按 action 分派 load、save、delete、forget。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_end/_10_organize_history.py#L9-L30",
+      "locator": "extensions/python/message_loop_end/_10_organize_history.py",
+      "lines": "L9-L30",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "每轮循环结束在后台任务里整理历史；历史超过预算才压缩（helpers/history.py L543-L552），摘要走 call_utility_model（同文件 L298-L305、L350-L355）；下一轮仍超预算由 message_loop_prompts_before/_90_organize_history_wait.py 等待或同步整理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_compaction/default_config.yaml#L1",
+      "locator": "plugins/_chat_compaction/default_config.yaml",
+      "lines": "L1",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "手动整段压缩默认 use_chat_model: true，即主聊天模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_time_travel/helpers/time_travel.py#L23-L33",
+      "locator": "plugins/_time_travel/helpers/time_travel.py",
+      "lines": "L23-L33",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Time Travel 常量：影子仓库根 /a0/usr/.time_travel/workspaces，自动快照合并窗口 10 秒，文件监视合并 1 秒。该插件 plugin.yaml 无 always_enabled、目录无 .toggle-0，按插件默认规则开启；工作区必须在 /a0/usr 内（同文件 L347-L375）；触发点包括 tool_execute_after/_50_code_execution_snapshot.py（排除 output 轮询）、text_editor_write_after、text_editor_patch_after、workdir_file_mutation_after 各 _50_snapshot.py，监视器由 _functions/run_ui/init_a0/end/_30_register_watchdog.py 注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_time_travel/default_config.yaml#L1-L5",
+      "locator": "plugins/_time_travel/default_config.yaml",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "保留策略默认：retention_enabled true，每 6 小时清理检查，retention_max_age_days 0 表示历史永不因年龄删除，孤儿宽限 24 小时、陈旧锁 30 分钟（job_loop/_50_retention.py 执行）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_context_doctor/extensions/python/message_loop_result/_10_context_doctor.py#L25-L64",
+      "locator": "plugins/_context_doctor/extensions/python/message_loop_result/_10_context_doctor.py",
+      "lines": "L25-L64",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "默认启用（插件无 always_enabled、无 .toggle-0）；回复处理前修复文本形式的工具调用，已有原生函数调用时跳过，没提取到动作时保留输出并加继续提示；配置默认 suppress_xml、split_thoughts 为 true（default_config.yaml L1-L3）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_context_doctor/hooks.py#L21-L47",
+      "locator": "plugins/_context_doctor/hooks.py",
+      "lines": "L21-L47",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "联网",
+      "note": "启动迁移检查固定版本的 json_repair，缺失或版本不符时调用 uv pip install 安装；Kokoro 的 plugins/_kokoro_tts/hooks.py L15-L47 同样按需用 uv 安装 onnxruntime 和语言包（含一个 GitHub 发布页的 wheel 链接）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/job_loop.py#L10-L45",
+      "locator": "helpers/job_loop.py",
+      "lines": "L10-L45",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "run_loop 每 60 秒执行一次调度器 tick 和 job_loop 扩展；由 run_ui.py 的启动流程里 initialize_job_loop 起（L92-L93）。全新数据目录没有任务文件时建空任务集，已有则载入（helpers/task_scheduler.py L512-L535）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/system_prompt/_11_tools_prompt.py#L58-L66",
+      "locator": "extensions/python/system_prompt/_11_tools_prompt.py",
+      "lines": "L58-L66",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "有独立视觉模型或主模型配置 vision 为真时，才把 vision_load 的说明加进系统提示；随包兜底预设 Default 为 vision:true（plugins/_model_config/mode_presets_fallback.yaml L1-L9）。"
     }
   ],
-  "note": "版本：GitHub releases/latest、Docker Hub 标签 latest（与 v2.15 同一摘要）和 main 头一致，均为 v2.15 / ba9b67df…（2026-11-01）；上一个正式版 v2.14（2026-10-13）。镜像里 git 提交没有读取验证（未拉取镜像）：由构建脚本 git clone -b main、当时 main 头为 ba9b67df… 推断。官方快速开始的默认路径是 A0 Launcher（桌面）而不是 docker run，所以 config_id 末段用 launcher-default；Launcher 本体（agent0ai/a0-launcher v1.9）是独立仓库，未读其源码，它创建实例时传给 docker 的端口、挂载和环境变量只依据官方文档，与 docker run 路径相同的部分是镜像内的一切。文档在仓库 docs/ 目录，同时发布在 https://www.agent-zero.ai/p/docs/；站点的 llms-full.txt（约 16 KB）实为文档摘要，不是全文导出。待核：镜像基础层 agent0ai/agent-zero-base 的内容、对话历史压缩所用模型、scheduler 与 orchestrator 的默认状态、vision_load 的出现条件、chat_compaction 的触发方式。"
+  "note": "版本：GitHub releases/latest、Docker Hub 标签 latest（与 v2.15 同一摘要）和 main 头一致，均为 v2.15 / ba9b67df…（2026-11-01）；上一个正式版 v2.14（2026-10-13）。镜像里 git 提交没有读取验证（未拉取镜像）：由构建脚本 git clone -b main、当时 main 头为 ba9b67df… 推断。官方快速开始的默认路径是 A0 Launcher（桌面）而不是 docker run，所以 config_id 末段用 launcher-default；Launcher 本体（agent0ai/a0-launcher v1.9）是独立仓库，未读其源码，它创建实例时传给 docker 的端口、挂载和环境变量只依据官方文档，与 docker run 路径相同的部分是镜像内的一切。文档在仓库 docs/ 目录，同时发布在 https://www.agent-zero.ai/p/docs/；站点的 llms-full.txt（约 16 KB）实为文档摘要，不是全文导出。待核：镜像基础层 agent0ai/agent-zero-base 的内容、对话历史压缩所用模型、scheduler 与 orchestrator 的默认状态、vision_load 的出现条件、chat_compaction 的触发方式。 2026-11-13 由 GPT-6.1 Sol（经编排器配置 gpt-6-1-sol 调用）作为第二位读者对照源码快照复核，Claude Sonnet 5.5 核实并落实：改了权限层的写法（有始终启用的工具访问策略层，默认放行）、记忆工具名（统一的 memory 工具）、远程工具的出现条件、历史整理所用模型，补了默认文件快照和 Context Doctor，并补核了 vision_load 与调度器、chat_compaction 的触发方式；版本和提交仍是原来钉的 v2.15、ba9b67df…。默认启动时若缺依赖，Context Doctor 和本地语音（Kokoro）的启动迁移会用 uv 联网安装 json_repair、onnxruntime 与语言包（镜像里是否已装未核实）。待核项里 scheduler 的默认状态、vision_load 的出现条件、chat_compaction 的触发方式、历史压缩所用模型已补核，其余待核项不变。"
 }

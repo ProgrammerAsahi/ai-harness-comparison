@@ -7,10 +7,10 @@
   "view": "configured",
   "version_or_commit": "2026.11.0-beta.2（package.json；GitHub 预发布 v2026.11.0-beta.2；官方快速开始 git clone 得到的 main 头提交，今天与该预发布标签同一提交）；提交 0ede4cf61c139879024a941ebbfe1c90b626c7fb",
   "mode": "local",
-  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "representative_rationale": "沿用试编码约定：按研究负责人确认，取默认分支固定的预发布快照 0ede4cf61c139879024a941ebbfe1c90b626c7fb，使用 CLI 渠道及默认权限模式；沙箱镜像问题答否，按固定提交的 Dockerfile 本机构建，入口取主产品形态。",
   "entrypoint": "本机常驻服务（launchd 或 systemd 用户服务）里的 NanoClaw：消息经宿主进程路由进每会话一个的 Docker 容器，容器内 Bun 运行 agent-runner，由 Claude Agent SDK 驱动 Claude Code。入口按官方文档走查取内置 CLI 渠道（向导里选 Fresh agent，再选 Pause here and chat with your agent from the terminal，渠道问题选 Skip for now，之后用 pnpm run chat \"…\" 发消息）。官方向导没有预设消息渠道（菜单第一项 Slack，文档走查跳过），入口取文档走查路径，研究负责人 2026-11-12 确认；渠道只是进出消息的适配层，容器内的代理循环相同。",
   "install_method": "command: git clone https://github.com/nanocoai/nanoclaw.git；cd nanoclaw；bash nanoclaw.sh（官方文档先 cd ~，克隆目录默认 nanoclaw）；脚本代装 Node、pnpm、Docker（macOS 经 Homebrew，Linux 经 get.docker.com），再运行 pnpm run setup:auto 向导：检查环境、沙箱镜像（答否，本机按固定提交的 Dockerfile 构建，不登录 NanoClaw 账户）、装凭据网关 OneCLI、选代理运行时（默认 Claude）并认证、写入访问规则、编译并装成系统服务、建 CLI agent、首次对话检查、选渠道、校验。官方只给 git clone 默认分支这一种安装方式，没有发行包或包管理器通道，因此得到的是 main 当前提交（不是 releases/latest 的 v2026.10.0）。安装不依赖另一个编码代理：技能文件（.claude/skills/*/SKILL.md）由仓库内的指令引擎在向导里机械执行；宿主上的 Claude Code 只在三处出现——订阅登录时用 claude setup-token 取令牌（宿主没有 claude 时脚本会用 curl -fsSL https://claude.ai/install.sh | bash 代装）、步骤失败时 claude -p 诊断并可交接、时区解析兜底。这些技能文件只是研究材料，不照做。唯一偏离向导默认答案之处：沙箱镜像那一问（Enable Echo’s hardened agent image? Open the perks dashboard in your browser?）答否，研究负责人 2026-11-12 确认，理由是固定提交的 agent-images.json 只列了上一个正式版的加固镜像，内容和钉住的源码对不上；source: https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/README.md#L40-L48 （只作记录，未执行）",
-  "permission_mode": "容器内无审批：Claude Code 在每个会话容器里以 bypassPermissions 运行（allowDangerouslySkipPermissions），读、写、执行命令、联网都不弹审批提示；边界是容器隔离，不是权限提示。容器只能看到自己的 agent 组文件夹（读写）、会话目录（读写）以及只读的技能和 agent-runner 源码；额外挂载白名单默认为空，所以宿主其他目录不可见。联网：默认有正常外网出口（出口锁定 NANOCLAW_EGRESS_LOCKDOWN 默认关），出站 HTTPS 经凭据网关，网关在请求时注入凭据，容器不持有真实密钥；网关对未配凭据主机的审批行为未核实。需要管理员批准的是改自己的运行环境：install_packages、add_mcp_server，create_agent 也可能需要批准（工具描述写 may require admin approval）。",
+  "permission_mode": "容器内无审批：Claude Code 在每个会话容器里以 bypassPermissions 运行（allowDangerouslySkipPermissions），读、写、执行命令、联网都不弹审批提示；边界是容器隔离，不是权限提示。容器只能看到自己的 agent 组文件夹（读写；其中组内 CLAUDE.md、container.json、plugins/ 以只读覆盖）、会话目录（读写）、按组共享的 Claude 状态卷（宿主 data/v2-sessions/<组 id>/.claude-shared，读写挂到 容器内 node 用户的 ~/.claude）以及只读的技能和 agent-runner 源码；额外挂载白名单默认为空，所以宿主其他目录不可见。联网：默认有正常外网出口（出口锁定 NANOCLAW_EGRESS_LOCKDOWN 默认关），出站 HTTPS 经凭据网关，网关在请求时注入凭据，容器不持有真实密钥；网关对未配凭据主机的审批行为未核实。需要管理员批准的是改自己的运行环境：install_packages、add_mcp_server，create_agent 同样要批准：本配置默认 cli_scope=group，create_agent 必须经管理员批准（只有 global scope 才直接放行）；仅用 CLI、选 Skip for now 的新装没有授予 owner，未另设可达的审批人时，批准类请求会失败（代码返回 no owner or admin configured to approve）。",
   "operating_system": "macOS、Linux（Windows 经 WSL2）；Node 22.23.4+、24.22.1+ 或 26.12.1+ 与 pnpm 10+，需要 Docker（macOS 为 Docker Desktop，Linux 为 Docker Engine）和 jq；至少 4 GB 内存（官方文档）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "evidence_cutoff": "2026-11-12",
@@ -22,13 +22,16 @@
     "内置 MCP 服务 nanoclaw 的工具（源码注册表，共 9 个）：send_message、send_file、edit_message、add_reaction、ask_user_question、send_card、create_agent、install_packages、add_mcp_server；定时任务不走 MCP 工具，agent 在容器里用命令行 ncl tasks 管理。默认没有其他 MCP 服务（container.json 的 mcpServers 默认为空，未逐项核实空值）。",
     "容器技能（挂载到 /app/skills）：agent-browser、frontend-engineer、self-customize、welcome；技能选择默认为全部（skills: 'all'）。技能目录来自检出目录下的 container/skills，由宿主只读挂载，与镜像来源无关。本机构建的镜像里装有 Chromium（apt，版本未核实）与 agent-browser 0.27.1，浏览器自动化默认可用。onecli-gateway 技能由所选网关技能装入，不在主干 container/skills 里。",
     "渠道：主干只自带 cli 渠道，默认安装不含任何消息渠道适配器；Slack、Telegram 等要在向导里选或事后 /add-<渠道> 安装。",
-    "子代理：允许列表含 Task、TaskStop、TeamCreate、TeamDelete，Claude Code 自己的子代理默认可用，不需改设置；此外 create_agent 可创建长期伙伴 agent，可能需要管理员批准。Claude Code 里 Task 工具现在是否仍以该名字出现（可能叫 Agent）未核实。",
+    "子代理：允许列表含 Task、TaskStop、TeamCreate、TeamDelete，Claude Code 自己的子代理默认可用，不需改设置；此外 create_agent 可创建长期伙伴 agent，默认 cli_scope=group 下必须经管理员批准。Claude Code 里 Task 工具现在是否仍以该名字出现（可能叫 Agent）未核实。",
     "默认开着的开关：Claude Code 自动记忆关闭（autoMemoryEnabled false、CLAUDE_CODE_DISABLE_AUTO_MEMORY=1）；改用 NanoClaw 自己的 Markdown 记忆树，在 startup、clear、compact 时注入上下文；自动压缩窗口 165000 个 token；claude.ai 账户技能与插件同步关闭；快速模式 NANOCLAW_FAST_MODE 默认关；出口锁定默认关；设置来源为 project、user、local。",
-    "默认会自发的模型请求：（1）安装向导里的首次对话检查会用临时 ping_test agent 发一次真实模型请求，之后删除；（2）渠道接通后宿主给 agent 发 /welcome 系统指令，触发 welcome 技能；本记录选 Skip for now 的 CLI 路径是否同样发送未核实；（3）自动压缩；（4）agent 自己创建的定时任务到点唤醒（宿主每 60 秒扫描一次到期消息）；默认安装没有预置定时任务；没有查到标题或摘要之类的辅助模型调用，查到的范围仅限固定提交的容器和宿主源码，未做全库穷举。",
-    "安装期联网与遥测：向导默认向 PostHog 发匿名安装诊断（NANOCLAW_NO_DIAGNOSTICS=1 关闭）；沙箱镜像本机构建，不登录 NanoClaw 账户；README 称本机构建不联系任何服务，也没有到社区门户的出站连接（该连接只在启用门户选项后出现）。构建期仍会从公共来源取基础镜像、apt 包、Bun 安装脚本和 Claude Code 原生二进制。运行期是否有更新检查或其他心跳未核实。",
-    "自修改：agent 可自由改自己的记忆与 CLAUDE.md 类文件，装包和接 MCP 服务要管理员批准（批准后重建镜像并重启容器）；self-customize 技能说明这些能力。"
+    "默认会自发的模型请求：（1）安装向导里的首次对话检查会用临时 ping_test agent 发一次真实模型请求，之后删除；（2）渠道接通后宿主给 agent 发 /welcome 系统指令，触发 welcome 技能；本记录选 Skip for now 的 CLI 路径是否同样发送未核实；（3）自动压缩；（3a）聊天回复没按 message 块发送、或定时任务误用消息块时，runner 自动向活动 query 推一次纠正输入（每回合各一次，不需用户另发消息），属于条件性的额外模型请求；（4）agent 自己创建的定时任务到点唤醒（宿主每 60 秒扫描一次到期消息）；默认安装没有预置定时任务；没有查到标题或摘要之类的辅助模型调用，查到的范围仅限固定提交的容器和宿主源码，未做全库穷举。",
+    "安装期联网与遥测：向导默认向 PostHog 发匿名安装诊断（NANOCLAW_NO_DIAGNOSTICS=1 关闭）；沙箱镜像本机构建，不登录 NanoClaw 账户；README 称本机构建不联系任何服务，也没有到社区门户的出站连接（该连接只在启用门户选项后出现）。构建期仍会从公共来源取基础镜像、apt 包、Bun 安装脚本和 Claude Code 原生二进制。运行期有活动会话租约时，OneCLI 集成每 5 秒向网关 /v1/health 发一次健康探测（不是模型请求）；是否另有更新检查、遥测或其他心跳未核实。",
+    "自修改：代理可直接修改 instructions.prepend.md、memory/ 和工作文件；组内 CLAUDE.md 由宿主在每次启动容器时重新合成并只读挂载，container.json、plugins/ 与 agent-runner 源码同样只读，不能直接修改。装包和接 MCP 服务两项都要管理员批准：装包会重建镜像并重启容器，新增 MCP 服务只更新配置并重启容器，不重建镜像；self-customize 技能说明这些能力。",
+    "默认宿主模块与 ncl 权限层：宿主默认载入 approvals、interactive、permissions、agent-to-agent、self-mod、community-portal 六个模块。容器里用的 ncl 命令按 cli_scope 过滤：默认 group 只能访问本组的 groups、sessions、destinations、members、tasks、templates 资源，不能自行提高 scope；配置更新、重启等标为需批准，挂载管理只允许宿主；组内定时任务（ncl tasks create 等）标为 open，不需批准即可创建未来唤醒模型的任务。这层守卫独立于容器内的 bypassPermissions。",
+    "默认钩子与对话归档：容器内 Claude Code 带 PreToolUse、PostToolUse、PostToolUseFailure 钩子（记录当前工具的运行状态，并在 NanoClaw 禁用的工具被调用时二次拦截）和 PreCompact 钩子；PreCompact 在压缩前把对话文本归档为 Markdown 到 /workspace/agent/conversations/（落在宿主组目录，只抽用户与助理文本，不是完整 transcript 或文件系统检查点），另有命令钩子 compact-instructions 输出路由保留要求。恢复会话前，原 .jsonl 过大或过旧时会先归档并轮换。这些钩子与文件处理本身不发模型请求。",
+    "默认状态卷与更新快照：宿主 data/v2-sessions/<组 id>/.claude-shared 读写挂到容器 容器内 node 用户的 ~/.claude，同组各会话共享 Claude 设置、技能链接和提供方状态，不是每会话独立的 Claude home。所读的 SDK 调用没有显式启用文件检查点，不据此推断 SDK 默认；NanoClaw 自己只在用户发起更新时，于停止服务和容器后、切换代码前，把可变状态复制到项目父目录的 .nanoclaw-updates/<安装标识>/<事务>/snapshot，不是每回合拍照。"
   ],
-  "note": "版本：官方快速开始只有 git clone 一种安装方式，克隆得到默认分支 main 的当前提交。今天（2026-11-12）main 头提交 0ede4cf6…（提交日期 2026-11-12T14:56:53Z，信息 chore(release): v2026.11.0-beta.2）与预发布标签 v2026.11.0-beta.2（15:18Z 发布，annotated tag d5449ac9…）指向同一提交；package.json 版本 2026.11.0-beta.2。GitHub releases/latest 是更早的正式版 v2026.10.0（2026-10-09，annotated tag 36092f68… 解引用到提交 7203e00dc271cc2ea9ea84bb130731b8ca00319e）。按“以默认安装实际得到的为准”钉在 main 头提交，它是预发布版本；main 每天都在动，晚于今天的克隆会得到别的提交，所以编码必须读钉住的快照。研究负责人 2026-11-12 确认钉 main 当前头，不改钉 v2026.10.0。；镜像来源：向导问“Enable Echo’s hardened agent image? Open the perks dashboard in your browser?”，默认答是（需要 NanoClaw 账户登录，镜像约 800 MB，来自 us-east-1）。本记录在这一问答否，改为本机按固定提交的 Dockerfile 构建（研究负责人 2026-11-12 确认，是相对向导默认答案的唯一偏离）。理由：固定提交的 agent-images.json 只列上一个正式版 v2026.10.0 的加固镜像，镜像内容（含 Claude Code 版本）和钉住的源码对不上。本机构建的组成按 container/Dockerfile 与 container/cli-tools.json：基础镜像 node:22.23.4-slim（摘要固定，L20）、Bun 1.4.4（L31）、pnpm 10.34.9（L111）、npm 11.21.2（L117）、Claude Code 2.1.321 与 agent-browser 0.27.1（cli-tools.json L1-L11）；Chromium 等 apt 包未固定版本，具体版本未核实；入口：向导没有预设消息渠道，官方文档走查是先在终端里聊再跳过渠道，故入口取 CLI 渠道（研究负责人 2026-11-12 确认），config_id 末段为 container-cli。主产品形态仍是常驻服务：消息渠道只是适配层，换成 Slack、Telegram 等不改变容器内代理循环，但会多出渠道适配器代码与渠道特有的技能和格式化说明。CLI 渠道限制：一次只能有一个 chat 客户端；没有终端连着时回复不送达，定时任务的主动消息收不到。；运行时：Docker 是仓库里唯一随附的容器运行时，macOS 与 Linux 没有差别（只是 Docker Desktop 与 Docker Engine 的安装方式不同）；Apple Container 等没有随附驱动。；凭据：官方走查用 Claude Pro 或 Max 订阅。订阅令牌与 API key 的区别主要在计费，容器内的代理循环相同；Claude Code 默认型号文档称各账户类型相同（Opus 5.5），但没有运行验证。；官方文档在仓库外的 https://docs.nanoclaw.dev（Mintlify）；全文导出 https://docs.nanoclaw.dev/llms-full.txt 可打开，约 806,926 字节（2026-11-12 实测）；索引 https://docs.nanoclaw.dev/llms.txt。仓库内 docs/ 是开发文档，不等于站点文档。；README 要求的 Claude Code（for /customize、/debug、错误恢复、/add-<渠道>）不是运行时依赖，向导可以在没有它的情况下完成默认安装，但订阅登录分支会装它。",
+  "note": "版本：官方快速开始只有 git clone 一种安装方式，克隆得到默认分支 main 的当前提交。今天（2026-11-12）main 头提交 0ede4cf6…（提交日期 2026-11-12T14:56:53Z，信息 chore(release): v2026.11.0-beta.2）与预发布标签 v2026.11.0-beta.2（15:18Z 发布，annotated tag d5449ac9…）指向同一提交；package.json 版本 2026.11.0-beta.2。GitHub releases/latest 是更早的正式版 v2026.10.0（2026-10-09，annotated tag 36092f68… 解引用到提交 7203e00dc271cc2ea9ea84bb130731b8ca00319e）。按“以默认安装实际得到的为准”钉在 main 头提交，它是预发布版本；main 每天都在动，晚于今天的克隆会得到别的提交，所以编码必须读钉住的快照。研究负责人 2026-11-12 确认钉 main 当前头，不改钉 v2026.10.0。；镜像来源：向导问“Enable Echo’s hardened agent image? Open the perks dashboard in your browser?”，默认答是（需要 NanoClaw 账户登录，镜像约 800 MB，来自 us-east-1）。本记录在这一问答否，改为本机按固定提交的 Dockerfile 构建（研究负责人 2026-11-12 确认，是相对向导默认答案的唯一偏离）。理由：固定提交的 agent-images.json 只列上一个正式版 v2026.10.0 的加固镜像，镜像内容（含 Claude Code 版本）和钉住的源码对不上。本机构建的组成按 container/Dockerfile 与 container/cli-tools.json：基础镜像 node:22.23.4-slim（摘要固定，L20）、Bun 1.4.4（L31）、pnpm 10.34.9（L111）、npm 11.21.2（L117）、Claude Code 2.1.321 与 agent-browser 0.27.1（cli-tools.json L1-L11）；Chromium 等 apt 包未固定版本，具体版本未核实；入口：向导没有预设消息渠道，官方文档走查是先在终端里聊再跳过渠道，故入口取 CLI 渠道（研究负责人 2026-11-12 确认），config_id 末段为 container-cli。主产品形态仍是常驻服务：消息渠道只是适配层，换成 Slack、Telegram 等不改变容器内代理循环，但会多出渠道适配器代码与渠道特有的技能和格式化说明。CLI 渠道限制：一次只能有一个 chat 客户端；没有终端连着时回复不送达，定时任务的主动消息收不到。；运行时：Docker 是仓库里唯一随附的容器运行时，macOS 与 Linux 没有差别（只是 Docker Desktop 与 Docker Engine 的安装方式不同）；Apple Container 等没有随附驱动。；凭据：官方走查用 Claude Pro 或 Max 订阅。订阅令牌与 API key 的区别主要在计费，容器内的代理循环相同；Claude Code 默认型号文档称各账户类型相同（Opus 5.5），但没有运行验证。；官方文档在仓库外的 https://docs.nanoclaw.dev（Mintlify）；全文导出 https://docs.nanoclaw.dev/llms-full.txt 可打开，约 806,926 字节（2026-11-12 实测）；索引 https://docs.nanoclaw.dev/llms.txt。仓库内 docs/ 是开发文档，不等于站点文档。；README 要求的 Claude Code（for /customize、/debug、错误恢复、/add-<渠道>）不是运行时依赖，向导可以在没有它的情况下完成默认安装，但订阅登录分支会装它。；2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照固定提交的源码快照与官方文档导出复核，Claude Sonnet 5.5 核实并落实，改了 representative_rationale（改为与预发布快照一致的说法）、permission_mode（默认 cli_scope=group 下 create_agent 必须经管理员批准、未授 owner 时审批会失败；补状态卷与只读覆盖）、enabled_extensions（自修改的可写边界与 MCP 不重建镜像；补宿主模块与 ncl 权限层、默认钩子与对话归档、纠正性模型续轮、状态卷与更新快照、OneCLI 健康探测）和默认资源限额的说明（默认只设 pidsLimit=2048，含线程；CPU 与内存默认不设上限）；版本与提交仍是原来钉的 0ede4cf61c139879024a941ebbfe1c90b626c7fb。",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -374,7 +377,7 @@
       "lines": "L36-L40",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "子代理",
-      "note": "create_agent 创建长期伙伴子代理（独立 agent 组），描述写明可能需要管理员批准；是 NanoClaw 自己的多 agent 机制，和 Claude Code 的 Task 子代理不同。"
+      "note": "create_agent 创建长期伙伴子代理（独立 agent 组），工具描述写明可能需要管理员批准；默认 cli_scope=group 下必须批准（见 src/modules/agent-to-agent/guard.ts 的卡）；是 NanoClaw 自己的多 agent 机制，和 Claude Code 的 Task 子代理不同。"
     },
     {
       "evidence_kind": "source_path",
@@ -383,7 +386,7 @@
       "lines": "L41-L45",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "install_packages 向本 agent 的镜像加 apt 或 npm 包，需要管理员批准，批准后重建镜像并重启容器；add_mcp_server（L173-L177）接入第三方 MCP 服务，同样需要批准。"
+      "note": "install_packages 向本 agent 的镜像加 apt 或 npm 包，需要管理员批准，批准后重建镜像并重启容器；add_mcp_server（L173-L177）接入第三方 MCP 服务，同样需要批准，但批准后只更新配置并重启容器、不重建镜像（见 src/modules/self-mod/apply.ts 的卡）。"
     },
     {
       "evidence_kind": "source_path",
@@ -418,7 +421,7 @@
       "lines": "L1486-L1496",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "权限",
-      "note": "容器网络为 shared-private，硬化姿态 standard，设内存与进程数上限（文档称 pids 默认 2048）。"
+      "note": "容器网络为 shared-private，硬化姿态 standard；资源参数里 pidsLimit 取 CONTAINER_PIDS_LIMIT（默认 2048，cgroup 计数包含线程），CPU 与内存限额取环境变量、默认未设置（见 src/config.ts L95-L106 的卡）。"
     },
     {
       "evidence_kind": "official_doc",
@@ -516,6 +519,202 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "环境前提",
       "note": "README：本机构建不需要账户、也不联系任何服务；Echo 加固镜像与社区门户是可选项，需要免费 NanoClaw 账户，登录后宿主保持一条到门户的出站连接。向导对门户选项会再提示一次（L119-L123），同样答否。本记录不启用这些可选项。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/db/migrations/015-cli-scope.ts#L9",
+      "locator": "src/db/migrations/015-cli-scope.ts",
+      "lines": "L9",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "container_configs 新增 cli_scope 列，默认值 group。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/agent-to-agent/guard.ts#L46-L57",
+      "locator": "src/modules/agent-to-agent/guard.ts",
+      "lines": "L46-L57",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "create_agent 的守卫：cli_scope 为 global 才直接放行；默认 group 以及任何未知值都返回 HOLD，需管理员批准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/scripts/init-cli-agent.ts#L125-L135",
+      "locator": "scripts/init-cli-agent.ts",
+      "lines": "L125-L135",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "CLI agent 初始化只建合成的 cli 用户，注释写明不授 owner（真实渠道用户接入后才授）；本配置选 Skip for now，没有这一步。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/approvals/primitive.ts#L252-L264",
+      "locator": "src/modules/approvals/primitive.ts",
+      "lines": "L252-L264",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "发起批准时先找审批人和可投递的私信渠道；没有 owner 或 admin 时通知代理“failed: no owner or admin configured to approve”，找不到可达渠道也失败。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts#L1225-L1267",
+      "locator": "src/container-runner.ts",
+      "lines": "L1225-L1267",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "组文件夹读写挂载之上，container.json、plugins/ 和合成后的组内 CLAUDE.md 都以嵌套只读挂载覆盖；CLAUDE.md 每次启动重新合成。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/group-init.ts#L25-L26",
+      "locator": "src/group-init.ts",
+      "lines": "L25-L26",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "注释：提供方项目文档（CLAUDE.md）每次启动重新生成，初始的常驻指令只放进与提供方无关的 prepend 文件。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.nanoclaw.dev/extend/self-modification",
+      "locator": "Self-modification：What an agent can change；Free edits",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "memory/、instructions.prepend.md 和工作区文件可直接修改；装包需管理员批准并重建镜像、重启容器；MCP 服务需批准、只更新配置并重启容器（不重建）；组内 CLAUDE.md、container.json、stamped plugins/ 与 agent-runner 源码只读。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/self-mod/apply.ts#L75-L95",
+      "locator": "src/modules/self-mod/apply.ts",
+      "lines": "L75-L95",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "批准后的 install_packages：重建 agent 组镜像、杀掉容器并在下次唤醒时用新镜像。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/self-mod/apply.ts#L149-L169",
+      "locator": "src/modules/self-mod/apply.ts",
+      "lines": "L149-L169",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "批准后的 add_mcp_server：更新 container_configs 的 mcp_servers、杀掉容器后重新唤醒，不重建镜像。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/config.ts#L95-L106",
+      "locator": "src/config.ts",
+      "lines": "L95-L106",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "CONTAINER_CPU_LIMIT、CONTAINER_MEMORY_LIMIT 默认为空（不加限额参数）；CONTAINER_PIDS_LIMIT 默认 2048，注释说明 cgroup 计数包含线程。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/provider-contracts/claude.ts#L18-L35",
+      "locator": "src/provider-contracts/claude.ts",
+      "lines": "L18-L35",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "Claude 状态卷 claude-home：宿主 .claude-shared 读写挂到 容器内 node 用户的 ~/.claude，按组共享，技能链接也放在其中。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/index.ts#L18-L27",
+      "locator": "src/modules/index.ts",
+      "lines": "L18-L27",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "宿主默认导入 approvals、interactive、permissions、agent-to-agent、self-mod、community-portal 六个模块。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/guard.ts#L49-L118",
+      "locator": "src/cli/guard.ts",
+      "lines": "L49-L118",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "ncl 命令守卫：host-only 命令拒绝任何容器调用；group scope 只放行指定资源且参数必须是本组，不能改 cli_scope；access 为 approval 的命令返回 HOLD，open 命令放行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/resources/tasks.ts#L470-L476",
+      "locator": "src/cli/resources/tasks.ts",
+      "lines": "L470-L476",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "ncl tasks create 的 access 为 open：组内代理可直接创建定时任务，不经批准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L118-L151",
+      "locator": "container/agent-runner/src/providers/claude.ts",
+      "lines": "L118-L151",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "PreToolUse 钩子记录当前工具与超时，并对 SDK_DISALLOWED_TOOLS 里的工具二次拦截；PostToolUse 与 PostToolUseFailure 清除运行状态；PreCompact 钩子触发对话归档。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-history.ts#L52-L55",
+      "locator": "container/agent-runner/src/providers/claude-history.ts",
+      "lines": "L52-L55",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "archiveClaudeTranscript：把 SDK 的 transcript 归档为 Markdown 写入 conversations 目录，失败不抛错；归档只做文件处理，不调用模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/compact-instructions.ts#L1-L10",
+      "locator": "container/agent-runner/src/compact-instructions.ts",
+      "lines": "L1-L10",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "PreCompact 命令钩子脚本，向压缩提示输出自定义指令，让摘要保留消息路由信息。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L634-L691",
+      "locator": "container/agent-runner/src/poll-loop.ts",
+      "lines": "L634-L691",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "回合结束时，若回复未按 message 块包装或任务误用消息块，runner 向活动 query 推一次纠正输入（unwrappedNudged、taskBlockNudged 各一次）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/scripts/update/transaction.ts#L146-L147",
+      "locator": "scripts/update/transaction.ts",
+      "lines": "L146-L147",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "更新事务的根目录默认在项目父目录的 .nanoclaw-updates/<安装标识>/ 下。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/scripts/update/transaction.ts#L571-L588",
+      "locator": "scripts/update/transaction.ts",
+      "lines": "L571-L588",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "createSnapshot：用户发起更新、切换代码前把可变状态复制到事务目录的 snapshot；先写 snapshot.new 再改名，保证完整。不是每回合的检查点。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.nanoclaw.dev/operate/upgrading",
+      "locator": "Upgrading：Cut over；Rollback",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "更新切换时先停服务和本安装的 agent 容器，再切换代码；回滚时从快照恢复。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/.claude/skills/add-onecli/payload/src/gateway-providers/onecli.ts#L126-L154",
+      "locator": ".claude/skills/add-onecli/payload/src/gateway-providers/onecli.ts",
+      "lines": "L126-L154",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "有活动会话租约期间，每 5 秒向网关 /v1/health 发一次探测（5 秒超时），失败则通知会话网关不可用；不是模型请求。"
     }
   ],
   "environment_premises": {

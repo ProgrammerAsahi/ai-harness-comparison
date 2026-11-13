@@ -9,28 +9,31 @@
   "version_or_commit": "VS Code 1.146.0 稳定版（2026-11-11 发布）内置的 GitHub Copilot Chat 扩展 0.74.0；提交 69047191fc427f2f92828279aae1d90d8eeda7ab（microsoft/vscode，tag 1.146.0，稳定版更新接口返回同一提交）；Copilot 代理运行时 1.0.108-0（经 @github/copilot-sdk 1.0.30-preview.0 随包，闭源，无提交）",
   "mode": "local",
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
-  "entrypoint": "VS Code 编辑器内的 Chat view（聊天侧栏），新建聊天后 Session Target=Copilot（Copilot harness，自 1.143 起为默认）、Agent=Agent（代理模式）、模型 Auto、权限 Manual permissions；文件、命令在本机由 Agent Host 实用进程执行。Local harness（旧的扩展宿主实现，已弃用，2027-02 移除）、Agents 窗口、Cloud 目标、Copilot CLI、云端编码代理都不取",
+  "entrypoint": "VS Code 编辑器内的 Chat view（聊天侧栏），新建聊天后 Session Target=Copilot（Copilot harness，自 1.143 起为默认）、Agent=Agent（代理模式）、模型 Auto、权限 Manual permissions；本机 Agent Host 实用进程管理适配层和会话，经 stdio 连接随包的 Copilot 运行时子进程；内置 shell、文件工具在该运行时侧（本机）执行，客户端和扩展提供的工具回到提供它们的客户端或扩展执行。Local harness（旧的扩展宿主实现，已弃用，2027-02 移除）、Agents 窗口、Cloud 目标、Copilot CLI、云端编码代理都不取",
   "install_method": "command: 界面操作：从 code.visualstudio.com 下载 VS Code 稳定版并安装（macOS 为 VSCode-darwin-universal.zip，Linux 为官网的 deb、rpm 或 tar.gz）；Copilot Chat 扩展随 VS Code 内置，不需另装；然后在状态栏悬停 Copilot 图标，选 Use AI Features，用 GitHub 账户登录；官方文档未给命令行安装命令；source: https://code.visualstudio.com/docs/agents/quickstart.md ；https://code.visualstudio.com/docs/setup/copilot.md ；https://update.code.visualstudio.com/api/update/darwin-universal/stable/latest （只作记录，未执行）",
   "permission_mode": "Manual permissions（默认，chat.permissions.default 与会话审批项都默认它；会话内可切 Assisted permissions 或 Allow all，本配置不切）：官方快速开始写明代理可在项目文件夹内改文件；终端命令默认自动放行常见只读命令，rm、del 等风险命令和其余命令需确认（默认动作 Allow Once）；网页抓取按域名确认；工作区外的文件读写、MCP 工具调用需确认；闭源运行时可在终端规则之前先批准只读或沙箱内命令。沙箱默认关（chat.agent.sandbox.enabled=off），打开后也不默认拦出站网络。读取工作区内文件是否弹确认由闭源运行时决定，未逐项核实。",
   "subagents_enabled": true,
   "enabled_extensions": [
-    "运行时内置工具（来源：copilotBuiltinToolAllowlist.ts 白名单，即 Agent Host 放行的运行时内置工具；运行时的实际注册表在闭源代码里，未逐项核实）：shell 族 bash、read_bash、stop_bash、list_bash（Windows 为 powershell 族，另有 local_shell）；文件与搜索 view、create、edit、apply_patch、grep、rg、glob、web_fetch（多数 GPT 型号用 apply_patch 与 rg 代替 create、edit、grep）；轮次控制 ask_user、task_complete、exit_plan_mode；子代理与技能 task、list_agents、read_agent、write_agent、skill、tool_search；存储与记忆 sql、session_store_sql、store_memory、vote_memory；画布 list_canvas_capabilities、open_canvas、invoke_canvas_action；image_generation 和 execution_subagent 在白名单里但受设置控制，见下一条。",
-    "默认注册但关着或排除：search_code_subagent（设置默认 false）、execution_subagent（设置默认 false，运行时实验分配可能覆盖）、image_generation（图像生成设置未设值，按关处理，未核实运行时是否因账户另行放开）、run_dynamic_workflow、dynamic_workflows_manage、运行时 semantic_code_search（被 Agent Host 排除）；计算机使用默认关；Copilot Connectors、MCP Skills、本地记忆、沙箱默认关。",
-    "客户端工具与 MCP：availableTools 默认含全部客户端工具（custom:*）和 mcp:*，客户端工具由 VS Code 与扩展提供，是否全部暴露给 Copilot harness、具体名单在 Tools 选项卡里，未逐项核实；内置 Copilot Chat 扩展 0.74.0 在 package.json 里声明 35 个语言模型工具（例如 copilot_readFile、copilot_findFiles、copilot_applyPatch、copilot_fetchWebPage），其中哪些进入 Copilot harness 未核实。没有默认安装的用户 MCP 服务器；运行时开启了配置发现（enableConfigDiscovery），工作区里的 .vscode/mcp.json、.mcp.json、技能、指令、钩子在信任后会被加载；运行时是否默认带 GitHub 官方 MCP 服务未核实。",
+    "运行时内置工具（来源：copilotBuiltinToolAllowlist.ts 白名单，即 Agent Host 放行的运行时内置工具；运行时的实际注册表在闭源代码里，未逐项核实）：shell 族 bash、read_bash、stop_bash、list_bash（Windows 为 powershell 族，另有 local_shell）；文件与搜索 view、create、edit、apply_patch、grep、rg、glob、web_fetch（多数 GPT 型号用 apply_patch 与 rg 代替 create、edit、grep）；轮次控制 ask_user、task_complete、exit_plan_mode；子代理与技能 task、list_agents、read_agent、write_agent、skill、tool_search；存储与记忆 sql、session_store_sql、store_memory、vote_memory；画布 list_canvas_capabilities、open_canvas、invoke_canvas_action；image_generation 和 execution_subagent 在白名单里但受设置控制，见后面几条。",
+    "默认注册但关着或排除：search_code_subagent（设置默认 false）、execution_subagent（运行时实现的设置默认 false，运行时实验分配可能覆盖；扩展另有原生 executionSubagent，见客户端工具一条）、run_dynamic_workflow、dynamic_workflows_manage、运行时 semantic_code_search（被 Agent Host 排除）；计算机使用默认关；Copilot Connectors、MCP Skills、本地记忆、沙箱默认关。 image_generation 不在关着之列：编辑器设置 chat.copilot.imageGeneration.model 静态默认选 gpt-image-2.5-flare（带实验标记），转成开关传给运行时时为开；账户可用性、权限和实验覆盖在快照里核不了。",
+    "客户端工具与 MCP：availableTools 默认含全部客户端工具（custom:*）和 mcp:*，客户端工具由 VS Code 与扩展提供，是否全部暴露给 Copilot harness、具体名单在 Tools 选项卡里，未逐项核实；内置 Copilot Chat 扩展 0.74.0 在 package.json 里声明 35 个语言模型工具（例如 copilot_readFile、copilot_findFiles、copilot_applyPatch、copilot_fetchWebPage），其中哪些进入 Copilot harness 未核实。没有默认安装的用户 MCP 服务器；运行时开启了配置发现（enableConfigDiscovery），工作区里的 .vscode/mcp.json、.mcp.json、技能、指令、钩子在信任后会被加载；宿主默认启用运行时内置的 GitHub MCP 服务（见后面一条）。 扩展原生 executionSubagent（toolReferenceName，设置 github.copilot.chat.executionSubagent.enabled 静态默认 true，默认模型 gpt-5.6-luna，带实验标记）与运行时 execution_subagent 是两套实现：宿主在运行时工具目录里确有 execution_subagent 时移除客户端那个，否则保留；Free 账户能否成功调用未验证。",
     "内置智能体与技能：Ask、Agent、Plan（/plan）三个内置智能体；运行时内置 Explore 智能体（设置默认开）和 Rubber Duck 评审子代理（设置默认开，用互补模型审代码改动，会额外发模型请求）；宿主自带技能 troubleshoot，model-router 技能仅在模型路由设置开启时出现；Copilot Chat 的 IDE 技能在 Free 档不可用。",
     "默认会自发的模型请求：会话标题（标题策略默认 utility，用辅助模型即时起标题）；意图检测、提示分类等轻量辅助调用（chat.utilitySmallModel、chat.utilityModel 默认走 GitHub Copilot 内置辅助模型）；上下文自动压缩（infiniteSessions 开启，由运行时执行）；Auto 路由本身是服务端决策；Rubber Duck 评审；行内建议与下一步编辑建议（扩展的另一功能，Free 每月 2000 次）；提交信息、PR 描述等只在用户触发时发。Assisted permissions 的风险判断模型只在切到该档时才发，本配置不涉及。",
-    "其他默认行为：代理创建提交时默认加 Co-authored-by 尾注；本地会话索引默认开；Copilot Memory 在 Free 档不可用；遥测默认开启（官方在 Free 说明里提示，可用 telemetry.telemetryLevel 关闭）；代码在本机 Agent Host 实用进程中执行，模型请求发往 GitHub Copilot 服务。"
+    "其他默认行为：代理创建提交时默认加 Co-authored-by 尾注；本地会话索引默认开；Copilot Memory 在 Free 档不可用；遥测默认开启（官方在 Free 说明里提示，可用 telemetry.telemetryLevel 关闭）；命令和文件操作由本机的 Copilot 运行时子进程执行（Agent Host 实用进程启动并管理它），模型请求发往 GitHub Copilot 服务。",
+    "内置 GitHub MCP 服务：宿主设置 chat.agentHost.githubMcpServer.enabled 与协议默认都是 true，启动运行时时显式设置 COPILOT_ENABLE_BUILTIN_GITHUB_MCP=true，所以没有安装用户 MCP 服务器不等于没有默认的 GitHub MCP；服务的实际工具集、认证权限和 Free 账户可用性在快照里核不了（该设置带启动期实验标记，可被覆盖）。",
+    "默认开启的检查点：宿主在会话创建时为已有提交的 Git 工作区拍基线（turn/0），回合开始时捕获工作树，回合成功或出错（可恢复的错误除外）后异步拍 Git 检查点，存为工作区仓库 .git 内的引用 refs/agents/<会话>/checkpoints/turn/<N>（其他聊天用 refs/agents/chats/<键>/checkpoints/turn/<N>），并重算变更集；非 Git 目录或捕获失败时降级，取消的回合只更新变更集。另外运行时按 infiniteSessions 在 COPILOT_HOME（默认用户主目录下 .copilot）的 session-state 下为会话准备 plan.md、checkpoints、files 目录，其写入时机在闭源运行时里，核不了。",
+    "宿主自带的服务端工具：Agent Host 向会话注册由宿主自己执行的工具组，评论反馈组（addComment、listComments、replyToComment、deleteComments、resolveComments、viewUnreviewedComments）的开关始终为开；会话管理组（列出、创建、删除会话等）、合并、产物、隔离等组各有门控，默认标题策略下不发布 rename_chat，各组最终有效清单没有逐项核实。它们不在扩展声明的 35 个工具里；工具按型号延迟暴露（tool_search，Auto 等型号支持），不是每次请求都完整注入。"
   ],
   "operating_system": "macOS、Linux、Windows（VS Code 稳定版覆盖三者；Computer use 仅 macOS 与 Windows 且默认关）。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "environment_premises": {
     "account_tier": "GitHub 账户，Copilot Free（官方快速开始：没有订阅时登录即自动开通 Copilot Free；Free 含代理模式，每月有 AI credits 与 2000 次行内建议额度，模型只能用 Auto；只面向没有组织或企业席位的个人）。Pro 以上才可手动选型号，那是另一档，不是官方默认；本记录取 Copilot Free 和 Copilot harness（研究负责人 2026-11-12 确认）",
-    "default_model": "Auto（聊天模型选择器的默认项；服务端按任务复杂度与可用性逐请求路由，具体型号不固定，源码和文档都没有固定型号；Free 档只有它可选）。若动态 Auto 层级开启且服务给该账户 Fusion 层，选择器改显 Copilot Fusion，其开关的默认值未核实",
+    "default_model": "Auto（聊天模型选择器的默认项；服务端按任务复杂度与可用性逐请求路由，具体型号不固定，源码和文档都没有固定型号；Free 档只有它可选）。当前宿主启动运行时时无条件开启动态 Auto 层级支持（官方文档仍写需手动打开旧设置 chat.copilot.dynamicAutoTiers.enabled，与源码不一致，以源码为准）；服务给该账户可运行的 Fusion 层时，选择器改显 Copilot Fusion，具体层级与底层型号核不了",
     "host_os": "macOS 或 Linux（不含 Windows）",
     "workspace": "已有提交的 Git 仓库，在仓库根目录启动（用 VS Code 打开仓库根文件夹）",
     "trust": "首次打开该文件夹默认不弹启动对话框（security.workspace.trust.startupPrompt 默认 never），以受限模式打开并显示横幅；受限模式禁用 AI 代理。按官方快速开始在横幅里选 Manage→Trust 信任后才能用代理；信任还会放开工作区设置、扩展和 MCP 配置的加载。Copilot 自己没有另一层目录信任提示。编码按“已信任”算",
     "credentials": "只有 GitHub 账户登录（Copilot 订阅）；不配 BYOK 模型密钥，不登录 Claude、Codex 提供方，环境里没有其他提供方的密钥",
-    "other": "快速开始里 Chat view（编辑器内）与 Agents 窗口二选一，取 Chat view 与“本机、当前文件夹”；执行位置为本机 Agent Host 实用进程，不取 Dev Container、SSH 或隧道主机、Cloud 目标；会话目标取 Copilot，不取 Local、Claude、Codex"
+    "other": "快速开始里 Chat view（编辑器内）与 Agents 窗口二选一，取 Chat view 与“本机、当前文件夹”；执行位置为本机（Agent Host 实用进程及其启动的 Copilot 运行时子进程），不取 Dev Container、SSH 或隧道主机、Cloud 目标；会话目标取 Copilot，不取 Local、Claude、Codex"
   },
   "evidence_cutoff": "2026-11-12",
   "evidence": [
@@ -324,7 +327,7 @@
       "retrieved_at": "2026-11-12",
       "content_sha256": "571d1b3aa57ffbe7484666ec3a52ce0ce6648523c01473063de09b980322f207",
       "configuration_scope": "扩展",
-      "note": "Auto 按任务复杂度与可用性逐请求路由；Copilot harness 里若服务给账户 Fusion 层级，选择器显示 Copilot Fusion 取代 Auto；标题、摘要、提交信息、意图检测等辅助任务默认用 GitHub Copilot 内置辅助模型。"
+      "note": "Auto 按任务复杂度与可用性逐请求路由；Copilot harness 里若服务给账户 Fusion 层级，选择器显示 Copilot Fusion 取代 Auto；标题、摘要、提交信息、意图检测等辅助任务默认用 GitHub Copilot 内置辅助模型。 该页仍写需手动开启旧设置 chat.copilot.dynamicAutoTiers.enabled，与当前源码（宿主一律开启）不一致。"
     },
     {
       "evidence_kind": "official_doc",
@@ -333,7 +336,7 @@
       "retrieved_at": "2026-11-12",
       "content_sha256": "4a6a30f9f02509e13c607b383140c6554d80cfe24d97b4a6f445f06471079e57",
       "configuration_scope": "扩展",
-      "note": "所有客户端工具对 Copilot harness 默认可用，Copilot 组内置工具只读；计算机使用默认关闭（chat.agentHost.computerUse.enabled）；Copilot harness 的终端用 SDK 内置 shell 工具。"
+      "note": "所有客户端工具对 Copilot harness 默认可用，Copilot 组内置工具只读；计算机使用默认关闭（chat.agentHost.computerUse.enabled）；Copilot harness 的终端用 SDK 内置 shell 工具。 Copilot 组内置工具在 Copilot 运行时里运行，其他工具在 VS Code 客户端里运行，客户端连着时才对代理可用。"
     },
     {
       "evidence_kind": "official_doc",
@@ -351,7 +354,142 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "环境前提",
       "note": "文档位置：VS Code 文档在独立仓库 microsoft/vscode-docs（不在 microsoft/vscode 内），GitHub 文档在 github/docs 仓库 content/copilot；两站都没有 llms-full.txt（404），只有索引 llms.txt 与逐页 .md。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/imageGenerationConfiguration.ts#L18-L73",
+      "locator": "src/vs/platform/agentHost/common/imageGenerationConfiguration.ts",
+      "lines": "L18-L73",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "图像生成设置默认选 gpt-image-2.5-flare（L18 模型列表、L56-L73 默认值与实验标记），转成开关传给运行时；账户可用性核不了。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts#L1699-L1702",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+      "lines": "L1699-L1702",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "会话参数 imageGeneration.enabled 取自该设置转成的布尔值，并传入运行时。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts#L4850-L4863",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+      "lines": "L4850-L4863",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "入口",
+      "note": "适配层用 RuntimeConnection.forStdio 连接随包的 Copilot 运行时（子进程，路径为内置或配置值，L4798-L4803）；运行时由 Agent Host 实用进程启动管理。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts#L201-L209",
+      "locator": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts",
+      "lines": "L201-L209",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "入口",
+      "note": "Agent Host 作为 Electron 的 utility process 启动（entryPoint agentHostMain）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/platform/configuration/common/configurationService.ts#L789-L797",
+      "locator": "extensions/copilot/src/platform/configuration/common/configurationService.ts",
+      "lines": "L789-L797",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "扩展原生执行子代理设置 chat.executionSubagent.enabled 静态默认 true（实验型设置），默认模型 gpt-5.6-luna；与运行时 execution_subagent 是两套实现。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts#L1343-L1365",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+      "lines": "L1343-L1365",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "子代理",
+      "note": "会话启动时若运行时工具目录里有 execution_subagent，就移除客户端 executionSubagent，否则保留客户端那个。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostStarter.config.contribution.ts#L340-L346",
+      "locator": "src/vs/platform/agentHost/common/agentHostStarter.config.contribution.ts",
+      "lines": "L340-L346",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "chat.agentHost.githubMcpServer.enabled 默认 true（实验标记，启动期可被覆盖）：会话包含 GitHub MCP 服务。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts#L4730",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+      "lines": "L4730",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "启动运行时前按宿主设置显式设置 COPILOT_ENABLE_BUILTIN_GITHUB_MCP（环境变量名与设置函数见 L165、L176-L180）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts#L4745-L4751",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+      "lines": "L4745-L4751",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "启动运行时时无条件加入 DYNAMIC_AUTO_TIERS 特性开关（Auto 的层级由服务提供，含 Fusion）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts#L150-L154",
+      "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts",
+      "lines": "L150-L154",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "旧的 dynamicAutoTiers 配置键标为 legacy，注释写明当前宿主一律开启。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/chatContributions/checkpointAndChangeset/checkpointAndChangesetContribution.ts#L29-L53",
+      "locator": "src/vs/platform/agentHost/node/chatContributions/checkpointAndChangeset/checkpointAndChangesetContribution.ts",
+      "lines": "L29-L53",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "回合结束后异步捕获 Git 检查点并更新变更集；取消的回合只更新变更集，可恢复的错误不拍。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostCheckpointService.ts#L11-L43",
+      "locator": "src/vs/platform/agentHost/common/agentHostCheckpointService.ts",
+      "lines": "L11-L43",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "检查点存为工作区仓库内的 Git 引用 refs/agents/<会话>/checkpoints/turn/<N>（其他聊天用 refs/agents/chats/<键>/...）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts#L7731-L7743",
+      "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+      "lines": "L7731-L7743",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "会话实体化时捕获基线检查点（turn/0）；非 Git 目录或捕获失败时降级。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/serverToolGroups.ts#L31-L41",
+      "locator": "src/vs/platform/agentHost/node/shared/serverToolGroups.ts",
+      "lines": "L31-L41",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "宿主注册的服务端工具组：评论反馈、会话管理、合并、产物、产物集成、隔离，另有按条件的会话迁移组；由 Agent Host 执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/agentFeedbackServerTools.ts#L655-L661",
+      "locator": "src/vs/platform/agentHost/node/shared/agentFeedbackServerTools.ts",
+      "lines": "L655-L661",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "评论反馈工具组的开关始终为开。"
     }
   ],
-  "note": "版本与可追溯性：今天按官方默认方式得到的是 VS Code 1.146.0 稳定版（官网更新接口三个平台均返回提交 69047191…，与 GitHub releases/latest 及 tag 1.146.0 一致）。Copilot Chat 扩展不再单独发行：原仓库 microsoft/vscode-copilot-chat 已于 2026-05-20 归档并并入 microsoft/vscode 的 extensions/copilot，稳定版把它作为内置扩展随包（0.74.0，同一提交可读源码）；Marketplace 上的 GitHub.copilot-chat 停在 0.48.1（2026-05-15），不是今天的正式版。main 分支已是 VS Code 1.147 预发版线、扩展 0.75.0，不取。不确定的一层：开源部分（Chat view、Agent Host、对接 Copilot 运行时的适配代码、Local harness 的扩展实现）能落到上述提交；但 Copilot harness 的代理循环、内置工具实现与系统提示在随包的 Copilot 运行时 1.0.108-0 里，它的许可是专有的，公开仓库 github/copilot-cli 没有源码，只有 VS Code 一侧的适配代码、工具白名单和提示片段可读。因此本记录的工具名、默认值以 Agent Host 源码和官方文档为准，运行时内部行为（读取是否确认、压缩细节、自带 MCP 服务）标为未核实；编码时源码分类应区分“Agent Host 适配层”与“闭源运行时”。入口选择：任务派工建议的是 Copilot Chat 代理模式（agent mode）；该名称对应的实现今天有两条：Copilot harness（默认，官方快速开始走它）和 Local harness（旧实现，开源，已弃用、冻结，2027-02 移除）。按官方快速开始取前者，config_id 末段保留 vscode-agent-default。文档位置：VS Code 文档不在 microsoft/vscode 仓库，在 microsoft/vscode-docs（docs/agents/…）；GitHub 文档在 github/docs 的 content/copilot。两处文档站都没有 llms-full.txt（404），只有索引 llms.txt（code.visualstudio.com 约 80 KB，docs.github.com 约 29 KB）和逐页 .md（如 code.visualstudio.com/docs/agents/quickstart.md 约 14 KB）。其余入口（Copilot CLI、云端编码代理、Agents 窗口、Claude 与 Codex harness）不取。content_sha256 为 2026-11-12 取到的 .md 版内容哈希。"
+  "note": "版本与可追溯性：今天按官方默认方式得到的是 VS Code 1.146.0 稳定版（官网更新接口三个平台均返回提交 69047191…，与 GitHub releases/latest 及 tag 1.146.0 一致）。Copilot Chat 扩展不再单独发行：原仓库 microsoft/vscode-copilot-chat 已于 2026-05-20 归档并并入 microsoft/vscode 的 extensions/copilot，稳定版把它作为内置扩展随包（0.74.0，同一提交可读源码）；Marketplace 上的 GitHub.copilot-chat 停在 0.48.1（2026-05-15），不是今天的正式版。main 分支已是 VS Code 1.147 预发版线、扩展 0.75.0，不取。不确定的一层：开源部分（Chat view、Agent Host、对接 Copilot 运行时的适配代码、Local harness 的扩展实现）能落到上述提交；但 Copilot harness 的代理循环、内置工具实现与系统提示在随包的 Copilot 运行时 1.0.108-0 里，它的许可是专有的，公开仓库 github/copilot-cli 没有源码，只有 VS Code 一侧的适配代码、工具白名单和提示片段可读。因此本记录的工具名、默认值以 Agent Host 源码和官方文档为准，运行时内部行为（读取是否确认、压缩细节、内置 GitHub MCP 服务的实际工具集与认证）标为未核实；宿主默认启用该服务可核；编码时源码分类应区分“Agent Host 适配层”与“闭源运行时”。入口选择：任务派工建议的是 Copilot Chat 代理模式（agent mode）；该名称对应的实现今天有两条：Copilot harness（默认，官方快速开始走它）和 Local harness（旧实现，开源，已弃用、冻结，2027-02 移除）。按官方快速开始取前者，config_id 末段保留 vscode-agent-default。文档位置：VS Code 文档不在 microsoft/vscode 仓库，在 microsoft/vscode-docs（docs/agents/…）；GitHub 文档在 github/docs 的 content/copilot。两处文档站都没有 llms-full.txt（404），只有索引 llms.txt（code.visualstudio.com 约 80 KB，docs.github.com 约 29 KB）和逐页 .md（如 code.visualstudio.com/docs/agents/quickstart.md 约 14 KB）。其余入口（Copilot CLI、云端编码代理、Agents 窗口、Claude 与 Codex harness）不取。content_sha256 为 2026-11-12 取到的 .md 版内容哈希。 2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，Claude Sonnet 5.5（claude-sonnet-5-5）逐条核实并落实，改了：图像生成默认值、进程与执行位置的描述、客户端原生 executionSubagent、内置 GitHub MCP、动态 Auto 层级，并补记宿主 Git 检查点和宿主服务端工具；版本和提交仍是原来钉的（VS Code 1.146.0、提交 69047191…）。"
 }

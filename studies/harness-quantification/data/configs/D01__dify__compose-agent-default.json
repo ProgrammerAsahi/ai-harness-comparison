@@ -9,24 +9,25 @@
   "version_or_commit": "社区版 1.19.0；提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759",
   "mode": "local",
   "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
-  "entrypoint": "Docker Compose 自托管社区版的网页控制台（http://localhost），在导航栏 Agents 页新建空白的新 Agent（beta，Compose 默认开启），在它的编辑页对话窗口里对话；执行落在 agent_backend 与 local_sandbox 两个容器。应用类型取新 Agent（研究负责人 2026-11-12 确认）；旧版 Agent 应用（Studio 创建，api 进程内循环）、工作流或 Chatflow 里的 Agent 节点是同一套部署里的其他形态，本记录不取，区别见 note。",
+  "entrypoint": "Docker Compose 自托管社区版的网页控制台（http://localhost），在导航栏 Agents 页新建空白的新 Agent（beta，Compose 默认开启），在它的编辑页默认的 Build 对话窗口里对话（社区版前端不提供可切换的 Preview 面板）；执行落在 agent_backend 与 local_sandbox 两个容器。应用类型取新 Agent（研究负责人 2026-11-12 确认）；旧版 Agent 应用（Studio 创建，api 进程内循环）、工作流或 Chatflow 里的 Agent 节点是同一套部署里的其他形态，本记录不取，区别见 note。",
   "install_method": "command: git clone --branch 1.19.0 --depth 1 https://github.com/langgenius/dify.git；cd dify/docker；cp .env.example .env；openssl rand -hex 32，把输出填进 .env 的 DIFY_AGENT_LOCAL_SANDBOX_AUTH_TOKEN（保持默认 COMPOSE_PROFILES）；docker compose up -d；docker compose ps --all；然后打开 http://localhost/install 创建管理员账户。前置：Docker（macOS 用 Docker Desktop，虚拟机至少 2 vCPU、8 GiB 内存）、Docker Compose 2.35.0 以上、Git、OpenSSL；机器至少 2 核 CPU、4 GiB 内存。alternative: 云版 cloud.dify.ai、源码部署；source: https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/README.md#L66-L92（只记录，未执行）",
-  "permission_mode": "没有逐条命令的审批机制，也没有读、写、联网的分档权限模式：模型通过 shell_run、shell_wait、shell_input、shell_interrupt 在 local_sandbox 容器里直接执行命令、读写文件，无需批准；容器出口走 agent_ssrf_proxy，公网可访问，内网地址默认被拦（可用 SSRF_PROXY_ALLOW_PRIVATE_IPS 等放行）；沙箱里新装的程序在已发布运行中是临时的，只有 Build 模式里装的才随 Agent 保留；Agent 的能力（提示词、技能、工具、型号）只能在配置页改，运行中模型改不了；用户侧权限靠工作区角色（创建和管理 Agent 需 Editor 及以上）。社区版不提供互不信任用户之间的强隔离。",
+  "permission_mode": "没有逐条命令的审批机制，也没有读、写、联网的分档权限模式：模型通过 shell_run、shell_wait、shell_input、shell_interrupt 在 local_sandbox 容器里直接执行命令、读写文件，无需批准；容器出口走 agent_ssrf_proxy，公网可访问，内网地址默认被拦（可用 SSRF_PROXY_ALLOW_PRIVATE_IPS 等放行）；沙箱里新装的程序在已发布运行中是临时的，只有 Build 模式里装的才随 Agent 保留；本记录取社区版编辑页默认的 Build 对话：模型可用沙箱里的 dify-agent config 命令修改构建草稿的提示词、技能、文件、环境变量与构建笔记，这些写入同样无需逐项批准，由用户用 Apply 保留或 Discard 放弃；型号与 Dify 工具由用户在配置页设置，模型改不了；已发布版本和普通草稿不能经这些接口修改 Agent 配置；用户侧权限靠工作区角色（创建和管理 Agent 需 Editor 及以上）。社区版不提供互不信任用户之间的强隔离。",
   "subagents_enabled": false,
   "enabled_extensions": [
-    "默认随 Compose 起来的服务（COMPOSE_PROFILES 默认 weaviate,postgresql,collaboration）：api、worker、worker_beat、web、nginx、redis、plugin_daemon（插件守护进程）、sandbox（dify-sandbox 0.2.15，只供工作流代码节点和内置代码工具，本入口的 Agent 命令不走它）、local_sandbox（Agent 的命令沙箱）、agent_backend、agent_ssrf_proxy、ssrf_proxy、PostgreSQL、Weaviate、init_permissions（一次性任务，退出码 0）；knowledge_fs 系列需加 knowledge-fs 档案才起，默认不起。",
+    "默认随 Compose 起来的服务（COMPOSE_PROFILES 默认 weaviate,postgresql,collaboration）：api、worker、worker_beat、api_websocket（collaboration 档案下的工作流协作 WebSocket 服务，与模型工具无关）、web、nginx、redis、plugin_daemon（插件守护进程）、sandbox（dify-sandbox 0.2.15，只供工作流代码节点和内置代码工具，本入口的 Agent 命令不走它）、local_sandbox（Agent 的命令沙箱）、agent_backend、agent_ssrf_proxy、ssrf_proxy、PostgreSQL、Weaviate、init_permissions（一次性任务，退出码 0）；knowledge_fs 系列需加 knowledge-fs 档案才起，默认不起。",
     "所选入口的代码执行位置：模型循环在 agent_backend 容器（pydantic-ai，原生工具调用，每次运行至多 500 次模型请求，默认 1 小时超时），模型请求经 plugin_daemon 里的模型提供方插件发出；命令在 local_sandbox 容器的 workspace 命名卷里执行（DIFY_AGENT_RUNTIME_BACKEND 默认 local），不在宿主机上直接执行，也不挂载宿主机目录；Dify 工具由 plugin_daemon 或 api 进程执行。",
-    "默认注册给模型的工具（按 agent_backend 源码）：shell_run、shell_wait、shell_input、shell_interrupt；挂了知识库且为 Agent decide 时加 knowledge_base_search；声明了结构化输出时加 final_output；用户在配置页添加的 Dify 工具（插件工具、自定义 API、工作流工具、MCP）按配置注册。新建的空白 Agent 没有任何 Dify 工具、技能、文件、知识库；沙箱里另有 dify-agent 命令行（config、files、skills 等子命令）供模型读写自己的配置。没有网页搜索工具，也没有子代理工具。",
+    "默认注册给模型的工具（按 agent_backend 源码）：shell_run、shell_wait、shell_input、shell_interrupt；挂了知识库且为 Agent decide 时加 knowledge_base_search；声明了结构化输出时加 final_output；用户在配置页添加的 Dify 工具（插件工具、自定义 API、工作流工具、MCP）按配置注册。新建的空白 Agent 没有任何 Dify 工具、技能、文件、知识库；沙箱里另有 dify-agent 命令行（config、files、skills 等子命令）供模型读自己的配置；写入类子命令只在 Build 草稿运行里开放（该类运行另带一段构建专用的系统说明，模型仍经 shell_run 调用，没有单独的“改配置”工具）。没有网页搜索工具，也没有子代理工具。",
     "新装后不用装插件就能在 Integrations → Tools 里看到并添加的内置工具提供方：time（current_time、localtime_to_timestamp、timestamp_to_localtime、timezone_conversion、weekday）、code（simple_code）、webscraper（webscraper）、audio（asr、tts，依赖默认语音模型，新装时未配）；这些默认都不挂在新建的 Agent 上，要手动添加。Google、GitHub、网页搜索等其余工具都要先去 Marketplace 装插件（部分还需凭据）。",
     "插件与市场：plugin_daemon 默认随 Compose 起，Marketplace 默认开（MARKETPLACE_ENABLED=true，需要能连外网），插件需签名校验（FORCE_VERIFYING_SIGNATURE=true）；新工作区一个插件都没有（NEW_USER_DEFAULT_PLUGIN_IDS 默认空）。模型提供方是插件，必须先装再填密钥；Agent Strategy 也是插件，但新 Agent 不用它。",
     "默认开着或关着的开关：NEXT_PUBLIC_ENABLE_AGENT_V2=true（Agents 页和工作流里的新 Agent 节点）；NEXT_PUBLIC_ENABLE_AGENT_V2_IN_CHATFLOW=false；新 Agent 为 beta；知识库、技能（库技能最多 20 个）、环境变量、文件均默认为空；对话开场白、追问建议、引用等 Chat Features 的缺省值未核实；MCP 服务默认一个都没有（仅支持 HTTP 传输）。",
-    "默认会自发的模型请求：上下文压缩（目标预算为模型窗口的 80%，先清理旧工具结果再摘要，摘要用哪个型号未核实）；对话标题自动生成（auto_generate_name 缺省 True，用哪个型号未核实）；Build 模式下的 Generate 提示词也会调用模型，但需用户点击。没有审批分类器类调用。",
+    "默认会自发的模型请求：上下文压缩（目标预算为模型窗口的 80%，先清理旧工具结果再摘要，摘要用哪个型号快照里核不了（依赖库 pydantic-ai-harness 的源码不在快照内））；对话标题自动生成（auto_generate_name 缺省 True；新会话首条消息后由 api 进程延迟 1 秒起线程，用工作区默认 LLM，可能不同于 Agent 选定的型号，同一会话和查询缓存 3600 秒）；Build 模式下的 Generate 提示词也会调用模型，但需用户点击。没有审批分类器类调用。",
+    "默认开启的检查点与状态快照（不是每条命令前的文件检查点）：每次运行收尾时由 agent_backend 生成会话状态快照（各层状态，不含配置），成功、失败、取消后的可用终态由 api 存进数据库 agent_workspace_bindings.session_snapshot，下一轮据此续接，进程崩溃时不保证恢复到最新；用户在 Build 里点 Apply 时，api 为该构建会话的 Home 目录（`/home/dify/<binding_id>`）拍一份快照，复制到 local_sandbox 卷的 `/home/dify/.snapshots/`，新会话从中恢复 Home，工作区目录 `/workspace/<workspace_id>` 另在 workspace 卷里；没有发现每轮自动做的文件快照。",
     "不属于本入口但同一部署里还有：旧版 Agent 应用（Studio → Create from Blank → For beginners 折叠区里的 Agent，AppMode agent-chat）、经典 Agent 节点（Agent Strategy 插件驱动）、Workflow、Chatflow、Chatbot、文本生成；它们不进入本配置的编码范围，选项对比见 note。"
   ],
   "operating_system": "macOS、Linux（Docker Desktop 或 Docker Engine）；官方文档另列 Windows 的 WSL 2 路线；需 Docker Compose 2.35.0 以上。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "evidence_cutoff": "2026-11-12",
-  "note": "版本：GitHub releases/latest 为 1.19.0（2026-11-04 发布，非预发布）；官方快速开始让用户在 Dify releases 里自选标签，Compose 里的镜像标签也固定为 1.19.0，所以取 1.19.0；注解标签 daa2f261… 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签但没有对应发布页。官方文档在 langgenius/dify-docs 仓库（站外），文档站 llms-full.txt 可用（约 2.9 MB，仅英文，含云版与自托管两部分）。\n\n应用类型是本记录最要紧的取舍：同一套部署里有四类东西可被叫作“Agent”，研究负责人 2026-11-12 确认取第 (1) 类。(1) 新 Agent（本记录取这一类）：Agents 页创建、beta、Compose 默认开启，运行在 agent_backend + local_sandbox，自带 shell 沙箱，无 ReAct/函数调用开关，一次运行至多 500 次模型请求；与工作流里的新 Agent 节点共用同一套代码（clients.agent_backend、agent_v2 请求构造器）。(2) 旧版 Agent 应用（agent-chat）：Studio 里 For beginners 折叠区创建，在 api 进程内循环（fc_agent_runner / cot_agent_runner），型号具备工具调用特性时用函数调用、否则 ReAct，最大迭代默认 10（前端滑块上限默认 99），只有用户添加的工具、没有 shell 沙箱，模板预置型号 openai/gpt-4o（仅当工作区没有默认型号时作回退）。(3) 经典 Agent 节点：只在工作流或 Chatflow 里，由 Agent Strategy 插件（Function Calling、ReAct，需从 Marketplace 装）驱动，与旧版 Agent 应用不是同一套代码，自带 Max Iterations 与 Memory。(4) 官方通用快速开始带新用户建的第一个应用是 Workflow，不是 Agent。\n\n默认提供方与型号：官方没有默认提供方和默认型号，新工作区一个模型提供方也没装、Default Models 全空；官方快速开始（云版）示例装 OpenAI 提供方、用 gpt-5.2；云版新账户有一次性 200 AI credits，自托管没有。未核实：新 Agent 编辑页对话窗口的具体按钮名；Chat Features 各项缺省值；自动标题与上下文摘要实际使用的型号；dify-agent 沙箱镜像（langgenius/dify-agent-local-sandbox）里预装的程序（未下载镜像）。",
+  "note": "版本：GitHub releases/latest 为 1.19.0（2026-11-04 发布，非预发布）；官方快速开始让用户在 Dify releases 里自选标签，Compose 里的镜像标签也固定为 1.19.0，所以取 1.19.0；注解标签 daa2f261… 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签但没有对应发布页。官方文档在 langgenius/dify-docs 仓库（站外），文档站 llms-full.txt 可用（约 2.9 MB，仅英文，含云版与自托管两部分）。\n\n应用类型是本记录最要紧的取舍：同一套部署里有四类东西可被叫作“Agent”，研究负责人 2026-11-12 确认取第 (1) 类。(1) 新 Agent（本记录取这一类）：Agents 页创建、beta、Compose 默认开启，运行在 agent_backend + local_sandbox，自带 shell 沙箱，无 ReAct/函数调用开关，一次运行至多 500 次模型请求；与工作流里的新 Agent 节点共用同一套代码（clients.agent_backend、agent_v2 请求构造器）。(2) 旧版 Agent 应用（agent-chat）：Studio 里 For beginners 折叠区创建，在 api 进程内循环（fc_agent_runner / cot_agent_runner），型号具备工具调用特性时用函数调用、否则 ReAct，最大迭代默认 10（前端滑块上限默认 99），只有用户添加的工具、没有 shell 沙箱，模板预置型号 openai/gpt-4o（仅当工作区没有默认型号时作回退）。(3) 经典 Agent 节点：只在工作流或 Chatflow 里，由 Agent Strategy 插件（Function Calling、ReAct，需从 Marketplace 装）驱动，与旧版 Agent 应用不是同一套代码，自带 Max Iterations 与 Memory。(4) 官方通用快速开始带新用户建的第一个应用是 Workflow，不是 Agent。\n\n默认提供方与型号：官方没有默认提供方和默认型号，新工作区一个模型提供方也没装、Default Models 全空；官方快速开始（云版）示例装 OpenAI 提供方、用 gpt-5.2；云版新账户有一次性 200 AI credits，自托管没有。未核实：新 Agent 编辑页对话窗口的具体按钮名；Chat Features 各项缺省值；上下文摘要实际使用的型号（依赖库源码不在快照内，核不了）；dify-agent 沙箱镜像（langgenius/dify-agent-local-sandbox）里预装的程序（未下载镜像）。\n\n默认联网：社区版默认向 https://updates.dify.ai 查版本更新（控制台版本接口，可用 CHECK_UPDATE_URL 置空关闭），并由 worker_beat 每 30 分钟检查一次匿名社区遥测心跳、发往 https://otel.dify.ai/v1/events（备用 otel.dify.cn；DISABLE_TELEMETRY 或 DO_NOT_TRACK 可关）；插件市场默认开。\n\n2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5）。改了五处：入口和权限写明取默认 Build 对话及其配置写入边界（原先把已发布运行的限制说成了本入口的限制）；默认服务清单补 api_websocket；补会话状态快照与 Apply 时的 Home 快照；标题生成改为用工作区默认 LLM，并补默认的版本检查与匿名遥测联网。版本和提交仍是原来钉的 1.19.0 与 8e689e868b63b6dd2b449d0eb568ca5cc7127759。",
   "evidence": [
     {
       "version": "1.19.0",
@@ -136,10 +137,10 @@
     {
       "evidence_kind": "official_doc",
       "source_url": "https://docs.dify.ai/en/self-host/use-dify/build/new-agent/build",
-      "locator": "docs.dify.ai 自托管：构建 Agent（Create an Agent、Model、Tools、Run Limits、Troubleshooting）",
+      "locator": "docs.dify.ai 自托管：构建 Agent（Create an Agent、Model、Tools、Run Limits、Troubleshooting、Build by Chatting）",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "Agents → Create → Create from Blank 新建（需 Editor 及以上角色）；模型栏选用强推理且原生支持工具调用的型号；每次运行至多 500 次模型请求，单次运行默认 1 小时；沙箱联网走代理，默认拦截内网地址；可在 Build 模式里用对话搭建配置。"
+      "note": "Agents → Create → Create from Blank 新建（需 Editor 及以上角色）；模型栏选用强推理且原生支持工具调用的型号；每次运行至多 500 次模型请求，单次运行默认 1 小时；沙箱联网走代理，默认拦截内网地址；可在 Build 模式里用对话搭建配置。；Build by Chatting 一节写明：在 Build 对话里 Agent 自己设置提示词、技能、文件和环境变量，点 Apply 保留或 Discard 放弃，Build 期间配置面板只读，模型改不了型号和工具；只有已发布的 Agent 不会按用户要求改自己的能力。"
     },
     {
       "evidence_kind": "official_doc",
@@ -369,7 +370,7 @@
       "lines": "L145",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "新 Agent 应用对话默认自动生成对话标题（auto_generate_name 缺省 True）；标题调用具体用哪个型号未逐行核实。"
+      "note": "新 Agent 应用对话默认自动生成对话标题（auto_generate_name 缺省 True）；标题调用的型号见 llm_generator.py 一卡：取工作区默认 LLM。"
     },
     {
       "evidence_kind": "source_path",
@@ -379,6 +380,177 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
       "note": "上下文压缩：目标预算为模型上下文窗口的 80%（并扣除 max_tokens），先清理旧工具结果（保留最近 3 对），再做摘要压缩（保留 20 条消息）；窗口未知则不压缩。摘要所用型号未逐行核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/features/agent-v2/agent-detail/configure/page.tsx#L21-L55",
+      "locator": "web/features/agent-v2/agent-detail/configure/page.tsx",
+      "lines": "L21-L55",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "编辑页右侧面板的 mode 参数缺省为 build；Preview 只在 deploymentEdition 不是 COMMUNITY 时可选，所以社区版编辑页对话默认且只能是 Build 对话。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/features/agent-v2/agent-detail/configure/components/preview/build-chat.tsx#L74-L80",
+      "locator": "web/features/agent-v2/agent-detail/configure/components/preview/build-chat.tsx",
+      "lines": "L74-L80",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "Build 对话发出的运行草稿类型为 debug_build。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/workflow/nodes/agent_v2/runtime_request_builder.py#L996-L1016",
+      "locator": "api/core/workflow/nodes/agent_v2/runtime_request_builder.py",
+      "lines": "L996-L1016",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "运行请求里 config_version.writable 仅在配置版本为 build_draft 时为 true；构建笔记 config_note 随配置清单传入。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/layers/config/layer.py#L30-L59",
+      "locator": "dify-agent/src/dify_agent/layers/config/layer.py",
+      "lines": "L30-L59",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "dify-agent config 命令的使用说明与规则：本地改文件不会自动保存，持久化必须执行 config 写入命令，写入命令只在配置版本为可写的 build_draft 时开放；列出 note、prompt、env、files、skills 的写入子命令。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/layers/config/layer.py#L164-L175",
+      "locator": "dify-agent/src/dify_agent/layers/config/layer.py",
+      "lines": "L164-L175",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "只有 config_version.writable 为 true 时，才把写入类子命令的帮助交给模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/clients/agent_backend/request_builder.py#L77-L121",
+      "locator": "api/clients/agent_backend/request_builder.py",
+      "lines": "L77-L121",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "build_draft 运行把原提示词包进一段 build mode 系统说明（原提示词作为以后正常运行的任务嵌入）；快照和普通草稿的提示词原样传入。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/agent_config_service.py#L970-L999",
+      "locator": "api/services/agent_config_service.py",
+      "lines": "L970-L999",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "提示词写入：只替换调用者自己 build_draft 的提示词，写入前要求可写；已构造的运行请求不受影响，之后的运行才采用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/agent_config_service.py#L1017-L1047",
+      "locator": "api/services/agent_config_service.py",
+      "lines": "L1017-L1047",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "配置版本解析：snapshot 与普通 draft 的 writable 为 false，只有当前账户自己的 debug_build 草稿（build_draft）为 true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/agent_config_service.py#L1102-L1116",
+      "locator": "api/services/agent_config_service.py",
+      "lines": "L1102-L1116",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "agent stub（模型经 CLI 的写入面）对不可写目标返回 403，写入只允许 build draft；这里没有逐项人工审批。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/docker/docker-compose.yaml#L331-L348",
+      "locator": "docker/docker-compose.yaml",
+      "lines": "L331-L348",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "api_websocket 服务属 collaboration 档案，用于工作流协作的 WebSocket，默认 COMPOSE_PROFILES 含 collaboration，因而默认启动。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime/runner.py#L389-L405",
+      "locator": "dify-agent/src/dify_agent/runtime/runner.py",
+      "lines": "L389-L405",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "每次运行收尾（含取消清理之后）把各层状态快照成 SessionSnapshot；运行中逐步保存消息历史。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/apps/agent_app/app_runner.py#L717-L724",
+      "locator": "api/core/app/apps/agent_app/app_runner.py",
+      "lines": "L717-L724",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "运行失败或取消且产生了快照时，把终态会话快照存下；没有快照则保留上一次存的。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/agent/composer_service.py#L1014-L1037",
+      "locator": "api/services/agent/composer_service.py",
+      "lines": "L1014-L1037",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Apply 构建结果时为该构建会话建 Home 快照，并关联到新的普通草稿。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/dify-agent/src/dify_agent/runtime_backend/local.py#L119-L144",
+      "locator": "dify-agent/src/dify_agent/runtime_backend/local.py",
+      "lines": "L119-L144",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "local 后端建会话绑定时，若有 Home 快照就从 `/home/dify/.snapshots/<ref>` 复制进新的 Home 目录，工作区目录另建或复用；快照根目录默认 `/home/dify/.snapshots`。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/llm_generator/llm_generator.py#L200-L217",
+      "locator": "api/core/llm_generator/llm_generator.py",
+      "lines": "L200-L217",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "生成对话标题时，没有传入型号则取工作区默认 LLM 调用一次（max_tokens 500）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/task_pipeline/message_cycle_manager.py#L86-L100",
+      "locator": "api/core/app/task_pipeline/message_cycle_manager.py",
+      "lines": "L86-L100",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新会话的首条消息且自动命名开启时，起 1 秒延迟的线程生成标题（同一会话与查询的结果缓存 3600 秒，见同文件 L133-L151）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/configs/feature/__init__.py#L905-L944",
+      "locator": "api/configs/feature/__init__.py",
+      "lines": "L905-L944",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "CHECK_UPDATE_URL 默认 https://updates.dify.ai；社区遥测 DISABLE_TELEMETRY、DO_NOT_TRACK 默认 false，端点默认 https://otel.dify.ai/v1/events，心跳检查间隔默认 30 分钟。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/extensions/ext_celery.py#L391-L402",
+      "locator": "api/extensions/ext_celery.py",
+      "lines": "L391-L402",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "社区版在未关遥测、未设 DO_NOT_TRACK 时，把 community_telemetry.send_heartbeat 加进 Celery beat 计划。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/controllers/console/system.py#L36-L60",
+      "locator": "api/controllers/console/system.py",
+      "lines": "L36-L60",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "环境前提",
+      "note": "控制台版本接口由 api 进程向 CHECK_UPDATE_URL 发请求，带当前版本号。"
     }
   ],
   "environment_premises": {

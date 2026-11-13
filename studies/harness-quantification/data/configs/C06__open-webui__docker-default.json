@@ -14,16 +14,16 @@
   "permission_mode": "没有逐次审批：工具审批模式缺省为 full（ENABLE_TOOL_PERMISSIONS 默认 False），模型发出的工具调用直接执行。没有 shell 或文件系统工具：默认安装不连接 Open Terminal，也没有预置的外部工具服务，模型能做的是内置系统工具（见 enabled_extensions）；这些工具读写的是该用户在 Open WebUI 里的数据（记忆、笔记、聊天、知识库、技能、自动化、日历），管理员账户的模型还能调用 create_tool 在服务端保存并执行 Python 工具模块。代码解释器（需用户在聊天里手动打开）在浏览器的 Pyodide 里运行。联网搜索默认关闭；容器自身对外网无限制。账户规则：第一个注册用户成为管理员并自动关闭注册，之后的用户默认待批准（pending）；管理员绕过所有功能权限检查，非管理员的工作区（工具、模型、知识库、提示词、技能）权限默认都关。服务端进程在容器里以 root 身份运行。",
   "subagents_enabled": false,
   "enabled_extensions": [
-    "工具调用模式：原生（Native，智能体）模式是默认；内置系统工具只在请求来自网页界面、模型能力 builtin_tools 未被关掉时注册，直接调接口的人默认拿不到。",
-    "默认注册给模型的内置工具（管理员账户，没有选 Legacy，源码 get_builtin_tools 的注册表）：get_current_timestamp、calculate_timestamp、ask_user；知识库 list_knowledge_bases、search_knowledge_bases、query_knowledge_bases、grep_knowledge_files、search_knowledge_files、query_knowledge_files、view_knowledge_file、display_file（ENABLE_KB_EXEC 默认 False，不走 kb_exec）；search_chats、view_chat；笔记 search_notes、view_note、write_note、replace_note_content；任务 create_tasks、update_task（只在已保存的聊天里）；自动化 create_automation、update_automation、list_automations、toggle_automation、delete_automation；日历 search_calendar_events、create_calendar_event、update_calendar_event、delete_calendar_event；技能 create_skill；create_tool。聊天里带上传文件时另加 list_chat_files、query_chat_files、grep_chat_files、view_file、display_file；有技能被选用时另加 view_skill、read_skill_file、grep_skill_files（未逐行核实触发条件）。",
+    "工具调用模式：原生（Native，智能体）模式是默认；内置系统工具只在请求来自网页界面、模型能力 builtin_tools 未被关掉时注册，直接调接口的人默认拿不到；例外是保存的内部笔记附属聊天，它绕过这些门槛直接进入内置工具解析并注册笔记工具。",
+    "默认注册给模型的内置工具（管理员账户，没有选 Legacy，源码 get_builtin_tools 的注册表）：get_current_timestamp、calculate_timestamp、ask_user；知识库 list_knowledge_bases、search_knowledge_bases、query_knowledge_bases、grep_knowledge_files、search_knowledge_files、query_knowledge_files、view_knowledge_file、display_file（ENABLE_KB_EXEC 默认 False，不走 kb_exec）；search_chats、view_chat；笔记 search_notes、view_note、write_note、replace_note_content；任务 create_tasks、update_task（只在已保存的聊天里）；自动化 create_automation、update_automation、list_automations、toggle_automation、delete_automation；日历 search_calendar_events、create_calendar_event、update_calendar_event、delete_calendar_event；技能 create_skill；create_tool。聊天里带上传文件时另加 list_chat_files、query_chat_files、grep_chat_files、view_file、display_file（还要求 Files 类别、file_upload 能力和用户权限开启，且模型的 file_context 即 Preload files 保持缺省的关闭）；技能：Native 模式每次请求自动查出该用户可访问且启用的全部技能并以清单交给模型，只要有可用技能就注册 view_skill、read_skill_file、grep_skill_files，其中有工作区技能时另注册 update_skill_files（写入要求该技能的写权限；选用或提及某个技能会预载其内容）；全新空库没有技能，管理员的模型用 create_skill 建出后，之后的请求就会带上这几项；技能存在数据库里，创建时记一条首版快照，之后每次内容变化追加一条版本历史。语音通话界面里、模型配置了虚拟形象手势且有通话权限时，还会注册 play_animation（全新的文本聊天里不会）。",
     "默认不注册的内置工具：search_web 与 fetch_url（ENABLE_WEB_SEARCH 默认 False 且未选搜索引擎）；generate_image 与 edit_image（图像生成默认关）；频道工具（ENABLE_CHANNELS 默认 False）；delegate_task 与 timer（ENABLE_SUBAGENTS 默认 False）；notify（用户 webhooks 默认关）；kb_exec（ENABLE_KB_EXEC 默认 False）；search_tools/call_tool（工具检索是默认关的实验功能）。",
-    "create_tool：管理员账户（ENABLE_TOOLS 默认 True）的模型默认就带这个工具，保存时在服务端进程里执行模型写出的 Python 模块；同属管理员的 create_skill 只写技能文件。工作区工具（Workspace > Tools）与函数（Functions：Pipes、Filters、Actions）镜像里不预置，由管理员从社区导入或自写；它们在服务端进程内以服务进程权限运行（容器内 root）。",
-    "记忆：memories.enable 默认 True，界面在新聊天里默认带上 memory 开关（settings.memory 未设置时取服务器的 enable_memories），所以八个记忆工具（search_memories、list_memory_paths、read_memory_path、list_memories、update_memory、add_memory、replace_memory_content、delete_memory）默认就注册；ENABLE_MEMORY_SYSTEM_CONTEXT 默认 True（记忆放进系统上下文，具体注入位置未逐行核实）；后台记忆复盘 ENABLE_MEMORY_BACKGROUND_REVIEW 默认 False。",
-    "代码执行：两处开关默认都开（ENABLE_CODE_EXECUTION=True 管回复里代码块的“运行”按钮，ENABLE_CODE_INTERPRETER=True 管 execute_code 工具），引擎默认 pyodide，即在用户浏览器的 WebAssembly 里跑 Python（不在服务端容器里），只含固定的一小组库、不能装包、没有 shell。但每个聊天里代码解释器的开关默认关，要用户在输入框集成菜单里手动打开，或在工作区模型设置里把它设成默认功能；打开后 execute_code 才注册给模型。Jupyter（服务端）要管理员另配，Open Terminal 要另装另连，二者都不在默认安装里。",
-    "联网搜索：默认关闭（ENABLE_WEB_SEARCH=False，WEB_SEARCH_ENGINE 空），需要管理员在 Admin > Web Search 开启并选搜索引擎，之后用户权限默认放行，并要在聊天里为消息打开（或设为模型默认功能）。聊天框里输入 # 加网址取网页内容是否受这个开关控制：未核实。",
-    "知识库检索：默认可用但没有任何知识库内容；聊天里上传文件会在容器内分块、用本地 all-MiniLM-L6-v2 嵌入并存入 ChromaDB（RAG_EMBEDDING_ENGINE 默认空，VECTOR_DB 默认 chroma，镜像含该嵌入模型），BYPASS_EMBEDDING_AND_RETRIEVAL 与 RAG_FULL_CONTEXT 默认 False；附件会触发检索查询生成（ENABLE_RETRIEVAL_QUERY_GENERATION 默认 True），那是一次用任务模型发出的辅助请求。",
+    "create_tool：管理员账户（ENABLE_TOOLS 默认 True）的模型默认就带这个工具，保存时在服务端进程里执行模型写出的 Python 模块；同属管理员的 create_skill 只把技能（含附带文件）存进数据库，不写宿主磁盘路径，也不执行代码。工作区工具（Workspace > Tools）与函数（Functions：Pipes、Filters、Actions）镜像里不预置，由管理员从社区导入或自写；它们在服务端进程内以服务进程权限运行（容器内 root）。",
+    "记忆：memories.enable 默认 True，界面在新聊天里默认带上 memory 开关（settings.memory 未设置时取服务器的 enable_memories），所以八个记忆工具（search_memories、list_memory_paths、read_memory_path、list_memories、update_memory、add_memory、replace_memory_content、delete_memory）默认就注册；ENABLE_MEMORY_SYSTEM_CONTEXT 默认 True（自动召回：Native 模式在每条新回复开始时，由服务端按最近几条用户消息检索个人记忆，把结果作为隐藏的 recall_memories 工具结果放进对话历史，不等模型先调工具；非内置工具路径则把记忆追加到用户消息里；仍受记忆开关、模型 Memory 能力和权限约束，记忆库为空时没有召回内容，嵌入检索不另算一次聊天生成请求）；后台记忆复盘 ENABLE_MEMORY_BACKGROUND_REVIEW 默认 False。",
+    "代码执行：两处开关默认都开（ENABLE_CODE_EXECUTION=True 管回复里代码块的“运行”按钮，ENABLE_CODE_INTERPRETER=True 管 execute_code 工具），引擎默认 pyodide，即在用户浏览器的 WebAssembly 里跑 Python（不在服务端容器里），前端会按代码里的 import 自动装一小组常用库（requests、numpy、pandas 等）；沙箱默认加载并使用 micropip，源码里没有看到禁止代码自行装包的限制，所以这组库不是强制白名单，额外包能否装上取决于 Pyodide 兼容性和浏览器的网络条件（官方文档的说法更严格，称不能装清单外的库，快照里核不了实际结果，未运行验证）；没有系统 shell。但每个聊天里代码解释器的开关默认关，要用户在输入框集成菜单里手动打开，或在工作区模型设置里把它设成默认功能；打开后 execute_code 才注册给模型。Jupyter（服务端）要管理员另配，Open Terminal 要另装另连，二者都不在默认安装里。",
+    "联网搜索：默认关闭（ENABLE_WEB_SEARCH=False，WEB_SEARCH_ENGINE 空），需要管理员在 Admin > Web Search 开启并选搜索引擎，之后用户权限默认放行，并要在聊天里为消息打开（或设为模型默认功能）。聊天框里输入 # 加网址取网页内容不受这个开关控制：源码里 process_url 路径没有 web.search.enable 检查（只有搜索接口检查），界面按 web_upload 权限显示该入口，抓取默认拒绝非全局地址（ENABLE_LOCAL_WEB_FETCH 默认 False）；未运行验证。",
+    "知识库检索：默认可用但没有任何知识库内容；聊天里上传文件会在容器内分块、用本地 all-MiniLM-L6-v2 嵌入并存入 ChromaDB（RAG_EMBEDDING_ENGINE 默认空，VECTOR_DB 默认 chroma，镜像含该嵌入模型），BYPASS_EMBEDDING_AND_RETRIEVAL 与 RAG_FULL_CONTEXT 默认 False；检索查询生成开关 ENABLE_RETRIEVAL_QUERY_GENERATION 默认 True，但只有走附件预载检索路径（模型的 file_context 开启）才实际调用 generate_queries、发一次用任务模型的辅助请求；本配置默认是 Native 附件工具路径，query_chat_files 直接用主模型提交的查询词检索，不额外发这一次请求（嵌入计算另算）。",
     "外部工具服务接入：MCP（HTTP）、MCPO、OpenAPI 服务在 Admin > Connections 里由管理员添加，TOOL_SERVER_CONNECTIONS 默认空，ENABLE_DIRECT_CONNECTIONS（用户自带直连）默认 False，TERMINAL_SERVER_CONNECTIONS 默认空；默认安装没有任何外部工具服务。Pipelines 是另外运行的服务，以 OpenAI 连接的形式接入（路由在 routers/pipelines.py）；默认安装里没有。仓库里没有关于 Pipelines 的官方文档站页面，其官方说明未核实。",
-    "默认会自发的模型请求：标题生成、标签生成、跟进问题生成（均默认 True）和搜索/检索查询生成（默认 True）都用当前聊天所用的模型当任务模型（TASK_MODEL 默认空）；自动补全默认关；上下文压缩默认关；工具审批分类默认关。服务启动时起的自动化调度循环只有在用户创建了自动化时才会发请求（空闲行为未核实）。",
+    "默认会自发的模型请求：标题生成、标签生成、跟进问题生成（均默认 True）和搜索/检索查询生成（默认 True）都用当前聊天所用的模型当任务模型（TASK_MODEL 默认空）；自动补全默认关；上下文压缩默认关；工具审批分类默认关。服务启动时起的调度循环常驻轮询：每秒查到期的定时器，每隔几秒查到期的自动化和日历提醒，只对查到的到期记录才发请求；全新空库没有到期记录，空闲时不发模型请求（定时器工具本身要 ENABLE_SUBAGENTS 才注册）。",
     "默认的外网调用：向 api.github.com 查最新版本（ENABLE_VERSION_UPDATE_CHECK 默认开）；对默认 OpenAI 连接请求模型列表（密钥为空）；每次启动检查 Hugging Face 上嵌入模型是否更新（RAG_EMBEDDING_MODEL_AUTO_UPDATE）；匿名统计默认关（SCARF_NO_ANALYTICS、DO_NOT_TRACK、ANONYMIZED_TELEMETRY）。",
     "入口代码的执行位置：服务端 Python 进程在 Docker 容器内以 root 运行，数据存在命名卷 open-webui（/app/backend/data）；内置工具（记忆、笔记、知识库检索等）和管理员导入的工具、函数都在这个进程里执行；代码解释器的 Pyodide 在用户的浏览器里执行；模型推理在所连接的 Ollama 或云端接口，不在这个容器里。"
   ],
@@ -249,12 +249,12 @@
     },
     {
       "evidence_kind": "source_path",
-      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2070-L2075",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2069-L2075",
       "locator": "backend/open_webui/utils/middleware.py",
-      "lines": "L2070-L2075",
+      "lines": "L2069-L2075",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "权限",
-      "note": "use_builtin_tools：请求带 session_id（即来自网页界面）、function_calling 不是 legacy、模型能力 builtin_tools 未被关掉（缺省为 True）时才给内置工具；API 调用方默认拿不到。"
+      "note": "use_builtin_tools：保存的内部笔记附属聊天（is_note_chat）直接进入；普通聊天要求请求带 session_id（即来自网页界面）、function_calling 不是 legacy、模型能力 builtin_tools 未被关掉（缺省为 True），否则不给内置工具；API 调用方默认拿不到。"
     },
     {
       "evidence_kind": "source_path",
@@ -380,7 +380,7 @@
       "lines": "L869-L877",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "笔记工具（search_notes、view_note、write_note、replace_note_content）默认注册（notes.enable 默认 True）；频道工具要求 channels.enable（默认 False）。"
+      "note": "笔记工具（search_notes、view_note、write_note、replace_note_content）默认注册（notes.enable 默认 True；is_note_chat 的笔记附属聊天跳过 notes 开关、类别与功能权限检查，L870）；频道工具要求 channels.enable（默认 False）。"
     },
     {
       "evidence_kind": "source_path",
@@ -389,7 +389,7 @@
       "lines": "L886-L908",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "技能：管理员总能得到 create_skill；有技能被选用时才有 view_skill 等；ENABLE_TOOLS（默认 True）为真时，管理员得到 create_tool；有保存的聊天时注册 create_tasks、update_task。"
+      "note": "技能：只要本次请求解析出可用技能（__skill_ids__ 非空）就注册 view_skill、read_skill_file、grep_skill_files，含工作区技能时另注册 update_skill_files（L889-L893）；管理员总能得到 create_skill；ENABLE_TOOLS（默认 True）为真时，管理员得到 create_tool；有保存的聊天时注册 create_tasks、update_task。"
     },
     {
       "evidence_kind": "source_path",
@@ -668,7 +668,7 @@
       "lines": "L446-L451",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "服务启动时就起一个自动化调度循环 scheduler_worker_loop；是否发出模型请求取决于有没有用户创建的自动化（空闲时的行为没有逐行核实）。"
+      "note": "服务启动时就起一个调度循环 scheduler_worker_loop，另起 socket 身份检查与连接池清理任务；调度循环逐条处理到期记录才发请求，见 automations.py 的小卡。"
     },
     {
       "evidence_kind": "source_path",
@@ -678,7 +678,142 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "环境前提",
       "note": "没有任何用户时界面进入引导（onboarding）状态，由此创建第一个管理员账户；没有按目录的信任提示。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2488-L2523",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L2488-L2523",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Native 模式下 skill_tools_enabled 为真时，直接取该用户可访问的全部技能（get_skills(user_id)），保留启用的，逐个写入技能清单，并非要先选用技能。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2604-L2610",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L2604-L2610",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "技能清单作为隐藏的 list_available_skills 工具结果放进新回复的初始输出。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/skills.py#L178-L203",
+      "locator": "backend/open_webui/models/skills.py",
+      "lines": "L178-L203",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "create_skill 落到 insert_new_skill：技能内容和附带文件存进数据库的 Skill 表，同时写一条 SkillHistories 首版快照与 version_id；后续内容变化追加版本（L393-L424）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L588-L593",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L588-L593",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "is_file_context_enabled：模型能力 file_context 缺省值仅在 legacy 或没有 session 时为真；网页界面的 Native 聊天缺省为假。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L733-L750",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L733-L750",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "附件工具 list_chat_files、query_chat_files、grep_chat_files、view_file、display_file：要求 Files 类别、file_upload 能力、file_context 未开、聊天里有上传文件和 file_upload 权限。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L1685-L1708",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L1685-L1708",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "chat_completion_files_handler：附件不全是 full context 时才调用 generate_queries（一次辅助请求）；该 handler 只在 file_context 开启时被调用（L2926-L2930）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py#L2628-L2635",
+      "locator": "backend/open_webui/tools/builtin.py",
+      "lines": "L2628-L2635",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "query_chat_files 的 query 参数由主模型的工具调用给出，直接用于检索（L2693-L2720），不经 generate_queries。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L2359-L2375",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L2359-L2375",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "自动记忆：features.memory、memories.enable、memories.system_context.enable 与权限都满足时，use_builtin_tools 路径调用 preload_memory，否则 add_memory_context 追加到用户消息。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py#L3053-L3057",
+      "locator": "backend/open_webui/utils/middleware.py",
+      "lines": "L3053-L3057",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "preload_memory 把自动召回的结果作为隐藏的 recall_memories 工具调用和输出保存进普通工具历史。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/pyodide/pyodideSandboxHost.ts#L19-L37",
+      "locator": "src/lib/pyodide/pyodideSandboxHost.ts",
+      "lines": "L19-L37",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "Pyodide 沙箱加载 micropip，初始化时和之后每次请求都用 micropip 安装前端传入的包，再运行代码。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/routes/+layout.svelte#L316-L340",
+      "locator": "src/routes/+layout.svelte",
+      "lines": "L316-L340",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "前端按代码里的 import 自动选包（requests、numpy、pandas、matplotlib 等一小组）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py#L444-L446",
+      "locator": "backend/open_webui/config.py",
+      "lines": "L444-L446",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "CODE_INTERPRETER_BLOCKED_MODULES 默认空列表：没有默认的模块禁用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py#L86-L126",
+      "locator": "backend/open_webui/utils/automations.py",
+      "lines": "L86-L126",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "调度循环轮询到期定时器、（automations.enable 时）到期自动化与（calendar.enable 时）日历提醒；只对 claim 出的到期记录执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py#L691-L724",
+      "locator": "backend/open_webui/utils/tools.py",
+      "lines": "L691-L724",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "play_animation 仅在 features.voice、模型 voice_avatar 配有手势、有事件回调、builtin_tools 能力开启、非内部请求且用户有通话权限时注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/retrieval.py#L2091-L2123",
+      "locator": "backend/open_webui/routers/retrieval.py",
+      "lines": "L2091-L2123",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "process_url（# 加网址）不检查 web.search.enable；对照 L2644-L2653 的搜索接口才检查。网址抓取默认拒绝非全局地址（config.py L1118-L1124，retrieval/web/utils.py L113-L117）。"
     }
   ],
-  "note": "版本：GitHub releases/latest 为 v0.13.3（2026-11-08），非预发布；该标签是轻量标签，直接指向提交 b0e6098e940942281d9c83f3529ea117287a3a22，与 main 分支当前最新提交相同；官方快速开始拉取的 ghcr.io/open-webui/open-webui:main 镜像的 OCI 标签 revision 也是这个提交（2026-11-12 只读镜像索引与配置核对，没有拉取镜像层）。:main 随 main 推送滚动，是浮动标签，v0.13.3 之后的提交会让它变化；Python 方式（pip install open-webui）装的是发行版，本记录不取。官方文档不在代码仓库里，而在 open-webui/docs 仓库和 https://docs.openwebui.com ：文档引用固定到 docs 仓库提交 36b7e50e4140f3cca1de0aeef4ae776af21169cb（docs 仓库 main 分支，2026-11-12 读取）；文档站有全文导出 https://docs.openwebui.com/llms-full.txt（约 4,444,695 字节）和目录 https://docs.openwebui.com/llms.txt（约 90,298 字节）。文档与源码口径：文档称 Pyodide 和 Jupyter 为遗留引擎、推荐 Open Terminal；文档称“内置系统工具”默认可用，源码里这些工具是否注册取决于逐项条件（全局开关、模型能力、用户权限、每聊天的功能开关），本记录以源码条件为准；管理员账户绕过用户权限检查，普通用户的工具集更小（自动化、日历之外，非管理员没有 create_skill、create_tool，自动化权限默认关）。本记录描述的是管理员账户（首个注册用户）、新聊天、未改任何设置、已连一个支持工具调用的模型的情形。待核：#加网址取页面是否受联网搜索开关控制；Pipelines 的官方文档说明；记忆系统上下文的具体注入位置；自动化调度循环空闲时的行为；技能工具的触发条件。许可：仓库许可为自定义（GitHub 标为 NOASSERTION），不影响本记录事实。"
+  "note": "版本：GitHub releases/latest 为 v0.13.3（2026-11-08），非预发布；该标签是轻量标签，直接指向提交 b0e6098e940942281d9c83f3529ea117287a3a22，与 main 分支当前最新提交相同；官方快速开始拉取的 ghcr.io/open-webui/open-webui:main 镜像的 OCI 标签 revision 也是这个提交（2026-11-12 只读镜像索引与配置核对，没有拉取镜像层）。:main 随 main 推送滚动，是浮动标签，v0.13.3 之后的提交会让它变化；Python 方式（pip install open-webui）装的是发行版，本记录不取。官方文档不在代码仓库里，而在 open-webui/docs 仓库和 https://docs.openwebui.com ：文档引用固定到 docs 仓库提交 36b7e50e4140f3cca1de0aeef4ae776af21169cb（docs 仓库 main 分支，2026-11-12 读取）；文档站有全文导出 https://docs.openwebui.com/llms-full.txt（约 4,444,695 字节）和目录 https://docs.openwebui.com/llms.txt（约 90,298 字节）。文档与源码口径：文档称 Pyodide 和 Jupyter 为遗留引擎、推荐 Open Terminal；文档称“内置系统工具”默认可用，源码里这些工具是否注册取决于逐项条件（全局开关、模型能力、用户权限、每聊天的功能开关），本记录以源码条件为准；管理员账户绕过用户权限检查，普通用户的工具集更小（自动化、日历之外，非管理员没有 create_skill、create_tool，自动化权限默认关）。本记录描述的是管理员账户（首个注册用户）、新聊天、未改任何设置、已连一个支持工具调用的模型的情形。待核：Pipelines 的官方文档说明。许可：仓库许可为自定义（GitHub 标为 NOASSERTION），不影响本记录事实。2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，核实并落实者为 Claude Sonnet 5.5（claude-sonnet-5-5）；据此改了五处：技能工具的触发条件与写入工具，附件路径不必然发检索查询生成请求，Pyodide 装包说法（文档与源码口径不同），自动记忆的注入位置，内置工具注册条件的笔记聊天例外；并补了技能版本历史、调度循环处理范围、语音界面条件工具，# 加网址取页面不受联网搜索开关控制。版本与提交仍是原来钉的（v0.13.3，b0e6098e…）。"
 }
