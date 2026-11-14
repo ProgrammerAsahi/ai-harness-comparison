@@ -24,7 +24,7 @@ REPOS = {
  'vscode':'microsoft/vscode', 'openhands-sdk':'OpenHands/software-agent-sdk',
  'qwen-docs':'QwenLM/qwen-code-docs',
  'grok-build':'xai-org/grok-build',
- 'avante':'yetone/avante.nvim', 'codecompanion':'olimorris/codecompanion.nvim',
+ 'avante':'avante-corp/avante.nvim', 'codecompanion':'olimorris/codecompanion.nvim',
  'step-code':'stepfun-ai/Step-Code',
  'superset':'superset-sh/superset', 'nanoclaw':'nanocoai/nanoclaw',
 }

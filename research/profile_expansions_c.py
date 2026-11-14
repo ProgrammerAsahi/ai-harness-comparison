@@ -2,12 +2,14 @@
 from profile_expansions import add, base
 
 NANOCLAW='https://github.com/nanocoai/nanoclaw/blob/3631c64a18677d7d188bfb8d09ce166a8a668dca/'
+# Facts rechecked on 2026-11-12 cite the main head of that day; the snapshot above is unchanged.
+NANOCLAW_HEAD='https://raw.githubusercontent.com/nanocoai/nanoclaw/0ede4cf61c139879024a941ebbfe1c90b626c7fb/'
 base("C10", "NanoClaw：把每个代理放进自己容器的常驻助理",
 f"""**定位与理念。** NanoClaw 是一个经聊天渠道常驻服务的个人助理，作者把它定位为比 OpenClaw 更小、更容易读懂的替代品：一个宿主进程加少量源码文件。它最主要的设计选择是让代理在 Linux 容器里运行，用“容器里只看得见显式挂载的目录”来限制代理能碰到的范围，而不依赖应用层的逐条授权。项目采用 MIT 许可。[README]({NANOCLAW}README.md)
 
-**结构与取舍。** 消息从 WhatsApp、Telegram、Slack 等渠道进入宿主进程，宿主按“用户 → 消息群组 → 代理组 → 会话”找到归属，把消息写进该会话的 `inbound.db`，再唤醒容器。容器里的代理运行器默认使用 Anthropic 的 Claude Agent SDK，读取消息、调用模型和工具，把回复写进 `outbound.db`，宿主再投递回原渠道。这两个 SQLite 文件各只有一个写入方，宿主和容器之间不另设进程通信。每个代理组（一个代理的身份、目录和记忆）有自己的 `CLAUDE.md`、记忆文件和容器配置；出站请求经凭据网关在发出时注入密钥，代理本身拿不到原始 API Key。[隔离层级]({NANOCLAW}docs/isolation-model.md)、[安全模型]({NANOCLAW}docs/SECURITY.md)
+**结构与取舍。** 消息从 WhatsApp、Telegram、Slack 等渠道进入宿主进程，宿主按“用户 → 消息群组 → 代理组 → 会话”找到归属，把消息写进该会话的 `inbound.db`，再唤醒容器。容器里的代理运行器默认使用 Anthropic 的 Claude Agent SDK，读取消息、调用模型和工具，把回复写进 `outbound.db`，宿主再投递回原渠道。这两个 SQLite 文件各只有一个写入方，宿主和容器之间不另设进程通信。每个代理组（一个代理的身份、目录和记忆）有自己的 `CLAUDE.md`、记忆文件和容器配置；出站请求经凭据网关在发出时注入密钥，代理本身拿不到原始 API Key。NanoClaw 主干只定义网关接口，具体网关由技能安装：安装向导默认装 OneCLI 的 Agent Vault，也可以用 `/add-iron-proxy` 换成 Iron Proxy，每次安装只选其中一个。[隔离层级]({NANOCLAW}docs/isolation-model.md)、[安全模型]({NANOCLAW}docs/SECURITY.md)、[网关接口说明]({NANOCLAW_HEAD}docs/gateway-seam.md)、[当前 README]({NANOCLAW_HEAD}README.md)
 
-**与 OpenClaw 的差别。** OpenClaw 以常驻 Gateway 为中心，连接消息渠道、控制客户端和设备节点，功能面更宽，工具是否隔离要看部署时的配置。NanoClaw 保留渠道接入、记忆和定时任务这些核心功能，把隔离做成默认：不同代理组默认分开容器和目录，凭据留在网关。代价是渠道适配器和其他模型提供方不在主干里，要用 `/add-telegram`、`/add-opencode` 之类的技能把代码复制进自己的分叉；作者也主张让 Claude Code 直接改代码来定制，不提供配置文件。[更新说明]({NANOCLAW}CHANGELOG.md)""")
+**与 OpenClaw 的差别。** OpenClaw 以常驻 Gateway 为中心，连接消息渠道、控制客户端和设备节点，功能面更宽，工具是否隔离要看部署时的配置。NanoClaw 保留渠道接入、记忆和定时任务这些核心功能，把隔离做成默认：不同代理组默认分开容器和目录，凭据留在网关。代价是渠道适配器和其他模型提供方不在主干里，要用 `/add-telegram`、`/add-opencode` 之类的技能把代码复制进自己的分叉；作者也主张让 Claude Code 直接改代码来定制，不提供配置文件。安装本身由脚本化向导 `nanoclaw.sh` 完成：装依赖、网关和容器、配第一个渠道都按固定步骤执行，向导用仓库自带的指令引擎应用技能文档；Claude Code 用在某一步失败后的诊断、用户中途求助，以及之后的 `/customize`、`/debug` 和添加渠道的技能上。选 Claude 订阅登录而宿主上还没有 Claude Code 命令行时，向导会先代装它，用来取登录令牌。[向导的技能驱动]({NANOCLAW_HEAD}setup/lib/skill-driver.ts)、[订阅令牌脚本]({NANOCLAW_HEAD}.claude/skills/add-onecli/scripts/register-claude-token.sh)、[更新说明]({NANOCLAW}CHANGELOG.md)""")
 
 add("C10",
     principle="常驻助理会长期接触私人消息、文件和账号，一旦被诱导执行错误操作，影响面取决于它能访问什么。NanoClaw 先把能访问的范围缩小：代理以非 root 用户在容器里运行，只能看到自己的组目录、会话目录和管理员加入白名单的额外目录。这让 bash 这类强工具更可控；同时，用户要自己维护 Docker、凭据网关和分叉后的代码。",
@@ -15,7 +17,7 @@ add("C10",
     mechanism="隔离分三层：几个渠道可以共用一个会话；也可以共用同一个代理，但各自一个会话；或者各配一个独立代理组。只有最后一种才真正互不可见，前两种共享工作目录和记忆。凭据网关本身也是需要维护的安全组件：2026.10.0 版的更新说明要求把 OneCLI 网关升级到修补了凭据注入绕过问题的版本。默认路线依赖 Anthropic 凭据和 Claude 模型；改用 Codex、OpenCode 或本地 Ollama 需要另装相应技能，工具调用与记忆行为要重新核对。",
     rows=[("运行方式", "单个 Node 宿主进程常驻，收到消息时唤醒对应会话的代理容器", "宿主进程与 Docker 都要长期在线"),
           ("隔离边界", "代理组各有容器、目录与记忆，非 root 运行，只见显式挂载", "额外挂载需白名单；共享会话或共享代理的渠道彼此可见"),
-          ("凭据", "出站请求经凭据网关注入密钥，容器内不持有原始 Key", "网关要单独升级维护，曾修补注入绕过问题"),
+          ("凭据", "出站请求经凭据网关注入密钥，容器内不持有原始 Key；默认网关是 OneCLI Agent Vault，可换 Iron Proxy", "网关要单独升级维护，曾修补注入绕过问题"),
           ("宿主与容器交接", "每个会话一对 SQLite：inbound 由宿主写，outbound 由容器写", "排查时分别看路由、容器运行和投递三段"),
           ("模型", "默认 Claude Agent SDK；Codex、OpenCode、Ollama 经技能接入", "换后端后重测工具调用与记忆"),
           ("定制方式", "渠道与提供方以技能装进自己的分叉，主干只留注册与基础设施", "升级时要处理自己分叉上的改动")],
