@@ -19,7 +19,7 @@
     "默认注册给模型的工具（按 agent_backend 源码）：shell_run、shell_wait、shell_input、shell_interrupt；挂了知识库且为 Agent decide 时加 knowledge_base_search；声明了结构化输出时加 final_output；用户在配置页添加的 Dify 工具（插件工具、自定义 API、工作流工具、MCP）按配置注册。新建的空白 Agent 没有任何 Dify 工具、技能、文件、知识库；沙箱里另有 dify-agent 命令行（config、files、skills 等子命令）供模型读自己的配置；写入类子命令只在 Build 草稿运行里开放（该类运行另带一段构建专用的系统说明，模型仍经 shell_run 调用，没有单独的“改配置”工具）。没有网页搜索工具，也没有子代理工具。",
     "新装后不用装插件就能在 Integrations → Tools 里看到并添加的内置工具提供方：time（current_time、localtime_to_timestamp、timestamp_to_localtime、timezone_conversion、weekday）、code（simple_code）、webscraper（webscraper）、audio（asr、tts，依赖默认语音模型，新装时未配）；这些默认都不挂在新建的 Agent 上，要手动添加。Google、GitHub、网页搜索等其余工具都要先去 Marketplace 装插件（部分还需凭据）。",
     "插件与市场：plugin_daemon 默认随 Compose 起，Marketplace 默认开（MARKETPLACE_ENABLED=true，需要能连外网），插件需签名校验（FORCE_VERIFYING_SIGNATURE=true）；新工作区一个插件都没有（NEW_USER_DEFAULT_PLUGIN_IDS 默认空）。模型提供方是插件，必须先装再填密钥；Agent Strategy 也是插件，但新 Agent 不用它。",
-    "默认开着或关着的开关：NEXT_PUBLIC_ENABLE_AGENT_V2=true（Agents 页和工作流里的新 Agent 节点）；NEXT_PUBLIC_ENABLE_AGENT_V2_IN_CHATFLOW=false；新 Agent 为 beta；知识库、技能（库技能最多 20 个）、环境变量、文件均默认为空；对话开场白、追问建议、引用等 Chat Features 的缺省值未核实；MCP 服务默认一个都没有（仅支持 HTTP 传输）。",
+    "默认开着或关着的开关：NEXT_PUBLIC_ENABLE_AGENT_V2=true（Agents 页和工作流里的新 Agent 节点）；NEXT_PUBLIC_ENABLE_AGENT_V2_IN_CHATFLOW=false；新 Agent 为 beta；知识库、技能（库技能最多 20 个）、环境变量、文件均默认为空；对话开场白、追问建议、引用、文件上传等 Chat Features，配置面板对没有保存过的项一律按关显示；文件上传关着时聊天输入区不显示上传入口，请求里即使带了文件，后端也不构造文件对象、按空列表继续，不报错（Build 对话读草稿、已发布对话读快照，这段处理相同）；MCP 服务默认一个都没有（仅支持 HTTP 传输）。新 Agent 创建时站点与服务接口（enable_site、enable_api）都关，首次成功发布时一并打开；服务接口的密钥要在发布之后另行创建（没有已发布快照时创建会被拒），调用时带应用密钥，接口关着时请求被拒。",
     "默认会自发的模型请求：上下文压缩（目标预算为模型窗口的 80%，先清理旧工具结果再摘要，摘要用哪个型号快照里核不了（依赖库 pydantic-ai-harness 的源码不在快照内））；对话标题自动生成（auto_generate_name 缺省 True；新会话首条消息后由 api 进程延迟 1 秒起线程，用工作区默认 LLM，可能不同于 Agent 选定的型号，同一会话和查询缓存 3600 秒）；Build 模式下的 Generate 提示词也会调用模型，但需用户点击。没有审批分类器类调用。",
     "默认开启的检查点与状态快照（不是每条命令前的文件检查点）：每次运行收尾时由 agent_backend 生成会话状态快照（各层状态，不含配置），成功、失败、取消后的可用终态由 api 存进数据库 agent_workspace_bindings.session_snapshot，下一轮据此续接，进程崩溃时不保证恢复到最新；用户在 Build 里点 Apply 时，api 为该构建会话的 Home 目录（`/home/dify/<binding_id>`）拍一份快照，复制到 local_sandbox 卷的 `/home/dify/.snapshots/`，新会话从中恢复 Home，工作区目录 `/workspace/<workspace_id>` 另在 workspace 卷里；没有发现每轮自动做的文件快照。",
     "不属于本入口但同一部署里还有：旧版 Agent 应用（Studio → Create from Blank → For beginners 折叠区里的 Agent，AppMode agent-chat）、经典 Agent 节点（Agent Strategy 插件驱动）、Workflow、Chatflow、Chatbot、文本生成；它们不进入本配置的编码范围，选项对比见 note。"
@@ -27,7 +27,7 @@
   "operating_system": "macOS、Linux（Docker Desktop 或 Docker Engine）；官方文档另列 Windows 的 WSL 2 路线；需 Docker Compose 2.35.0 以上。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "evidence_cutoff": "2026-11-12",
-  "note": "版本：GitHub releases/latest 为 1.19.0（2026-11-04 发布，非预发布）；官方快速开始让用户在 Dify releases 里自选标签，Compose 里的镜像标签也固定为 1.19.0，所以取 1.19.0；注解标签 daa2f261… 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签但没有对应发布页。官方文档在 langgenius/dify-docs 仓库（站外），文档站 llms-full.txt 可用（约 2.9 MB，仅英文，含云版与自托管两部分）。\n\n应用类型是本记录最要紧的取舍：同一套部署里有四类东西可被叫作“Agent”，研究负责人 2026-11-12 确认取第 (1) 类。(1) 新 Agent（本记录取这一类）：Agents 页创建、beta、Compose 默认开启，运行在 agent_backend + local_sandbox，自带 shell 沙箱，无 ReAct/函数调用开关，一次运行至多 500 次模型请求；与工作流里的新 Agent 节点共用同一套代码（clients.agent_backend、agent_v2 请求构造器）。(2) 旧版 Agent 应用（agent-chat）：Studio 里 For beginners 折叠区创建，在 api 进程内循环（fc_agent_runner / cot_agent_runner），型号具备工具调用特性时用函数调用、否则 ReAct，最大迭代默认 10（前端滑块上限默认 99），只有用户添加的工具、没有 shell 沙箱，模板预置型号 openai/gpt-4o（仅当工作区没有默认型号时作回退）。(3) 经典 Agent 节点：只在工作流或 Chatflow 里，由 Agent Strategy 插件（Function Calling、ReAct，需从 Marketplace 装）驱动，与旧版 Agent 应用不是同一套代码，自带 Max Iterations 与 Memory。(4) 官方通用快速开始带新用户建的第一个应用是 Workflow，不是 Agent。\n\n默认提供方与型号：官方没有默认提供方和默认型号，新工作区一个模型提供方也没装、Default Models 全空；官方快速开始（云版）示例装 OpenAI 提供方、用 gpt-5.2；云版新账户有一次性 200 AI credits，自托管没有。未核实：新 Agent 编辑页对话窗口的具体按钮名；Chat Features 各项缺省值；上下文摘要实际使用的型号（依赖库源码不在快照内，核不了）；dify-agent 沙箱镜像（langgenius/dify-agent-local-sandbox）里预装的程序（未下载镜像）。\n\n默认联网：社区版默认向 https://updates.dify.ai 查版本更新（控制台版本接口，可用 CHECK_UPDATE_URL 置空关闭），并由 worker_beat 每 30 分钟检查一次匿名社区遥测心跳、发往 https://otel.dify.ai/v1/events（备用 otel.dify.cn；DISABLE_TELEMETRY 或 DO_NOT_TRACK 可关）；插件市场默认开。\n\n2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5）。改了五处：入口和权限写明取默认 Build 对话及其配置写入边界（原先把已发布运行的限制说成了本入口的限制）；默认服务清单补 api_websocket；补会话状态快照与 Apply 时的 Home 快照；标题生成改为用工作区默认 LLM，并补默认的版本检查与匿名遥测联网。版本和提交仍是原来钉的 1.19.0 与 8e689e868b63b6dd2b449d0eb568ca5cc7127759。",
+  "note": "版本：GitHub releases/latest 为 1.19.0（2026-11-04 发布，非预发布）；官方快速开始让用户在 Dify releases 里自选标签，Compose 里的镜像标签也固定为 1.19.0，所以取 1.19.0；注解标签 daa2f261… 解引用到提交 8e689e868b63b6dd2b449d0eb568ca5cc7127759。仓库另有 2.0.0-beta.1、2.0.0-beta.2 标签但没有对应发布页。官方文档在 langgenius/dify-docs 仓库（站外），文档站 llms-full.txt 可用（约 2.9 MB，仅英文，含云版与自托管两部分）。\n\n应用类型是本记录最要紧的取舍：同一套部署里有四类东西可被叫作“Agent”，研究负责人 2026-11-12 确认取第 (1) 类。(1) 新 Agent（本记录取这一类）：Agents 页创建、beta、Compose 默认开启，运行在 agent_backend + local_sandbox，自带 shell 沙箱，无 ReAct/函数调用开关，一次运行至多 500 次模型请求；与工作流里的新 Agent 节点共用同一套代码（clients.agent_backend、agent_v2 请求构造器）。(2) 旧版 Agent 应用（agent-chat）：Studio 里 For beginners 折叠区创建，在 api 进程内循环（fc_agent_runner / cot_agent_runner），型号具备工具调用特性时用函数调用、否则 ReAct，最大迭代默认 10（前端滑块上限默认 99），只有用户添加的工具、没有 shell 沙箱，模板预置型号 openai/gpt-4o（仅当工作区没有默认型号时作回退）。(3) 经典 Agent 节点：只在工作流或 Chatflow 里，由 Agent Strategy 插件（Function Calling、ReAct，需从 Marketplace 装）驱动，与旧版 Agent 应用不是同一套代码，自带 Max Iterations 与 Memory。(4) 官方通用快速开始带新用户建的第一个应用是 Workflow，不是 Agent。\n\n默认提供方与型号：官方没有默认提供方和默认型号，新工作区一个模型提供方也没装、Default Models 全空；官方快速开始（云版）示例装 OpenAI 提供方、用 gpt-5.2；云版新账户有一次性 200 AI credits，自托管没有。未核实：新 Agent 编辑页对话窗口的具体按钮名；新建的空白 Agent 是否预置了某项 Chat Features（配置面板对没有保存过的项按关显示）；上下文摘要实际使用的型号（依赖库源码不在快照内，核不了）；dify-agent 沙箱镜像（langgenius/dify-agent-local-sandbox）里预装的程序（未下载镜像）。\n\n默认联网：社区版默认向 https://updates.dify.ai 查版本更新（控制台版本接口，可用 CHECK_UPDATE_URL 置空关闭），并由 worker_beat 每 30 分钟检查一次匿名社区遥测心跳、发往 https://otel.dify.ai/v1/events（备用 otel.dify.cn；DISABLE_TELEMETRY 或 DO_NOT_TRACK 可关）；插件市场默认开。\n\n2026-11-13 由第二位读者（GPT-6.1 Sol，经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，核实和落实者为 Claude Sonnet 5.5（claude-sonnet-5-5）。改了五处：入口和权限写明取默认 Build 对话及其配置写入边界（原先把已发布运行的限制说成了本入口的限制）；默认服务清单补 api_websocket；补会话状态快照与 Apply 时的 Home 快照；标题生成改为用工作区默认 LLM，并补默认的版本检查与匿名遥测联网。版本和提交仍是原来钉的 1.19.0 与 8e689e868b63b6dd2b449d0eb568ca5cc7127759。 2026-11-14 第三批编码收齐后补记两处：聊天文件上传默认关（前端不显示入口，后端不构造文件对象）；服务接口要先发布、再另行创建应用密钥才能调用。由 Kimi K3.1 Pro（经编排器配置 k3-1-pro 调用）对照源码快照追查，Claude Fable 5.2（claude-fable-5-2）复看所引各行后写入；版本与提交不变。",
   "evidence": [
     {
       "version": "1.19.0",
@@ -551,6 +551,87 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "环境前提",
       "note": "控制台版本接口由 api 进程向 CHECK_UPDATE_URL 发请求，带当前版本号。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/features/agent-v2/agent-detail/configure/components/preview/chat-features-panel.tsx#L27-L110",
+      "locator": "web/features/agent-v2/agent-detail/configure/components/preview/chat-features-panel.tsx",
+      "lines": "L27-L110",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "配置面板的缺省状态：开场白、追问建议、语音、引用、内容审核、文件上传等各项 enabled 都是 false（L27-L46）；Agent 没有保存相应设置时取这些缺省值（L89-L110）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/features/agent-v2/agent-detail/configure/components/preview/chat-config.ts#L42-L64",
+      "locator": "web/features/agent-v2/agent-detail/configure/components/preview/chat-config.ts",
+      "lines": "L42-L64",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "文件上传没有启用时，对话窗口拿到的是 enabled 为 false 的上传配置。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/web/app/components/base/chat/chat/chat-input-area/operation.tsx#L38-L44",
+      "locator": "web/app/components/base/chat/chat/chat-input-area/operation.tsx",
+      "lines": "L38-L44",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "聊天输入区只在文件上传配置启用时才渲染上传入口。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/app_config/features/file_upload/manager.py#L17-L29",
+      "locator": "api/core/app/app_config/features/file_upload/manager.py",
+      "lines": "L17-L29",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "file_upload 没有启用时不生成上传配置。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/core/app/apps/agent_app/app_generator.py#L130-L143",
+      "locator": "api/core/app/apps/agent_app/app_generator.py",
+      "lines": "L130-L143",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "新 Agent 对话生成：请求带了文件但没有上传配置时，文件对象列表为空，不报错；调试（Build）与已发布对话只在取哪一版配置上不同（L444-L487），这段文件处理共用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/agent/composer_service.py#L779-L794",
+      "locator": "api/services/agent/composer_service.py",
+      "lines": "L779-L794",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "首次成功发布（此前没有可调用的活动快照，判断在 L716）时把应用的 enable_site、enable_api 设为 True；这段发布流程不创建接口密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/services/app/api_key_service.py#L40-L44",
+      "locator": "api/services/app/api_key_service.py",
+      "lines": "L40-L44",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "创建应用接口密钥：新 Agent 没有已发布快照时拒绝；密钥前缀 app-，每个应用至多 10 个。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/controllers/console/agent/roster.py#L1089-L1111",
+      "locator": "api/controllers/console/agent/roster.py",
+      "lines": "L1089-L1111",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "控制台为每个 Agent 提供单独的接口密钥列表与创建入口（/agent/<agent_id>/api-keys）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/langgenius/dify/blob/8e689e868b63b6dd2b449d0eb568ca5cc7127759/api/controllers/service_api/wraps.py#L126-L148",
+      "locator": "api/controllers/service_api/wraps.py",
+      "lines": "L126-L148",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "权限",
+      "note": "服务接口校验请求带的应用令牌并取到应用；应用的 enable_api 为假时拒绝（The app's API service has been disabled）。"
     }
   ],
   "environment_premises": {

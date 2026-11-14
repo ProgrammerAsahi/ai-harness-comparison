@@ -15,7 +15,7 @@
   "subagents_enabled": true,
   "enabled_extensions": [
     "默认注册的工具（按源码注册表，VS Code 客户端，主代理 code；这是内部注册项，发请求前还要按客户端、功能状态、型号及 family、代理和会话权限过滤）：question、bash、read、glob、grep、edit（按 modelID 与 family 联合判断，gpt 系且非 gpt-4、非 oss、非 gpt-image 时换成 apply_patch）、write、task、webfetch、todowrite、skill、plan_exit（code 代理沿用底座 deny，发请求前被滤掉，plan 模式才放行）、suggest；websearch 只在提供方是 kilo 时注册；Kilo 追加的 goal、goal_report、board_read、board_post、kilo_local_recall、chart、background_process、schedule_wakeup、cancel_wakeup、cron_create、cron_list、cron_delete、agent_manager_models、agent_manager、open_plan。另有 invalid（内部兜底）。",
-    "注册但默认不可见：semantic_search（要项目同意代码库索引；索引未就绪时根本不构建）、kilo_memory_recall 与 kilo_memory_save（项目记忆默认关闭）、browser_open（浏览器代理未启用）、notify_user 与 send_file（远程功能未开）；默认不注册：notebook_*（实验开关关）、图像生成、lsp、上下文工具、code mode、repo_clone 与 repo_overview（scout 实验开关关）、link_pr（仅 CLI 客户端）。",
+    "注册但默认不可见：semantic_search（在 VS Code 里照常构建并注册，每轮生成工具表时按项目是否同意代码库索引过滤，新装未同意时不发给模型，glob、grep 说明里指向它的那句提示也一并去掉）、kilo_memory_recall 与 kilo_memory_save（项目记忆默认关闭）、browser_open（浏览器代理未启用）、notify_user 与 send_file（远程功能未开）；默认不注册：notebook_*（实验开关关）、图像生成、lsp、上下文工具、code mode、repo_clone 与 repo_overview（scout 实验开关关）、link_pr（仅 CLI 客户端）。",
     "内置代理：主代理 code（默认）、plan、debug、orchestrator、ask；子代理 general、explore（只读，bash 限只读白名单）；隐藏辅助代理 compaction、title、summary。task 工具默认 allow，plan 代理里 general 子代理被 deny。",
     "技能：内置 kilo-config 一个，另默认扫描全局与项目的 .agents/skills 和配置目录里的技能（存在才加载；claudeCodeCompat 关时不扫 .claude）；全局与项目的 AGENTS.md（及已弃用的 CONTEXT.md）默认作为指令加载；插件：配置默认注入内置的代码库索引插件与 atomic-chat 插件；此外运行时默认初始化一组内部提供方／认证插件（KiloAuth、AtomicChat、AnacondaDesktop、CodexAuth、CopilotAuth、Modal、GitLab、Poe、Cloudflare 两个、Azure、DigitalOcean、SnowflakeCortex、Xai、Cerebras），初始化不等于已认证或被选用，GitLab 与 Poe 两个是 npm 包、实现不在源码快照里；MCP：未发现随包默认启用的 MCP 服务（未逐项核实）；Playwright 浏览器自动化默认关闭。",
     "默认开着的开关：自动压缩（compaction.auto 默认开）、快照（git 仓库内默认记录：每次模型流开始前与每步结束时拍，存在数据目录 kilo/snapshot/<项目 id>/<工作树哈希> 下的独立 git 目录，不往用户仓库提交）、共享代理看板、行内自动补全自动触发（enableAutoTrigger=true；未设型号时经 Kilo 网关用 Mercury Edit 2 的 Next Edit 流程，配置 ID inception/mercury-next-edit，另配 Mercury Edit 2 FIM 型号）、遥测（随 VS Code 的遥测开关，默认开则级别 all，具体采集内容未核实）。默认关着的开关：项目记忆、代码库索引（要按项目同意）、聊天框补全、智能行内任务快捷键、claudeCodeCompat、实验性集成浏览器、浏览器自动化、沙箱。",
@@ -25,7 +25,7 @@
   "operating_system": "凡能运行 VS Code ^1.105.1 的平台（macOS、Linux、Windows）；沙箱仅 macOS 与 Linux。官方安装页写的最低版本 1.84.0 与包清单不一致。",
   "model_policy": "架构层不绑定模型；适配记录另存",
   "evidence_cutoff": "2026-11-12",
-  "note": "版本：同一仓库（Kilo-Org/kilocode，主仓库名不变）同一个 v* 标签发 CLI 与 VS Code 扩展，另有 jetbrains/v* 标签；7.x 起扩展改建在 Kilo CLI（上游 OpenCode 分叉）之上，早期 6 系以前的 Roo/Cline 血统扩展不属于本记录。取稳定通道 7.8.27（标签 v7.8.27 → 提交 03a6f07d053cd7e6aa88fa1e258e93510335259f，2026-11-05），它同时是 GitHub releases/latest、npm @kilocode/cli latest 与应用市场稳定通道的最新版。官方文档让用户装预发布通道，现为 7.8.28（2026-11-07，标签 v7.8.28 → 提交 58072bd6963e1c7ada16e89faf4912437643dceb，GitHub 与 npm 都标 prerelease/rc）；7.8.27 到 7.8.28 共 53 个提交、174 个文件，其中本记录引用的文件只有 packages/kilo-vscode/package.json 与 packages/opencode/src/tool/registry.ts 两个有改动，其余引用文件未变（只比较了文件名单，未逐行比对这两个文件的改动）。研究负责人 2026-11-12 确认取稳定通道 7.8.27。；文档：官方文档在仓库 packages/kilo-docs/pages 内，站点另有全文导出 https://kilo.ai/docs/llms.txt（1,555,580 字节，页面为指向 raw-markdown 接口的索引加正文）。；已知文档与源码不一致：官方写自动压缩需在设置里启用，源码默认开；官方写最低 VS Code 1.84.0，包清单要求 ^1.105.1；官方 Defaults 小节没提 bash 默认 ask，但快速开始页与源码一致写明 shell 命令需确认。；jetbrains 客户端的编辑默认 ask，VS Code 不是。2026-11-13 由第二位读者 GPT-6.1 Sol（经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，Claude Opus 5.5（claude-opus-5-5）核实并落实：改了默认工具清单的过滤说明（plan_exit、edit/apply_patch、semantic_search）、行内自动补全默认型号（Mercury Edit 2 Next Edit，非 Codestral）、会话标题触发时机、会话云同步默认开启，补了内部提供方插件、技能与指令发现、快照拍摄时机与位置、Agent Manager 分支命名与工作树预建、持久唤醒接管；版本与提交仍是原来钉的 v7.8.27／03a6f07d053cd7e6aa88fa1e258e93510335259f。",
+  "note": "版本：同一仓库（Kilo-Org/kilocode，主仓库名不变）同一个 v* 标签发 CLI 与 VS Code 扩展，另有 jetbrains/v* 标签；7.x 起扩展改建在 Kilo CLI（上游 OpenCode 分叉）之上，早期 6 系以前的 Roo/Cline 血统扩展不属于本记录。取稳定通道 7.8.27（标签 v7.8.27 → 提交 03a6f07d053cd7e6aa88fa1e258e93510335259f，2026-11-05），它同时是 GitHub releases/latest、npm @kilocode/cli latest 与应用市场稳定通道的最新版。官方文档让用户装预发布通道，现为 7.8.28（2026-11-07，标签 v7.8.28 → 提交 58072bd6963e1c7ada16e89faf4912437643dceb，GitHub 与 npm 都标 prerelease/rc）；7.8.27 到 7.8.28 共 53 个提交、174 个文件，其中本记录引用的文件只有 packages/kilo-vscode/package.json 与 packages/opencode/src/tool/registry.ts 两个有改动，其余引用文件未变（只比较了文件名单，未逐行比对这两个文件的改动）。研究负责人 2026-11-12 确认取稳定通道 7.8.27。；文档：官方文档在仓库 packages/kilo-docs/pages 内，站点另有全文导出 https://kilo.ai/docs/llms.txt（1,555,580 字节，页面为指向 raw-markdown 接口的索引加正文）。；已知文档与源码不一致：官方写自动压缩需在设置里启用，源码默认开；官方写最低 VS Code 1.84.0，包清单要求 ^1.105.1；官方 Defaults 小节没提 bash 默认 ask，但快速开始页与源码一致写明 shell 命令需确认。；jetbrains 客户端的编辑默认 ask，VS Code 不是。2026-11-13 由第二位读者 GPT-6.1 Sol（经编排器配置 gpt-6-1-sol 调用）对照源码快照复核，Claude Opus 5.5（claude-opus-5-5）核实并落实：改了默认工具清单的过滤说明（plan_exit、edit/apply_patch、semantic_search）、行内自动补全默认型号（Mercury Edit 2 Next Edit，非 Codestral）、会话标题触发时机、会话云同步默认开启，补了内部提供方插件、技能与指令发现、快照拍摄时机与位置、Agent Manager 分支命名与工作树预建、持久唤醒接管；版本与提交仍是原来钉的 v7.8.27／03a6f07d053cd7e6aa88fa1e258e93510335259f。 2026-11-14 第三批编码收齐后改一处：原先写 semantic_search 在索引未就绪时不构建；这个提交里 VS Code 一侧不走就绪检查，工具照常构建，默认不可见是因为每轮按项目同意过滤（默认结果不变：新装未同意时不发给模型）。由 Kimi K3.1 Pro（经编排器配置 k3-1-pro 调用）对照源码快照追查，Claude Fable 5.2（claude-fable-5-2）复看所引各行后写入；版本与提交不变。",
   "evidence": [
     {
       "evidence_kind": "default_release",
@@ -322,7 +322,7 @@
       "lines": "L424-L448",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "按条件隐藏：semantic_search 在 VS Code 里要项目同意索引后才可见；browser_open 要浏览器代理地址与令牌环境变量；kilo_memory_* 要项目记忆开启；notify_user 要远程功能开启，send_file 要远程已连接（L306-L310）。"
+      "note": "按条件隐藏：semantic_search 在 VS Code 里每轮按项目是否同意索引过滤，未同意时从发给模型的工具表里去掉，并去掉 glob、grep 说明里指向它的提示；browser_open 要浏览器代理地址与令牌环境变量；kilo_memory_* 要项目记忆开启；notify_user 要远程功能开启，send_file 要远程已连接（L306-L310）。"
     },
     {
       "evidence_kind": "source_path",
@@ -493,7 +493,7 @@
       "lines": "L269-L284",
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
-      "note": "semantic_search 先查代码库索引是否就绪，未就绪直接返回 undefined，工具不构建。"
+      "note": "semanticTool 只在传入的 indexing 未定义时才查代码库索引是否就绪；VS Code 里传进来的固定是 true（同文件 L49-L57，经 tool/registry.ts L300-L305 传入），不走就绪检查，工具照常构建。传入 false 时返回 undefined，不构建。"
     },
     {
       "evidence_kind": "source_path",
@@ -620,6 +620,33 @@
       "retrieved_at": "2026-11-12",
       "configuration_scope": "扩展",
       "note": "分支命名对每条发出的用户消息调用：第一条只做准备，第 2 到 4 条可能命名，之后停止；只作用于 Agent Manager 工作树会话。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/registry.ts#L49-L57",
+      "locator": "packages/opencode/src/kilocode/tool/registry.ts",
+      "lines": "L49-L57",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "indexing()：平台是 VS Code 时固定返回 true（注释写明 VS Code 按项目同意而不是按配置启用索引，工具先构建，同意与否留给 applyVisibility 每轮检查）；其他平台读配置里的 indexing.enabled。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts#L392-L405",
+      "locator": "packages/opencode/src/tool/registry.ts",
+      "lines": "L392-L405",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "生成发给模型的工具表时，先做通用过滤，再调 KiloToolRegistry.applyVisibility；构建时把 indexing ?? false 传给 Kilo 工具注册（L300-L305）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/indexing.ts#L537-L542",
+      "locator": "packages/opencode/src/kilocode/indexing.ts",
+      "lines": "L537-L542",
+      "retrieved_at": "2026-11-12",
+      "configuration_scope": "扩展",
+      "note": "consented()：只有该项目的同意记录显式为 true 才算同意；从未设置过的项目返回 false。"
     }
   ],
   "environment_premises": {
