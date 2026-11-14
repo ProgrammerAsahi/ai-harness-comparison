@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-编码文件在 `data/codings/` 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前两批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)，三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
+编码文件在 [`batch-3/`](batch-3/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前两批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)，三轮试编码的经过见 [`../pilot/round1.md`](../pilot/round1.md)、[`../pilot/round2.md`](../pilot/round2.md)、[`../pilot/round3.md`](../pilot/round3.md)。
 
 ## 怎样做的
 
@@ -145,7 +145,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码者和读者提出的口径疑问
 
-下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里读者判为“归法不同”“材料不足”“前提不同”的 72 条。整张表由 Claude Sonnet 5.5 摘出：`opus` 的交回说明和读者的 72 条是通读的，两份字段备注（合起来约 600 条）是按关键词摘读的，没有逐行通读，可能有漏。这里不作裁决；编码期间提出的问题一律没有答复，免得两位编码者不再独立。
+下面的问题来自 `opus` 交回时的说明、两位编码者写在字段里的备注，以及交叉核对里读者判为“归法不同”“材料不足”“前提不同”的 72 条。整张表由 Claude Sonnet 5.5 摘出：`opus` 的交回说明和读者的 72 条是通读的，两份字段备注（合起来约 600 条）是按关键词摘读的，没有逐行通读，可能有漏。这里不作裁决；编码期间提出的问题一律没有答复，免得两位编码者不再独立。表里有九处后来在 `fields-0.8` 里定了口径（总则 R5、R6 和 F04、F05、F06、F17、F25、F30、F34），见 `data/schema/definition-decisions-0.8.md`；这张表保持编码结束时的样子。
 
 行内标记：没有标记的，是编码者在交回说明或字段备注里明写拿不准、码本没说的；“（读者）”是交叉核对里读者指出两人读法不同、编码者自己没写成疑问的；“（归纳）”是几个配置上做法不一致、由摘录者归纳的；“（第二批已问）”是第二批的口径疑问表里已有同类问题。
 
@@ -234,7 +234,7 @@ Open WebUI 和 Dify 在 F34 上的两条说的是同一类机制，名字不同�
 
 ## 编码文件在哪里
 
-- 这一批：`data/codings/` 下的 `opus/`、`gpt/` 各 10 份，按现行码本 `fields-0.7` 填写，通过了 `validate_data.py`。
+- 这一批：[`batch-3/`](batch-3/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `batch-3/fields-0.7.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.7` 填写并通过了 `validate_data.py`；码本小修订为 `fields-0.8` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.8.md`。
 - 交叉核对：[`batch-3/crosscheck-card.md`](batch-3/crosscheck-card.md) 是读者拿到的任务卡，[`batch-3/crosscheck.json`](batch-3/crosscheck.json) 是 93 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者；[`batch-3/spotcheck.json`](batch-3/spotcheck.json) 是对其中 21 条“一方没提”的抽查结果。
 - 前两批：[`batch-1/`](batch-1/)、[`batch-2/`](batch-2/)，各连同当时的码本。
 - 三轮试编码：[`../pilot/`](../pilot/) 下各轮连同当时的码本，只作历史记录，不参加现在的校验和对比。

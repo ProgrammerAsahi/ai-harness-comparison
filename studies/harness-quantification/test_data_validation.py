@@ -74,7 +74,7 @@ FACETED_FIELDS = ["F01", "F11", "F12", "F13", "F21", "F22", "F23", "F27", "F28",
 
 
 class DefinitionsAndFacets(Base):
-    """fields-0.7: every field carries an adopted definition; general rules and facets are shape-checked."""
+    """fields-0.8: every field carries an adopted definition; general rules and facets are shape-checked."""
 
     def schema_with(self, mutate):
         schema = copy.deepcopy(self.real.schema)
@@ -90,7 +90,7 @@ class DefinitionsAndFacets(Base):
         return {**self.coding()["fields"][fid]["facets"], **changes}
 
     def test_real_definitions_are_well_formed(self):
-        self.assertEqual(self.real.schema["schema_version"], "fields-0.7")
+        self.assertEqual(self.real.schema["schema_version"], "fields-0.8")
         self.assertEqual(vd.check_definitions(self.real.schema), [])
 
     def test_every_field_is_defined_and_no_draft_remains(self):
@@ -399,9 +399,10 @@ class TreeLinks(Base):
         self.edit(f"configs/{CFG_A}.json", lambda r: r.update(round="synthetic-9"))
         self.assertError(self.errors(), r"round 'synthetic-9' has no rounds")
 
-    def test_disabled_subagents_conflict(self):
+    def test_disabled_subagents_do_not_gate_f25(self):
+        # fields-0.8: the flag covers the subagent feature only; F25 may be present through other counted paths.
         self.edit(f"configs/{CFG_A}.json", lambda r: r.update(subagents_enabled=False))
-        self.assertError(self.errors(), r"config disables subagents")
+        self.assertFalse([e for e in self.errors() if "subagents" in e])
 
     def test_non_synthetic_fixture_rejected(self):
         self.edit(f"configs/{CFG_A}.json", lambda r: r.update(synthetic=False))

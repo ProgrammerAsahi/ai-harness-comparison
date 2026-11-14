@@ -780,10 +780,10 @@ def validate_tree(root, ctx):
         errors += validate_coding(rec, rel(p), ctx)
         if rec.get("config_id") != p.stem:
             errors.append(f"{rel(p)}: file name must equal config_id")
-        cfg = owner(p, rec, "coding")
-        f25 = (rec.get("fields") or {}).get("F25") if isinstance(rec.get("fields"), dict) else None
-        if cfg and cfg.get("subagents_enabled") is False and isinstance(f25, dict) and f25.get("value") == "present":
-            errors.append(f"{rel(p)}: F25=present, but the config disables subagents; code the configured view")
+        # subagents_enabled only states whether the product's subagent or delegation feature is on in this
+        # configuration; F25 also counts other paths (timers, external events, agents launched over a public
+        # protocol), so it is not tied to that flag (fields-0.8).
+        owner(p, rec, "coding")
     for p in sorted((root / "adapters").glob("*/*.json")):
         rec = _load(p, errors)
         if rec is None:
