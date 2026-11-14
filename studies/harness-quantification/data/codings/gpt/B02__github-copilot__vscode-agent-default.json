@@ -1,0 +1,2339 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "B02__github-copilot__vscode-agent-default",
+  "coder": {
+    "id": "gpt",
+    "model": "gpt-6-1-sol",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "推断：官方 SDK 的 agent-loop 说明同一 Copilot 运行时执行工具、回送结果，并由模型决定继续或给最终回复；VS Code 默认入口采用该 SDK。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/agent-loop",
+          "locator": "Who triggers each turn?；session.idle vs session.task_complete",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "工具使用循环由运行时推进，模型决定下一次调用或停止。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-harnesses",
+          "locator": "Choose a harness；Agent roles",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "Copilot harness 使用共享 Copilot SDK；Ask 仍可用只读工具，Agent 执行，Plan 研究并形成计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；_buildSessionConfig / configuredSdkExcludedTools",
+          "lines": "L1538-L1552",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "默认明确排除两种动态工作流工具。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "核对官方快速开始 Chat view 与 Agents window（后者不是所选入口），harness 文档的 Ask/Agent/Plan 角色，以及 copilotConfigSlashCommands.ts 的 plan/goal/autopilot/权限命令、copilotSlashCommandCompletionProvider.ts 的命令过滤及技能发现。Ask/Agent/Plan、goal、fleet 和 autopilot 仍由模型决定工具与下一步；compact、会话/插件/权限管理不构成另一个模型任务控制方式；定时启动属于 F33。运行时完整动态命令元数据不在快照，但文档模式表和宿主命令表可逐项判；没有可确认的第二种控制方式。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "宿主默认放行 sql 工具，并通过运行时 plan RPC 读取带 id、title、status、description 及 dependencies 的待办，属于可保存展示的结构化任务表；未发现宿主按这些条目强制推进。可选：用户 /plan 进入独立计划审阅流程。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts；COPILOT_ENABLED_BUILTIN_TOOL_NAMES / COPILOT_DEFAULT_AVAILABLE_TOOLS",
+          "lines": "L27-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "默认白名单含 sql 与 session_store_sql，未将待办工具限制为用户命令路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；getSessionPlan",
+          "lines": "L6188-L6203",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "从运行时读取计划与 SQL 待办条目、状态及依赖并返回给界面。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/planning",
+          "locator": "How to plan a task；Review and refine the plan",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "/plan 是用户主动进入的计划流程，不据此提升默认计划约束等级。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "已核对默认工具白名单、启动器排除项和 getSessionPlan；不把 dependencies 本身等同于框架按计划执行，也不把计划模式的只读限制当作按条目拦截。默认完整系统提示在闭源运行时，宿主 prompts/systemMessage.ts 仅 customize 基础提示；不会据此判 none。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "facets": {
+        "unresolved": [
+          "verification_condition"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：模型最终回复后运行时发 idle，宿主结束回合；用户可 Stop/abort，默认客户端执行子代理还有 10 轮上限（见 F12）。task_complete 完成审阅有 continue 分支，但在默认交互模式及派生子代理中的门控范围尚未确认。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/agent-loop",
+          "locator": "session.idle；Why task_complete might not appear",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "交互模式可不调用 task_complete，循环停止后总会产生 idle。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；onIdle / _completeActiveTurn",
+          "lines": "L11054-L11077",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "正常 idle 等待待交回工具完成后结束活动回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；abort",
+          "lines": "L7428-L7454",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "中断会话并调用运行时 session.abort。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts；getTaskCompleteMarkdown",
+          "lines": "L525-L540",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "审阅 outcome=continue 表示完成审阅让任务继续，是验证门控的具体迹象。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/platform/configuration/common/configurationService.ts",
+          "locator": "extensions/copilot/src/platform/configuration/common/configurationService.ts；ExecutionSubagentToolCallLimit",
+          "lines": "L789-L801",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "默认执行子代理轮数上限 10。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/intents/node/toolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/intents/node/toolCallingLoop.ts；run / toolCallLimit",
+          "lines": "L1445-L1457",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "子代理达到调用轮数限制停止循环。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "已核对主回合 idle、abort、task_complete 审阅，以及原生子代理生命周期完成处理；子代理内部结果校验/预算及运行时审阅的具体门控在快照外。官方 SDK 的 autopilot 强制 task_complete 续跑是用户切模式路径，不因此计入默认 budget 或 verification_condition；白名单含该工具而显示代码标注 Autopilot，故验证条件仅记疑似。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "value_note": "宿主把客户端或服务端工具失败包装为 textResultForLlm/failure 交回模型；活动主回合的运行时错误被标成可恢复，用户恢复时发送空消息延续原历史，不必重述任务。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；_createServerSdkTools",
+          "lines": "L4710-L4741",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "捕获宿主服务端工具异常并返回 failure 与错误文本。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；handleClientToolCallComplete",
+          "lines": "L4751-L4780",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "客户端工具失败作为结果交回运行时模型循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；onSessionError",
+          "lines": "L11197-L11240",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "认证错误触发重新认证信号；主回合错误产生可恢复错误条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；resume",
+          "lines": "L6822-L6866",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "重新准备同一会话后以 sendMessages({messages: []}) 恢复，保留任务历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/state/sessionState.ts",
+          "locator": "src/vs/platform/agentHost/common/state/sessionState.ts；createErrorResponsePart",
+          "lines": "L129-L135",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "resumable=true 的错误条目显式标为可恢复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 R7 部分确认，不宣称完整覆盖闭源运行时重试/参数修复。已检查认证/授权 401、context_limit、rate_limit、quota 的错误分类与统一可恢复入口（copilotSdkChatError.ts L21-L33），权限拒绝的失败回传、工作目录 Git 对齐失败；常规工具失败交模型处理，活动主回合错误可由恢复动作延续。沙箱默认关闭，其升级路径不计；遥测含 retry_index 但并不能证明当前配置对哪类失败自动重发，不凭此加入 call_retry。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "value_note": "直接对接代理循环的 Copilot 适配器在本机 Agent Host 内；它把随包运行时作为子进程经 stdio 连接。编辑器到 Agent Host 的 message-port 是界面宿主桥，按字段规则不拿它替代核心连接。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts；resolveCopilotRuntimePaths / runtimePath",
+          "lines": "L4790-L4805",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "默认选随安装包附带的 Copilot 运行时路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts；clientOptions / RuntimeConnection.forStdio",
+          "lines": "L4843-L4863",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "适配器通过运行时 stdio 连接调用执行核心。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts",
+          "locator": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts；UtilityProcess.start",
+          "lines": "L201-L209",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "Agent Host 本身由 Electron 实用进程承载。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "以实际持有 Copilot SDK 控制器的适配层为前端边界，循环所在的运行时为核心；不把可选 code agent host 独立服务入口混入本机默认 Chat view。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess",
+        "local_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：工具文档称内置工具在 Copilot 运行时中运行，按 R6 记 main_process；默认 shell 命令及子进程记 subprocess。宿主另有默认启用的反馈工具在长驻 Agent Host 进程执行，客户端工具也由连接中的 VS Code 客户端执行，记 local_service。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/tools",
+          "locator": "Manage tool availability for the Copilot harness；Run terminal commands",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "内置工具在运行时执行，其他客户端工具回客户端，默认使用 SDK shell。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/concepts/trust-and-safety",
+          "locator": "Agent sandboxing",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "Copilot 默认工具的 shell 执行及其子进程可受进程沙箱保护；非进程工具另走权限检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/agentFeedbackServerTools.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/agentFeedbackServerTools.ts；feedbackServerToolGroup / isEnabled",
+          "lines": "L655-L661",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "反馈服务端工具组始终启用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；_createServerSdkTools",
+          "lines": "L4710-L4741",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "运行时调用宿主注册的工具处理器，在 Agent Host 内执行 host.executeTool。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotNonPtyShellTerminals.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotNonPtyShellTerminals.ts；completeToolCall",
+          "lines": "L364-L391",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "消费默认运行时 shell 的进程结束/后台 shell 生命周期。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "参照进程为闭源 Copilot 运行时。local_service 指确有宿主执行的工具（反馈工具）与客户端回调，不是仅凭界面/核心分进程就增加该项。可选用户 MCP 服务、容器、SSH/Cloud 不算默认安装的位置；内置 GitHub MCP 在远端的具体实现与工具集未确认，云服务不混入本地位置集合。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "适配器给运行时只发送新提示及附件；会话恢复用同一 sessionId 调运行时 resumeSession，显示历史从运行时 eventLog 读回。Agent Host 的数据库补足界面/终端输出等状态，不取代运行时消息历史。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；_send / session.send",
+          "lines": "L6717-L6735",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "请求传新提示，未让客户端每次重交完整历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；_resumeSession",
+          "lines": "L1251-L1263",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "通过 runtime client.resumeSession(plan.sessionId) 恢复运行时会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；getMessages / _computeMappedEvents",
+          "lines": "L7350-L7397",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "历史由运行时 eventLog.read 读取并映射为前端回合。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "F07 看构造请求与恢复来源，运行时为消息权威；文档所称 Agent Host 是 AHP 同步状态的 source of truth 是界面协议层，不能据此另判独立 state_service。主机 SQLite 和运行时日志的存储形式属于 F17。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "宿主新聊天预留独立 UUID，并以该 sessionId 在共享 Copilot client 上创建运行时会话；默认传入当前工作区目录，不为 Chat view 新聊天另建独占工作树。可选：用户选择工作树隔离或容器环境。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts；_reserveChatBacking",
+          "lines": "L6603-L6620",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "为新聊天生成 sdkSessionId，并解析已有工作目录和复用客户端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；_createSession",
+          "lines": "L1286-L1304",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "同一 client.createSession 用独立会话 ID 和所选 workingDirectory。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/quickstart",
+          "locator": "2. Build the app / Chat view",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "Chat view 直接打开当前项目，新聊天不会关闭原聊天。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对创建会话、运行时 stdio 启动、工作目录传递、quickstart 与 sessions/manage-sessions：默认每会话 UUID；多个会话复用运行时，process 不成立；当前文件夹可共用，working_directory 不成立；无默认覆盖文件系统或容器路径，filesystem/container 不成立。会话状态目录和检查点 Git 引用不是隔离的工作文件系统。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "protocol_gateway",
+      "unknown_reason": null,
+      "value_note": "默认安装具备跨进程的统一模型代理：Copilot 核心对宿主 BYOK loopback 发 Responses，宿主转成 LM API，再由随包提供方转成 Responses、Chat Completions 或 Messages；本环境只用 Copilot 登录与 Auto，未配置 BYOK。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostSchema.ts",
+          "locator": "src/vs/platform/agentHost/common/agentHostSchema.ts；AgentHostByokModelsEnabledDefault",
+          "lines": "L492-L495",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "BYOK 接入能力默认开，无须额外安装提供方程序。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；synthesizeByokSessionConfig",
+          "lines": "L874-L925",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "按添加的提供方生成统一 OpenAI Responses loopback provider 定义。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/byokLmProxyService.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/byokLmProxyService.ts；ByokLmProxyService",
+          "lines": "L120-L131",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "与运行时分进程的宿主代理把 Responses 转为客户端 LM API 并回转结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/byok/vscode-node/customEndpointProvider.ts",
+          "locator": "extensions/copilot/src/extension/byok/vscode-node/customEndpointProvider.ts；apiTypeToPath / apiTypeToSupportedEndpoints",
+          "lines": "L48-L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "随包自定义端点支持三种不同消息协议。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/byok/vscode-node/anthropicProvider.ts",
+          "locator": "extensions/copilot/src/extension/byok/vscode-node/anthropicProvider.ts；provideLanguageModelChatResponse / apiMessageToAnthropicMessage",
+          "lines": "L114-L118",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "随包提供方把统一 LM 消息实际转换成 Anthropic 消息，并非只换 URL。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 F09 能力例外，添加提供方定义及凭据可用的随包路径也计入；判 protocol_gateway 的依据是实际 HTTP loopback + LM 桥与跨进程转换，非仅凭支持多家模型。扩展侧还有进程内适配器，但相对主 Copilot 循环它们在外部代理一侧，故主值选网关。原生 SDK 文档允许直接配置 Anthropic provider，但所选 VS Code 入口统一合成为 Responses，不拿 SDK 另一入口替代。Copilot 托管服务内部的厂商协议不可见，不作接口数断言。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：运行时工具使用结构化参数模式，宿主注册 name、parameters、handler；默认开放 MCP 配置发现与 mcp:*，官方同一 SDK 文档说明将 MCP 工具供代理调用。解析失败和工具失败可回传模型；未据 shell 执行普通脚本推定可编程工具分派。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts；_createSdkTools",
+          "lines": "L4343-L4368",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "客户端工具以命名工具、JSON 参数模式和 handler 接到运行时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts；COPILOT_DEFAULT_AVAILABLE_TOOLS",
+          "lines": "L48-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "默认过滤器包括全部 mcp:* 与 custom:*。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；_buildSessionConfig / mcpServers",
+          "lines": "L1716-L1739",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "默认打开配置发现并传入 MCP 服务与鉴权处理器。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/mcp",
+          "locator": "Using MCP servers with the GitHub Copilot SDK；Server types；Configuration",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "MCP 服务向同一运行时提供模型可调用工具，分别经 stdio 或 HTTP 协议接入。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "主运行时的原生模型响应解析实现闭源，依据结构化工具注册及官方同核 SDK 说明推断 native_structured；不把显示时 JSON.parse(arguments) 当普通文本解析，也不把 BYOK 消息协议转换重复计入 F10。已查白名单与 _buildSessionConfig，run_dynamic_workflow/dynamic_workflows_manage 明确禁用；未发现默认注册的代码解释器能经脚本分派其他工具，故不添加 script_dispatch。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "per_request_routing"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：Auto 官方文档明确逐请求按任务复杂度与可用性路由，默认 Rubber Duck 用互补模型审阅，执行子代理本地默认模型槽位为 gpt-5.6-luna；辅助标题默认取 utility 槽位，型号由服务端决定。子维度未确认：运行时压缩模型及网页内置工具内部是否分配另一型号未公开。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/language-models",
+          "locator": "Use auto model selection；Change the model for utility tasks",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；Chat view 默认 Agent / Auto",
+          "note": "Auto 每请求路由，标题/摘要等默认采用独立 Copilot utility 模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts",
+          "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts；DEFAULT_COPILOT_RUBBER_DUCK_ENABLED",
+          "lines": "L169-L169",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "审阅子代理本地默认开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts",
+          "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts；RubberDuck",
+          "lines": "L289-L294",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "配置定义明确审阅子代理使用互补模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts；RUBBER_DUCK_AGENT",
+          "lines": "L4773-L4780",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "按默认开关向运行时开启该子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostSchema.ts",
+          "locator": "src/vs/platform/agentHost/common/agentHostSchema.ts；AgentHostTitleGenerationConfigKey",
+          "lines": "L1001-L1012",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "标题策略默认 utility，与主代理模型槽位分开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/platform/configuration/common/configurationService.ts",
+          "locator": "extensions/copilot/src/platform/configuration/common/configurationService.ts；ExecutionSubagentToolEnabled / ExecutionSubagentModel",
+          "lines": "L789-L801",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "客户端执行子代理默认开、独立模型默认 gpt-5.6-luna。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts；resolveEndpoint",
+          "lines": "L126-L161",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "默认独立型号不可用或不支持工具时在起跑前回退主模型。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "辅助清单逐项核对：标题=utility（agentHostSchema）；压缩/摘要=宿主启用 infiniteSessions，压缩由闭源运行时执行，具体型号未知，通用 utility 文档不足以证明此压缩的选择；动作审核分类=Manual 不启用 Assisted judge，提示分类/意图检测用 utility-small；联网/网页=内置 web_fetch 内部未知，扩展 fetchWebPageTool.tsx 是抓取/切块/嵌入包装，未见另起生成模型；媒体理解=附件交主模型，computer use 默认关，未确认独立理解调用；生成图片=imageGenerationConfiguration.ts L14-L15 说明运行时只提供一种图像模型、设置只变开关，属于托管工具内部模型，非客户端可分配型号，不计入辅助分配。Rubber Duck 是子代理计主链 per_role；执行子代理启动前型号不可用回退不是任务中 failover。Free 文档只开放 Auto；未确认本配置 task 工具能选另一型号/推理强度，不据其他档位记 model_selected_delegation。动态 Auto 源码已强制开启，旧文档要求另改开关不作为排除依据；Fusion 是否给 Free 账户未知，但不影响 Auto 路由。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "call_count"
+        ],
+        "soft_notice": [
+          "call_count"
+        ],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "客户端原生执行子代理默认调用轮数上限为 10；最后一轮会注入结束提示，达到阈值则循环停下，故 call_count 同时有软提醒和强制截止。该工具默认开启，宿主仅在运行时实际提供同类工具时替换它；运行时内部其他上限及截断恢复未知。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/platform/configuration/common/configurationService.ts",
+          "locator": "extensions/copilot/src/platform/configuration/common/configurationService.ts；ExecutionSubagentToolEnabled / ExecutionSubagentToolCallLimit",
+          "lines": "L789-L801",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "原生执行子代理默认开、工具轮数上限 10，逐轮提示开关默认关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/tools/node/executionSubagentTool.ts",
+          "locator": "extensions/copilot/src/extension/tools/node/executionSubagentTool.ts；invoke / ExecutionSubagentToolCallingLoop",
+          "lines": "L66-L79",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "把默认上限传给执行子代理循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/intents/node/toolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/intents/node/toolCallingLoop.ts；run / toolCallLimit",
+          "lines": "L1445-L1457",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "达到轮数上限调用 hitToolCallLimit 后退出循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx",
+          "locator": "extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx；currentTurn / isLastTurn",
+          "lines": "L34-L37",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "根据已用回合和上限判定最后一轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx",
+          "locator": "extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx；render / UserMessage",
+          "lines": "L87-L96",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "即使逐轮提示默认关，最后一轮仍注入 allotted iterations are finished 提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts；_configureExecutionSubagentTool",
+          "lines": "L1343-L1365",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness；VS Code 1.146.0，默认 Agent / Manual permissions",
+          "note": "仅在运行时目录有 execution_subagent 时删除客户端 executionSubagent，否则保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/package.json",
+          "locator": "extensions/copilot/package.json；languageModelTools / execution_subagent",
+          "lines": "L188-L207",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "扩展声明执行子代理工具及结构化参数，when 只依赖默认开启的执行子代理设置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/package.json",
+          "locator": "extensions/copilot/package.json；github.copilot.chat.executionSubagent.enabled",
+          "lines": "L4644-L4652",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 VS Code 1.146.0 默认随包的 Copilot 扩展及 Agent Host",
+          "note": "用户可见配置的默认值同样为 true。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 R4 子代理预算计入；按本地默认运行时 execution_subagent=false、客户端 executionSubagent=true 路径编码，运行时实验可覆盖替换，但不据未知实验默认排除。核对宿主完整 copilotCliConfig、Agent Host 设置模式、_buildSessionConfig、官方 ai-settings、SDK session-limits 与执行子代理循环：chat.agent.maxRequests=25 属旧 Local 主循环，不能套到本入口；SDK maxAiCredits 要应用设置 sessionLimits，VS Code 启动器未设置，不计 money；上下文压缩阈值、工具输出 20KiB、shell/网络超时、会话创建限额均非 F12。输出 Token 元数据主要来自服务端（ChatEndpoint 默认缺省回填 4096 但未确认默认实际请求触发该缺省），不据 getter 或上下文预留值加入 output_limit；闭源运行时默认内部截断续写、Rubber Duck/Explore 上限未查明，不声称其他维不存在。 仍不能从公开宿主判明闭源 getBuiltinDescriptors 在关闭运行时实现时是否仍列出 execution_subagent；按源码本地开关路径取客户端实现，替换时原生运行时预算未知，交叉核对需保留这条边界。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：共享运行时的 SDK 文档明确说每次模型调用发送系统提示、用户消息及此前工具调用与结果的完整对话历史；据此记顺序消息，超窗摘要另记 F14。宿主事件回放仅用于恢复界面，不能据此判成逐轮类型化重建。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-harnesses",
+          "locator": "Compare agent harnesses",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 的执行核心",
+          "note": "Copilot harness 通过 Copilot SDK 提供跨产品共享代理体验；Local 是另一套实现。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/agent-loop",
+          "locator": "Architecture; The tool-use loop; Turns—what they are",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "由 VS Code 所调用的共享 Copilot 运行时",
+          "note": "SDK 是传输层；运行时循环每轮向模型发送完整对话历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _buildSessionConfig",
+          "lines": "L1691-L1695",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "SDK 会话入口",
+          "note": "宿主会话使用交互式、流式 Copilot SDK 配置。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "运行时闭源；按 R6 使用明确描述同一执行核心的 SDK 文档推断。未从落盘事件格式推断每轮请求结构；文档未揭示的内部投影层不补记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "facets": {
+        "unresolved": [
+          "tool_result_replacement"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：官方资料说明上下文满时自动摘要早期历史，模型侧工具结果可截断，客户端 readFile 还会按行数及单行长度截短内容。可选：/compact 手动压缩；统一大输出上限为 20 KiB，宿主注释确认超大结果另存文件并请模型回读，但不能区分是截短后附引用还是整条替换。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/sessions/manage-sessions",
+          "locator": "Keep long conversations focused → Compact conversation context",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot 会话默认自动压缩",
+          "note": "上下文满时会自动摘要早期历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/tools/node/readFileTool.tsx",
+          "locator": "extensions/copilot/src/extension/tools/node/readFileTool.tsx — getParamRanges",
+          "lines": "L96-L110",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认可供客户端注册的读文件工具",
+          "note": "未指定范围的读取会被 MAX_LINES_PER_READ 限制。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/tools/node/readFileTool.tsx",
+          "locator": "extensions/copilot/src/extension/tools/node/readFileTool.tsx — rawContents / MAX_LINE_LENGTH",
+          "lines": "L701-L720",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "客户端读文件结果",
+          "note": "长行按字符截短，输出附截短标记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _buildSessionConfig",
+          "lines": "L1749-L1752",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主运行时大输出策略",
+          "note": "宿主为 SDK 设置统一 20 KiB 上限。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Tool execution events → tool.execution_complete → Result fields",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交回模型的工具结果",
+          "note": "content 是发给模型的精简结果，文档明确可能截断；detailedContent 则保留完整展示内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _handlePermissionRequest",
+          "lines": "L8376-L8383",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "统一大输出的另存与回读路径",
+          "note": "宿主注释说明 SDK 把超大工具结果写到临时文件并让模型后续读取，但未交代是否保留部分正文。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "已查运行时配置、工具结果映射、读文件实现和默认权限入口；copilotAgentSession.ts L8376-L8383 明确描述 SDK 另存超大工具输出，是疑似 tool_result_replacement 的具体迹象，但运行时闭源，看不到是否先保留截短正文，故只列 unresolved，不与 truncation 重复确计。未见相关性选择旧历史片段的正面迹象。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval",
+        "structural_index"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：用户可用 #、拖放与附件指定文件；默认内置 grep/rg 提供字面检索，宿主注册客户端 semantic_search，官方工作区文档列出按定义、引用与实现查询的 usages 工具。语义索引是否就绪取决于仓库与账户策略；网页抓取及技能目录不计入这些取值。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/chat/copilot-chat-context",
+          "locator": "#-mentions → Add files as context",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Chat view 的 Copilot 会话",
+          "note": "可显式引用文件、目录、符号或拖入附件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts — COPILOT_ENABLED_BUILTIN_TOOL_NAMES",
+          "lines": "L28-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行时工具白名单",
+          "note": "允许 view、grep、rg、glob 等内置工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostActiveClientService.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostActiveClientService.ts — _getClientTools",
+          "lines": "L474-L507",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot 会话客户端工具注册",
+          "note": "semantic_search 被作为特例纳入并以 SDK 名称发布。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/reference/workspace-context",
+          "locator": "Search and read tools; Semantic search",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工作区材料检索",
+          "note": "文本、语义检索及 Usages（定义、引用、实现）均列为内置工具。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "内置搜索工具是模型直接调用的工具，非模型自行通过 bash 运行 rg。默认工具开放与索引已有内容分开；无可用语义索引时按文档退回字面检索，不推断已为此仓库建好索引。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Copilot 会话自动使用项目及用户指令文件；默认开启本地跨会话索引，模型能按自然语言检索以前会话。可选：付费档的云端 Copilot Memory 可写结构化事实和偏好，本配置为 Free 不计；仓库本地记忆开关默认关闭。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/custom-instructions",
+          "locator": "How instructions apply",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "项目指导文件自动加载",
+          "note": "Project-wide 指令由 harness 包含，跨新会话复用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/reference/custom-instructions-reference",
+          "locator": "Supported formats and locations; User instructions",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot 指令文件位置",
+          "note": "列出 .github/copilot-instructions.md、AGENTS.md 及用户级指令路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts",
+          "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts — copilotCliConfigSchema",
+          "lines": "L349-L354",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认本地跨会话索引",
+          "note": "Local Session Index 默认 true，说明明确包含跨会话检索。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _buildSessionConfig",
+          "lines": "L1717-L1722",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本地、非临时会话",
+          "note": "启用配置发现与会话存储。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/sessions/session-history",
+          "locator": "Query session history with Chronicle → Ask questions about session history; What gets tracked",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "新会话可检索历史会话",
+          "note": "自然语言问题可检索相关旧会话，历史存入本地 SQLite。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/concepts/prompting-and-context/copilot-memory",
+          "locator": "Where Copilot Memory is available",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Free 账户边界",
+          "note": "Copilot Memory 仅适用于付费 Copilot 计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts",
+          "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts — copilotCliConfigSchema",
+          "lines": "L379-L384",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "仓库本地记忆开关",
+          "note": "本地记忆默认 false。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "按 R8：可检索历史会话属于 retrieval_store；仅存消息本身不算记忆，但此处有内置自然语言检索流程。/chronicle 命令是可选触发，取值依据默认工具可检索的自然语言路径；Free 不借用付费 Memory 的 structured_records。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：共享运行时的持久事件记录含消息、工具结果和压缩／审批条目，按 event_log 计；宿主把受支持文件编辑的前后内容存入会话数据库，回退会读取，另有默认 Git 检查点。工具资源正文独立存储、结果保留引用，另记 external_reference。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts — getSessionStateFile",
+          "lines": "L5289-L5296",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行时持久事件文件",
+          "note": "宿主定位 session-state/<会话>/events.jsonl。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Overview; Event envelope; session.compaction_complete; permission.completed",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享运行时事件持久化",
+          "note": "非 ephemeral 事件落盘，压缩完成包含摘要与检查点，审批完成包含决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/fileEditTracker.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/fileEditTracker.ts — _processCompletedEdit",
+          "lines": "L298-L325",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "受支持的文件编辑记录",
+          "note": "按回合和调用编号持久化编辑前后正文，返回会话数据库引用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts — _writeCheckpointContent",
+          "lines": "L493-L499",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "快照恢复入口",
+          "note": "撤销编辑时读取 beforeContentUri 并改回工作文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/mapSessionEvents.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/mapSessionEvents.ts — persistSdkToolResultResources",
+          "lines": "L148-L186",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具结果中的资源附件",
+          "note": "资源正文存入会话数据库，发布可恢复的内容引用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/chatContributions/checkpointAndChangeset/checkpointAndChangesetContribution.ts",
+          "locator": "src/vs/platform/agentHost/node/chatContributions/checkpointAndChangeset/checkpointAndChangesetContribution.ts — onTurnEnd",
+          "lines": "L29-L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "回合完成后的 Git 快照",
+          "note": "成功或非可恢复错误时自动捕获 Git 检查点，取消时仅重算变化。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "同一事件文件里的消息不重复记 messages。文件编辑数据库副本有明确回退读取者；会话元数据、索引缓存不算快照。资源引用覆盖受支持工具资源及文件编辑内容，不声称所有终端输出都永久保存。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "推断：从会话列表打开历史后发送后续请求；宿主以原编号调用 SDK resumeSession 并从持久事件重建对话，恢复时将未结束的旧回合标为中断。共享运行时文档说明内存工具状态不持久，按读回上下文再运行判断；工作区回退另记 F20。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/sessions/manage-sessions",
+          "locator": "Find and resume a session",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Chat view 的恢复入口",
+          "note": "打开原会话、查看旧消息后发送后续请求继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _resumeSession",
+          "lines": "L1251-L1263",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 SDK 会话的冷恢复",
+          "note": "通过原 sessionId 调用 client.resumeSession。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _computeMappedEvents",
+          "lines": "L7379-L7405",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "冷恢复历史重建",
+          "note": "读取持久事件并为未完成的旧回合生成 executionInterrupted 错误。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/session-persistence",
+          "locator": "What gets persisted?; Limitations and considerations",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享运行时恢复边界",
+          "note": "持久化对话、结果与计划，内存工具状态不持久化。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "界面中断标记和 SDK 恢复文档共同支持此推断；未把名为 checkpoints 的对话快照当成能直接接续中断工具的执行检查点。运行时内部对未完成调用的所有修补分支不可见。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：共享运行时的恢复资料明确保存并读回完整对话、工具结果和 plan.md；宿主恢复后提供 plan.read 与 SQL 待办读取接口。已有工作目录被重新绑定，不自动还原其内容；需要撤销时另走 F20，外部网络请求和部署等副作用不恢复。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/session-persistence",
+          "locator": "How sessions work; Resuming a session; What gets persisted?",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享运行时跨进程会话恢复",
+          "note": "会话状态从磁盘载入，含消息、工具调用结果和规划状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — getSessionPlan",
+          "lines": "L6188-L6203",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "恢复后可读的计划与待办",
+          "note": "提供 plan.read、readSqlTodosWithDependencies，返回待办状态和依赖。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionHistory.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionHistory.ts — restoreStoredShellOutputs",
+          "lines": "L74-L104",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "恢复工具结果的外部引用",
+          "note": "按原 toolCallId 查询并挂回持久化的 shell 输出资源。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts — _resumeSessionOnce",
+          "lines": "L10824-L10846",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本配置已有工作目录",
+          "note": "从历史元数据解析工作目录，重新绑定；本配置非临时目录不重建文件。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "检查了持久状态表、恢复元数据、计划接口及父子历史重建：conversation、task_plan、tool_results 有依据；未把子代理 transcript/编号可追溯等同于 subagent_links。未找到冷恢复后按原编号继续原子代理上下文或自动补交未交结果的具体迹象；也未发现恢复后的持续目标执行器证据。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "Copilot 会话的 /fork 或旧请求 Fork Conversation 创建独立路线并保留原讨论；编辑器的检查点和 Undo 读取受支持编辑的前后正文来还原文件，生命周期随会话存储。Restore Checkpoint 裁去后续消息的行为本身不算分支；终端命令、部署和外部服务副作用不由此撤销。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts — _forkSdkChat",
+          "lines": "L9410-L9440",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "按过去回合分叉 SDK 会话",
+          "note": "调用 sessions.fork，以源会话及边界事件建立新编号。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/sessions/manage-sessions",
+          "locator": "Start a new or related conversation → Fork a chat session",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Chat view 分叉入口",
+          "note": "/fork 复制完整历史，也可在旧请求处分叉并保留原讨论。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts — restoreSnapshot",
+          "lines": "L239-L264",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "检查点与 Undo 入口",
+          "note": "回到指定请求之前，按前后内容恢复文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSnapshotController.ts — restoreSnapshot",
+          "lines": "L285-L316",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "快照实际执行",
+          "note": "跨检查点逐个写回 before/after 内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/fileEditTracker.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/fileEditTracker.ts — _processCompletedEdit",
+          "lines": "L298-L325",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认文件编辑快照",
+          "note": "原文与新文持久化并作为可读取的内容引用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/review-code-edits",
+          "locator": "Undo changes at the right scope; Restore a checkpoint",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "回退范围",
+          "note": "检查点恢复文件与历史，不逆转命令、网络和外部系统效果。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对分叉、截断旧会话、快照/Undo 和适配层重复调用处理；重复审批复用只在内存，未找到以持久执行标识防止调用重执行的证据，不记 idempotency_key；会话创建幂等或历史读回的结果配对不算动作去重。运行时闭源，未据此声称补偿或幂等机制已知不存在。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "权限配置模式定义了工具名及 Shell(...)、Read(...)、Edit(...)、WebFetch(...) 规则；默认 Manual 下普通项目文件可直接编辑，非内置放行命令、工作区外写入和下载依赖等命令需确认。网络目标规则可仅限制抓取工具；沙箱默认 off，已批准命令没有额外默认出站隔离，敏感配置文件另有审批例外。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostSchema.ts",
+          "locator": "src/vs/platform/agentHost/common/agentHostSchema.ts — permissionsProperty / platformSessionSchema",
+          "lines": "L288-L319",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户可写的权限规则格式",
+          "note": "配置模式明确交代工具、命令模式、路径及网页目标规则，允许/拒绝/询问列表默认空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/agentHostSchema.ts",
+          "locator": "src/vs/platform/agentHost/common/agentHostSchema.ts — permissionsProperty / platformSessionSchema",
+          "lines": "L398-L418",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认会话审批模式",
+          "note": "默认是 Manual permissions，对无放行设置的调用询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/sessionPermissions.ts",
+          "locator": "src/vs/platform/agentHost/node/sessionPermissions.ts — getAutoApproval",
+          "lines": "L305-L320",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "敏感路径与询问优先",
+          "note": "写入资源须通过编辑确认检查；路径规则和 ask/allow 匹配可控制结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/sessionPermissions.ts",
+          "locator": "src/vs/platform/agentHost/node/sessionPermissions.ts — getAutoApproval",
+          "lines": "L361-L399",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认文件和命令效果",
+          "note": "工作区编辑满足默认范围则自动放行；未命中命令放行规则返回等待确认。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/approvals",
+          "locator": "Permission levels; Scope approvals in Copilot sessions; Automatically approve terminal commands",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Manual 下的调用审批",
+          "note": "默认允许常见只读命令，其他命令按规则逐次审批；文件和站点可分范围授权。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-sandboxing",
+          "locator": "Understand the sandbox boundary; Turn on sandboxing where commands run",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本机默认不启用进程沙箱",
+          "note": "沙箱默认 off，启用也默认不阻断出站网络。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "四项均按已信任、macOS、本机当前 Git 目录、无用户规则判过：普通项目文件 allow；不在放行名单的构建命令 review；非会话内部资源的工作区外写 review；下载依赖命令 review 是调用前命令审批，不表示另有域名审批或默认断网。file_path 依据可由用户填写的 Read/Edit 模式与敏感编辑 glob，不依据框架替用户选定的临时文件/目录授权。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "whole_task",
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：Manual 下宿主把工具调用挂起为 PendingConfirmation，等待用户本次决定后才返回；内置 exit_plan_mode 的计划卡呈现整份计划，但确认计划不改变后续工具的权限档位，强制点仍归调用层。可选：切到 Assisted 后才由审核模型参与；本会话持续允许属于新增规则。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _buildSessionConfig",
+          "lines": "L1725-L1726",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 SDK 审批回调",
+          "note": "会话注册宿主 handlePermissionRequest。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _handlePermissionRequest",
+          "lines": "L8258-L8271",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "调用层审批入口",
+          "note": "权限请求转为工具待确认状态并等待响应。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _handlePermissionRequest",
+          "lines": "L8550-L8587",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "真实暂停与返回",
+          "note": "发出带调用编号的确认后 await pendingPermission，批准或拒绝才返回运行时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _handleExitPlanModeRequest",
+          "lines": "L12420-L12438",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型提出的计划审核",
+          "note": "暂停 exit_plan_mode，宿主只要求有当前回合，没有要求用户先发特定命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _resolveExitPlanMode / _syncAhpModeFromExitPlanAction",
+          "lines": "L9813-L9845",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "计划批准后的权限边界",
+          "note": "Autopilot 仅更新继续模式；只有原本已绕过审批时才给 autoApproveEdits。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/planning",
+          "locator": "Implement or save the plan",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "计划批准与动作批准分开",
+          "note": "计划审批后仍沿用当前权限等级。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/electron-browser/builtInTools/fetchPageTool.ts",
+          "locator": "src/vs/workbench/contrib/chat/electron-browser/builtInTools/fetchPageTool.ts — FetchWebPageTool.invoke",
+          "lines": "L340-L342",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "客户端抓取的跳转处理",
+          "note": "遇跳转返回目标地址，要求另一次工具调用取回，不是本次调用逐跳审批。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "按批准范围判：计划卡虽然覆盖任务，但不会替后续调用作总授权，因此 whole_task 仅记 UI；默认注册 exit_plan_mode 且宿主无用户命令门槛，按 R3 第一档纳入。查了网页抓取跳转、shell 和沙箱追加授权：客户端跳转需再调工具，运行时逐跳行为闭源未证实；沙箱追加授权要求先打开默认关闭的保护，不计 specific_operation。默认固定规则自动放行不算 auto_reviewer，Assisted 才是。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "present"
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Manual 的宿主权限代码能在执行前拒绝或挂起调用。扩展原生 executionSubagent 具名角色要求终端只用同步模式，这项限制只靠提示，部分兜底：发现异步结果后才移除后续工具并交回主代理；可选：打开默认关闭的命令沙箱后再增加操作系统级隔离。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/sessionPermissions.ts",
+          "locator": "src/vs/platform/agentHost/node/sessionPermissions.ts — isDeniedByPermissions",
+          "lines": "L404-L430",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认宿主权限检查入口",
+          "note": "拒绝规则先于自动批准和交互批准检查，命中即拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts — _handlePermissionRequest",
+          "lines": "L8550-L8587",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Manual 调用暂停",
+          "note": "等待用户批准或拒绝后才向运行时返回决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/package.json",
+          "locator": "extensions/copilot/package.json — contributes.languageModelTools: execution_subagent",
+          "lines": "L186-L197",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "客户端原生 executionSubagent 注册",
+          "note": "具名工具按 github.copilot.chat.executionSubagent.enabled 设置开放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/platform/configuration/common/configurationService.ts",
+          "locator": "extensions/copilot/src/platform/configuration/common/configurationService.ts — ExecutionSubagentToolEnabled",
+          "lines": "L789-L790",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "原生执行角色本地默认值",
+          "note": "executionSubagent 开关本地默认 true，仍可能受实验覆盖。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/copilotCliConfig.ts",
+          "locator": "src/vs/platform/agentHost/common/copilotCliConfig.ts — copilotCliConfigSchema",
+          "lines": "L325-L329",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行时执行角色本地默认值",
+          "note": "运行时另一套 execution_subagent 默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts — _configureExecutionSubagentTool",
+          "lines": "L1343-L1365",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选 Copilot 入口的原生执行工具路径",
+          "note": "仅当运行时目录已有替代执行工具时才移除扩展工具，否则保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx",
+          "locator": "extensions/copilot/src/extension/prompts/node/agent/executionSubagentPrompt.tsx — ExecutionSubagentPrompt.render",
+          "lines": "L41-L51",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "具名执行角色的专用提示",
+          "note": "要求终端工具始终 mode=sync，一回合只调一次。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts — collectBackgroundCommands",
+          "lines": "L220-L244",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "角色未在调用前禁止异步参数",
+          "note": "从已完成回合的工具参数识别 mode=async 或 isBackground=true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts — collectBackgroundCommands",
+          "lines": "L277-L282",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "异步执行可进入结果处理",
+          "note": "明确处理实际异步终端结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts",
+          "locator": "extensions/copilot/src/extension/prompt/node/executionSubagentToolCallingLoop.ts — getAvailableTools",
+          "lines": "L345-L360",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "角色的部分代码兜底",
+          "note": "已有后台命令后停止暴露工具，之前只限制终端工具种类。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-sandboxing",
+          "locator": "Understand the sandbox boundary; Turn on sandboxing where commands run",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选本机入口的默认隔离状态",
+          "note": "命令沙箱默认 off，不能把可选隔离计作默认。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按本地默认值编码；客户端工具贡献点和宿主保留逻辑共同支持原生执行角色属于所选入口，未用旧 Local 主循环代替 Copilot 主循环。prompt_only 的正面例子是具名角色对可调用终端模式的限制，并非通用安全建议；结果处理明确承认异步调用，事后停工具不等于事前拒绝。Free 能否成功取得该子代理模型及运行时实验覆盖未验证，R10 不用账户未知覆盖代码默认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：共享运行时默认的会话事件日志以事件链和 toolCallId 关联请求说明、实际工具名与参数、最终结果；permission.requested 的调用编号与 permission.completed 的 requestId 能对上批准和拒绝决定。这里依据普通会话日志，不声称另有完整审计账本或逐动作的人类账户身份记录，流式临时输出不计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-harnesses",
+          "locator": "Compare agent harnesses",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot 与 SDK 共用代理核心",
+          "note": "所选入口采用 Copilot SDK 的共享代理运行时，作为同核文档推断的依据。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgent.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgent.ts — getSessionStateFile",
+          "lines": "L5288-L5296",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口的落盘会话记录",
+          "note": "按实际 SDK 会话编号定位 session-state 下的 events.jsonl。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionMetadataEvents.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionMetadataEvents.ts — metadataEventTypes / toCopilotSessionMetadataEvent",
+          "lines": "L13-L36",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主读取审批事件元数据",
+          "note": "识别 permission.requested/completed，并以 ephemeral 标记区分是否持久。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Overview; Event envelope",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享运行时的持久事件与关联键",
+          "note": "完整消息和工具结果落盘，事件编号和 parentId 保持顺序链，临时事件不落盘。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Tool execution events → tool.execution_start; tool.execution_complete",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "实际调用与最终结果关联",
+          "note": "工具名、参数、成功或失败和结果按同一 toolCallId 对齐，结果可能截断。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Permission and user input events → permission.requested; permission.completed",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "动作意图与审批结果的持久关联",
+          "note": "审批请求带 intention 与可选 toolCallId；完成事件以 requestId 记录 approved 及各类 denied 结果。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "approval 按同核文档的批准和拒绝两类持久事件计，宿主也从日志读取这两种元数据；不把固定权限档位或单独拒绝错误算审批。intent 取审批请求里的 intention（例如 shell/write/read），不取临时 assistant.intent。关联覆盖携带 toolCallId 的审批及工具生命周期，不声称每个动作都有完整审批事件。查过事件元数据、会话映射和持久事件字段，未确认逐调用的人或账户身份；agentId、会话号和登录 GitHub 本身均不足以计 identity，也无具体疑似身份成员。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "推断：官方 Copilot 小节明确主代理可以自行调用 task 委派，子代理有自己的上下文；宿主按 agentId 和父工具调用跟踪其运行，不把标题、摘要辅助请求算作代理。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/subagents",
+          "locator": "Subagents by harness / Copilot; What you see in chat",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness",
+          "note": "Copilot 原生 task 委派，与 Local 的 runSubagent 区分。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSubagentTracking.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSubagentTracking.ts / CopilotSubagentTracking.start / resume",
+          "lines": "L27-L65",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness / Agent / Auto / Manual permissions",
+          "note": "维护子代理标识、父调用归属与活动集合。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Copilot 委派由主代理调用 task 发起，Rubber Duck 的自动征询也是主代理决策；用户自然语言要求委派仍归 main_agent；宿主 create_session 创建其他聊天需用户批准。可选：切到 Agents 窗口创建自动化、改设置启用动态工作流，不作为本入口的创建路径。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/subagents",
+          "locator": "Subagents by harness / Copilot",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness",
+          "note": "主代理可以自行决定委派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / wrapper.onSubagentStarted",
+          "lines": "L11129-L11163",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness / Agent / Auto / Manual permissions",
+          "note": "从 task 的 prompt 和父 toolCallId 建立被派子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/sessionServerTools.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/sessionServerTools.ts / applyCreateSessionTool / createSessionServerToolGroup",
+          "lines": "L2275-L2340",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness / Agent / Auto / Manual permissions",
+          "note": "会话管理工具默认开放，除自动标题相关工具外未要求用户显式命令。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "已核对原生 task 白名单、隐藏命令表、subagents 文档、automations 文档、RubberDuck/Explore/SearchSubagent 配置及 serverToolGroups：用户选择角色或独立新建聊天不等于直接派生子代理；没发现本入口默认有工作流运行时、外部事件或内部阈值直接创建多步代理的路径。宿主 create_session 可由模型直接调用，也归 main_agent；只返回会话链接不妨碍 F25 计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：原生 task 子代理各有上下文，read_agent/write_agent 允许按标识协调，宿主另建的聊天默认可共用当前工作目录。子维度未确认：原生 task 是否复制父历史没有直接说明，start_context 留空；可选：/fleet 或 SDK fleet.start 的共享 SQL 待办有明确文档，未证明普通 task 默认采用同一共享表，故不计 shared_state。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/subagents",
+          "locator": "Subagents by harness / Copilot",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享 Copilot 运行时，结合宿主实际开放路径",
+          "note": "子代理在自己的上下文工作并交回结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts / CopilotToolName.WriteAgent / getTaskCompleteMarkdown",
+          "lines": "L875-L908",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "write_agent 按 agent_id 或 children/siblings 传消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSubagentTracking.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSubagentTracking.ts / CopilotSubagentTracking.start / resume",
+          "lines": "L70-L84",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "已知 agentId 可以恢复活动，保留原身份。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/sessionServerTools.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/sessionServerTools.ts / applyCreateSessionTool / createSessionServerToolGroup",
+          "lines": "L1157-L1197",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "默认 currentSession 新聊天只带 prompt，可复用当前工作区。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/fleet-mode",
+          "locator": "How sub-agents coordinate",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享 Copilot 运行时，结合宿主实际开放路径",
+          "note": "共享 Copilot runtime 的 task/SQL 待办表由父子代理更新。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts / COPILOT_ENABLED_BUILTIN_TOOL_NAMES / COPILOT_DEFAULT_AVAILABLE_TOOLS",
+          "lines": "L37-L48",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "默认白名单包含 task、代理通信和 SQL 存储工具。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "已核对默认 task 白名单、代理通信事件、宿主 create_session 的工作目录及启动 prompt、原生 executionSubagent 的新建 Conversation、subagents 文档与 SDK fleet-mode 的启动条件。独立上下文、消息续派和共享目录有依据；task 的实际上下文构造在闭源运行时，无法确定 start_context。SDK fleet.start 和用户 /fleet 是额外入口，不能从 SQL 与 task 同时在白名单就推定普通 task 共享状态；相关共享表材料只作可选路径记录。宿主建聊继承提供方配置且经同一权限回调，不推断子代理另有提权。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": null
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：task 支持后台工作，宿主可在父回合结束后继续跟踪子代理；默认保留的扩展原生 executionSubagent 在工具调用内等待多步循环并传入取消令牌。子维度未确认：原生 task 的取消深度与三种取消方式完整覆盖不可见；可选：/fleet 的共享 SQL 看板不计默认共享看板。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / hasActiveSubagents",
+          "lines": "L1452-L1460",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "明确后台子代理可在主回合结束后继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/src/extension/tools/node/executionSubagentTool.ts",
+          "locator": "extensions/copilot/src/extension/tools/node/executionSubagentTool.ts / ExecutionSubagentTool.invoke",
+          "lines": "L66-L120",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "新建子循环并 await loop.run(stream, token)，父工具在子循环完成后返回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts / _configureExecutionSubagentTool / enableConfigDiscovery / enableSkills / hooks",
+          "lines": "L1343-L1368",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "运行时没有 execution_subagent 时保留客户端执行子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / abort",
+          "lines": "L7428-L7469",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness 默认本地 Agent 会话",
+          "note": "父会话 abort 调用运行时 abort，并完成活动子代理显示，丢弃晚到事件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/fleet-mode",
+          "locator": "How sub-agents coordinate",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享 Copilot 运行时，结合宿主实际开放路径",
+          "note": "协调者从共享 SQL 待办状态汇总。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/extensions/copilot/package.json",
+          "locator": "extensions/copilot/package.json / github.copilot.chat.executionSubagent.enabled",
+          "lines": "L4644-L4653",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 默认 Copilot harness",
+          "note": "扩展原生执行子代理默认启用。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "已逐项核对：打断当前回合，宿主 abort 转给 runtime，且原生 executionSubagent 传入取消 token；单独取消等待调用，原生客户端循环接受 token，但 task 的内部取消不可见；取消父运行/释放会话，宿主可 abort 或销毁 SDK 会话，无法从公开适配层确定对子树逐层传播。默认 task 路径的深度和全部/部分覆盖均不能确定，故两个子维度为 null；不能用原生 executionSubagent 仅一层的事实替代默认 task 路径。已检索快照内取消、子代理和中止相关文档，CLI 的按键行为不移用于 Chat view。默认注册的执行子代理受具体型号可用性限制，按 R2 计入机制；运行时替换与 Free 账户实际执行未验证。 已检查 /fleet 专用启动分支（copilotAgentSession.ts L6597-L6600、L6978-L6986），共享 SQL 看板仅见该可选模式，未计默认路径。宿主 create_session 仅返回链接，该路径不据此记同步交回或连带取消。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：内置工具、VS Code 扩展注册工具、MCP 服务及经 SDK/AHP 交回宿主的会话工具构成四条边界。子维度未确认：内置 GitHub MCP 默认启用，但 Free 账户实际注册了哪些工具不可见；编辑器扩展的全局注册工具最终有多少进入会话也未逐项确认，默认在用仅记内置工具和宿主会话声明工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotBuiltinToolAllowlist.ts / COPILOT_ENABLED_BUILTIN_TOOL_NAMES / COPILOT_DEFAULT_AVAILABLE_TOOLS",
+          "lines": "L28-L56",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "默认工具过滤器允许内置、custom 与 MCP 工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts / _configureExecutionSubagentTool / enableConfigDiscovery / enableSkills / hooks",
+          "lines": "L1715-L1758",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "SDK 会话启用发现、MCP、工具回调及会话工具配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/shared/serverToolGroups.ts",
+          "locator": "src/vs/platform/agentHost/node/shared/serverToolGroups.ts / buildServerToolGroups",
+          "lines": "L14-L47",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "宿主为各会话声明评论、会话管理等服务端工具组。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/tools",
+          "locator": "Manage tool availability for the Copilot harness",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "编辑器和扩展提供的工具可供模型调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/mcp-servers",
+          "locator": "MCP servers in VS Code",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "添加 MCP 配置可提供外部工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/changing-tools",
+          "locator": "Changing tools",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "SDK 可为会话声明和更新工具。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "按 R8 区分 VS Code 全局扩展工具注册和宿主经 SDK 为会话声明服务端工具；同一条经嵌入接口声明的路径不再算 MCP。核对工具白名单、会话配置、MCP 文档、工具文档及配置参考，未见把普通用户脚本直接按名注册成工具的独立装载路径；shell 执行脚本和技能脚本不算。GitHubMcpServerEnabled 默认为 true，但仅开关不足以证明该账户确有工具注册，未写入 in_use_by_default；非默认用户内容也未写入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "embedder_declared"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service",
+          "embedder_declared"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：本地受信任工作区开启配置发现、技能和指令装载；自定义 agent 文件提供可复用角色，其 hooks 前置数据可让框架执行代码。技能既能按需加载又能按名调用，仍只计技能目录；Local 专用 prompt 文件和默认关闭的动态工作流不计入本入口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts / _configureExecutionSubagentTool / enableConfigDiscovery / enableSkills / hooks",
+          "lines": "L1715-L1746",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "本地非虚拟会话 enableConfigDiscovery、enableSkills 为 true，传入技能、指令和自定义工具配置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/custom-instructions",
+          "locator": "Get started with project instructions / Supported project instructions",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "Copilot 支持项目说明文件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/agent-skills",
+          "locator": "Use Agent Skills in VS Code",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "技能包按需加入上下文。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/custom-agents",
+          "locator": "Create a custom agent",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "可用 agent 文件定义角色、工具和指令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/hooks",
+          "locator": "Agent-scoped hooks",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "agent frontmatter 内 hooks 由运行时执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/prompt-files",
+          "locator": "Use prompt files in VS Code / Important",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "prompt files 仅支持 Local harness，Copilot 需要转成技能。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "核对项目和用户指令文件、技能目录、agent 文件、prompt 文件与动态工作流：项目规则是提示文本；技能附带脚本由模型决定运行，不算框架执行；agent-scoped hooks 符合随角色装载的可执行项；独立 prompt 文件只在 Local 生效；run_dynamic_workflow 等默认排除，未计 workflow_definition。配置记录称 IDE skills 在 Free 不可用，但本入口源码 enableSkills 无账户档位分支，按 R1/R10 以宿主代码的开放机制计入，不声称已验证账户调用成功。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "role_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Copilot 文件钩子直接开放提示提交、工具前后、停止、压缩前和会话开始；同一运行核心的官方 SDK 还开放类型化模型回合通知和可改写输入的回调。默认宿主的权限/工具处理器属于核心实现，不算用户扩展默认在用；SDK 模型回合和压缩通知仅观察。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/hooks",
+          "locator": "Choose the hook implementation; Events and payloads; Agent-scoped hooks",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "Copilot 的具体钩子事件、作用和默认文件发现。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/hooks",
+          "locator": "Overview; Agent-scoped declarative hooks",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "SDK 同时开放输入改写、工具前后和生命周期回调。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/streaming-events",
+          "locator": "Subscribing to events; assistant.turn_start / assistant.turn_end; session.compaction_start / complete",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "类型化事件流允许观察模型调用和压缩。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/hooks/session-lifecycle",
+          "locator": "Agent stop hook",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "停止时可返回 block 要求再运行一轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts / _configureExecutionSubagentTool / enableConfigDiscovery / enableSkills / hooks",
+          "lines": "L1718-L1738",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "文件 hooks 默认启用，同时传入宿主核心权限和工具回调。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agent-customization/migrate-customizations",
+          "locator": "Migrate hooks / hook event mapping / PreCompact",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Copilot harness",
+          "note": "PreCompact 是通知，不能阻止压缩。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "逐项核对 input、model_call、tool_before_after、save、end、context_compaction、session_start：文件 userPromptSubmitted 输出被忽略，但 SDK onUserPromptSubmitted 可改写，因此 input 整个阶段不归 observe_only；preToolUse 可拒绝，postToolUse 可注入；agentStop 可阻止结束；sessionStart 可加上下文；preCompact 与 compaction 事件只确认通知/外部保存，未见修改当前压缩的返回契约；模型回合事件只有订阅。未见以记录写盘为本义的 save 钩子，消息落盘通知不计。默认在用清单核对用户/仓库配置（未预置）、插件目录（无用户内容）、内置技能与宿主 toSdkHooks：只有编进核心的处理器，按 R2 排除。SDK 需另装，故它独有的 model_call 不进 via_default_entry。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "model_call",
+          "context_compaction"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "library",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Agent Host 以开放、代理无关的 AHP 接受外部本机客户端连接；官方 SDK 驱动与本入口相同的 Copilot 运行核心，按无独立线协议文档的客户端库例外记 library，需另装官方包。AHP 属公共协议，不重复记 service_api；独立 Copilot CLI 的非交互命令不移作本发行版入口。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/concepts/agent-host",
+          "locator": "Agent Host Protocol; Run a standalone host",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "AHP 是开放、代理无关的 JSON-RPC 协议；code agent host 也可启动宿主。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/LOCAL_ENDPOINT.md",
+          "locator": "src/vs/platform/agentHost/LOCAL_ENDPOINT.md / Local Agent Host Endpoint Discovery / Metadata location / Connecting",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "编辑器默认宿主向同用户的外部本机进程提供可发现的 AHP 端点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/LOCAL_ENDPOINT.md",
+          "locator": "src/vs/platform/agentHost/LOCAL_ENDPOINT.md / Local Agent Host Endpoint Discovery / Metadata location / Connecting",
+          "lines": "L27-L43",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "每个本地编辑器和独立宿主实例发布自己的发现记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/LOCAL_ENDPOINT.md",
+          "locator": "src/vs/platform/agentHost/LOCAL_ENDPOINT.md / Local Agent Host Endpoint Discovery / Metadata location / Connecting",
+          "lines": "L79-L94",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / Copilot harness",
+          "note": "连接时读取发现记录的 token 并进行 AHP initialize。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/agent-loop",
+          "locator": "Architecture",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "SDK 是驱动 Copilot 多步运行循环的传输层。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.github.com/en/copilot/get-started/sdk-quickstart",
+          "locator": "Prerequisites; Step 1: install the SDK",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一 Copilot 运行核心或 VS Code 官方入口",
+          "note": "官方 SDK 包与初始化入口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/package.json",
+          "locator": "package.json / dependencies.@github/copilot-sdk",
+          "lines": "L110-L114",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 默认 Copilot harness",
+          "note": "本提交使用公开 Copilot SDK 1.0.30-preview.0。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/agent-harnesses",
+          "locator": "Compare agent harnesses / Copilot",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选 Copilot harness",
+          "note": "明确 VS Code Copilot harness 使用共享 Copilot SDK 运行任务，区别于旧 Local harness。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "R5 下用官方 SDK 文档明示的同一运行核心，加宿主本身使用 @github/copilot-sdk 的实际路径，纳入 library 及其工具/回调边界；并未把 Copilot CLI 终端交互或 GitHub 云端服务作为本入口。AHP 官方文档明确向其他同用户进程开放，token 由本地发现文件提供给这些客户端，并非只交自家前端的随机秘密，故 public_protocol 进 via_default_entry；只确认默认可尝试发布，不保证任意机器端点发布必成功。检查公开文档未见给第三方扩展提交完整任务的 host_extension_api；语言模型接口和工具注册 API 不能替代执行核心嵌入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "public_protocol"
+        ],
+        "needs_official_package": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Chat view 用户消息与 AHP 外部客户端均可发起任务；同一 VS Code 发行版的 Agents 窗口还提供默认启用的本地自动化定时器，按 R5 计入 schedule，但不属于所选 Chat view 直接开放的入口。云端 GitHub 自动化的仓库事件属于另一产品形态，不借入 external_event。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/chat-view",
+          "locator": "Chat view / Start an agent session",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 同一发行版",
+          "note": "用户可从聊天输入框发起任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/concepts/agent-host",
+          "locator": "Agent Host Protocol",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 同一发行版",
+          "note": "外部客户端通过 AHP 控制会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/run/automations",
+          "locator": "Prerequisites; Choose where an automation runs; Create an automation",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 同一发行版",
+          "note": "本地定时自动化在 Agents 窗口创建，默认启用；仓库事件只描述云端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/agentHostAutomationService.ts",
+          "locator": "src/vs/platform/agentHost/node/agentHostAutomationService.ts / IAgentHostAutomationExecution / IAgentHostAutomationService",
+          "lines": "L100-L143",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "本机自动化服务拥有持久定义、计划、会话创建与执行入口。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "R5 使本字段涵盖同一应用发行版的其他入口，所以 schedule 计入；F26/F35 仍只编码指定 Chat view 路径，不借用在 Agents 窗口主动新设的自动化。api 的默认入口子维度与 F32 的 AHP 一致。检查了自动化触发文档、AgentHostAutomationService 和 SDK agent-loop；后台 shell/子代理完成属于内部续办，没有作为新外部事件。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "宿主由 VS Code 主进程自动启动为独立 utility process，可在编辑器窗口关闭后继续执行运行时内置工具；VS Code 应用整体退出会关闭宿主，未注册为操作系统服务。此取值依据宿主源码和官方会话生命周期说明，continues_after_ui_exit=yes 指关闭编辑器窗口，需应用及宿主继续存活，客户端扩展工具仍需窗口连接。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts",
+          "locator": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts / ElectronAgentHostStarter.constructor / start",
+          "lines": "L71-L86",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "宿主由 VS Code 维护，应用关闭时协调 shutdown，释放时杀死 utility process。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts",
+          "locator": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts / ElectronAgentHostStarter.constructor / start",
+          "lines": "L206-L241",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "主进程拉起独立 Agent Host utility process 并建立管理通道。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://code.visualstudio.com/docs/agents/concepts/agent-host",
+          "locator": "Session lifetime and client dependencies",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 同一发行版",
+          "note": "窗口关闭后可继续；退出 VS Code 应用和断开窗口贡献工具另有边界。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "字段把编辑器窗口和应用整体退出并列成 UI exit，实际本配置两者不同：按“退出窗口而宿主仍在”的明确文档判后台进程；不是开机自启服务，不把关窗口误记为停止，也不声称应用退出仍能执行。后台宿主随应用主进程终止，属取值命名可能需进一步说明的边界。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "界面已提交的后续消息和 steering 放在宿主 ChatState 队列，由 QueueDrain 在可运行时消费；恢复入口重建会话历史、草稿和配置，没有恢复并自动执行该队列的流程。可选：在 Agents 窗口另建的持久定时自动化属主动进入的另一条路径，不提高本入口的默认队列保证。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/common/state/protocol/channels-chat/state.ts",
+          "locator": "src/vs/platform/agentHost/common/state/protocol/channels-chat/state.ts / ChatState.queuedMessages",
+          "lines": "L143-L156",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "已提交的 pending messages 存在 queuedMessages 状态数组。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/chatContributions/queueDrain/queueDrainContribution.ts",
+          "locator": "src/vs/platform/agentHost/node/chatContributions/queueDrain/queueDrainContribution.ts / QueueDrainContribution._tryConsumeNextQueuedMessage",
+          "lines": "L250-L305",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "steering 优先于普通排队消息，并由宿主发起下一回合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/agentService.ts",
+          "locator": "src/vs/platform/agentHost/node/agentService.ts / _restoreSessionState",
+          "lines": "L14820-L14841",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "冷恢复加载草稿、标题、配置和提供方 backing。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/agentService.ts",
+          "locator": "src/vs/platform/agentHost/node/agentService.ts / _restoreSessionState",
+          "lines": "L15136-L15179",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "恢复会话仅交入历史、草稿、目录及配置，没有恢复 pending 工作队列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / _computeMappedEvents",
+          "lines": "L7378-L7403",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "恢复事件记录时将未完成回合标为 interrupted，不自动接着执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "已核对输入/steering 队列、QueueDrain、会话恢复、会话数据库 schema 和 Copilot eventLog 重建：队列本身是宿主内存状态，持久事件日志不能替代执行恢复。未找到本 Chat view 默认入口另有持久目标或重试任务的来源；SDK 其他入口和用户切到 Agents 窗口后新建的计划不纳入。此判断针对执行保证，不否认聊天文字、草稿和历史可持久保存。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "Manual permissions 可暂停等待批准，ask_user 在默认 AutoReply 关闭时等待回答；审批/提问和完成通知默认在窗口未聚焦时发出系统 toast。可选：自动化结果、其他权限档位及主动开启的通知设置另计；已有审批和提问只归 blocking_approval，不因记录可恢复再计待办。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / _handlePermissionRequest",
+          "lines": "L8450-L8469",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "需审批时登记 pendingPermission。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / _handlePermissionRequest",
+          "lines": "L8574-L8590",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "等待用户权限决定后继续处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts / _handleUserInputRequest",
+          "lines": "L9485-L9564",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "ask_user 在未开启自动回答时登记并等待用户输入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts / ChatConfiguration.NotifyWindowOnConfirmation / NotifyWindowOnResponseReceived / AutoReply",
+          "lines": "L733-L746",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "审批通知默认 windowNotFocused，AutoReply 默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts / ChatConfiguration.NotifyWindowOnConfirmation / NotifyWindowOnResponseReceived / AutoReply",
+          "lines": "L1148-L1158",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "回复完成通知默认 windowNotFocused。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/workbench/contrib/chat/browser/chatWindowNotifier.ts",
+          "locator": "src/vs/workbench/contrib/chat/browser/chatWindowNotifier.ts / _notifyIfNeeded / _notifyIdleIfNeeded",
+          "lines": "L184-L221",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "空闲完成且未聚焦时发送 OS toast，可打开会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/microsoft/vscode/blob/69047191fc427f2f92828279aae1d90d8eeda7ab/src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts",
+          "locator": "src/vs/platform/agentHost/node/copilot/copilotToolDisplay.ts / CopilotToolName.WriteAgent / getTaskCompleteMarkdown",
+          "lines": "L530-L560",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 1.146.0 / 本机 Copilot harness / 默认配置",
+          "note": "完成展示为摘要/被阻止动作文本，未构成明确的结构化任务交接单。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "核对权限请求、ask_user、通知默认值与执行函数、task_complete 输出、session_store/SQL 及自动化文档：permission 与 question 均有实际等待；只在失焦条件通知仍属默认机制。计划清单和 SQL todos 是代理自用，未发现本入口提供等人处理的持久目标对象；普通摘要及 blockedActions 标签不当作目标/完成/遗留/产出字段的交接对象。模型提议创建其他聊天所需的启动批准仅计 F22，不据此增加 F36。未将仅显示界面状态算通知。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

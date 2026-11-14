@@ -1,0 +1,1693 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "C10__nanoclaw__container-cli",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "用户经 CLI 渠道发一条消息后，宿主写入会话 inbound.db 并唤醒容器；容器内 poll-loop 把消息交给 Claude Agent SDK，由 Claude Code 执行模型请求的工具并把结果交回模型，直到 result 事件。宿主按消息到达发起任务、任务内部是模型循环，按 scope_rule 记模型循环。Claude Code 主循环本身是快照外的闭源二进制，循环内部细节看不到。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L263-L312",
+          "locator": "container/agent-runner/src/providers/claude.ts：ClaudeProvider.query → sdkQuery",
+          "lines": "L263-L312",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "容器内 agent-runner 以 Claude Agent SDK 的 query 驱动 /pnpm/claude（Claude Code），传入 allowedTools、disallowedTools、MCP 服务和钩子；没有传 maxTurns 一类上限，工具循环由 Claude Code 自己执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：Inside the container",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口与默认提供方",
+          "note": "容器内 poll-loop 每秒读 inbound.db，把一批消息格式化后交给 provider.query()；默认提供方是 Claude Code，代理通过内置 MCP 服务与 NanoClaw 交互。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "secondary_modes 核对（无命令列表文档，用宿主命令闸门、runner 命令处理、提供方合约命令表和 CLI/ncl 文档代替）：/clear（重置会话，不改推进方式）；/upload-trace（上传轨迹）；Claude 原生管理命令 /compact /context /cost /usage /stats /files /reset /new（在本前提下 CLI 用户无 owner，被宿主拒绝；即使放行也不改推进方式）；过滤命令 /help /login 等直接丢弃；其他斜杠命令原样交给 Claude Code（技能调用等，仍在模型循环内）；ncl tasks 定时任务（任务发起，归 F33；pre-task 脚本只决定是否唤醒，不推进任务内部步骤）；create_agent 起长期伙伴 agent（另一个模型循环，且默认要管理员批准）；Claude Code 内置 Task/TeamCreate 子代理（嵌套的同类模型循环）。没有找到显式工作流或事件调度路径，判为 []。EnterPlanMode 被禁用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "默认允许列表含 Claude Code 的 TodoWrite（带条目和状态的待办工具，由模型自行调用）；计划模式工具 EnterPlanMode/ExitPlanMode 被 NanoClaw 显式禁用，所以没有计划模式。TodoWrite 在 Claude Code 2.1.321 里的确切形态在快照外，未能核实；基础指令 container/CLAUDE.md 没有要求先写计划。容器技能 frontend-engineer 要求构建—测试—验证流程，只是技能提示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts#L34-L70",
+          "locator": "container/agent-runner/src/providers/claude-config.ts：SDK_DISALLOWED_TOOLS；TOOL_ALLOWLIST",
+          "lines": "L34-L70",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具集",
+          "note": "禁用 EnterPlanMode/ExitPlanMode/EnterWorktree 等 12 个内置工具；允许列表含 Bash、Read、Write、Edit、Task、TodoWrite 等 16 个。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "TodoWrite 的行为（是否展示、是否保存条目状态）属于闭源 Claude Code，快照里只有它在允许列表里；按工具名的通常含义判为结构化任务表。bypassPermissions 下允许列表只是预批准，未列入的其他任务类工具是否可用看不到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_end_signal：SDK 的 result 事件结束一个回合，runner 投递结果、标记消息完成后回到轮询。user_interrupt：用户在回合进行中再发一条斜杠命令（未知命令放行到容器，属 passthrough 类），runner 中止当前查询流；宿主侧 ncl groups restart 也会停掉容器。在本环境前提下 CLI 用户没有 owner，/clear 等管理命令被宿主拒绝，不能借它们中断。没有找到 NanoClaw 层的预算上限（未传 maxTurns 等，文档称有意不设总运行时长上限，心跳超时属于存活检测）；Claude Code 内部是否有默认上限在快照外，看不到。回合未按 <message> 包装时 runner 只推一次纠正提示，属于为补出可见回复而补发，不算验证条件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L361-L384",
+          "locator": "container/agent-runner/src/providers/claude.ts：translateEvents：result、api_retry 分支",
+          "lines": "L361-L384",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "SDK 的 result 事件结束一个回合并交回结果；SDK 发出 api_retry 系统事件表示 Claude Code 正自动重发接口请求，runner 只记为可重试错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L474-L490",
+          "locator": "container/agent-runner/src/poll-loop.ts：processQuery 跟进轮询：Pending slash command",
+          "lines": "L474-L490",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口的进行中回合",
+          "note": "进行中的回合里若有待处理的斜杠命令（admin 或 passthrough 类），runner 调 query.abort() 中止当前流，回外层循环处理命令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/changelog/index",
+          "locator": "Releases：v2.1.14（Slash commands now interrupt an in-flight turn）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "发布说明",
+          "note": "发布说明写明斜杠命令会中断进行中的回合，而不是等它跑完。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/command-gate.ts#L17-L46",
+          "locator": "src/command-gate.ts：gateCommand；ADMIN_COMMANDS",
+          "lines": "L17-L46",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主命令闸门",
+          "note": "/clear、/compact 等列为管理命令，发送者无管理权限时被拒；未知斜杠命令直接放行到容器。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：What runs when（host sweep 末段）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行时长",
+          "note": "文档写明有意不设总运行时长上限，按心跳和认领时长判断存活；只有长时间无事件的容器会被杀。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "user_interrupt 依赖“再发一条斜杠命令会中断进行中回合”的副作用，CLI 渠道没有专门的停止键或停止命令；按“用户能发命令让框架停下当前任务”判为有。budget 是否存在取决于闭源 Claude Code 的内部上限，没有快照内迹象，故不写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：Claude Code 自动重发出错的接口请求（SDK 发出 api_retry 事件，次数和退避在快照外）；宿主在容器崩溃或被杀后把它认领的消息按 5s×2^tries 退避重新投递给新容器，最多 5 次。model_self_repair：PreToolUse 钩子拦下被禁用的工具时把原因交回模型；回复未按 <message> 包装而未送达、或任务回合误用消息块时，runner 推一次纠正提示让模型重发；工具失败经 PostToolUseFailure 作为结果交回模型（Claude Code 内部行为）。查询抛错时只向渠道发通用失败通知、本批记为完成不重投；认证失效、额度用尽只给出提示，要用户修好后重新发消息，不算升级人工。会话失效（找不到 transcript）时清掉续接编号，下一次重新开始。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L361-L384",
+          "locator": "container/agent-runner/src/providers/claude.ts：translateEvents：result、api_retry 分支",
+          "lines": "L361-L384",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "SDK 的 result 事件结束一个回合并交回结果；SDK 发出 api_retry 系统事件表示 Claude Code 正自动重发接口请求，runner 只记为可重试错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/reconcile-session.ts#L318-L345",
+          "locator": "src/reconcile-session.ts：清理崩溃容器遗留的 processing 认领",
+          "lines": "L318-L345",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主清扫",
+          "note": "容器死掉时它认领的消息按 5s×2^tries 退避重置为 pending 并重新唤醒容器处理，最多 5 次后标为失败；不经模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L118-L151",
+          "locator": "container/agent-runner/src/providers/claude.ts：preToolUseHook；postToolUseHook（含 PostToolUseFailure）",
+          "lines": "L118-L151",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认钩子",
+          "note": "PreToolUse 钩子对被禁用的工具返回 block 和原因（交回模型），PostToolUseFailure 钩子说明工具失败作为事件经过 SDK；钩子不改写参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L652-L692",
+          "locator": "container/agent-runner/src/poll-loop.ts：processQuery：wrap-nudge 与 task-block nudge",
+          "lines": "L652-L692",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "聊天回合与定时任务回合",
+          "note": "回合结果未按 <message> 包装而未送达，或任务回合误用消息块时，各推一次纠正提示让模型重发（unwrappedNudged/taskBlockNudged 各限一次）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L716-L760",
+          "locator": "container/agent-runner/src/poll-loop.ts：processQuery catch：失败通知",
+          "lines": "L716-L760",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "查询抛错时只向渠道发一条通用失败通知并结束本批（不重投），没有等待用户决定后从原处接着走的分支。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "framework_input_repair 若存在，应在闭源 Claude Code 里，快照内没有迹象，未写 unresolved。宿主对崩溃消息的重新投递是把同一条用户消息再交给新的查询，不是同一次接口请求，算不算 call_retry 有口径疑问。审批类请求（install_packages 等）是模型主动走审批通道，记 F22，不在这里。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "前端 pnpm run chat 是一次性客户端，经 Unix 套接字 data/cli.sock 连到常驻宿主服务（launchd/systemd）；宿主再经会话的 SQLite 邮箱（inbound.db/outbound.db）把消息交给每会话一个的容器，容器内 agent-runner 用 SDK 以子进程方式启动 Claude Code。同一个宿主服务同时服务其他渠道和 ncl 管理套接字。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/channels/cli.ts#L1-L16",
+          "locator": "src/channels/cli.ts：CLI channel 文件头",
+          "lines": "L1-L16",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "常驻宿主进程监听 data/cli.sock，scripts/chat.ts 客户端以每行一个 JSON 对象收发，经常规 router/delivery 路径。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel：How it works",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口（CLI 渠道）",
+          "note": "宿主服务里的 Unix 套接字 data/cli.sock，pnpm run chat 每次连上发一条消息并等回复；会话状态保存在服务端，跨调用延续。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：Inside the container",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口与默认提供方",
+          "note": "容器内 poll-loop 每秒读 inbound.db，把一批消息格式化后交给 provider.query()；默认提供方是 Claude Code，代理通过内置 MCP 服务与 NanoClaw 交互。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "执行核心按“运行模型循环的进程”是容器里的 Claude Code，它不是常驻服务本身，而是常驻宿主按需拉起的容器内子进程；前端连的是常驻宿主服务。词表没有“前端连常驻服务、服务再把核心起在容器里”这种分层，按前端实际连接方式取 local_service_api。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "subprocess",
+        "container"
+      ],
+      "facets": {
+        "unresolved": [
+          "main_process"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "所有工具都在每会话的本机 Docker 容器里执行，和宿主隔开（只挂组目录、会话目录等）。内置 nanoclaw MCP 服务由 SDK 以 stdio 子进程（bun run mcp-tools/index.ts）拉起；agent-browser 技能经 Bash 调 agent-browser 命令行。Claude Code 的 Read/Write/Edit 等文件工具是否在 Claude Code 进程内执行在快照外，写进 unresolved。用户经 add_mcp_server（需批准）或 container.json 添加的外部 MCP 服务按其配置起子进程或连 HTTP。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/index.ts#L97-L108",
+          "locator": "container/agent-runner/src/index.ts：mcpServers.nanoclaw",
+          "lines": "L97-L108",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置 MCP 服务",
+          "note": "内置 nanoclaw MCP 服务以 command: bun run mcp-tools/index.ts 的 stdio 子进程形式交给 SDK 拉起。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/container-lifecycle",
+          "locator": "Container lifecycle：Spawn — the world rebuilt every time（mount 表）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每会话容器",
+          "note": "每个活动会话一个 Docker 容器；会话目录挂到 /workspace，组目录挂到 /workspace/agent，.claude-shared 挂到 容器内 node 用户的 ~/.claude。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts#L34-L70",
+          "locator": "container/agent-runner/src/providers/claude-config.ts：SDK_DISALLOWED_TOOLS；TOOL_ALLOWLIST",
+          "lines": "L34-L70",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具集",
+          "note": "禁用 EnterPlanMode/ExitPlanMode/EnterWorktree 等 12 个内置工具；允许列表含 Bash、Read、Write、Edit、Task、TodoWrite 等 16 个。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "参照点是容器内运行模型循环的 Claude Code 进程；它本身在容器里，所以 container 与 main_process/subprocess 同时成立，字段没说明“核心本身就在容器里”时是否仍记 container，这里记了。Bash 命令起 shell 子进程属 Claude Code 内部，未单独作证。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "消息历史以 Claude Code 写在 ~/.claude（宿主 data/v2-sessions/<组>/.claude-shared，读写挂进容器）的 transcript 为准，续接编号由容器内 runner 存进会话 outbound.db，下一个容器按它 resume。CLI 客户端不保存任何历史（文档：会话状态保存在服务端，跨调用延续）。宿主的 inbound.db/central v2.db 保存待处理消息和实体，不是请求时读回的对话历史。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/db/session-state.ts#L63-L72",
+          "locator": "container/agent-runner/src/db/session-state.ts：getContinuation；setContinuation",
+          "lines": "L63-L72",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话续接",
+          "note": "续接编号按提供方存取在会话状态表里，由容器内 runner 读写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/provider-contracts/claude.ts#L18-L26",
+          "locator": "src/provider-contracts/claude.ts：stateVolumes claude-home",
+          "lines": "L18-L26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Claude 状态卷",
+          "note": "宿主 .claude-shared 以读写方式挂到容器内 容器内 node 用户的 ~/.claude，按组共享。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L95-L117",
+          "locator": "container/agent-runner/src/poll-loop.ts：runPollLoop：resume 前读取并轮换 continuation",
+          "lines": "L95-L117",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话恢复",
+          "note": "新容器启动时读回续接编号，必要时轮换过大过旧的 transcript，再交给提供方 resume。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel：How it works",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口（CLI 渠道）",
+          "note": "宿主服务里的 Unix 套接字 data/cli.sock，pnpm run chat 每次连上发一条消息并等回复；会话状态保存在服务端，跨调用延续。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "会话数据物理上在宿主目录、经挂载由核心读写；按“谁构造请求、谁读回”判为执行核心。会话邮箱 SQLite 文件由宿主和容器分别写，算不算 state_service 有疑问，这里不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id",
+        "process",
+        "container"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个会话有会话编号、自己的会话目录与 inbound/outbound 数据库，运行时有自己的 Docker 容器（一个会话一个容器，容器里一个 agent-runner 进程）。同一 agent 组的各会话共用组目录 /workspace/agent（工作文件、记忆）和 .claude-shared 状态卷，文档明说同组会话之间不是保密边界。CLI 渠道只有一个消息组，默认只会用到一个会话。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/isolation-levels",
+          "locator": "Isolation levels：One agent group, a session per chat — shared",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话隔离",
+          "note": "shared 模式下每个会话有自己的对话历史、会话目录与数据库、运行时自己的容器；同组各会话共用同一组目录 /workspace/agent。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/container-lifecycle",
+          "locator": "Container lifecycle：Spawn — the world rebuilt every time（mount 表）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每会话容器",
+          "note": "每个活动会话一个 Docker 容器；会话目录挂到 /workspace，组目录挂到 /workspace/agent，.claude-shared 挂到 容器内 node 用户的 ~/.claude。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts#L1203-L1226",
+          "locator": "src/container-runner.ts：buildMounts：/workspace 与 /workspace/agent",
+          "lines": "L1203-L1226",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每会话挂载",
+          "note": "会话目录读写挂到 /workspace，组目录读写挂到 /workspace/agent。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts#L139",
+          "locator": "src/container-runner.ts：activeContainers（按会话编号）",
+          "lines": "L139",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每会话容器",
+          "note": "活动容器按会话编号登记，一个会话一个容器。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "working_directory 没记：每个会话确有专用会话目录（挂在 /workspace，存邮箱和附件），但代理的工作目录 /workspace/agent 是同组共用的；判定标准“几个会话可以共用同一目录的不算”针对的是哪个目录不够清楚。filesystem 由容器带来，按 R8 归 container 一处。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "value_note": "主干只注册 claude 提供方（另有测试用 mock）：容器内 Claude Agent SDK 驱动 Claude Code，只说 Anthropic 消息接口；换后端靠 ANTHROPIC_BASE_URL 指向 Anthropic 兼容端点。钉住环境只配 Anthropic 订阅令牌，凭据网关按 api.anthropic.com 注入。可选：OpenCode、Codex 等提供方要经 provider 技能另装，不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/extend/providers",
+          "locator": "Agent providers：How the provider is resolved；Claude (default)",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "提供方与型号",
+          "note": "主干只带 claude（另有测试用 mock）提供方；OpenCode、Codex 要经 provider 技能装入；Claude 提供方包装 Claude Agent SDK，可用 ANTHROPIC_BASE_URL 指向 Anthropic 兼容端点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L445-L450",
+          "locator": "container/agent-runner/src/providers/claude.ts：registerProvider('claude')",
+          "lines": "L445-L450",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "提供方注册",
+          "note": "容器内只注册 claude 提供方（mock.ts 另注册测试用 mock）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L263-L312",
+          "locator": "container/agent-runner/src/providers/claude.ts：ClaudeProvider.query → sdkQuery",
+          "lines": "L263-L312",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "容器内 agent-runner 以 Claude Agent SDK 的 query 驱动 /pnpm/claude（Claude Code），传入 allowedTools、disallowedTools、MCP 服务和钩子；没有传 maxTurns 一类上限，工具循环由 Claude Code 自己执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Claude Code 内部是否还附带别的消息格式适配（例如云厂商封装）在快照外；按 scope_rule 只差地址和认证的不算另一种协议。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "text_parsing",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "native_structured：Claude Code 以 Anthropic 原生工具调用发出调用，钩子按 tool_name/tool_input 结构化字段取参数。protocol_translation：内置 nanoclaw MCP 服务的工具（send_message、ask_user_question、create_agent 等）作为 mcp__nanoclaw__* 交给模型，container.json 里添加的 MCP 服务同样进入允许列表。text_parsing：runner 从模型普通文本里解析 <message to=\"名字\"> 块，每个闭合块变成一条发往该目的地的外发消息（聊天回合中途的唯一内容出口），未包装文本当作草稿；未送达时推一次纠正提示（见 F04）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts#L118-L151",
+          "locator": "container/agent-runner/src/providers/claude.ts：preToolUseHook；postToolUseHook（含 PostToolUseFailure）",
+          "lines": "L118-L151",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认钩子",
+          "note": "PreToolUse 钩子对被禁用的工具返回 block 和原因（交回模型），PostToolUseFailure 钩子说明工具失败作为事件经过 SDK；钩子不改写参数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/index.ts#L97-L108",
+          "locator": "container/agent-runner/src/index.ts：mcpServers.nanoclaw",
+          "lines": "L97-L108",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置 MCP 服务",
+          "note": "内置 nanoclaw MCP 服务以 command: bun run mcp-tools/index.ts 的 stdio 子进程形式交给 SDK 拉起。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts#L130-L140",
+          "locator": "container/agent-runner/src/providers/claude-config.ts：resolveClaudeMcpServers：allowedTools 加 mcp__<服务>__*",
+          "lines": "L130-L140",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 工具",
+          "note": "每个已注册 MCP 服务的工具命名空间加入允许列表，模型以原生函数调用它们。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts#L1173-L1200",
+          "locator": "container/agent-runner/src/poll-loop.ts：dispatchResultText",
+          "lines": "L1173-L1200",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "外发消息",
+          "note": "解析模型最终文本里的 <message to=\"name\"> 块并按目的地投递，块外文本只记日志。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：Inside the container（<message to> 块）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "外发消息",
+          "note": "外发内容必须包在 <message to=\"name\"> 块里，每个完整块成为一条 messages_out 记录。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "text_parsing 记的是 <message to> 文本块：它是框架从普通文本里识别出的发送动作，作用等同 send_message 工具；它算不算“工具调用”有口径疑问，若码本认为只收调用工具的文本约定，应去掉这一项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "auxiliary_models": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "NanoClaw 不为组设型号（model、effort 都为空，NANOCLAW_DEFAULT_MODEL 未设），主循环型号交给 SDK 随附的 Claude Code 默认值。Claude Code 内置子代理（Task、TeamCreate）用什么型号、有没有失败回退、压缩和网页抓取等辅助调用用什么型号，都在快照外的闭源 Claude Code 里；快照里的文档没有涉及。可选：ncl groups config update --model 或 NANOCLAW_DEFAULT_MODEL 可改型号；create_agent 起的伙伴 agent 可有自己的型号，但默认要管理员批准。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "auxiliary_models 核对清单：标题生成、压缩（Claude Code 内部，触发窗口 165000）、动作审核（bypassPermissions 下没有）、联网搜索与网页抓取（WebSearch/WebFetch，Claude Code 内部）、媒体理解、生成类工具，均在闭源二进制内，无从判定。NanoClaw 自己没有查到辅助模型调用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "hard_stop": null,
+        "soft_notice": null,
+        "mode_unknown": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "NanoClaw 层没有默认用量上限：sdkQuery 没传 maxTurns、预算一类选项，文档写明有意不设总运行时长上限（心跳超时是存活检测，不计）；限流与额度事件来自服务方，不计。Claude Code 内部是否按型号设单次输出上限、子代理有没有步数上限，都在快照外的闭源二进制里，查不到。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "absent_rule 要求完整设置参考，快照只有 NanoClaw 的环境变量参考，没有 Claude Code 的设置参考，所以不写 known_absent。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "layers": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "每轮向主模型发请求的代码在容器内的 Claude Code 2.1.321（agent-runner 经 Claude Agent SDK 调起 /pnpm/claude），不在快照里。NanoClaw 这一层只把新到的入站行按类型格式化成一条用户消息推进 SDK 的输入流（MessageStream），会话上下文由 SDK 按 continuation（resume）维护；快照里的官方文档没有说明每轮请求从哪份数据构造。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts MessageStream; ClaudeProvider.query",
+          "lines": "L80-L115",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "NanoClaw 只往 SDK 的输入流里推新的用户消息文本，请求构造交给 SDK 和 Claude Code。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts ClaudeProvider.query sdkQuery options",
+          "lines": "L263-L312",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "resume: input.continuation 与 pathToClaudeCodeExecutable 表明上下文由 Claude Code 自己按会话记录维护。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "主循环是第三方 Claude Code 二进制，快照不含其源码；按总则 R6 用文档推断也没有依据：NanoClaw 文档只说 resume 时不再注入记忆，没有说每轮发送完整历史，所以写 closed_source。NanoClaw 的格式化层只转换新增入站消息、没有控制条目，按 layers 规则也不另记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "summarization：容器内 Claude Code 自动压缩，NanoClaw 把窗口设为 165000 token（CLAUDE_CODE_AUTO_COMPACT_WINDOW，可由运维改），PreCompact 钩子把保留路由要求作为压缩提示的附加说明；摘要由 Claude Code 生成，可读性在快照外。truncation：①记忆文件 index.md、definition.md 注入上下文时，每份超过 16000 字符就截断并附固定提示；②恢复前会话 transcript 超过 12 MiB 或首条早于 14 天时，整份归档并挪开，从空白会话开始（触发条件：容器启动且有 continuation）。用户发 /clear 重置会话按总则 R3 第二档，可选。Claude Code 自身对工具输出的截短或替换在快照外，未能确认。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts CLAUDE_CODE_AUTO_COMPACT_WINDOW; createPreCompactHook",
+          "lines": "L174-L202",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "Claude Code 在 165000 token 处自动压缩，压缩前触发 PreCompact 钩子。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/compact-instructions.ts",
+          "locator": "container/agent-runner/src/compact-instructions.ts 文件头注释",
+          "lines": "L1-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "PreCompact 输出作为 customInstructions 交给压缩提示，压缩产物是一份摘要。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/memory/context.ts",
+          "locator": "container/agent-runner/src/memory/context.ts MEMORY_FILE_BUDGET_CHARS; readMemoryFile",
+          "lines": "L4-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认记忆注入",
+          "note": "注入的记忆文件超过 16000 字符时截短并附截断提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-history.ts",
+          "locator": "container/agent-runner/src/providers/claude-history.ts rotateClaudeContinuation; decideContinuationRotation",
+          "lines": "L216-L286",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "恢复会话前",
+          "note": "transcript 超过 12 MiB 或 14 天时归档挪开，旧历史整段不再进入上下文。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "transcript 轮换在恢复前按大小或时间整份丢弃旧历史，不是在窗口接近上限时发生，我按 truncation 的“成段丢掉较早的历史”记；即使不算，记忆文件截断仍支撑 truncation。tool_result_replacement、segment_selection 若存在也在 Claude Code 内部，快照里没有能指出的具体迹象，没写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "keyword"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "keyword：默认允许列表含 Claude Code 内置的 Grep（另有按文件名匹配的 Glob），模型可直接调用；工具实现在快照外。CLI 渠道只收纯文本，没有附件或按路径引用文件的语法；其他环境：消息渠道的附件由宿主写进会话 inbox/。没有向量库或结构索引（文档：没有记忆数据库或嵌入库）。网页搜索与抓取（WebSearch、WebFetch、agent-browser 技能）不计；技能目录（/app/skills，经 Skill 工具按需读取）不计；ncl sessions history 经命令行拉取本组其他会话记录，按通用命令行处理，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts TOOL_ALLOWLIST",
+          "lines": "L54-L71",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具清单",
+          "note": "Grep、Glob 在默认允许列表里，模型可直接调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel — How it works",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选 CLI 渠道",
+          "note": "CLI 渠道的线上格式只有 text 字段，没有附件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/agent-memory",
+          "locator": "Agent memory — 开头段",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "文档明说没有记忆数据库或嵌入库。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Grep 是 Claude Code 内置工具，NanoClaw 只把它列进允许列表；按主循环是 Claude Code 算框架自带。confidence 取 medium 是因为工具实现不在快照里。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每次建立新的上下文（startup、clear、compact；resume 不注入）由 SessionStart 钩子把 memory/index.md 与 memory/system/definition.md 注入上下文。记忆由代理按 definition.md 的说明用通用文件工具改写，没有专门的记忆工具或定时写入代码，按 auto_summary 的判定不计、归 user_maintained_files。instructions.prepend.md 由宿主在每次启动容器时合成进只读的 CLAUDE.md，也属用户维护文件。Claude Code 自带的自动记忆被关掉（CLAUDE_CODE_DISABLE_AUTO_MEMORY=1）。PreCompact 钩子把对话文本（每条截到 2000 字）归档到 conversations/，是原文、不提炼，新会话也不自动读，不计。定时任务运行日志 tasks/<series>.md 属调度，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/memory/session-hook.ts",
+          "locator": "container/agent-runner/src/memory/session-hook.ts MEMORY_CONTEXT_SOURCES; memoryContextForSessionStart",
+          "lines": "L3-L23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认会话开始钩子",
+          "note": "startup、clear、compact 时注入记忆，resume 时不注入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts resolveClaudeMemoryRuntime",
+          "lines": "L141-L149",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "关闭 SDK 自带的自动记忆，改用 NanoClaw 的记忆树。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/agent-memory",
+          "locator": "Agent memory — How memory reaches a conversation; Ask the agent to remember",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "记忆是普通 Markdown 文件，代理直接编辑，新上下文开始时注入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages"
+      ],
+      "facets": {
+        "unresolved": [
+          "event_log"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "NanoClaw 的会话邮箱（宿主 data/v2-sessions/<组>/<会话>/ 下的 inbound.db、outbound.db）按消息存：messages_in（kind 为 chat、task、system 等，带状态和重试计数）、messages_out、delivered 投递结果；kind、status 是消息字段，没有压缩边界、审批一类的控制条目。PreCompact 时另把用户与助理文本归档为 conversations/ 下的 Markdown。容器内 Claude Code 的 .jsonl transcript 写在按组共享、挂到宿主的 ~/.claude 下，跨容器保留并用于 resume，其条目类型在快照外。session_state 只存 continuation 等键值，属会话元数据。send_file 的文件放 outbox/，投递后删除，不计 external_reference。宿主日志 logs/nanoclaw.log 另存。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/mailbox/sqlite/schema.ts",
+          "locator": "src/mailbox/sqlite/schema.ts INBOUND_SCHEMA; OUTBOUND_SCHEMA",
+          "lines": "L3-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认会话邮箱",
+          "note": "会话记录以入站、出站消息行和投递结果为单位，没有控制条目表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-history.ts",
+          "locator": "container/agent-runner/src/providers/claude-history.ts archiveClaudeTranscript",
+          "lines": "L85-L118",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "压缩前",
+          "note": "压缩前把对话归档为 conversations/ 下的 Markdown。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts systemPrompt 注释; compact_boundary 分支",
+          "lines": "L277-L283",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 Claude 提供方",
+          "note": "注释说 Claude Code 在会话首个请求记下提示、resume 时重发直到压缩，表明 .jsonl 里有压缩相关记录（unresolved 的迹象）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/container-lifecycle",
+          "locator": "Container lifecycle — Spawn 挂载表",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认挂载",
+          "note": "会话目录和 .claude-shared 都挂到宿主、读写，容器删除后保留。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Claude Code 的 .jsonl 是否含压缩边界一类独立条目（应记 event_log）在快照外；快照里 SDK 会发 compact_boundary 系统消息（claude.ts L412-L421），但那是事件流，不是落盘格式，所以只写进 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "容器每次唤醒时，agent-runner 从 outbound.db 的 session_state 读 continuation，交给 SDK resume 载入 Claude Code 的 transcript；上次容器崩溃或被杀时还处于 processing 的入站消息被清掉确认，重新作为提示发给模型，执行到一半的工具调用不接续（文档：kill 只丢正在进行的模型调用，宿主 sweep 重试这些消息，五次后标失败）。恢复由宿主在新消息到达、到期任务或重试时自动拉起，不需用户命令。transcript 过大或过旧时改为从空白会话开始；continuation 失效时清掉后重试。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts",
+          "locator": "container/agent-runner/src/poll-loop.ts runPollLoop 启动段",
+          "lines": "L95-L126",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器重启",
+          "note": "读回 continuation 续接会话，清掉残留 processing 确认让消息重新处理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/container-lifecycle",
+          "locator": "Container lifecycle — 开头段; Death",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "kill 只丢正在进行的模型调用，宿主 sweep 重试消息。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation"
+      ],
+      "facets": {
+        "unresolved": [
+          "tool_results"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "conversation：resume 载入原会话 transcript，文档说 resume 时上下文里已有原内容所以不再注入记忆。task_plan：TodoWrite 清单是否随 resume 回来在 Claude Code 内部，快照里没有迹象，未计；定时任务（messages_in kind=task 带 recurrence）跨重启保留并继续唤醒代理，属调度，不计。subagent_links：SendMessage 被禁用，Claude Code 子代理恢复后不能按编号续派；create_agent 在本配置因无审批人被自动拒绝，建不出伙伴 agent。其他环境：有 owner 时伙伴 agent 各有自己的 continuation，可经 send_message 按名续派。workspace：组目录本来持久挂载，不是恢复动作带回，不计。已投递的外部消息不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts",
+          "locator": "container/agent-runner/src/poll-loop.ts runPollLoop 启动段",
+          "lines": "L95-L126",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器重启",
+          "note": "恢复时读回的是 continuation（会话记录），没有读回计划或子代理状态。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/agent-memory",
+          "locator": "Agent memory — How memory reaches a conversation",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "resume 的上下文已包含原会话内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts SDK_DISALLOWED_TOOLS",
+          "lines": "L22-L47",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具清单",
+          "note": "SendMessage 被禁用，恢复后不能给 Claude Code 子代理续发指令。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "tool_results 写进 unresolved：resume 载入的是 Claude Code 自己的 .jsonl，是否连同工具结果放回上下文在快照外，迹象只有 claude.ts L277-L281 关于 resume 重发会话记录的注释。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "idempotency_key"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "idempotency_key：宿主投递代理外发消息（send_message、send_file 写入的 messages_out 行）时，每次先从 inbound.db 的 delivered 表读已投递编号，只投还没记录的行；投递失败按持久的 delivery_attempts 计数重试，宿主重启后仍按 delivered 跳过已投的。去重范围只限外发消息的投递，键是 messages_out.id。入站消息在容器崩溃后整轮重新处理，其中的工具调用不查重。没有会话分支、工作区快照和补偿：/clear 只清 continuation，旧 transcript 没有切回入口；SDK 调用没有启用文件检查点，CLI 渠道也没有回退命令；升级事务前给可变状态拍快照、失败时回滚，属安装更新，不针对代理动作。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/delivery.ts",
+          "locator": "src/delivery.ts 会话出站投递循环 getDeliveredIds; getDueMessages",
+          "lines": "L330-L379",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认出站投递",
+          "note": "投递前按持久的已投递编号过滤，重试和重启后不重复投递。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/poll-loop.ts",
+          "locator": "container/agent-runner/src/poll-loop.ts /clear 处理",
+          "lines": "L164-L180",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话命令",
+          "note": "/clear 只重置 continuation，没有分支或回退。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "idempotency_key 是否成立取决于口径：这是对代理外发消息这类副作用的投递去重，不是对用户输入去重；若码本把“消息提交”理解为也包括代理外发消息，本字段应改为 known_absent。Claude Code 内部是否默认有文件检查点在快照外，但所选入口没有回退入口，不影响判定。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：组配置 cli_scope（disabled／group／global，本配置默认 group）由管理员用 ncl groups config update 设定，决定代理经容器内 ncl 能用哪些资源和动作，宿主 guard 给 allow、hold 或 deny。file_path：additional_mounts 要过宿主 mount-allowlist.json 白名单（没有文件即不许挂载，内置屏蔽 .ssh、.env 等，默认只读）。network_target：NANOCLAW_EGRESS_LOCKDOWN=true 时容器进 --internal 网络、只通凭据网关，是进程级联网总开关，默认关。另有 agent 之间的消息审批策略（ncl policies set）和技能白名单；OneCLI 网关的按主机规则属网关产品，未细查。容器内 Claude Code 以 bypassPermissions 运行，12 个内置工具写死禁用，按写死名单处理；Claude Code 设置文件里的权限规则在 bypass 下是否生效在快照外，未计。默认效果：改工作区文件、运行命令都直接执行；工作区外，容器内 /tmp、会话目录 /workspace、挂到宿主的 ~/.claude 都能直接写，宿主其他目录不可见；命令联网因出口锁定默认关而直接放行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/dispatch.ts",
+          "locator": "src/cli/dispatch.ts agentCliScope; guard decision",
+          "lines": "L84-L138",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内 ncl 调用",
+          "note": "按组的 cli_scope 决定代理能用的 ncl 资源，guard 给 deny 或 hold。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/mount-security/index.ts",
+          "locator": "src/modules/mount-security/index.ts 文件头; DEFAULT_BLOCKED_PATTERNS; validateMount",
+          "lines": "L1-L70",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "额外挂载",
+          "note": "额外挂载按宿主路径白名单校验，默认不允许。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/config.ts",
+          "locator": "src/config.ts EGRESS_LOCKDOWN",
+          "lines": "L110",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认环境变量",
+          "note": "出口锁定只有显式设为 true 才开，默认关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts resolveClaudeExecutionPolicy",
+          "lines": "L80-L107",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "容器内以 bypassPermissions 运行，改文件和执行命令不询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/security",
+          "locator": "Security model — Egress lockdown; The mount allowlist",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "出口锁定默认关，默认有开放外网；挂载白名单默认拒绝。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "default_outside_write 取 allow：工作区是 /workspace/agent，容器内工作区外仍有可写而且持久的位置（/home/node/.claude 对应宿主 .claude-shared、/workspace 会话目录），不经任何批准；宿主其他目录因挂载表不可见，那是 F23 的 container_policy。若口径按宿主文件系统判，应改为 deny。cli_scope 按动作类别分，记 tool_category；agent 间消息策略按目标 agent 逐条审批，词表没有正好的项，没另提取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "容器内 Claude Code 以 bypassPermissions 运行，工具调用不停下等批准。NanoClaw 审批模块对 install_packages、add_mcp_server、create_agent（cli_scope=group）和需批准的 ncl 写命令会请求审批，但本配置只用 CLI 渠道、渠道选 Skip for now，init-cli-agent 不给 cli:local 授 owner，pickApprover 返回空，requestApproval 当场回告 no owner or admin configured to approve，相当于自动拒绝，没有动作停下来等人。其他环境：有可达的 owner 或管理员时，这几类请求在调用层拦下等用户批准（tool_call，批准者 user）。可选：OneCLI 凭据的逐次审批和 agent 间消息策略要另配。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/approvals/primitive.ts",
+          "locator": "src/modules/approvals/primitive.ts requestApproval; pickApprover",
+          "lines": "L242-L256",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认审批模块",
+          "note": "没有审批人时直接告诉代理请求失败，不建待批记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/scripts/init-cli-agent.ts",
+          "locator": "scripts/init-cli-agent.ts 第 2 步 Synthetic CLI user",
+          "lines": "L125-L135",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "CLI-only 安装路径",
+          "note": "CLI 合成用户不授 owner，owner 留给接真实渠道时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts resolveClaudeExecutionPolicy",
+          "lines": "L80-L107",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "Claude Code 的权限提示被 bypassPermissions 关掉。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/security",
+          "locator": "Security model — Human-in-the-loop approvals",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "没有可达审批人即自动拒绝。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按总则 R1 钉住的 CLI-only 路径判：审批机制默认开着、触发也能发生，但因无审批人当场拒绝、从不暂停等人，所以写 known_absent 而不是 tool_call，这些动作的实际效果是拒绝。若码本认为“开着但必然自动拒绝”仍算审批层，应改为 tool_call、approver user。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "container_policy"
+      ],
+      "facets": {
+        "prompt_only": null
+      },
+      "unknown_reason": null,
+      "value_note": "container_policy：每个会话一个 Docker 容器，以非 root（node 或宿主 uid）运行，挂载表只给组目录、会话目录、按组共享的 ~/.claude 和只读代码，container.json、合成的 CLAUDE.md、plugins/ 以只读覆盖；另有 --cap-drop=ALL、no-new-privileges、--init 和默认 2048 的 pids 上限（文档）。application_check：①PreToolUse 钩子按写死名单拦下 12 个被禁用的内置工具（同时经 SDK disallowedTools 去掉）；②宿主 ncl 分发按 cli_scope 自动填本组参数、拒绝跨组访问，guard 给 deny 或 hold，hold 走审批；③install_packages、add_mcp_server、create_agent 走审批模块，无审批人即拒绝；范围限于这些工具入口和 ncl。容器内 Claude Code 自己的权限检查因 bypassPermissions 不起作用。可选：出口锁定（--internal 网络）默认关。命名空间、cap-drop 等随容器一起，归 container_policy，不另记 os_isolation。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts",
+          "locator": "src/container-runner.ts buildMounts",
+          "lines": "L1157-L1340",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认容器挂载",
+          "note": "容器只看到挂载表里的目录，配置和代码以只读挂载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/security",
+          "locator": "Security model — Container isolation",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "容器以非特权用户运行，cap-drop、no-new-privileges、pids 上限无条件生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts preToolUseHook",
+          "lines": "L117-L142",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认钩子",
+          "note": "执行前按禁用名单拦下工具调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/dispatch.ts",
+          "locator": "src/cli/dispatch.ts agentCliScope; guard; hold → requestApproval",
+          "lines": "L84-L187",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内 ncl 调用",
+          "note": "宿主在执行 ncl 命令前按范围和规则拒绝或转审批。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "prompt_only 核对清单：默认模式——只读挂载、无凭据、ncl 范围都有代码或容器兜底；不改设置可切换的内置模式——EnterPlanMode、ExitPlanMode 被禁用，NanoClaw 没有别的模式；文档列出的限制设置（cli_scope、出口锁定、挂载白名单、消息策略）都有代码检查。默认会被调用的内置子代理或角色——Task 工具调起的 Claude Code 内置子代理类型，以及其中有没有被说成只读的角色、背后有无工具限制，都在 Claude Code 二进制里，快照里看不到，这一项没法判，所以 prompt_only 写 null。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "覆盖范围：代理外发消息这一类动作有完整的落盘链：messages_out 行（目标渠道和内容，即动作与参数）以 in_reply_to 指向触发它的 messages_in 行（用户请求），delivered 表按 message_out_id 记投递结果（delivered 或 failed）。其他工具调用（Bash、Edit 等）只在 Claude Code 的 .jsonl transcript 里，格式在快照外；container_state 只存当前在跑的工具，结束即清。没有专门的审计日志。approval：pending_approvals 能区分 approved 和 rejected，但本配置无审批人，requestApproval 在建行前就返回，不产生审批记录。identity：入站只有 cli:local 一个合成用户，所有记录同一值，不计；其他环境：多用户渠道有发送者身份。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/mailbox/sqlite/schema.ts",
+          "locator": "src/mailbox/sqlite/schema.ts messages_in; delivered; messages_out",
+          "lines": "L3-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认会话邮箱",
+          "note": "出站行带 in_reply_to 指向入站行，投递结果按出站编号记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/mcp-tools/core.ts",
+          "locator": "container/agent-runner/src/mcp-tools/core.ts send_file handler",
+          "lines": "L125-L153",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 MCP 工具",
+          "note": "工具调用写出站行时带上目标、内容和 in_reply_to。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/reference/db-schema",
+          "locator": "Database schema — Session databases",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "in_reply_to 是这条出站消息回应的入站编号；delivered 记投递结果。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "intent、actual_operation、result 只靠外发消息这一类动作支撑；Bash、文件修改等调用的记录在 Claude Code transcript 里，看不到落盘格式，没有据此记，也没写 unresolved（快照里没有能指出的具体迹象）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认路径上有两条多代理路径：(1) 主代理调用 Claude Code 内置委派工具 Task（在 NanoClaw 的允许列表里，容器内以 bypassPermissions 运行，NanoClaw 只禁用 SendMessage 等 12 个内置工具），派出 Claude Code 自己的进程内子代理；TeamCreate、TeamDelete 也在允许列表。(2) 定时任务到点时，宿主为每个任务系列唤醒一个独立的 per-task 会话（自己的容器和提供方对话），框架在会话表和运行日志里跟踪它（ncl tasks list/get 可查运行、失败和下次触发）。其他环境：create_agent 创建长期伙伴 agent 组，本配置 cli_scope=group 必须经管理员批准，而仅 CLI 的新装没有 owner 或 admin，请求直接失败。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts SDK_DISALLOWED_TOOLS 与 TOOL_ALLOWLIST",
+          "lines": "L13-L71",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内 Claude 提供方的默认工具集",
+          "note": "Task、TaskStop、TeamCreate、TeamDelete 在允许列表，禁用列表只去掉 SendMessage 等；注释说明 SendMessage 指向 Claude Code 自己的进程内子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/session-manager.ts",
+          "locator": "src/session-manager.ts resolveTaskSession",
+          "lines": "L178-L192",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务的执行会话",
+          "note": "每个任务系列建一个独立的系统会话（thread system:tasks:<seriesId>），由框架创建并登记。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/guides/scheduled-tasks",
+          "locator": "Schedule recurring work：Schedule a task in chat；Know what fires it",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "ncl tasks create 为系列建独立 per-task 会话；reconciliation 发现到期行就唤醒该会话的容器，代理的 poll loop 执行提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/agent-to-agent/guard.ts",
+          "locator": "src/modules/agent-to-agent/guard.ts create_agent 守卫",
+          "lines": "L45-L57",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 cli_scope=group",
+          "note": "只有 global scope 直接放行，其余返回 HOLD 要管理员批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/approvals/primitive.ts",
+          "locator": "src/modules/approvals/primitive.ts 审批人查找失败分支",
+          "lines": "L254",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "无 owner/admin 的仅 CLI 安装",
+          "note": "没有 owner 或 admin 时告诉代理 failed: no owner or admin configured to approve。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Task 子代理的实现在容器内的 Claude Code 2.1.321 里，快照只含 NanoClaw 源码，工具在 2.1.321 是否已改名 Agent 未核实；不过 bypassPermissions 下允许列表只是预批准，委派工具不在禁用列表，存在性不受影响。定时任务这条路径本身就足以判 present。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：模型自己调用默认可用的 Task（以及 TeamCreate）派出 Claude Code 子代理。event_scheduling：定时任务到点由 host sweep 直接唤醒该任务系列的独立会话去执行提示，中间不经主代理；任务定义由代理在容器里用 ncl tasks create 建立（open，不需批准），或由用户在宿主执行 ncl tasks。其他环境：create_agent（主代理发起）在本配置无审批人，失败。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts TOOL_ALLOWLIST",
+          "lines": "L54-L71",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主代理默认工具",
+          "note": "委派工具 Task、TeamCreate 默认交给模型，由模型决定何时派出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/resources/tasks.ts",
+          "locator": "src/cli/resources/tasks.ts tasks.create",
+          "lines": "L473-L476",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内 ncl 的 group scope",
+          "note": "建定时任务的命令 access 为 open，代理不经批准即可建立。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/scheduling/create.ts",
+          "locator": "src/modules/scheduling/create.ts createScheduledTask",
+          "lines": "L131-L158",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "建任务时就为系列解析出独立任务会话，任务行写进该会话的邮箱。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/guides/scheduled-tasks",
+          "locator": "Schedule recurring work：Know what fires it",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "没有单独调度器：到期行由 reconciliation 唤醒任务会话的容器执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "用户在宿主执行 ncl tasks run 立即触发一次任务会话，算同一任务会话机制，没另记 user：它不是在对话里发出的命令，结果只经 send_message 或会话 echo 回到聊天。主代理路径的证据只到工具注册，Claude Code 内部的创建过程在快照外。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {}
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：每个定时任务系列在自己的会话和提供方对话里执行，看不到聊天会话的对话。shared_files：同一 agent 组的每个会话容器都把组文件夹读写挂到 /workspace/agent（含 memory/ 记忆树），Claude Code 子代理与主代理同在一个容器和工作目录里，彼此靠文件交换。权限：任务会话与聊天会话同组，同为 bypassPermissions、同一 ncl cli_scope；Task 子代理的权限继承在 Claude Code 内，未核实。续派 Claude Code 子代理用的 SendMessage 被 NanoClaw 禁用。子维度未确认：start_context，默认委派路径（模型调用 Task、不传可选参数）启动时带进什么由 Claude Code 决定，快照外。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/session-manager.ts",
+          "locator": "src/session-manager.ts resolveTaskSession",
+          "lines": "L178-L192",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务会话",
+          "note": "每个任务系列有自己的隔离会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts",
+          "locator": "src/container-runner.ts 组文件夹挂载",
+          "lines": "L1216-L1223",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同组所有会话容器",
+          "note": "组文件夹以读写方式挂到 /workspace/agent，注释写明供工作文件和共享记忆。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/cross-session-context/config.ts",
+          "locator": "src/modules/cross-session-context/config.ts ECHO_TASK_SURFACE",
+          "lines": "L18-L23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "任务会话到聊天会话的 echo",
+          "note": "任务会话已投递的对外消息只 echo 进投递到的消息组的会话，作为背景上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts SendMessage 注释",
+          "lines": "L22-L27",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Claude Code 子代理的消息通道",
+          "note": "SendMessage 指向 Claude Code 自己的进程内子代理，被列入禁用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "messages 写进 unresolved：cross-session-context 把任务会话投递出去的消息 echo 进聊天会话，是框架维护的会话间内容通道，但只传已投递的最终对外消息，更像结果交付，拿不准算不算执行中的消息往来。start_context 写 null：主代理委派路径在 F26 词表里排在事件调度前，按子维度规则取它，而它的行为在 Claude Code 内、快照里查不到；若改按定时任务路径判，带进的是任务提示，记 task_brief。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": null,
+        "unresolved": [
+          "messages"
+        ]
+      }
+    },
+    "F28": {
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "not_found",
+      "value_note": "只有主代理经 Task 委派这条路径有调用方；定时任务会话没有调用方，结果经 send_message 投递到聊天，并以 echo 进入聊天会话，不参与本字段。Task 的返回方式、后台参数和取消处理都在 Claude Code 2.1.321 里，快照里没有它的源码或文档。",
+      "evidence": [],
+      "confidence": null,
+      "coder_note": "查过：claude-config.ts 允许列表（Task、TaskStop）、claude.ts 的事件翻译与 abort（abort 只结束输入流）、sdk-signal-probe.ts 注释。迹象：claude.ts L422-L424 把 SDK 的 task_notification 系统消息当进度事件，sdk-signal-probe.ts 注释提到 background task notifications，TaskStop 在允许列表，说明可能有后台委派加完成通知（async_wait），但分不清是子代理还是后台命令；同步返回和取消传播都无快照内证据。按 unknown_rule 一项都确认不了，写 unknown。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：Claude Code 内置工具，加上 NanoClaw 写在 agent-runner 核心里的 nanoclaw MCP 服务（send_message、ask_user_question、create_agent 等；内部经 MCP 接给 SDK，但属核心代码，按 R2 记内置）。external_protocol_service：用户在宿主用 ncl groups config add-mcp-server 加一条 stdio 或远程 HTTP MCP 服务（带命令或地址，算添加内容），运行时与内置服务合并、允许模式自动派生；工具安装技能和模板（Agent Plugins 的 mcp.json）也经这条边界接入。代理自己的 add_mcp_server 要管理员批准，本配置无审批人（其他环境）。默认 container.json 没有其他 MCP 服务，所以不进 in_use。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude-config.ts",
+          "locator": "container/agent-runner/src/providers/claude-config.ts TOOL_ALLOWLIST",
+          "lines": "L54-L71",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认内置工具",
+          "note": "Claude Code 内置工具默认交给模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/mcp-tools/index.ts",
+          "locator": "container/agent-runner/src/mcp-tools/index.ts 工具模块桶",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置 nanoclaw MCP 服务",
+          "note": "核心工具模块在桶文件里 import 后 registerTools，新增模块要改这份核心文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/index.ts",
+          "locator": "container/agent-runner/src/index.ts mcpServers 合并",
+          "lines": "L102-L123",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "组容器配置里的 MCP 服务",
+          "note": "内置 nanoclaw 服务之外，合并 container.json 里配置的其他 MCP 服务交给 SDK。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/extend/tools",
+          "locator": "Give agents tools：Bring your own MCP server",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主操作员添加 MCP 服务",
+          "note": "任何 stdio 或远程 Streamable HTTP MCP 服务可用一条 ncl 命令加给组，宿主 shell 里直接生效。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "不记 plugin_api：registerTools 新增工具要改核心桶文件的 import（技能也是往核心里拷代码加 import），extendTool 只能扩展已有工具的 schema；模板只打包 MCP 服务、技能、人格和任务，按 R2 和 plugin_api 的排除句记外部协议服务。Claude Code 自己经 settingSources（project、user）读取的 .mcp.json 或插件是否生效未核实（claude.ai 插件同步已关）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：宿主每次启动容器把 instructions.prepend.md（常驻指令）、提供方基础文档和各能力段合成组内 CLAUDE.md，只读挂进工作区，每个会话装载。skill_directory：container/skills 只读挂到 /app/skills，并按组链接进 ~/.claude/skills，模型经 Skill 工具按需装载；用户发 /技能名 时未知斜杠命令原样交给 SDK，可按名调用同一份技能。role_template：模板（Agent Plugins 目录，可带 persona 即 context/instructions.md）用 ncl groups create --template <ref> 按名选用，盖章出一个带该角色的新 agent 组；用户可在本地 templates 目录写自己的模板，不写代码。executable_items：模板携带的 stdio MCP 服务和任务脚本闸门由框架在容器里运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/project-doc-compose.ts",
+          "locator": "src/project-doc-compose.ts 文件头注释",
+          "lines": "L1-L17",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "组项目文档",
+          "note": "每次容器启动在宿主合成一份平铺的项目文档：常驻指令、提供方基础文档和各能力段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/container-runner.ts",
+          "locator": "src/container-runner.ts 共享技能挂载",
+          "lines": "L1328-L1336",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器技能",
+          "note": "container/skills 只读挂到 /app/skills，.claude-shared/skills 里的链接指向它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/formatter.ts",
+          "locator": "container/agent-runner/src/formatter.ts categorizeMessage",
+          "lines": "L104-L128",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户发来的斜杠命令",
+          "note": "非管理、非过滤的斜杠命令归为 passthrough，原样交给 SDK 分派。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/reference/template-format",
+          "locator": "Template format：stamped layout（Persona、Plugin copy、MCP servers）与 runtime contract",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模板盖章",
+          "note": "persona 写进 instructions.prepend.md 每次启动内联；插件文件在宿主只是数据，stdio 服务、技能脚本和任务脚本闸门都在容器里运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "role_template 拿不准：模板是创建整个 agent 组的预设（人格、技能、MCP、任务），盖章后人格成了该组每会话固定装载的文字（像 project_rules）；按“可按名选用、用户不写代码就能新增一份”记 role_template，并把模板的可执行部分记进 executable_items。prompt_template 写进 unresolved：未知斜杠命令原样交给 Claude Code（formatter.ts L127），settingSources 含 project、user，Claude Code 可能装载工作区或 ~/.claude 下的命令文件，但装载代码在快照外。NanoClaw 宿主技能（.claude/skills 下的 add-* 等）由宿主上的编码代理执行，不进代理会话，不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "role_template"
+        ],
+        "unresolved": [
+          "prompt_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "两类挂点。(1) 容器内 Claude Code 的设置文件钩子：组的 Claude 状态目录（宿主 data/v2-sessions/<组>/.claude-shared/settings.json，挂成容器内 ~/.claude）按 settingSources user 读取；NanoClaw 自己在这里写 PreCompact 与 SessionStart 命令钩子，并保留用户的其他条目。SDK 的事件有 UserPromptSubmit、PreToolUse、PostToolUse、PostToolUseFailure、PermissionRequest、SubagentStart、Stop、SubagentStop、SessionEnd、PreCompact、SessionStart、Notification。(2) 宿主侧有文档的模块钩子：渠道桥入站策略（输入，可拦截或装饰入站）、会话创建钩子（会话开始，仅观察）、投递后钩子（结束，仅观察），以及提供方的 onExchangeComplete（每次交换结束，仅观察）。in_use 为空：默认的 SDK 程序化钩子（PreToolUse 记录状态并二次拦截禁用工具、PostToolUse、PreCompact 归档）编进核心；设置文件里的 PreCompact 与记忆 SessionStart 钩子由核心每次启动重写或补上，不能单独停用，按 R2 都不算在用。via_default_entry：用户往 settings.json 加一条带命令的钩子算添加内容（R2），五个阶段都由这条路径直接开放；宿主模块钩子要往核心拷代码加 import，不算直接开放。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/migrate-claude-memory-settings.ts",
+          "locator": "src/migrate-claude-memory-settings.ts CLAUDE_DEFAULT_SETTINGS 与 claudeSettingsTransformer",
+          "lines": "L11-L33",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "组 Claude 状态目录的 settings.json",
+          "note": "默认设置文件里写了 PreCompact 命令钩子；后面的调和逻辑（L109-L125）只去掉旧记忆钩子、缺失时补 PreCompact，其他钩子保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/provider-contracts/claude.ts",
+          "locator": "container/agent-runner/src/provider-contracts/claude.ts writeMemorySessionHook",
+          "lines": "L64-L90",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内 ~/.claude/settings.json",
+          "note": "SessionStart 钩子以命令形式写进设置文件，只替换记忆命令，其他 SessionStart 条目保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/scripts/sdk-signal-probe.ts",
+          "locator": "container/agent-runner/scripts/sdk-signal-probe.ts HOOK_EVENTS",
+          "lines": "L73-L86",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Agent SDK 钩子事件名",
+          "note": "列出 SDK 发出的钩子事件：UserPromptSubmit、SessionStart、SessionEnd、Stop、SubagentStart、SubagentStop、PreCompact、PermissionRequest 等。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/providers/claude.ts",
+          "locator": "container/agent-runner/src/providers/claude.ts preToolUseHook 与 query hooks",
+          "lines": "L118-L142",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心挂的 SDK 钩子",
+          "note": "PreToolUse 处理器能返回 decision: block 拦下工具调用；这些处理器编进核心（L305-L310 注册）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/reference/adapter-interface",
+          "locator": "Channel adapter interface：Hooks for channel modules",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主渠道模块",
+          "note": "会话创建、投递后、成员三个观察钩子 fire-and-forget；桥入站策略可拦截或装饰该渠道类型的每条入站路径。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/extend/providers",
+          "locator": "Agent providers：Provider capability hooks",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "提供方扩展",
+          "note": "poll loop 在每次交换完成后调用 onExchangeComplete，尽力而为，抛错只记日志。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "设置文件钩子的依据是代码：NanoClaw 文档没有专门写用户可在组的 settings.json 加 Claude Code 钩子，Claude Code 自己的钩子文档不在快照里。observe_only 记 end：快照里能看到的结束类处理器（投递后钩子、onExchangeComplete）都只观察；Claude Code 的 Stop、SubagentStop 能否阻止结束在快照外，未确认。input 的干预依据是桥入站策略（只作用于 Chat SDK 渠道，不含 CLI）；UserPromptSubmit 能否拦截同样在快照外。session_start 与 context_compaction 的干预依据是核心自己的命令钩子会注入记忆上下文和压缩指令。没有找到 model_call 与 save 的挂点（更新快照只在用户发起更新时由脚本做，无钩子）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "end"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "宿主服务里的 CLI 渠道在 data/cli.sock（权限 0600）上开放有文档的线协议：每行一个 JSON 对象，{\"text\": ...} 进出，持有套接字的一方还能发带 to 地址的路由消息投进任一已接线渠道；pnpm run chat 是它的单次客户端。服务由 launchd 或 systemd 拉起，套接字只凭文件权限，不需另配凭据，按 R5 算所选入口直接开放。ncl 管理 CLI 经 data/ncl.sock 发请求帧（--json 供脚本用），能从宿主建或立即运行定时任务，线协议无文档，作为同一宿主服务的客户端不另记。文档写明没有 HTTP API，webhook 服务只接渠道平台回调（记 F33）。没有公开库、公共协议服务端或宿主扩展接口。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel：Using it；How it works",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口（CLI 渠道）",
+          "note": "宿主服务绑定 data/cli.sock，线格式是每行一个 JSON 对象，pnpm run chat 一次发一条并打印回复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/channels/cli.ts",
+          "locator": "src/channels/cli.ts deliver 与 handleConnection",
+          "lines": "L146-L200",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "CLI 渠道套接字",
+          "note": "套接字按行解析入站 JSON，回复以 {text} 写回已连接客户端。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：webhook server 说明（There is no HTTP API）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "宿主网络接口",
+          "note": "没有 HTTP API，webhook 服务只在渠道适配器注册时懒启动、按路径分给适配器或模块的原始处理器。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "pnpm run chat 一次一条、打印回复后退出，像非交互 CLI，但它不启动核心，只是套接字客户端；照库条目“只包装网络或子进程调用的客户端按背后边界记”类推，归 service_api，不记 cli_subprocess。码本没说这类“自带的单次客户端命令”算不算 cli_subprocess，另一位编码者可能记成 cli_subprocess。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：本配置是终端里的 pnpm run chat；同一发行版经 /add-<渠道> 安装的 Slack、Telegram、GitHub、Linear 等渠道，人在平台上发来的消息也是。api：照 F32 的 cli.sock 套接字（F32 via_default_entry 有项，本项随之进）。schedule：ncl tasks 原生定时，代理在容器里可直接建（open），用户也可在宿主建；host sweep 到点唤醒任务会话。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel：Using it",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "用户在终端用 pnpm run chat 发消息给代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/cli/resources/tasks.ts",
+          "locator": "src/cli/resources/tasks.ts tasks.create",
+          "lines": "L473-L476",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "创建定时任务（循环或一次性）的命令，代理侧 access 为 open。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/guides/scheduled-tasks",
+          "locator": "Schedule recurring work：Know what fires it",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "到期任务由 reconciliation 唤醒会话执行，不需要另外的调度守护。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/overview",
+          "locator": "Channels overview：The webhook server",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "同一发行版的渠道与原始 webhook 路由",
+          "note": "模块可用 registerWebhookHandler 接非 Chat SDK 回调（文档举例自定义 GitHub webhook、支付提供方）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "external_event 写进 unresolved：webhook 服务有 registerWebhookHandler 原始路由供模块接外部回调（src/webhook-server.ts L1-L14），formatter 支持 kind=webhook 的 <webhook> 块（container/agent-runner/src/formatter.ts L228），但主干里没找到写入 webhook 消息的生产者，也没有官方模块把外部事件转成任务。GitHub、Linear 渠道收的是评论线程里人写的消息（Linear 转发每条评论，不必点名代理），按人发的消息记 user_interaction，没记外部事件。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule"
+        ],
+        "unresolved": [
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "local_service",
+      "unknown_reason": null,
+      "value_note": "安装向导把宿主编译成服务：macOS 为 launchd 用户代理（RunAtLoad、KeepAlive，登录启动、崩溃重启），Linux 为 systemd 用户单元（Restart=always）。代理循环在宿主按需拉起的会话容器里；pnpm run chat 只是一次性客户端，退出它不影响宿主和容器里在跑的任务，回复仍写进出站存储（没有终端连着时不送达）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/launchd/com.nanoclaw.plist",
+          "locator": "launchd/com.nanoclaw.plist RunAtLoad 与 KeepAlive",
+          "lines": "L14-L17",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "macOS 服务定义",
+          "note": "服务登录时启动并由 launchd 保持存活。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/installation",
+          "locator": "Installation：Running as a service",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "plist 带 RunAtLoad 与 KeepAlive，登录启动、崩溃重启；Linux 用户单元 Restart=always。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/channels/cli",
+          "locator": "CLI channel：Using it；How it works（No client, no delivery）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "chat 命令单次退出，代理会话在服务端保留；没有客户端时回复仍持久化在出站存储。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "入站消息和定时任务都是会话 inbound.db 里的 messages_in 行（磁盘上的 SQLite）。容器被杀时，宿主把它仍持有的消息重置为 pending、带退避在新容器里重试；宿主进程由服务管理器重启后，host sweep 照常扫到期和待处理的行；定时任务按 process_after 和 series_id 续发。运行中用户再发的消息先写进 inbound.db，查询开着时由 500ms 的跟进轮询推进当前流；交给代理之后即标记完成，那之后被杀不再重试。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/operate/troubleshooting",
+          "locator": "Troubleshooting：Container killed mid-task",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话消息队列",
+          "note": "被杀容器仍持有的消息重置为 pending、在新容器重试，直到用尽次数标为失败；查询开着时后到的消息交给代理时即标为完成。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/concepts/architecture",
+          "locator": "Architecture：Inside the container",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行中的后续消息",
+          "note": "poll loop 每秒读 pending 的 messages_in；查询流式进行时，500ms 跟进轮询把新到消息推进开着的流。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.nanoclaw.dev/guides/scheduled-tasks",
+          "locator": "Schedule recurring work：Know what fires it",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "定时任务",
+          "note": "任务是会话库里的行，reconciliation 按到期时间唤醒，循环任务完成后克隆下一条 pending 行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "persistent"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "resumable_todo：带脚本闸门的定时任务连续 8 次脚本失败后，系列以 paused 状态存回会话库，运行日志写明“修好脚本后 ncl tasks resume”，重启后仍在，等人处理或决定是否恢复（代理自己也能运行 ncl tasks resume）。触发条件是失败分支（R2）。其他环境：ask_user_question 会阻塞等回答（默认 300 秒超时），但 CLI 渠道只投递带 text 的消息，问题卡（type ask_question，无 text）不会显示，终端也没有回答通道，本配置等不到回答；install_packages、add_mcp_server、create_agent 的批准在本配置没有 owner 或 admin，直接失败。message_notification：CLI 渠道没有系统通知，没有终端连着时回复不送达；外部聊天渠道推送属其他环境。没有结构化交接对象。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/scheduling/recurrence.ts",
+          "locator": "src/modules/scheduling/recurrence.ts 脚本连续失败自动暂停",
+          "lines": "L68-L92",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "带脚本的循环任务",
+          "note": "失败次数到上限时把下一次以 paused 存回，并在运行日志写明修脚本后 ncl tasks resume。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/container/agent-runner/src/mcp-tools/interactive.ts",
+          "locator": "container/agent-runner/src/mcp-tools/interactive.ts ask_user_question",
+          "lines": "L224-L276",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "阻塞提问",
+          "note": "问题卡写成 type ask_question 的出站消息（无 text 字段），之后轮询回答直到超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/channels/cli.ts",
+          "locator": "src/channels/cli.ts deliver 与 extractText",
+          "lines": "L146-L165",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口（CLI 渠道）",
+          "note": "只转发能取出 text 的消息，取不出就不投递；没有终端连着时直接不投递（extractText 见 L309-L316）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/nanocoai/nanoclaw/blob/0ede4cf61c139879024a941ebbfe1c90b626c7fb/src/modules/approvals/primitive.ts",
+          "locator": "src/modules/approvals/primitive.ts 审批人查找失败分支",
+          "lines": "L254",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "无 owner/admin 的仅 CLI 安装",
+          "note": "没有审批人时请求直接失败，不会停下等人。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "blocking_approval 没记：ask_user_question 默认注册、代理确会停下等，但在钉住的 CLI 渠道里人既看不到问题也答不了，按 R1 写其他环境；如果码本把“代理在等、只是人收不到”也算阻塞，这里会和另一位编码者分歧。resumable_todo 也拿不准：暂停的任务系列代理自己能恢复，只是日志和文档都写成等人修脚本再恢复。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": null
+      }
+    }
+  }
+}

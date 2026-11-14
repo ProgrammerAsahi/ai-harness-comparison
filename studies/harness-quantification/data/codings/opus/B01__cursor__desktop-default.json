@@ -1,0 +1,1823 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "B01__cursor__desktop-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "推断：官方说明写 Agent 自己决定读哪些文件、怎样改、怎样验证，并跑命令、修错误，任务中工具调用次数没有上限（help agent L1-L7，overview L9-L25），即模型输出决定下一次工具调用、结果交回模型循环到结束。Ask、Plan、Debug 是同一模型循环的模式；可选：/goal（用户命令，逐步推出）在模型停下后续跑，算模型循环的外层；Projects 的协调代理只在 Agents Window 和云端、Free 档不含，不在本配置。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：开头、What can Agent mode do?",
+          "lines": "L1-L7",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "Agent 自己搜索代码库、改多个文件、跑终端命令、修错误，自行决定读哪些文件、怎样改、怎样验证。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：How Agent works、Tools（docs-pages.txt L4288-L4304）",
+          "lines": "L9-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口（编辑器 Agent）",
+          "note": "Agent 由指令、工具、型号三部分组成；工具用于搜索、编辑、跑命令；任务中工具调用次数没有上限。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：Which mode should I use?、How do I switch between modes?",
+          "lines": "L52-L68",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式",
+          "note": "Agent、Ask（只读）、Plan（批准计划后才改）、Debug 四种模式，Shift+Tab 切换；每种模式用自己的上下文，切换即开新的上下文窗口。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/skills",
+          "locator": "Agent Skills：Built-in Cursor skills",
+          "lines": "L31-L57",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置技能（命令清单）",
+          "note": "19 个内置技能及用途，含 /loop（按间隔重复跑提示）、/automate（建 Automations）、/autopilot、/review、/shell 等；用 / 手动调用，部分会被 Agent 自动使用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Goals with /goal",
+          "lines": "L128-L138",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选路径",
+          "note": "/goal 由用户输入，给出长期目标直到完成；正在逐步推出。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "secondary_modes 核对（闭源，没有完整命令列表，用 help agent 的模式表、overview 和 skills 内置清单代替）：Agent（默认）、Ask（只读，仍是模型循环）、Plan（先出计划、点 Build 后执行，模型循环，计划约束记 F02）、Debug（模型按假设、埋点、复现、修复分步，提示层面的步骤，仍模型循环）——都不改变推进方式；/goal 是外层续跑，不另记；/loop 按间隔重复跑提示，属任务发起（F33），不改变任务内部推进；/automate 建云端 Automations（F33、云端）；/autopilot 云端盯 PR；/review、/review-bugbot、/review-security 委派审阅代理，仍模型循环；/canvas、/create-*、/cursor-blame、/migrate-to-skills、/sdk、/split-to-prs、/statusline、/update-* 是模型执行的技能提示；/shell 直接执行命令不经模型，不算；侧聊 /side /btw 是另一段模型循环对话；Custom Modes 只在 Agents Window 和 CLI；stop 钩子自动续发要用户写钩子；Tab 补全、Cmd+L 只是补全或把选区交给 Agent。没有找到 explicit_workflow 或 event_scheduling，secondary_modes 写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "推断：IDE 3.22 发布说明写“智能体读取它的待办清单时，对话里显示清单本身”，3.25 修复“很长的待办清单让智能体崩溃”，说明默认路径的 Agent 带有由模型维护、界面展示的待办清单；文档没有写框架按清单推进下一步或拦下偏离清单的动作，不记 executable_flow_constraint。可选：Plan Mode（Shift+Tab）先出可编辑的计划文件、用户点 Build 后执行，计划默认存主目录，属 prompt_text_only 一类；Cursor 遇到复杂任务关键词会建议进入，3.25 还提到模式切换调用在请求批准前显示，即模型或框架可提出、需用户点选或批准。",
+      "evidence": [
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.22（Cursor IDE 一节，### Agent，docs-pages.txt L3174-L3180）",
+          "lines": "L1845-L1851",
+          "version": "3.22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.22：智能体读取自己的待办清单时对话里显示清单；推理反复同一行时 Cursor 停下这一步，带一句提示重试一次。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.25（Cursor IDE 一节，### Fixes：Fixes to agent tools，docs-pages.txt L2094）",
+          "lines": "L765",
+          "version": "3.25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.25：模型给 Shell、Grep、Read 传越界值时会话不再结束；很长的待办清单不再让智能体崩溃；模式切换调用在请求批准前先显示在对话里。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/plan-mode",
+          "locator": "Plan Mode：开头、How it works",
+          "lines": "L1-L13",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选路径（Plan Mode）",
+          "note": "Shift+Tab 进入 Plan Mode，遇到复杂任务关键词时 Cursor 会建议进入；生成可编辑的计划，用户点 Build 后执行；计划默认存在主目录。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：Which mode should I use?、How do I switch between modes?",
+          "lines": "L52-L68",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式",
+          "note": "Agent、Ask（只读）、Plan（批准计划后才改）、Debug 四种模式，Shift+Tab 切换；每种模式用自己的上下文，切换即开新的上下文窗口。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "待办工具不在 overview 的九类工具清单里，名称、条目状态字段 IDE 文档没写（CLI 的 ACP 文档有 cursor/update_todos，含 pending/in_progress/completed，属另一入口，没借用）；按总则 R6 用 IDE 旧发布说明推断延续。Plan Mode 若按总则 R3 第一档算默认，也排在 structured_task_list 之后，不影响取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Agent 完成当前任务后交还控制权，排队消息在任务结束后才处理（overview L79-L91）；子代理自主工作后交回一条带结果的最终消息（subagents L23-L25），记模型结束信号，范围含内置子代理。help 页写点 Stop 可在任务中途停下 Agent（L24-L26）。overview 写任务中工具调用次数没有上限，文档没写默认的轮数、时长或费用上限，不记 budget；用量池耗尽是账户一侧限额。默认没有框架在结束前做的检查；可选：stop/subagentStop 钩子可自动续发（默认每个脚本 5 次），要用户写钩子；/goal（用户命令，逐步推出）在模型停下后续跑，文档只写 CLI 里 Ctrl+C 暂停目标。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Queued messages、Using the queue",
+          "lines": "L79-L91",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "排队消息等当前任务结束后才按顺序处理，说明任务以 Agent 结束本轮为界。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：How subagents work",
+          "lines": "L23-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "Agent 遇到复杂任务会自动派子代理；子代理自主工作，交回一条带结果的最终消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：How do I interrupt Agent?",
+          "lines": "L24-L26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "点 Stop 按钮可在任务中途停下 Agent。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：How Agent works、Tools（docs-pages.txt L4288-L4304）",
+          "lines": "L9-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口（编辑器 Agent）",
+          "note": "Agent 由指令、工具、型号三部分组成；工具用于搜索、编辑、跑命令；任务中工具调用次数没有上限。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：stop 钩子与 loop_limit 配置项（docs-pages.txt L8594、L9198）",
+          "lines": "L714, L1318",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选路径（钩子）",
+          "note": "stop 钩子在智能体循环结束时调用，可自动续发一条用户消息；loop_limit 默认每个脚本 5 次；默认没有配置钩子。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "F12 写了 unknown，这里没有 budget 的证据，也没写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "facets": {
+        "unresolved": [
+          "framework_input_repair"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：IDE 3.22 写推理反复同一行时 Cursor 停下这一步、带一句提示重试一次（注入纠正提示）；子代理失败时把错误状态交回父代理，由父代理决定重试、补上下文续跑或改做法；Auto-review 分类器拦下后 Cursor 换办法，沙箱内因限制失败的命令由智能体决定是否在沙箱外重跑，这些记模型自修，模型随后选择请求批准的记 F22。IDE 3.26 写运行本地智能体的扩展宿主中途退出时，对话显示错误并给出 Resume 选项，用户点 Resume 后原对话接着做（需用户点选），记升级人工。3.27 写 MCP OAuth 刷新令牌过期时改为请用户重新连接，连接后是否从原处续跑没写。call_retry 只在其他入口有说法（Agents Window 3.23 提供方解码错误自动重试、CLI 断流自动重试），编辑器文档没有，不记。framework_input_repair 放 unresolved：IDE 3.25 写模型给 Shell、Grep、Read 传越界值时会话不再结束，没写是改正参数后照常执行还是把错误交回模型。",
+      "evidence": [
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.22（Cursor IDE 一节，### Agent，docs-pages.txt L3174-L3180）",
+          "lines": "L1845-L1851",
+          "version": "3.22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.22：智能体读取自己的待办清单时对话里显示清单；推理反复同一行时 Cursor 停下这一步，带一句提示重试一次。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：FAQ What happens if a subagent fails?",
+          "lines": "L464-L466",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "子代理失败时把错误状态交回父代理，由父代理重试、补上下文续跑或改做法。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How Auto-review works",
+          "lines": "L17-L31",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式（Auto-review）",
+          "note": "沙箱内因限制失败的命令可由智能体在沙箱外重跑并交分类器；分类器拦下时 Cursor 换办法，智能体认为仍有必要时才弹出批准。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE 一节，### Agent and chat，docs-pages.txt L1610-L1614）",
+          "lines": "L281-L285",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.26：运行本地智能体的扩展宿主中途退出时，对话显示“Extension host stopped unexpectedly”并给出 Resume 选项；一次崩溃停下的多个智能体合并成一条系统通知。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.25（Cursor IDE 一节，### Fixes：Fixes to agent tools，docs-pages.txt L2094）",
+          "lines": "L765",
+          "version": "3.25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.25：模型给 Shell、Grep、Read 传越界值时会话不再结束；很长的待办清单不再让智能体崩溃；模式切换调用在请求批准前先显示在对话里。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.27（Cursor IDE 一节，### Fixes：Fixes to MCP，docs-pages.txt L1454）",
+          "lines": "L125",
+          "version": "3.27",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.27：MCP 的 OAuth 刷新令牌过期时改为请用户重新连接。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.23（Agents Window 一节，### Chat and composer，docs-pages.txt L2864）",
+          "lines": "L1535",
+          "version": "3.23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "其他入口（Agents Window）",
+          "note": "Agents Window 3.23：提供方解码错误自动重试；属其他入口，只作对照。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "按 F04 清单逐类过：认证失效——只见 MCP OAuth 过期请重连（3.27），智能体任务是否暂停等用户未写；权限被拒——分类器拦下交回模型，弹批准由模型决定（run-modes L25-L31）；版本库操作失败、请求过大——文档未涉及；扩展宿主崩溃——Resume。Agents Window 与编辑器是同一发行版的两个界面，3.23 的自动重试可能共用同一执行核心，但配置记录只取编辑器，按总则 R5 不借。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "value_note": "推断：发布说明称为 Cursor 的 AI 功能供能、连接 Cursor 服务器的是本机扩展宿主（IDE 3.22），本地智能体在扩展宿主里运行；扩展宿主中途退出时对话界面仍在、显示错误并提供 Resume（IDE 3.26），扩展宿主卡住时 Cursor 自动重启它（3.22），可见对话界面和运行智能体的扩展宿主是两个进程，扩展宿主由应用拉起、随窗口存在，经内部进程间消息通信；具体协议闭源，文档没写。模型推理在 Cursor 后端（见 F09）。",
+      "evidence": [
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.22（Cursor IDE 一节，### Fixes：Fixes to the editor and workbench，docs-pages.txt L3208）",
+          "lines": "L1879",
+          "version": "3.22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.22：连接 Cursor 服务器的本机扩展宿主卡住时，Cursor 重启它让窗口重新连上。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE 一节，### Agent and chat，docs-pages.txt L1610-L1614）",
+          "lines": "L281-L285",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.26：运行本地智能体的扩展宿主中途退出时，对话显示“Extension host stopped unexpectedly”并给出 Resume 选项；一次崩溃停下的多个智能体合并成一条系统通知。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：beforeSubmitPrompt（docs-pages.txt L9137）",
+          "lines": "L1257",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型请求路径",
+          "note": "beforeSubmitPrompt 在用户发送后、发出后端请求之前调用。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "前端怎样界定有疑问：若把 Cursor 的智能体控制器类比 IDE 扩展，按 F05 scope_rule 只取扩展宿主里的控制器、不计渲染层和消息桥，可能判 in_process；本编码把渲染进程里的对话面板当作前端（它是 Cursor 自己的界面逻辑，不是外部宿主平台强加的渲染层），判 subprocess_protocol。扩展宿主在 VS Code 架构里由主进程拉起，不是由界面进程启动，和“前端把执行核心作为子进程启动”也不完全吻合。建议码本说明 VS Code 分叉类 IDE 本体的界面进程与扩展宿主怎样归类。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：参照点是运行本地智能体的扩展宿主（F05）。终端命令：Cursor 直接在终端里跑 shell 命令，Auto-review 下多数套 Seatbelt（sandbox-exec），沙箱配置约束整棵子进程树，记 subprocess。读写文件：overview 写 Agent 读文件、提出编辑并自动应用，没提另起进程或服务，按 F06 闭源规则推断 main_process；搜索可能另起随包的 ripgrep，文档没写由 Agent 调用。浏览器工具是内置浏览器，Browser 子代理经 MCP 工具控制它，所在进程文档没写。可选：用户添加的 stdio MCP 服务由 Cursor 管理启动（subprocess），Debug 模式在 Cursor 扩展里起本机调试服务器（用户切换模式才有）。云端：Cloud Agents、/in-cloud 子代理、Remote Control 的智能体循环在 Cursor 云端，不在本配置。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/tools/terminal",
+          "locator": "Terminal：开头",
+          "lines": "L1-L3",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具（终端）",
+          "note": "Cursor 直接在终端里跑 shell 命令，运行模式决定何时跑、何时问、何时进沙箱。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How sandboxing works on your platform / macOS",
+          "lines": "L172-L174",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式（macOS 沙箱）",
+          "note": "macOS 用 Seatbelt（sandbox-exec），生成的沙箱配置约束整棵子进程树。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Tools 各小节（Search files、Web、Fetch Rules、Read files、Edit files、Run shell commands、Browser、Image generation、Ask questions）",
+          "lines": "L19-L67",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "列出默认工具；编辑由 Agent 提出并自动应用；shell 命令在终端里执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/mcp",
+          "locator": "MCP：How it works（传输方式表）",
+          "lines": "L15-L23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "扩展点（MCP）",
+          "note": "MCP 服务经协议向 Cursor 提供工具；stdio 服务由 Cursor 管理启动，另有远程传输。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "浏览器工具的执行位置查不清，也没有足够迹象指向某一取值，没写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "推断：Cursor 把智能体对话历史存在本机数据库（install-issues L34-L46），扩展宿主崩溃后可在原对话 Resume（IDE 3.26），文档没说界面层和执行核心分开保存，按 F07 闭源规则推断执行核心。删除账户的说明列出会丢失对话历史，服务端可能另有一份，是否镜像、能否关掉文档没写；模型推理在 Cursor 后端，每次请求由谁交出历史也没写明。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/troubleshooting/install-issues",
+          "locator": "Install issues：How do I free up disk space used by Cursor?、Clean up agent chat history",
+          "lines": "L34-L46",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话存储",
+          "note": "Cursor 把智能体对话历史存在本机数据库，可用 Delete Old Chats 和 GC Agent KV Blobs 清理。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE 一节，### Agent and chat，docs-pages.txt L1610-L1614）",
+          "lines": "L281-L285",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.26：运行本地智能体的扩展宿主中途退出时，对话显示“Extension host stopped unexpectedly”并给出 Resume 选项；一次崩溃停下的多个智能体合并成一条系统通知。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "若 Cursor 后端在会话中保存权威历史、客户端只缓存，应改 state_service；文档不足以区分。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：每个对话有自己的 conversation_id（钩子输入字段），切换模式即开新的上下文窗口；同一扩展宿主可同时跑几个本地智能体（IDE 3.26：一次崩溃停下的多个智能体合并成一条通知），不是每个会话一个进程。可选：IDE 里工作树要用 Worktree Skills 命令，UI 原生工作树只在 Agents Window；子代理在用户要求隔离时各开一个工作树。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：钩子输入的公共字段 conversation_id（docs-pages.txt L8281）",
+          "lines": "L401",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话标识",
+          "note": "钩子输入带 conversation_id，每个对话有自己的编号。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：Which mode should I use?、How do I switch between modes?",
+          "lines": "L52-L68",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式",
+          "note": "Agent、Ask（只读）、Plan（批准计划后才改）、Debug 四种模式，Shift+Tab 切换；每种模式用自己的上下文，切换即开新的上下文窗口。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE 一节，### Agent and chat，docs-pages.txt L1610-L1614）",
+          "lines": "L281-L285",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.26：运行本地智能体的扩展宿主中途退出时，对话显示“Extension host stopped unexpectedly”并给出 Resume 选项；一次崩溃停下的多个智能体合并成一条系统通知。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/configuration/worktrees",
+          "locator": "Worktrees：开头",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选路径（工作树）",
+          "note": "UI 原生工作树只在 Agents Window；IDE 里要用 Worktree Skills 命令。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Parallel execution、Isolated project copies",
+          "lines": "L255-L263",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "Agent 在一条消息里发多个 Task 工具调用并行派子代理；子代理默认共用父代理的检出，用户要求隔离时各开一个工作树。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "protocol_gateway",
+      "unknown_reason": null,
+      "value_note": "推断：本配置只用 Cursor 账户、没有自带密钥。钩子文档写 beforeSubmitPrompt 在“发出后端请求之前”调用，发布说明称扩展宿主“连接 Cursor 的服务器”，隐私页写 Cursor 把提示和代码上下文发给 OpenAI、Anthropic、Google 等提供方；据此推断客户端只对 Cursor 后端说一种协议，由后端转给各家（Free 档只含 Grok 与 Composer）。overview 写 Cursor 为每个支持的型号调整指令和工具，这层在哪一侧做文档没写。其他环境：付费档可在 Settings > Models 填 OpenAI、Anthropic、Google、Azure、Bedrock 的自带密钥，这些请求是否仍经 Cursor 后端文档没写。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：beforeSubmitPrompt（docs-pages.txt L9137）",
+          "lines": "L1257",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型请求路径",
+          "note": "beforeSubmitPrompt 在用户发送后、发出后端请求之前调用。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.22（Cursor IDE 一节，### Fixes：Fixes to the editor and workbench，docs-pages.txt L3208）",
+          "lines": "L1879",
+          "version": "3.22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.22：连接 Cursor 服务器的本机扩展宿主卡住时，Cursor 重启它让窗口重新连上。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/security-and-privacy/privacy",
+          "locator": "Privacy and data：What data is sent to AI providers?",
+          "lines": "L23-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型请求路径",
+          "note": "使用 AI 功能时 Cursor 把提示和代码上下文发给 OpenAI、Anthropic、Google 等提供方。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/models-and-usage/api-keys",
+          "locator": "Bring your own API key：How do I add an API key?",
+          "lines": "L5-L12",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "其他环境（自带密钥）",
+          "note": "在 Settings > Models 可为 OpenAI、Anthropic、Google、Azure、Bedrock 填自带密钥。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "若自带密钥的请求由客户端直接发往各家接口，核心里就有多协议适配，应记 adapter_layer；文档没说，按后端网关推断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：子代理文档写 Agent 在一条消息里发出多个 Task 工具调用（subagents L255-L257），按结构化调用条目推断 native_structured；overview 链接的“工具调用原理”页不在快照里。MCP 默认开放，用户在 mcp.json 或 Customize 里加一条服务配置即可，Cursor 把 MCP 服务提供的工具接给智能体，记 protocol_translation。文档没提从普通文本里解析调用或脚本分派。出错路径：IDE 3.25 写模型给 Shell、Grep、Read 传越界值时会话不再结束；IDE 3.22 写 MCP 工具过多不再超出型号的工具数上限。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Parallel execution、Isolated project copies",
+          "lines": "L255-L263",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "Agent 在一条消息里发多个 Task 工具调用并行派子代理；子代理默认共用父代理的检出，用户要求隔离时各开一个工作树。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/mcp",
+          "locator": "MCP：How it works（传输方式表）",
+          "lines": "L15-L23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "扩展点（MCP）",
+          "note": "MCP 服务经协议向 Cursor 提供工具；stdio 服务由 Cursor 管理启动，另有远程传输。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.25（Cursor IDE 一节，### Fixes：Fixes to agent tools，docs-pages.txt L2094）",
+          "lines": "L765",
+          "version": "3.25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口",
+          "note": "IDE 3.25：模型给 Shell、Grep、Read 传越界值时会话不再结束；很长的待办清单不再让智能体崩溃；模式切换调用在请求批准前先显示在对话里。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ],
+        "unresolved": [
+          "per_request_routing"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：主循环用型号选择器里的型号（Free 档只有 Grok 4.7、4.6、4.5 和 Composer 2.5，默认型号未核实）。内置 Explore 子代理默认用“较快的型号”做并行搜索，内置子代理为子任务挑型号，型号由服务端决定，记 per_role；父代理派子代理时可以指定型号，记 model_selected_delegation（Free 档有四个自家型号可选）。per_request_routing 放 unresolved：help L91 写内置子代理“按子任务自动选型号”，是固定槽位还是按每次请求特征挑没写。Auto（个人计划只有 Cost 模式）按请求选型号，但 Free 档默认是否 Auto 未核实，不计。配置的型号被屏蔽或计划不含时改用兼容型号，属开始前选择，不算 failover。辅助：Auto-review 分类器在 Cursor 后端固定用 Gemini 3.5 Flash Lite，记 per_role；Haiku 兜底文档写的是首选被屏蔽时启用，是否在调用失败时自动换没写，没记 failover。子维度未确认：标题生成、上下文压缩摘要所用型号文档没写；图像生成走图像服务商、联网搜索走搜索服务商，属托管服务，不计。可选：对话中用 Cmd / 或型号选择器换型号。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Built-in subagents、Why these subagents exist",
+          "lines": "L38-L56",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "内置 Explore 与 Browser；Explore 默认用较快的型号做并行搜索；无需配置，Agent 自动使用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Parent model and usage pools",
+          "lines": "L205-L211",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理型号",
+          "note": "型号选择器只作用于父代理；内置子代理为子任务挑型号；父代理派子代理时可以指定型号。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/models-and-usage/available-models",
+          "locator": "Available models：What models do subagents use?",
+          "lines": "L89-L91",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理型号",
+          "note": "内置子代理（该页写 Explore、Bash、Browser）按子任务自动选型号；自定义子代理默认 inherit。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Auto-review classifier requirements",
+          "lines": "L37-L39",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "辅助调用（动作审核分类）",
+          "note": "分类器跑在 Cursor 管理的小型号上，目前是 Gemini 3.5 Flash Lite，Haiku 兜底。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/prompting",
+          "locator": "Prompting agents：Context usage、Changing models",
+          "lines": "L42-L61",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "型号与上下文",
+          "note": "窗口快满时把较早对话压成摘要；用型号选择器或 Cmd / 换型号，Settings > Models 设默认型号。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "auxiliary_models 核对：标题生成——文档没写是否有、用什么型号；上下文压缩或摘要——prompting L42-L44 写窗口快满时自动压成摘要，型号没写；动作审核分类——Gemini 3.5 Flash Lite（per_role）；联网搜索与网页抓取——搜索服务商托管，不计；媒体理解——读图由主型号完成（overview Read files），不算辅助；生成类工具——图像生成由图像服务商处理，型号没写，不计。Browser、Explore 子代理能多步调用工具，按总则 R4 计入 value。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "hard_stop": null,
+        "soft_notice": null,
+        "mode_unknown": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "overview L25 写任务中工具调用次数没有上限（call_count 可判无）；文档没写单次输出上限、截断续写、任务 Token、时长或金额的默认上限，也没有完整的设置参考可核。用量池、附加用量月上限是账户一侧限额，不计；上下文窗口满时自动摘要属 D 组。可选：stop/subagentStop 钩子的自动续发默认每个脚本最多 5 次，要用户写钩子才有。其他入口：CLI 发布说明提到步数上限（step limit）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：How Agent works、Tools（docs-pages.txt L4288-L4304）",
+          "lines": "L9-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认入口（编辑器 Agent）",
+          "note": "Agent 由指令、工具、型号三部分组成；工具用于搜索、编辑、跑命令；任务中工具调用次数没有上限。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：stop 钩子与 loop_limit 配置项（docs-pages.txt L8594、L9198）",
+          "lines": "L714, L1318",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选路径（钩子）",
+          "note": "stop 钩子在智能体循环结束时调用，可自动续发一条用户消息；loop_limit 默认每个脚本 5 次；默认没有配置钩子。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "闭源、没有完整设置参考，按 F12 unknown_rule 写 unknown（closed_source）。若认为 overview 的“工具调用无上限”加文档沉默足以推断各维都为空，可改 known_absent（low）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：提示页 Context usage 写每个对话共享一个固定窗口，请求由系统提示、工具定义、规则、技能说明、MCP 说明、子代理说明、已摘要的对话和对话本身（用户消息、代理回复、工具结果）组成，窗口接近满时把较早部分压成摘要；据此推断每轮请求从维护的对话历史出发、前缀被一份摘要替换后发出，属顺序消息加修整。构造请求的代码闭源，客户端或服务端是否另有按条目类型重建的一层看不到，layers 只能按文档写一层。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/prompting",
+          "locator": "Prompting agents：Context usage（上下文构成分类与接近满窗口时压成摘要）",
+          "lines": "L42-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "桌面编辑器 Agent 默认路径的每轮请求",
+          "note": "文档列出请求的构成，含 Summarized conversation 与 Conversation 两类，说明对话历史加摘要前缀进入请求。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "unknown_rule 只在文档明说每轮发送完整对话历史时允许记 sequential_messages；这页没有那句原话，只给了上下文构成分类和压缩说明，我按总则 R6“外部表现足以归类”推断。另一种读法是 unknown（closed_source）。行号按导出文件换算（导出行减 Source 行再减 1），与配置记录引的 L44-L46 差两行。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "summarization"
+      ],
+      "facets": {
+        "unresolved": [
+          "tool_result_replacement"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：提示页写窗口接近满时自动把较早对话压成摘要；IDE 3.24 发布说明写对话到上限时压缩后继续、保留最新请求原文、接近上限时复用上一轮已开始的摘要；钩子 preCompact 的 trigger 区分 auto 与 manual。摘要由哪种型号、在客户端还是后端生成，内容是否可读，文档未写。可选：用户输入 /summarize 手动压缩（第二档）。浏览器工具把日志写进文件供代理 grep 选读，疑似把整条输出换成文件引用，但文档没说工具结果本身怎样交回，记 unresolved。Explore、Browser 子代理把中间输出留在子代理里只交回摘要，属委派，不算缩减主请求。截断：文档没有工具输出截短或大文件改给提纲的说明，未计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/prompting",
+          "locator": "Prompting agents：Context usage",
+          "lines": "L42-L44",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径的上下文管理",
+          "note": "窗口接近满时 Cursor 把较早对话压成摘要。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.24（Cursor IDE，Agent and chat 一节之后的 Fixes）Fixes to long-conversation summarization",
+          "lines": "L1169",
+          "version": "3.24",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "桌面编辑器 Agent",
+          "note": "到上限时压缩后继续，保留最新请求原文，接近上限时复用上一轮开始的摘要。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：preCompact（trigger auto／manual，messages_to_compact）",
+          "lines": "L1404-L1436",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "压缩触发方式",
+          "note": "压缩有自动与手动两种触发，按条数把消息摘要掉。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/tools/browser",
+          "locator": "Browser：Efficient log handling",
+          "lines": "L13",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "浏览器工具",
+          "note": "浏览器日志写进文件，代理 grep 后只读需要的行；作为 tool_result_replacement 的疑似迹象。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "浏览器日志写文件那条只说日志进文件、代理按需读，没说工具结果被整条换成路径，所以只放 unresolved。release-notes 页里同一版本号有两条（Agents Window 与 Cursor IDE），我按配置记录说明，取含 Editor／Agent and chat 的第二条为 IDE。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "推断：@ 提及可附文件、文件夹、终端输出、以往对话、Git diff、浏览器内容，也可拖入或粘贴图片（user_specified）。内置“搜索文件和目录”工具按关键词或模式查内容，Instant Grep 在本机建索引，代理引用具体符号时自动用 grep（keyword）。IDE 3.27 发布说明 Agent and chat 节写代码库索引让语义搜索也能在旧编码文件里找到匹配（semantic_retrieval）；但搜索页又写 Instant Grep 不存代码库嵌入，语义搜索的工具名和触发方式文档没交代。structural_index：文档没有符号、定义与引用一类模型可调查询，未计。网页搜索、Fetch、浏览器不计；Fetch Rules 按类型和描述取规则，技能说明常驻上下文、正文按需读，均不计。Explore 子代理用的是同一批搜索工具。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/prompting",
+          "locator": "Prompting agents：@ mentions、Image input",
+          "lines": "L5-L30",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户在输入里指定材料",
+          "note": "用户用 @ 引用文件、文件夹、终端、对话、diff、浏览器，或拖入粘贴图片。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Tools / Search files and folders",
+          "lines": "L27-L29",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "默认工具能按名称找文件、读目录结构、按关键词或模式搜内容。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/tools/search",
+          "locator": "Search：Instant Grep、Privacy and security",
+          "lines": "L3-L13",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认搜索工具",
+          "note": "Instant Grep 自动运行，支持正则；索引建在本机，不存嵌入。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.27（Cursor IDE）Agent and chat：Agent no longer garbles non-UTF-8 and non-ASCII text",
+          "lines": "L119",
+          "version": "3.27",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "桌面编辑器 Agent",
+          "note": "代码库索引读入旧编码文件后，语义搜索能在其中找到匹配，说明 IDE 有语义检索。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "semantic_retrieval 的依据只有一条 IDE 发布说明，且与搜索页“不存嵌入”的说法容易读成冲突（搜索页那句只说 Instant Grep）；另一位编码者可能把它放 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "retrieval_store"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "推断：项目规则（.cursor/rules）、项目根与子目录的 AGENTS.md、用户规则（Customize → Rules）在会话中放进模型上下文开头（user_maintained_files）；本配置仓库不带这些文件、用户规则默认为空，机制默认开放。帮助页写对话搜索是代理工具，代理需要以前讨论过的内容时会自己查过往对话，本机建有对话检索索引（retrieval_store）。没有找到 IDE 里自动把会话提炼成记忆（auto_summary）或结构化记忆条目的功能；MEMORIES.md 只在 Automations（云端）出现，Bugbot 的 learned rules 属另一产品，不计。@Chats 引用旧对话属用户指定，归 F15。代理按用户要求用 /create-rule 写规则靠通用编辑，不算 auto_summary。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/rules",
+          "locator": "Rules：How rules work、AGENTS.md、User Rules",
+          "lines": "L24-L28",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "新会话自动读入的说明文件",
+          "note": "规则内容放在模型上下文开头，提供跨补全的持久上下文；AGENTS.md 支持根目录和子目录（L321），用户规则对所有项目生效（L361）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：Can Agent search my past conversations for context?",
+          "lines": "L50",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "代理默认工具",
+          "note": "对话搜索是代理工具，代理能自己查过往对话取回上下文。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/conversation-search",
+          "locator": "Conversation search",
+          "lines": "L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "过往对话的检索库",
+          "note": "Cursor 在本机为过往对话建搜索索引。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "对话搜索检索的是过往会话记录，不是专门写入的记忆条目；我按 retrieval_store“跨会话内容存进可检索的库、新会话按当前任务检索取回”记。conversation-search 页的命令面板入口写在 Agents Window，代理工具那句没说入口范围，按默认入口也有处理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "推断：Agent 聊天保存在本机数据库（可用 Delete Old Chats、GC Agent KV Blobs 清理），另有 .jsonl 会话转录（钩子 transcript_path，IDE 3.24；可关闭，关闭时为 null）；文档没说记录里有压缩边界、审批决定一类独立条目，按 unknown_rule 记 messages。检查点在大改动前自动保存被改文件的状态、存在本机，Restore Checkpoint 读它把文件改回（state_snapshot）。Plan Mode 的计划文件默认存在主目录，属可选路径的产出。external_reference：没找到超限输出另存文件的 IDE 文档（超时命令输出存文件那条属 CLI 发布说明），未计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/troubleshooting/install-issues",
+          "locator": "Install issues：How do I free up disk space used by Cursor? / Clean up agent chat history",
+          "lines": "L36-L40",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话存储",
+          "note": "Agent 聊天历史存在本机数据库。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.24（Cursor IDE）Customization and settings：Easier hook correlation for shell and MCP calls",
+          "lines": "L1154",
+          "version": "3.24",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话转录文件",
+          "note": "有 .jsonl 会话转录，钩子经 transcript_path 拿到。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Checkpoints",
+          "lines": "L69-L77",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "检查点",
+          "note": "大改动前自动建检查点，存在本机，恢复时把文件改回。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "推断：聊天历史存在本机，更新或重启后仍在，可从侧栏或历史中重新打开旧对话接着发消息；IDE 3.26 起扩展宿主崩溃中断的本地代理显示 Resume 选项。文档没说恢复时会接续执行到一半的工具调用，按重建对话再运行记。子代理按编号恢复写在 F19。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/troubleshooting/minimum-version",
+          "locator": "Minimum version：Will I lose my data?",
+          "lines": "L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "重启后的会话",
+          "note": "聊天历史和设置留在本机，更新后可再用。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE）Agent and chat：Agents stopped by an extension host crash can be resumed",
+          "lines": "L285",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本地代理中断后",
+          "note": "扩展宿主崩溃后聊天显示 Resume 选项。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "Resume 选项具体是重发一轮还是接续中断的调用，文档没写；按词表先后与“没写能接续就是重建”的读法记 rebuild_and_rerun。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "facets": {
+        "unresolved": [
+          "subagent_links"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：重开旧对话后历史消息回到上下文；提示页把工具结果列为对话的一部分，故记 tool_results。子代理页写每次子代理返回编号，可按编号带完整上下文恢复，后台子代理边跑边写状态，但没说父会话重启后还能按编号续，记 unresolved。待办清单工具存在（IDE 3.22 说明），恢复后是否回到可用状态文档未写，未计；/goal 正在推出且由用户命令设立，恢复行为未写。工作区不随恢复自动回退（检查点要用户点，归 F20）。外部副作用不在恢复范围。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/prompting",
+          "locator": "Prompting agents：Context usage（Conversation 一类含工具结果）",
+          "lines": "L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "对话上下文",
+          "note": "对话上下文包括用户消息、代理回复和工具结果。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/troubleshooting/minimum-version",
+          "locator": "Minimum version：Will I lose my data?",
+          "lines": "L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "重启后的会话",
+          "note": "聊天历史留在本机，重启更新后可再用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Resuming subagents",
+          "lines": "L287-L297",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理关联",
+          "note": "子代理可按编号带完整上下文恢复，后台子代理运行时写状态；作为 subagent_links 的疑似迹象。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "推断：检查点在大改动前自动保存被改文件，点时间线上的检查点或 Restore Checkpoint 把文件改回，只回文件、不删消息，存在本机、与 Git 分开（workspace_snapshot）。帮助页说要缩短对话可从较早消息 fork 聊天，IDE 3.19 说明 Fork Chat 复制本地对话消息，原对话保留（session_branch）。编辑并重新提交旧消息时会问是否把文件恢复到那条消息，后续消息被删掉，属裁掉后续，不另计。补偿操作、幂等标识：文档没有外部副作用的反向步骤或工具调用去重说明，未计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Checkpoints",
+          "lines": "L69-L77",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "回退文件",
+          "note": "自动建检查点，用户可把所有文件恢复到该点。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/agent",
+          "locator": "Agent mode：How do I undo Agent changes?",
+          "lines": "L32-L34",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "回退对话",
+          "note": "恢复检查点只回文件；要缩短对话可从较早消息 fork 聊天。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.19（Cursor IDE）：Clearer prompt when resubmitting an earlier message；Faster Fork Chat on long chats",
+          "lines": "L2649-L2650",
+          "version": "3.19",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本地对话",
+          "note": "Fork Chat 复制本地对话消息成新会话；重新提交旧消息会删去后续消息并可选恢复文件。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "fork 后原对话是否在列表里可切回，文档没明写，按“fork”一词的通常含义推断原对话保留。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "推断：运行模式三选一（Auto-review、Allowlist、Run Everything）按调用类别决定是否自动运行；Browser、File-Deletion、External-File 三项保护按动作类别开关；MCP 工具可逐个列入允许名单或在聊天里关掉（tool_category）。终端命令允许名单（permissions.json，或审批卡上选 Always Run 加入）按命令匹配（command_rule）；permissions.json 里 allow／block_instructions 是给分类器的自然语言倾向，不是确定规则。Read Access 的 Workspace 档与 Read Allowlist、sandbox.json 的额外可读写路径、.cursorignore 按路径限制（file_path）。sandbox.json 的域名允许名单与三档网络模式，只管沙箱内的终端命令（network_target）。默认效果：改工作区文件直接写盘（配置类文件要批准）；不在名单里的构建脚本先进 Seatbelt 沙箱直接跑，沙箱跑不了或失败重跑才交分类器；写工作区外受 External-File Protection，要批准；命令联网在沙箱里默认只放内置包管理器等域名（下载 npm、PyPI 依赖直接放行），其他网络要绕出沙箱交分类器审、被拦后请用户批准，故记 review。其他环境：Linux 内核不够新时退回逐次批准。文档冲突：安全总览页写“终端命令默认需批准”，按配置记录取 Auto-review。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Pick a mode、How Auto-review works、Configuring Auto-review",
+          "lines": "L7-L31",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行模式 Auto-review",
+          "note": "三种模式按调用类别放行；Auto-review 下名单内直接跑，其他 shell 进沙箱，进不了的交分类器。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Sandboxing（默认行为表）、Read access、Read Allowlist",
+          "lines": "L89-L138",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "路径与网络规则",
+          "note": "sandbox.json 控制网络域名和额外可读写路径；Read Access 默认 System，Workspace 档按路径询问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Network access（sandbox.json + Defaults 为默认）",
+          "lines": "L246-L253",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "命令联网默认效果",
+          "note": "沙箱内网络默认只放 sandbox.json 名单加内置包管理器域名。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Other protections",
+          "lines": "L359-L367",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "写工作区外、删文件、浏览器",
+          "note": "三项保护在模式本可自动运行时仍要求批准。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security",
+          "locator": "Agent Security：First-party tool calls",
+          "lines": "L11-L17",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "改工作区文件的默认效果",
+          "note": "代理改工作区文件不需批准，配置类文件要批准；.cursorignore 可挡住文件；本页写终端命令默认需批准，与运行模式页不一致。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（Cursor IDE）Customization and settings：Always Run on terminal approvals now sticks when permissions.json manages your allowlist",
+          "lines": "L292",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "终端命令允许名单",
+          "note": "permissions.json 设终端允许名单，审批卡的 Always Run 把命令加入名单。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "default_command 记 allow：沙箱能跑的构建脚本不过分类器也不问人；沙箱里失败后的重跑交分类器，那是另一次调用。default_network 记 review：问题的例子“下载依赖”多数落在内置域名名单里会直接放行，而任意外网要过分类器，两种读法都说得通，我按任意外网记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "auto_reviewer",
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：Auto-review 下不在名单里又进不了沙箱的 shell 命令、沙箱内失败后的重跑、非名单的 MCP 与 Fetch 调用，执行前交后端分类器审；分类器拦下后代理可换办法，坚持时弹出审批卡请用户批准这一次调用；Browser、文件删除、工作区外文件三项保护也在调用前停下请用户批准。批准者先分类器、后用户。审批卡的 Always Run／Always Allow 相当于加规则。可选：Plan Mode 要用户 Shift+Tab 切换（输入关键词时框架会建议），计划确认后动作仍按运行模式逐次处理，不算任务层。MCP 连接批准属连接配置，本配置没有 MCP 服务。代理提问工具属 F36。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How Auto-review works",
+          "lines": "L17-L31",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行模式 Auto-review",
+          "note": "调用先过分类器；被拦而代理坚持时向用户弹出审批。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/terminal",
+          "locator": "Terminal integration：Can Agent run terminal commands on its own?",
+          "lines": "L9-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "终端命令",
+          "note": "Auto-review 为默认；分类器放行或拦下，被拦的命令经用户批准可重试。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：Other protections",
+          "lines": "L359-L367",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "浏览器、删文件、工作区外文件",
+          "note": "这些动作即使模式本可自动运行也要求批准。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "os_isolation"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "推断：运行模式、允许名单匹配、后端分类器、三项保护、.cursorignore 由 Cursor 在执行前判断放行或拦下（application_check；文档明说分类器不是安全边界）。macOS 上 Auto-review 默认把能沙箱的终端命令放进 Seatbelt（sandbox-exec），生成的配置限制整个子进程树的文件、网络和进程行为（os_isolation，只管终端命令）。其他环境：Linux 用 Landlock 加 seccomp，内核不够时退回逐次批准。没有容器或受限运行时。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How Auto-review works、Auto-review is not a security boundary",
+          "lines": "L17-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行模式 Auto-review",
+          "note": "名单与分类器在执行前放行或拦下调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How sandboxing works on your platform / macOS",
+          "lines": "L172-L180",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "macOS 终端命令",
+          "note": "macOS 用 Seatbelt 限制整个子进程树，无需额外设置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/ask-mode",
+          "locator": "Ask mode",
+          "lines": "L3",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "prompt_only 核对：Ask 模式",
+          "note": "Ask 模式被说成只读、不做编辑；是否有代码检查文档未写。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "prompt_only 逐项：默认 Agent 模式的限制由运行模式、保护项和沙箱执行，文档写成机制，有代码检查。Ask 模式文档称只读、不编辑，是否在代码里去掉编辑和命令工具没写，拿不准；Plan 模式写先出计划、确认后才改，是否强制同样没写，拿不准；Debug 模式没声明限制。内置 Explore、Browser 子代理没被说成只读角色（readonly 只是自定义子代理的字段，本配置没有自定义子代理）。文档列出的设置项（Read Access、三项保护、sandbox.json）都描述成执行机制。Ask、Plan 两项拿不准，按子维度总则照记 absent；闭源看不到代码，另一读法是 null。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "推断：本机保存的会话记录（数据库与 .jsonl 转录）按顺序存用户请求、代理回复、工具调用和结果，重开对话可见；钩子事件用 conversation_id、generation_id、tool_use_id 把一次调用前后对上（IDE 3.24 起 shell、MCP 执行钩子带与 preToolUse 相同的 tool_use_id）。转录里每条调用是否带编号文档没写，按同一份顺序记录相邻对上推断。审批：IDE 3.22 起聊天里显示 Approval required／Approval denied，没说批准和分类器放行是否落盘、能否区分，不计。身份：钩子输入带 user_email，但那是传给钩子的字段，不是落盘记录；团队审计日志属 Teams／Enterprise，Free 档不适用（其他环境：）。没有默认开的专门审计日志；用户自加钩子写日志属添加内容，默认没有。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/troubleshooting/install-issues",
+          "locator": "Install issues：Clean up agent chat history",
+          "lines": "L36-L40",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话存储",
+          "note": "Agent 聊天存在本机数据库。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：Common schema（conversation_id、generation_id、user_email、transcript_path）",
+          "lines": "L845-L854",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "转录与编号",
+          "note": "对话有稳定编号，转录文件路径可取到；transcripts 可关闭。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.24（Cursor IDE）Easier hook correlation for shell and MCP calls",
+          "lines": "L1154",
+          "version": "3.24",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "调用编号与转录",
+          "note": "执行钩子带 tool_use_id，可从头到尾跟住一次调用；转录为 .jsonl。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.22（Cursor IDE）Agent：Clearer agent tool calls in chat",
+          "lines": "L1850",
+          "version": "3.22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "审批在聊天中的显示",
+          "note": "被审批卡住的调用在聊天里显示 Approval required 或 Approval denied；未说明是否落盘。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "intent、actual_operation、result 都靠“会话记录按顺序存消息与工具调用”推断，文档没给转录格式；若认为证据不够，三项可整体改为 unknown（closed_source）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "推断：官方子代理页写明 Agent 遇到复杂任务会自动经 Task 工具派出子代理，每个子代理有自己的上下文窗口、自主工作并把最终消息交回父代理；内置 Explore 与 Browser 两个，无需配置、自动使用；框架跟踪其运行（子代理任务卡、托盘状态、按 agent ID 恢复）。另有 Auto-review 分类器在后端运行、可在本机做只读 ReadFile、Grep、Glob、ListDir 调用，按总则 R4 算框架派生的辅助代理（见 F26）。其他环境：/in-cloud 云端子代理与 Projects 协调者只在 Agents Window 或 Cloud Agents，Free 档不含。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：How subagents work、Foreground vs background、Built-in subagents（docs-pages.txt L7407-L7445）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "编辑器 Agent 的默认委派",
+          "note": "Agent 遇到复杂任务自动派子代理，子代理在独立上下文里自主工作、交回最终消息；内置 Explore、Browser 自动使用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Parallel execution、Resuming subagents、FAQ（docs-pages.txt L7633-L7680、L7839-L7850）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "编辑器 Agent 的默认委派",
+          "note": "Agent 在一条消息里发多个 Task 调用并行派出子代理；每次执行返回 agent ID 供恢复；子代理失败时向父代理返回错误状态。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "闭源，只能按文档推断。配置记录 subagents_enabled=true，与文档一致；Free 档能否派子代理文档没有单独说明，按钉住的环境照记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：main_agent：主代理经 Task 工具自动委派（Automatic delegation；Parallel execution 写 Agent 在一条消息里发多个 Task 调用），内置 Explore、Browser 由主代理按需调用；主代理和它的直接子代理都能再派，孙代理不能再派。framework_internal：Auto-review 分类器在命令进不了沙箱或沙箱外重跑时由框架自动发起，判定前可在本机做只读 ReadFile、Grep、Glob、ListDir 调用，按总则 R4 算能调用工具的辅助代理；文档没写一次判定调几次工具。user 列为疑似：子代理页写可在提示里用 /name 点名子代理，但没写是框架直接创建还是交主代理决定；/side 侧聊是挂在父会话下的持久子对话，结果只在用户 @ 提及时拉回主对话；/agent-review 跑一次专门审阅，是否为能多步调工具的代理文档未写。可选：Plan 模式的 Build in Parallel 与 /multitask（help/multi-agent 仅一句，未说明属于哪个界面）；Agent Review 设为提交后自动运行要改设置。其他环境：/in-cloud、/autopilot 云端子代理和 Projects 协调者属 Agents Window 或 Cloud Agents。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Using subagents（Automatic delegation、Explicit invocation、Parallel execution）与 FAQ Can subagents launch other subagents?（docs-pages.txt L7605-L7640、L7839-L7842）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理创建路径",
+          "note": "主代理按任务复杂度和子代理描述主动委派，经 Task 工具并行派出；也可在提示里用 /name 点名；嵌套到孙层为止。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How Auto-review works（docs-pages.txt L5782-L5800）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行模式 Auto-review",
+          "note": "分类器在 Cursor 后端运行，判定一个调用时可在本机做只读 ReadFile、Grep、Glob、ListDir 调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/help/ai-features/side-chats",
+          "locator": "Side chats：What is a side chat、How do I open a side chat?、How do I bring side chat context back（docs-pages.txt L57514-L57537）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户命令 /side",
+          "note": "/side 开出挂在父代理下的完整代理对话，以父会话历史为隐藏参考；结果要用户在主对话 @ 提及才拉回。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "framework_internal 只凭“分类器可调用只读工具”一句判为能调用工具的辅助代理；若主控认为审批分类器一律按辅助调用处理，应去掉此项。/name 点名写在提示文字里，判不出是否绕过主代理，故 user 只进 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "unresolved": [
+          "user"
+        ]
+      }
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：子代理从干净上下文开始，父代理把必要信息写进提示，子代理看不到此前对话，执行中只在自己的上下文里工作（independent_context，启动时带任务说明）。messages：每次执行返回 agent ID，凭 ID 可恢复子代理、完整保留上下文接着做，后台子代理完成后也能恢复。shared_files：子代理默认共用父代理的检出目录，并行编辑会互相覆盖；后台子代理把输出写到 ~/.cursor/subagents/，父代理读这些文件看进度。在提示里要求隔离时每个子代理在自己的 Git worktree 上工作、由父代理合并（模型可自行决定，属第一档）。权限：子代理继承父代理全部工具（含 MCP），自定义子代理可设 readonly 限制写入。未见框架维护、多个代理共读写的结构化状态。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：How subagents work（docs-pages.txt L7407-L7412）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理以干净上下文启动，父代理在提示里给出相关信息，子代理看不到之前的对话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Isolated project copies、Resuming subagents（docs-pages.txt L7643-L7680）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理默认共用父代理的检出目录；凭 agent ID 恢复子代理并保留完整上下文。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：FAQ How do I see what a subagent is doing?、Can I use MCP tools in subagents?（docs-pages.txt L7844-L7855）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "后台子代理与权限",
+          "note": "后台子代理输出写到 ~/.cursor/subagents/，父代理可读；子代理继承父代理的全部工具。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "messages 的依据是“凭 ID 恢复子代理接着做”；文档没写能否在子代理运行中给它发消息，按判定（空闲时续派也算）记入。shared_state：查过子代理页、hooks 页和发布说明，只见 Projects 任务表（Agents Window 与云端，不在本配置）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：前台模式阻塞到子代理完成、立即返回结果，自定义子代理 is_background 默认 false（synchronous_return）。后台模式立即返回、子代理独立运行，父代理可读 ~/.cursor/subagents/ 查看进度；自定义子代理设 is_background: true 即可（用户添加内容），模型调用时能否自选后台文档未明写（async_wait）。cancel_propagation：IDE 3.20、3.19 发布说明写在子代理上点 Stop 会一并停止它派出的全部子代理（含未打开的），父任务标为 interrupted；嵌套只到孙层，这条路径只传一层。用户在主对话按 Stop 是否连带子代理文档未写。Stop all 是专门停止全部代理的命令，不计。子代理失败或被停时父代理收到失败状态。其他环境：CLI 的 ACP 客户端取消提示会停掉其后台子代理。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Foreground vs background、Configuration fields（is_background）（docs-pages.txt L7413-L7420、L7504-L7512）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "前台模式阻塞到子代理完成并返回结果；后台模式立即返回，子代理独立运行；is_background 默认 false。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.20（第二条，Agent 小节）Stopping a subagent now stops its nested subagents too（docs-pages.txt L3721）",
+          "lines": "",
+          "version": "3.20",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "取消子代理",
+          "note": "在子代理上点 Stop 或 Stop all，会停止它派出的全部子代理，挂起的提问一并撤销。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.19（第二条，Agent 小节）Stopping a subagent stops its nested subagents too（docs-pages.txt L3984）",
+          "lines": "",
+          "version": "3.19",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "取消子代理",
+          "note": "停一个子代理，它派出的子代理全部停止，父任务标为 interrupted。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "cancel_coverage 三种方式：用户打断主代理当前回合——文档未写（查了 agent overview、subagents、IDE 发布说明）；取消等待中的调用（在子代理任务卡上 Stop）——连带其嵌套子代理；取消父运行（关闭或归档对话）——未写。第一、三项未知，判不了 all_ways 还是 some_ways，写 null。cancel_depth 依据“停一个子代理连带它的子代理”这条路径，主代理到子代理的默认委派路径上是否传播未知。发布说明页不标产品，按 3.27 那对条目（含 Projects 的是 Agents Window，含 Editor and app 的是 IDE）判同号第二条为 IDE。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": null
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：internal_code：搜索、网页、Fetch Rules、读写文件、shell、浏览器、图像生成、提问及 Task 等内置工具写在核心里；浏览器工具虽经 MCP 工具控制浏览器，属官方内置，按内置记。external_protocol_service：在 ~/.cursor/mcp.json 或 .cursor/mcp.json 加 MCP 服务条目，或经 Customize、插件安装，工具即交给 Agent；VS Code 扩展可用 vscode.cursor.mcp.registerServer() 编程注册 MCP 服务，边界仍是 MCP。embedder_declared：@cursor/sdk 的 local.customTools 让调用方为本地代理声明工具，SDK 内部注册成名为 custom-user-tools 的 MCP 服务、由调用方进程执行；SDK 文档称它跑的是 IDE、CLI 里同一个代理，按总则 R5 记入，不进 via_default_entry（Python SDK 同样提供）。插件只打包规则、技能、子代理、命令、MCP 与钩子，自身不注册工具，不记 plugin_api；未见把用户脚本注册成同名工具的机制。子维度未确认：默认安装是否预装插件或 MCP 服务，文档未说明。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Tools（docs-pages.txt L4298-L4346）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "列出 Agent 的内置工具：搜索、网页、Fetch Rules、读文件、改文件、shell、浏览器、图像生成、提问。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/mcp",
+          "locator": "MCP：Using the Extension API、Configuration locations（docs-pages.txt L9573-L9590）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 扩展点",
+          "note": "项目 .cursor/mcp.json 或用户 ~/.cursor/mcp.json 加服务即可；扩展可用 vscode.cursor.mcp.registerServer() 注册 MCP 服务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/sdk/typescript",
+          "locator": "Cursor TypeScript SDK：开头、Overview、Custom tools（docs-pages.txt L25097-L25120、L26788-L26800）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方 SDK",
+          "note": "SDK 跑的是 IDE、CLI 中同一个代理；local.customTools 声明的函数由 SDK 注册成 custom-user-tools MCP 服务供代理调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/plugins",
+          "locator": "Plugins：What plugins contain（docs-pages.txt L6248-L6260）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "插件",
+          "note": "插件打包规则、技能、代理、命令、MCP 服务和钩子，不含直接注册工具的代码接口。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "plugin_api 判否：Cursor 是 VS Code 分支，文档只给出扩展注册 MCP 服务的接口，未见扩展直接向 Agent 注册工具的接口。in_use_by_default 只确认 internal_code；配置记录写默认没有 MCP 服务，插件预装未核实。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：project_rules：.cursor/rules 的规则（alwaysApply、按 glob、或由 Agent 按描述决定是否套用，属同一装载机制）、项目根目录和子目录的 AGENTS.md、User Rules，套用时放在模型上下文开头。skill_directory：从 .agents/skills、.cursor/skills、~/.cursor/skills 及 .claude、.codex 兼容目录发现 SKILL.md，Agent 按描述按需装载；也可用 / 按名调用或作 Custom Mode，另有 19 个内置技能。role_template：.cursor/agents/（及 .claude/agents、.codex/agents、用户目录）里的自定义子代理定义，含提示、模型、readonly，主代理按描述委派或用户用 /name 点名。prompt_template：命令文件（.cursor/commands）在 Agent 对话里用 / 调用，展开成可复用提示，与技能目录是两条装载路径。workflow_definition：未见以文件保存、由框架推进多步的定义；钩子 stop 的跟进消息在 F31 记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/rules",
+          "locator": "Rules：Project Rules、User Rules、AGENTS.md、How rules work（docs-pages.txt L6631-L6670、L6945-L6990）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "规则装载",
+          "note": "规则内容在套用时放进模型上下文开头；支持 .cursor/rules、User Rules、AGENTS.md（含子目录）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/skills",
+          "locator": "Agent Skills：How skills work、Skill directories、Including scripts in skills（docs-pages.txt L7054-L7100、L7262-L7290）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "技能目录",
+          "note": "启动时从技能目录自动发现技能，Agent 按相关性决定使用，也可用 / 手动调用；技能附带脚本由 Agent 读说明后执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/subagents",
+          "locator": "Subagents：Custom subagents、File locations、Configuration fields（docs-pages.txt L7465-L7515）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理定义",
+          "note": "项目和用户目录里的 Markdown 子代理定义，含名称、描述、模型和只读开关，可被委派或点名。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/customize-cursor",
+          "locator": "Customize Cursor：Extension components（Commands 一行）（docs-pages.txt L6182-L6195）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "命令文件",
+          "note": "Commands 是在 Agent 对话里用 / 调用的可复用提示，以 Markdown 文件保存。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "executable_items 逐项：project_rules 只进上下文；skill_directory 附带脚本由 Agent 自己经命令行运行，不算；role_template 是提示与配置；prompt_template 是提示文字，文档未写有由框架执行的嵌入命令片段（插件页称 Commands 为 Agent-executable command files，理解为由 Agent 执行）。故写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：在项目 .cursor/hooks.json、用户 ~/.cursor/hooks.json 或经插件挂命令型或提示型处理器。input：beforeSubmitPrompt 可阻止提交。tool_before_after：preToolUse、postToolUse、postToolUseFailure、beforeShellExecution、beforeMCPExecution、beforeReadFile、afterFileEdit、subagentStart 等，可 deny。end：stop 可回填 followup_message 让代理继续（默认每脚本 5 次）；afterAgentResponse、afterAgentThought、sessionEnd、subagentStop 只观察。context_compaction：preCompact 明写只观察、不能阻断或修改，只能给用户显示一条消息。session_start：sessionStart 在新建对话时触发，可注入 additional_context 与环境变量。未见能改写模型请求的事件，也未见写盘事件。workspaceOpen 属应用生命周期、按工作区触发并可返回要加载的插件路径，不是每会话事件，不记；Tab 钩子不属 Agent 主链。SDK 写明钩子只能用文件配置、没有编程回调；SDK 事件流的类型落在已记阶段。in_use_by_default：配置记录写默认没有钩子，插件是否预装未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：开头、Hook categories、Command-Based Hooks（docs-pages.txt L7881-L7925、L8058-L8080）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钩子事件",
+          "note": "列出 Agent 钩子事件；权限类钩子返回 deny 或退出码 2 即阻断动作。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：Reference beforeSubmitPrompt、stop、sessionStart、sessionEnd、preCompact、workspaceOpen（docs-pages.txt L9135-L9345）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钩子事件",
+          "note": "beforeSubmitPrompt 可阻止提交；stop 可自动提交跟进消息；sessionStart 可注入上下文；sessionEnd、preCompact 只观察。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/sdk/typescript",
+          "locator": "Cursor TypeScript SDK：Hooks（docs-pages.txt L26900-L26905）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方 SDK",
+          "note": "SDK 的钩子只能用 hooks.json 文件配置，没有编程回调。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "sessionStart 文档写 fire-and-forget、不阻断，但 additional_context 会加进初始系统上下文，按能注入算干预点，不进 observe_only。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "context_compaction"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "library",
+        "service_api",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：cli_subprocess：Cursor CLI 的 print 模式 agent -p，--output-format 可选 text、json、stream-json。library：@cursor/sdk（TypeScript）与 cursor-sdk（Python），Local 运行时在调用方 Node 进程内跑代理循环，文档称它就是 IDE、CLI 里的同一个代理。service_api：SDK Bridge 是内嵌 TS SDK 的本机服务，经 Connect/protobuf 暴露同一套代理接口，官方发布并支持 sdk.v1 契约和二进制。public_protocol：agent acp 以 ACP（JSON-RPC over stdio）服务端身份接受编辑器等客户端。四项都要另装 CLI、SDK 包或 bridge 二进制；所选桌面编辑器本身没有直接开放的程序化入口：deeplink 只预填提示、须用户确认后才执行，扩展接口只见注册 MCP 服务，都不记。不计：Cloud Agents API（云端托管）、Agent SDK（@grok/agent-sdk，部署到云端的另一套）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/cli/headless",
+          "locator": "Using Headless CLI：How it works（docs-pages.txt L37943-L37975、L38004-L38060）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Cursor CLI 非交互模式",
+          "note": "agent -p 用于脚本与 CI，输出格式可选 text、json、stream-json。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/sdk/typescript",
+          "locator": "Cursor TypeScript SDK：开头、Overview（docs-pages.txt L25097-L25133）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方 SDK",
+          "note": "SDK 让代码调用 IDE、CLI、网页里同一个代理；Local 运行时在调用方 Node 进程内跑代理循环。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/sdk/bridge",
+          "locator": "Cursor SDK Bridge：开头、When to use it（docs-pages.txt L29341-L29365）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "SDK Bridge",
+          "note": "本机服务内嵌 TS SDK，经 Connect/protobuf 暴露代理接口；官方发布并支持 sdk.v1 契约。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/cli/acp",
+          "locator": "ACP：Overview、Start ACP server（docs-pages.txt L37413-L37440）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Cursor CLI ACP 模式",
+          "note": "agent acp 经 stdio 用 JSON-RPC 接受自定义客户端，即 Agent Client Protocol 服务端。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/reference/deeplinks",
+          "locator": "Deeplinks：Prompts（docs-pages.txt L24921-L24935）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "桌面编辑器",
+          "note": "提示 deeplink 只把提示预填进对话，须用户确认后执行，从不自动执行。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "Cursor CLI 是单独安装、单独版本线的官方程序，闭源无法核对是否与 3.29.15 同一提交；按 SDK 文档“IDE、CLI 与 SDK 是同一个代理”视作同一发行版的另装官方包记入。若主控认定 CLI 属同一产品的另一形态，应去掉 cli_subprocess 与 public_protocol。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [
+          "cli_subprocess",
+          "library",
+          "service_api",
+          "public_protocol"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：user_interaction：用户在编辑器 Agent 面板（Cmd+I）输入任务；deeplink 预填的提示也要用户确认。api：按 F32 记 CLI print 模式、ACP、SDK 与 SDK Bridge，也包括在 GitHub Actions 里调用 CLI；F32 的 via_default_entry 为空，api 不进本字段的 via_default_entry。schedule：内置技能 /loop 按指定间隔重复运行一个提示或技能，不给间隔时由代理自己决定何时唤醒；文档未写实现细节。external_event：订阅 GitHub、Slack、Linear 事件与 Automations 都在 Cloud Agents（云端托管），不在同一发行版的本机入口，不记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：开头、Goals with /goal（docs-pages.txt L4280-L4282、L4407-L4420）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "编辑器 Agent",
+          "note": "Agent 在侧栏用 Cmd+I 打开；/goal 可配内置 /loop 技能按固定或可变间隔运行提示，不给间隔时代理自己决定何时唤醒。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/skills",
+          "locator": "Agent Skills：Built-in Cursor skills（/loop 一行）（docs-pages.txt L7060-L7086）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置技能",
+          "note": "/loop 按指定间隔重复运行一个提示或技能；内置技能在 Agent 对话里用 / 调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/cli/headless",
+          "locator": "Using Headless CLI：How it works（docs-pages.txt L37943-L37975）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Cursor CLI 非交互模式",
+          "note": "print 模式供脚本、CI 与 GitHub Actions 提交任务。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "schedule 只凭 /loop 的说明判为原生定时器；内置技能表混有 CLI 专用技能（/statusline、/update-cli-config），/loop 在桌面编辑器的可用性文档没有单列，但编辑器 Agent 总览页提到它，故记入 via_default_entry。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "推断：本地代理跑在桌面应用的扩展宿主进程里（IDE 3.26 发布说明：扩展宿主意外退出时本地代理随之停下，可点 Resume 恢复）；钩子 sessionEnd 的结束原因含 window_close，说明关窗即结束会话。文档未见桌面编辑器注册系统服务或自行常驻后台。推断：随前台进程，退出界面后任务不继续。其他环境：交给 Cloud Agents 运行可合上电脑继续（help/multi-agent），不在本配置。",
+      "evidence": [
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（第二条，Agent and chat）Agents stopped by an extension host crash can be resumed（docs-pages.txt L1614）",
+          "lines": "",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本地代理进程",
+          "note": "运行本地代理的是编辑器的扩展宿主进程，它退出时代理中途停下。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/hooks",
+          "locator": "Hooks：Reference sessionEnd（docs-pages.txt L9252-L9283）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话结束",
+          "note": "会话结束原因包括 window_close 与 user_close。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "闭源；模型推理与审批分类器在 Cursor 后端，但主循环所在的本机进程按文档是编辑器的扩展宿主。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "not_found",
+      "value_note": "找到的是交互输入这一层：代理工作时按 Enter 把消息排进队列，当前任务结束后依次处理，可拖动排序（agent overview Queued messages）；IDE 3.25 发布说明写新装默认改为 steer（在下一次工具调用时送进当前回合），队列仍可手动使用。另有 /goal 目标、/loop 定时和扩展宿主崩溃后的 Resume 选项。文档与发布说明都没写应用崩溃或重启后排队消息、目标或 /loop 是否保留并自动继续。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Queued messages、Steer a running agent（docs-pages.txt L4358-L4394）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互输入",
+          "note": "运行中提交的消息排进队列，当前任务完成后依次处理；也可立即发送或 steer。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.25（第二条，Agent and chat）New installs steer the running agent by default（docs-pages.txt L2077）",
+          "lines": "",
+          "version": "3.25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互输入",
+          "note": "新装时运行中发出的消息默认 steer 当前代理，而不是排队或打断。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "按 F35 unknown_rule：找到了队列、查不到崩溃后语义，写 unknown(not_found)。默认送达方式文档有出入：overview 写 steer 在 Agents Window 逐步推出，IDE 3.25 发布说明写新装默认 steer。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": null
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：blocking_approval：Auto-review 下删文件、工作区外改动、配置类文件，以及分类器否决后代理仍要执行的调用会弹出批准，等用户允许或拒绝；子代理需要批准或回答时主对话状态显示 Waiting for approval 或 Waiting for response（IDE 3.25），子代理停下等人。主代理的提问工具不阻塞：等回答时代理继续读文件、改代码。message_notification：IDE 3.26 发布说明写扩展宿主意外退出使本地代理停下时，若 Cursor 不在前台会发一条系统通知（失败分支，按总则 R2 计入）；正常完成或待批准时是否发系统通知文档未写。resumable_todo 疑似：同一条说明里停下的对话标为未读并带 Resume 选项、等用户决定恢复，但没写应用重启后是否保留。structured_handoff：未见。MCP 服务索要输入的表单要先加 MCP 服务，可选。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/security/run-modes",
+          "locator": "Run Modes：How Auto-review works（docs-pages.txt L5782-L5800）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行模式 Auto-review",
+          "note": "分类器否决而代理仍认为该执行时，Cursor 弹出批准提示等用户决定。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://cursor.com/docs/agent/overview",
+          "locator": "Cursor Agent：Ask questions（docs-pages.txt L4344-L4347）",
+          "lines": "",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "提问工具",
+          "note": "提问时代理继续读文件、编辑、运行命令，回答到达后再并入。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.25（第二条，Agent and chat）Clearer live status in agent chat（docs-pages.txt L2080）",
+          "lines": "",
+          "version": "3.25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理阻塞",
+          "note": "子代理需要批准或回答时，主对话状态显示 Waiting for approval 或 Waiting for response。"
+        },
+        {
+          "evidence_kind": "default_release",
+          "source_url": "https://cursor.com/docs/release-notes",
+          "locator": "Release notes：3.26（第二条，Agent and chat）Agents stopped by an extension host crash can be resumed（docs-pages.txt L1614）",
+          "lines": "",
+          "version": "3.26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "失败时的提醒",
+          "note": "本地代理因扩展宿主退出停下时显示 Resume 选项并标为未读；Cursor 不在前台时发一条系统通知。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "block_kind 记 permission 与 question：question 来自子代理等待回答（按总则 R4 计入子代理默认行为），主代理的提问工具按文档不阻塞。到达上限停下问人：总览写工具调用次数不设上限，未见此类询问。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ],
+        "unresolved": [
+          "resumable_todo"
+        ]
+      }
+    }
+  }
+}

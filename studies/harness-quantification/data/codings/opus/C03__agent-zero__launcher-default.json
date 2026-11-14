@@ -1,0 +1,1867 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "C03__agent-zero__launcher-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "Agent.monologue 的内层循环：每次调用主模型，从回复里取出工具请求并执行，结果写回历史再调模型，直到某个工具返回 break_loop（默认是 response 工具）才把控制权交还用户。子代理（call_subordinate、parallel）是嵌套的同类模型循环。/goal 或模型用 goal 工具建立目标后，response 不再结束循环、框架自动续跑，仍是模型循环的外层，不另记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent.monologue",
+          "lines": "L396-L565",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认网页界面发起的任务",
+          "note": "while True 内层循环：准备提示、调主模型、处理工具结果；process_llm_result_tools 返回结果时才 return（L538-L540）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/response.py",
+          "locator": "tools/response.py: ResponseTool.execute",
+          "lines": "L8-L14",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "response 工具返回 break_loop=True，是循环的结束信号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/response.py",
+          "locator": "plugins/_goal/tools/response.py: ResponseTool.execute",
+          "lines": "L12-L26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑",
+          "note": "目标为 active 时 response 改为 break_loop=False 并注入继续提示，循环由模型继续推进。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 核对：命令表取 plugins/_commands/commands/*.command.yaml 与插件命令（new、presets、status、compact、browser、computer-use、chat、queue、project、nudge、copy、clear、quit、pause、stop、plugins、chats、send、resume、attach、permissions、profile、models、rename、goal）：都是会话管理、开关或模型选择，不改变任务推进方式；/goal 是同一模型循环的自动续跑。快速开始只有网页界面一个入口（Launcher 或 docker run 得到同一界面）。scheduler 工具和每 60 秒的任务循环只决定何时启动一个任务（记 F33），不是任务内的事件调度。orchestrator 技能调用外部命令行代理，镜像里没有这些命令，且不是另一种控制方式。因此写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "value_note": "默认系统提示 agent.system.main.solving.md（agent0 profile 未覆盖）第 0 步写明“define observable success; outline short plan”，并要求在 thoughts 里说明每一步、证据不符时修订计划；计划只在回复文本里，框架不保存条目。默认工具清单里没有计划或待办工具。goal 工具只保存一个目标及其状态（active/complete/blocked），是目标续跑，不是带条目的计划，不按本字段的 structured_task_list 记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.main.solving.md",
+          "locator": "prompts/agent.system.main.solving.md",
+          "lines": "L1-L16",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认系统提示（agent0）",
+          "note": "解题步骤第 0 步要求先定义可观察的成功标准并列出简短计划，之后按证据修订计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.main.md",
+          "locator": "prompts/agent.system.main.md",
+          "lines": "L3-L13",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认系统提示",
+          "note": "主提示依次 include role、specifics、environment、communication、solving、tips；agent0 只覆盖 role、specifics 和 response 工具说明。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/prompts/agent.system.tool.goal.md",
+          "locator": "plugins/_goal/prompts/agent.system.tool.goal.md",
+          "lines": "L1-L13",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "goal 工具只有 get、create、update 三个动作，管理单个目标的状态，没有计划条目。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“outline short plan”前有一句“not for simple questions only tasks needing solving”，属于明确要求先列计划，但只对需要求解的任务；按 prompt_text_only 判，不是泛泛鼓励。goal 是单条目标加状态、框架在目标未完成时不让 response 结束：它约束的是结束而非按计划条目推进，码本里目标续跑归 F03/F04/F12，这里不记 structured_task_list 或 executable_flow_constraint。若主控认为单条带状态的目标算结构化任务表，请明确。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_end_signal：模型调用 response 工具（break_loop=True）结束本轮；子代理同样以 response 交回。目标续跑（模型可用默认 goal 工具自行建立，工具说明写着“只在用户要求时用”）中，模型调用 goal update 标 complete 或 blocked 后，response 才恢复结束。verification_condition：response 工具要求非空的 text 或 message 参数，否则抛 RepairableException，作为警告交回模型、不结束循环（只检查格式）。user_interrupt：网页界面的停止（api/stop.py kill_process）、暂停（api/pause.py，循环在 wait_if_paused 处等待）、运行中发新消息作为干预（handle_intervention）。没有默认的步数、Token、时长或金额上限；goal 的 token_budget 参数只保存不执行。连续 5 次不可用回复后停止属于异常处理，记在 F04。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/response.py",
+          "locator": "tools/response.py: ResponseTool.execute",
+          "lines": "L8-L14",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "参数非空才返回 break_loop=True，否则抛 RepairableException，循环继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent.monologue / handle_intervention / wait_if_paused",
+          "lines": "L536-L541",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "只有工具结果带结束标记时才 return；handle_intervention（L1097-L1119）在用户干预时抛 InterventionException、暂停时等待。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/api/stop.py",
+          "locator": "api/stop.py: stop_context",
+          "lines": "L5-L19",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "网页界面",
+          "note": "停止接口 kill_process 中止当前代理运行；api/pause.py L4-L18 切换暂停。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/response.py",
+          "locator": "plugins/_goal/tools/response.py",
+          "lines": "L12-L26",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑（模型可自行启用）",
+          "note": "目标 active 时 response 不结束；结束靠模型把目标标为 complete/blocked。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "verification_condition 只靠 response 工具的非空参数检查成立，按判定“只检查结构或格式的也算”记入；这一检查本质是结束工具的参数校验，口径偏宽，若码本本意不收这类参数校验，应去掉这一项。goal 的完成判定只看模型自己标 complete，不算验证条件。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：LiteLLMChatWrapper.unified_turn 对瞬时错误（408、429、5xx、超时、连接错误）在还没收到任何流式片段时最多重发 2 次、间隔 1.5 秒；空回复由 _20_empty_response 跳过默认处理、原样再调一次，连续 5 次（max_consecutive_unusable_responses 默认 5）后停止并提示用户重新发消息；_error_retry 的 try_clear_embeds 在重试用尽后遇到 BadRequest 时删掉历史里的嵌入媒体再继续。model_self_repair：RepairableException、找不到工具、格式错误、输出截断（fw.msg_output_limit）、重复回复检测（fw.msg_repeat）都以警告写回历史由模型改正；其他异常由 _error_retry 默认重试 1 次，把错误说明写入历史后继续循环（ContentPolicyViolation 除外），再失败就记错误、结束本轮。framework_input_repair：Context Doctor（默认启用插件）修复文本形式的工具调用 JSON，_05_leaked_tool_call 把其他格式漏出的完整调用按名称映射改回规范的工具名和参数，extract_tools.json_parse_dirty 宽松解析脏 JSON。没有框架暂停等人决定的分支。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/models.py",
+          "locator": "models.py: LiteLLMChatWrapper.unified_turn / _is_transient_litellm_error",
+          "lines": "L786-L797",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主模型调用",
+          "note": "未收到片段且属瞬时错误时按 a0_retry_attempts（默认 2）重发，判定见 L310-L332。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_error_retry/extensions/python/_functions/agent/Agent/handle_exception/end/_80_retry_critical_exception.py",
+          "locator": "_80_retry_critical_exception.py: RetryCriticalException",
+          "lines": "L27-L109",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启用插件 _error_retry（retries: 1, try_clear_embeds: true）",
+          "note": "临界异常重试一次并把错误说明交给模型；重试用尽时 BadRequest 可清除嵌入媒体后继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/_functions/agent/Agent/handle_exception/end/_50_handle_repairable_exception.py",
+          "locator": "_50_handle_repairable_exception.py: HandleRepairableException",
+          "lines": "L9-L23",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心异常处理",
+          "note": "可修复异常格式化后作为警告写入历史，循环继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_result/_20_empty_response.py",
+          "locator": "_20_empty_response.py: EmptyResponse",
+          "lines": "L63-L85",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心回合结果处理",
+          "note": "空回复跳过处理再调一次，连续达到上限后抛 HandledException 停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_context_doctor/extensions/python/message_loop_result/_10_context_doctor.py",
+          "locator": "_10_context_doctor.py",
+          "lines": "L25-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启用插件 _context_doctor",
+          "note": "执行前修复文本形式的工具调用 JSON，修好后照常执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_result/_05_leaked_tool_call.py",
+          "locator": "_05_leaked_tool_call.py: LeakedToolCall",
+          "lines": "L1-L57",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心回合结果处理",
+          "note": "把其他格式漏出的完整工具调用改写成规范 JSON 并修正工具名，交给正常分派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_result/_30_repeat_response.py",
+          "locator": "_30_repeat_response.py: RepeatResponse",
+          "lines": "L1-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心回合结果处理",
+          "note": "与上一回复相同就注入“你又发了同样的消息”的纠正提示。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按错误类型过了一遍：认证失效（OpenRouter 密钥错误）走临界异常，重试一次后结束本轮并显示错误，没有等用户补凭据再续的分支；权限被拒只有 tool_access 策略的拒绝，作为错误回给模型；请求过大（BadRequest）在重试用尽后清除嵌入媒体再试；没有版本库操作的专门处理。_error_retry 的临界异常重试会在历史里加一条错误说明再调模型，严格说不是“同一请求”，故归 model_self_repair；call_retry 以 models.py 的瞬时错误重发为主依据。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "执行核心在容器内由 supervisord 拉起的 run_ui.py（uvicorn，--dockerized=true --port=80）里常驻运行，代理循环与网页服务同进程；前端是主机浏览器里的网页界面，经映射到主机回环的端口（docker run 路径 127.0.0.1:5080）用 HTTP 接口和 WebSocket 连接。同一服务也供 A0 CLI 等其他前端连接。Launcher 只负责建容器和打开界面，其端口绑定未读其源码。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/run_ui.py",
+          "locator": "run_ui.py: run / prepare_web_runtime / start_web_server",
+          "lines": "L9-L52",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "网页界面入口",
+          "note": "启动 uvicorn 网页服务并注册传输处理器，初始化代理（init_a0）在同一进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf",
+          "locator": "supervisord.conf: [program:run_ui]",
+          "lines": "L61-L76",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "容器内由 supervisord 常驻运行 run_ui。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/api/message_async.py",
+          "locator": "api/ 目录（message、message_async、pause、stop、poll 等 ApiHandler）",
+          "lines": "L1-L17",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "网页界面",
+          "note": "前端经这些 HTTP 接口向核心发消息、暂停、停止。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess",
+        "local_service"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "main_process：text_editor、memory、document_query 等在 run_ui 进程内直接执行。subprocess：code_execution_tool 在容器内（ssh_enabled=auto 遇 dockerized 用本地 TTY）经 pty 用 asyncio.create_subprocess_shell 起 shell 子进程；browser 工具起容器内 Playwright 浏览器。local_service：search_engine 工具把查询发到 supervisord 单独常驻的 SearXNG（localhost:55510）。整个执行核心和这些工具都在同一个 Docker 容器里，和主机隔开，但容器不是相对执行核心另起的执行位置，不记 container。可选：MCP 服务器要用户添加配置；Host access 与 A0 CLI 的远程工具在主机执行，默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/helpers/tty_session.py",
+          "locator": "tty_session.py: 打开 pty 并起 shell",
+          "lines": "L260-L276",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认代码执行（容器内本地 TTY）",
+          "note": "命令在 create_subprocess_shell 起的子进程里运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py",
+          "locator": "code_execution_tool.py: _resolve_ssh_enabled",
+          "lines": "L563-L567",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方 Docker 镜像",
+          "note": "auto 在 dockerized 时返回 False，用 LocalInteractiveSession。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/searxng.py",
+          "locator": "helpers/searxng.py: search",
+          "lines": "L4-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "search_engine 工具",
+          "note": "向 http://localhost:55510/search 的本机 SearXNG 发请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf",
+          "locator": "supervisord.conf: [program:run_searxng]",
+          "lines": "L46-L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "SearXNG 作为独立常驻程序运行（user=searxng）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent._execute_tool_request / process_tools",
+          "lines": "L1155-L1245",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "工具对象在核心进程内 await tool.execute 执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "container 的口径拿不准：工具确实在容器里、和主机隔开，但执行核心也在同一容器内；按“参照点是执行核心所在的进程”判，不记 container。若码本本意是“工具所在环境是否为容器”，应加上 container。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "核心在每轮循环结束时（message_loop_end/_90_save_chat）把上下文序列化写到 /a0/usr/chats/<context_id>/chat.json，启动时由 initialize 调 persist_chat.load_tmp_chats 读回；网页界面只经接口取日志和历史显示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "helpers/persist_chat.py: save_tmp_chat / load_tmp_chats",
+          "lines": "L17-L97",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话持久化",
+          "note": "按 context id 存 usr/chats/<ctxid>/chat.json，并从该目录读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_end/_90_save_chat.py",
+          "locator": "_90_save_chat.py",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "每轮循环结束由代理循环一侧保存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/initialize.py",
+          "locator": "initialize.py",
+          "lines": "L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "启动",
+          "note": "启动时载入保存的聊天。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个聊天是一个 AgentContext，用生成的 context id 区分，历史存到 usr/chats/<ctxid>/。所有聊天共用同一个 run_ui 进程、同一个容器和默认工作目录 /a0/usr/workdir（项目按项目给目录，不按会话）；子代理也是同进程里的子 context。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: AgentContext.__init__ / generate_id",
+          "lines": "L64-L160",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话管理",
+          "note": "会话以 id 登记在同一进程的上下文表里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "helpers/persist_chat.py: get_chat_folder_path",
+          "lines": "L35-L45",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话持久化",
+          "note": "按 ctxid 分目录存放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py",
+          "locator": "helpers/settings.py: workdir_path 默认值",
+          "lines": "L604",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工作目录",
+          "note": "默认工作目录对所有会话相同。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心进程内以 LiteLLM 库调用模型（LiteLLMTransport 走 acompletion 或 aresponses），conf/model_providers.yaml 随包列出 anthropic、gemini、bedrock、openai、ollama 等多种 litellm_provider，用户只需选提供方填密钥；LiteLLM 把统一消息转成 Anthropic Messages、Gemini 等不同协议。钉住环境用 OpenRouter（litellm_provider openrouter，a0_api_mode chat，即 Chat Completions 格式）。另有自写的 ResponsesTransport 用于 Responses 模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/litellm_transport.py",
+          "locator": "helpers/litellm_transport.py: LiteLLMTransport.acomplete",
+          "lines": "L232-L246",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主模型调用",
+          "note": "按传输模式调用 litellm 的 acompletion 或 aresponses。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/conf/model_providers.yaml",
+          "locator": "conf/model_providers.yaml: chat 提供方表",
+          "lines": "L28-L204",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装的提供方",
+          "note": "anthropic、gemini、bedrock、openai、openrouter 等提供方都映射到 LiteLLM 的对应适配实现。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "text_parsing",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "text_parsing：钉住的 OpenRouter 走 Chat Completions 模式，请求不带原生工具定义（只有 Responses 模式才发），模型在回复里写 {tool_name, tool_args} JSON，由 extract_tools.extract_tool_request 解析后分派；解析不到时注入 fw.msg_misformat 警告让模型重写，Context Doctor 和 _05_leaked_tool_call 先做修复（记在 F04）。protocol_translation：默认开放 MCP 客户端，用户在 mcp_servers 里添加一条服务配置后，MCP 工具出现在提示里，模型照样用 JSON 调用，框架经 MCPTool 转成 MCP call_tool 请求。其他环境：a0_api_mode 为 responses 的提供方（如 _oauth 插件的 Codex 账户）用 Responses API 的原生函数调用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent.call_chat_model_turn",
+          "lines": "L946-L953",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钉住提供方（chat 模式）",
+          "note": "原生函数工具只在 Responses 模式下发送。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/conf/model_providers.yaml",
+          "locator": "conf/model_providers.yaml: openrouter",
+          "lines": "L194-L204",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钉住提供方",
+          "note": "OpenRouter 的 a0_api_mode 为 chat。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent.process_tools",
+          "lines": "L1430-L1536",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "从回复文本提取工具请求，先查 MCP 工具再查本地工具，找不到或格式错误时写警告。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/mcp_handler.py",
+          "locator": "helpers/mcp_handler.py: MCPTool.execute",
+          "lines": "L437-L455",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 客户端（添加服务配置后）",
+          "note": "把模型的工具调用转成 MCP 服务的 call_tool 请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py",
+          "locator": "helpers/settings.py: mcp_servers 默认值",
+          "lines": "L625-L626",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "默认 mcpServers 为空对象，扩展点开放，用户添加即用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "script_dispatch 查过 _code_execution 插件：执行环境里没有调用代理工具的接口，不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环和子代理都经 get_chat_model 解析到同一个 chat_model 槽位（钉住环境按向导推断为 openrouter / openai/gpt-5.6-terra）；子代理 profile 只换提示，不带型号设置，父会话有型号覆盖时子代理继承。call_subordinate 没有型号或推理强度参数，没有失败换型号的逻辑。browser 型号默认取主模型。可选：用户在界面或 /models、/presets 里给本聊天切换预设；浏览器可另选型号预设；配置独立视觉模型后 vision_load 改用视觉模型（默认 Default 预设主模型 vision:true，图片交给主模型）。辅助调用用 utility 槽位（钉住环境 google/gemini-3.1-flash-lite），与主型号不同，记 per_role。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_model_config/helpers/model_config.py",
+          "locator": "model_config.py: get_effective_config / get_chat_model_config / get_vision_model_config / get_utility_model_config",
+          "lines": "L772-L823",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "型号解析",
+          "note": "主模型取 chat_model 槽位（可有聊天级覆盖）；独立视觉模型只在主模型非 vision 或 override_main 时启用；辅助调用取 utility_model。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "tools/call_subordinate.py: get_or_create_subordinate",
+          "lines": "L164-L180",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "子代理只按 profile 设置提示，父会话的型号覆盖原样继承。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_onboarding/webui/onboarding-providers.js",
+          "locator": "onboarding-providers.js: openrouter 默认型号",
+          "lines": "L233-L241",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钉住环境",
+          "note": "OpenRouter 向导默认主模型 openai/gpt-5.6-terra，工具模型 google/gemini-3.1-flash-lite。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_naming/helpers/naming.py",
+          "locator": "naming.py: 自动命名",
+          "lines": "L112",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "辅助调用",
+          "note": "标题生成用 call_utility_model。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: 话题与批量摘要",
+          "lines": "L298-L355",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "辅助调用",
+          "note": "历史压缩摘要用 call_utility_model。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对：标题生成——utility（per_role）；上下文压缩或摘要——自动历史整理用 utility（per_role），手动 chat_compaction 默认主模型且需用户点击；动作审核分类——infection_check 带 .toggle-0 默认关，无；联网搜索与网页抓取——SearXNG 不调模型，browser 默认用主模型；媒体理解——vision_load 默认无独立视觉模型，图片交主模型，无辅助；生成类工具——office_artifact 等不调模型，无。另有记忆提取与整合、behavior_adjustment、document_query 的分块处理用 utility（document_query 的问答用主模型）。钉住型号的确切名称：向导写入与首次启动联网取到的 a0-presets 可能不同（配置记录已注明），两种情况下主、辅型号都不同，不影响取值，故 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "output_limit：主模型请求不由框架设输出上限（上限来自提供方），但回复因输出上限被截断时，_05_truncated_response 专门写入 fw.msg_output_limit 警告并让模型重答、要求拆小内容，属截断的专门重试处理。独立视觉模型槽位默认 max_tokens 2000，只在配置了视觉模型时用。不计入：rl_requests/rl_input/rl_output 默认 0（不限速，可选）；连续 5 次不可用回复后停止属于错误恢复次数（F04）；goal 的 token_budget 是可选参数且代码不据此停止；历史超 ctx_history 比例时的压缩属 D 组；子代理没有单独的步数或用量上限。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_result/_05_truncated_response.py",
+          "locator": "_05_truncated_response.py: TruncatedResponse",
+          "lines": "L13-L59",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心回合结果处理",
+          "note": "回复被输出上限截断、且没有完整工具调用时，写警告并跳过默认处理，让模型重答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_model_config/mode_presets_fallback.yaml",
+          "locator": "mode_presets_fallback.yaml: Default",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认预设",
+          "note": "各槽位 rl_requests、rl_input、rl_output 都是 0，没有默认限速或用量阈值。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/goal.py",
+          "locator": "goal.py: create_goal / _clean_token_budget",
+          "lines": "L107-L135",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑",
+          "note": "token_budget 只做清洗和保存，仓库里没有据它停止的代码。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "output_limit 的上限值来自提供方，按字段规定“截断后有专门续写或重试处理的照常记”计入。max_consecutive_unusable_responses（默认 5）连续空回复后停止，提示里写“防止继续产生 API 费用”，口径上像调用次数上限，但只数连续失败，按 call_count 判定中“错误恢复次数不算”排除。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每轮 prepare_prompt 直接取内存里维护的 History（bulks、topics、current 三层容器里的消息）展开，再追加 protocol、extras（记忆召回、目标、技能提示等）发出；Topic、Bulk 带 summary 时只输出它自带的摘要，属一对一修整。压缩在每轮结束的后台任务里原地改这份结构，不从存储重读；chat.json 只在载入旧会话时反序列化一次。其他环境：Responses 模式的提供方（如 Codex 账户）会附带服务端响应状态，不是钉住的 OpenRouter chat 模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py: Agent.prepare_prompt",
+          "lines": "L567-L628",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环每次构造主模型请求",
+          "note": "每轮取 self.history.output()（内存里维护的历史），前后拼上 protocol 与 extras 消息，转成 langchain 消息与系统提示一起发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: History.output / Topic.output / Bulk.output",
+          "lines": "L428-L434",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径每轮",
+          "note": "按 bulks、topics、current 顺序展开消息；有 summary 的 Topic、Bulk 只输出它自带的摘要（Topic.output L222-L227，Bulk.output L337-L344）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/conf/model_providers.yaml",
+          "locator": "conf/model_providers.yaml: openrouter.kwargs.a0_api_mode",
+          "lines": "L194-L204",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "环境前提钉住的 OpenRouter 提供方",
+          "note": "OpenRouter 走 chat 模式（a0_api_mode: chat），每次发完整消息历史，不走 Responses 接口的服务端状态。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "Topic、Bulk 有自己的 _cls 类型、summary 会改变回放内容，按 scope_rule 算“控制条目被一对一换成它自带的摘要”，归修整，所以仍记 sequential_messages；F17 那边按“有一类控制条目就够”判 event_log，两处口径不同但不矛盾，请主控确认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "value_note": "触发条件：历史 token 超过 ctx_length×ctx_history（默认 128000×0.7）。truncation：大消息按比例截短；Bulk 合并后仍超预算时丢掉最旧一块（不留标记）。summarization：话题中段、旧话题、Bulk 用工具模型写摘要替换。tool_result_replacement：vision_load 带进的图片 raw 消息过大时整条换成固定说明，图片嵌入超过 max_embeds 时较早的整条改为“embedded data removed”；这一项要主模型配置 vision 为真才会出现图片（兜底预设 Default 为 vision:true，向导选 OpenRouter 后的 vision 值未钉住），所以 confidence 取 medium。超过 500 字符的工具结果另存 usr/chats/<id>/messages/N.txt 并在结果里附路径，但原文仍在上下文，不算替换。可选：chat_compaction 插件的整段压缩只由用户在界面点按钮触发（默认用主聊天模型），按总则 R3 第二档不进取值。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/message_loop_end/_10_organize_history.py",
+          "locator": "OrganizeHistory.execute / compress_history",
+          "lines": "L9-L30",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径每轮循环结束",
+          "note": "每轮循环结束在后台任务里调用 history.compress()；下一轮前 message_loop_prompts_before/_90_organize_history_wait.py 等待或同步整理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: History.compress / compress_topics / compress_bulks",
+          "lines": "L543-L625",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "历史超过 ctx_length*ctx_history 预算时",
+          "note": "超预算才压缩：当前话题先压大消息再摘要中段，旧话题先压大消息、再摘要、再并成 Bulk 摘要；Bulk 合并后仍超就 pop(0) 丢掉最旧一块。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: Topic.compress_large_messages",
+          "lines": "L233-L273",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "单条消息超过预算比例时",
+          "note": "普通消息按比例截短（truncate_dict_by_ratio，不调模型）；raw 消息（图片等嵌入内容）整条换成“Message content replaced to save space in context window”。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: Topic.compress_attention / summarize_messages",
+          "lines": "L281-L305",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "当前话题或旧话题超预算时",
+          "note": "把话题中段消息交给工具模型（call_utility_model）写成摘要，替换原消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "helpers/history.py: History.trim_embeds / _trim_embeds_in_record",
+          "lines": "L465-L521",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主模型配置 vision 为真时每轮",
+          "note": "超过 max_embeds（默认 10）的较早图片嵌入消息整条改为“embedded data removed”；vision 为假时 max_embeds 为 0，全部移除（L653-L662）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/vision_load.py",
+          "locator": "tools/vision_load.py: VisionLoad.after_execution",
+          "lines": "L235-L255",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "vision_load 工具结果",
+          "note": "vision_load 把图片作为 RawMessage（raw_content）加进历史，这就是上面被整条替换的 raw 消息来源。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "tool_result_replacement 的对象是 vision_load 工具产生的图片消息（单独一条 RawMessage，紧跟工具结果），按“工具结果被整条换成占位”记；若主控认为它不算工具结果，则这一项应删。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "value_note": "semantic_retrieval 有两条：用户放进 usr/knowledge 的资料（以及随包 knowledge/）在记忆初始化时导入向量库，由默认开启的记忆召回每 3 次循环自动按相似度取回、模型也能用 memory 工具 load；document_query 工具把模型给出的本地或远程文档切块建向量索引后按查询取回。没有框架自带的关键词或代码结构检索工具（工具清单只有 text_editor 读写补丁、code_execution 等），代理用终端自己跑 grep 不计。用户在网页界面上传附件时，消息里只带附件路径，框架不读入内容，由模型自己用工具读，因此不记 user_specified。search_engine（容器内 SearXNG）与 browser 属网页访问，不计。技能：每个任务开头框架按用户消息检索技能名称和描述放进 extras，正文由 skills_tool 按需载入，属技能目录途径，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/helpers/memory.py",
+          "locator": "Memory.preload_knowledge / _preload_knowledge_folders",
+          "lines": "L259-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认记忆初始化",
+          "note": "记忆库初始化时把知识目录里的文件导入同一个 FAISS 向量库（按 main、fragments、solutions 等区域）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/helpers/memory.py",
+          "locator": "abs_knowledge_dir",
+          "lines": "L676-L689",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认知识目录",
+          "note": "knowledge_subdirs 的 default 指仓库 knowledge/，custom 指用户资料目录 usr/knowledge/。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/initialize.py",
+          "locator": "initialize_agent: knowledge_subdirs",
+          "lines": "L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "默认 knowledge_subdirs = [agent_knowledge_subdir（默认 custom）, 'default']，即用户资料库和随包知识都导入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/extensions/python/message_loop_prompts_after/_50_recall_memories.py",
+          "locator": "RecallMemories.execute / search_memories",
+          "lines": "L45-L230",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的记忆召回（每 3 次循环）",
+          "note": "按对话内容做向量相似度检索（search_similarity_threshold），取回 main/fragments 与 solutions 区域的条目放进 extras。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_document_query/helpers/document_query.py",
+          "locator": "DocumentQueryStore.init_vector_db / 建索引",
+          "lines": "L119-L142",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "document_query 工具（默认注册）",
+          "note": "把模型指定的文档切块写进向量库，按查询的相似度取回片段（default_config.yaml search_threshold 0.5、search_limit 100）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/api/message.py",
+          "locator": "api/message.py: 上传附件",
+          "lines": "L34-L79",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "网页界面发消息",
+          "note": "附件保存后只把路径列表交给 UserMessage.attachments，fw.user_message.md 模板只写入路径。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "附件只传路径、不由框架读入内容，我按 user_specified 判定里“由框架读入上下文”这一条排除；若码本认为“拖入附件”本身即算用户指定，则应补 user_specified。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：_promptinclude 插件（默认开）每次构造系统提示时扫描工作目录（默认 /a0/usr/workdir，项目激活时为项目目录）下的 *.promptinclude.md 并注入。auto_summary：每轮 monologue 结束由工具模型从对话提炼记忆片段与解法，写进向量记忆库（memorize_enabled、consolidation 默认 true）；模型也可用默认注册的 memory 工具 save；behavior_adjustment 工具把行为规则合并写进记忆目录 behavior.md，新会话系统提示自动读入。retrieval_store：上述记忆存在本地 FAISS 向量库，新会话按当前对话每 3 次循环相似度检索取回（召回阈值 0.7），不整份载入。记忆条目只带 area、timestamp 等元数据，正文是自由文本，不按 structured_records 计。scheduler 的定时任务属调度，不算记忆。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_promptinclude/extensions/python/system_prompt/_16_promptinclude.py",
+          "locator": "PromptInclude.execute / _resolve_workdir",
+          "lines": "L10-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的 _promptinclude 插件",
+          "note": "每次构造系统提示时扫描工作目录里的 *.promptinclude.md 并放进系统提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/extensions/python/monologue_end/_50_memorize_fragments.py",
+          "locator": "MemorizeMemories.execute",
+          "lines": "L17-L211",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的自动记忆",
+          "note": "monologue 结束时检查 memory_memorize_enabled，用 call_utility_model 提炼片段，insert_text 写入 fragments 区域。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/extensions/python/message_loop_prompts_after/_50_recall_memories.py",
+          "locator": "RecallMemories.execute / search_memories",
+          "lines": "L45-L230",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的记忆召回（每 3 次循环）",
+          "note": "按对话内容做向量相似度检索（search_similarity_threshold），取回 main/fragments 与 solutions 区域的条目放进 extras。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_memory/default_config.yaml",
+          "locator": "plugins/_memory/default_config.yaml",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "记忆插件默认配置",
+          "note": "memory_recall_enabled true、interval 3、similarity_threshold 0.7、memorize_enabled 与 consolidation 均为 true。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_behavior_adjustment/extensions/python/system_prompt/_20_behavior_prompt.py",
+          "locator": "get_custom_rules_file / read_rules",
+          "lines": "L19-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册的 behavior_adjustment",
+          "note": "行为规则文件 behavior.md 存在记忆目录，每次构造系统提示时读入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "behavior_adjustment 写入的 behavior.md 由专门工具写、自动读入，我并入 auto_summary 的说明，没有另记 user_maintained_files；memory 工具支持按元数据 filter 查询，但正文不是固定字段，未记 structured_records。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "event_log：chat.json 里的历史除 Message 外还有压缩产生的 Bulk 条目（独立 _cls，带 summary，回放时整块换成摘要），按“有一类控制条目就够”记；chat.json 每次整份覆盖写。界面日志（log）一并存在 chat.json，条目类型只有 agent、tool、util、warning 等，不另记。state_snapshot：Time Travel 插件（默认开）把 /a0/usr 内工作区存进 /a0/usr/.time_travel 的影子 Git 仓库，travel/revert 入口会读取。超过 500 字符的工具结果另存 usr/chats/<id>/messages/N.txt 并在结果里附路径，但原文同时保存在 chat.json，不满足“只存引用”，不记 external_reference。可选：chat_compaction（用户点按钮）替换历史前把原聊天备份到 chats/<id>/backups/。其他持久数据：记忆向量库、目标文件 usr/plugins/_goal/goals/、调度任务文件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "save_tmp_chat / _serialize_context / _serialize_agent",
+          "lines": "L50-L239",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认每轮循环结束保存（extensions/python/message_loop_end/_90_save_chat.py）",
+          "note": "把整个上下文写成 usr/chats/<id>/chat.json：各代理的 history（Bulk、Topic、Message 三种 _cls）、agent.data、output_data 和最近 1000 条界面日志。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "History.to_dict / Bulk.to_dict / Topic.to_dict / Message.to_dict",
+          "lines": "L138-L149",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "历史序列化",
+          "note": "Message 存 content、metadata、summary；Bulk、Topic 以独立 _cls 存放并带 summary（L308-L371、L530-L537）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_time_travel/helpers/time_travel.py",
+          "locator": "TimeTravelService.snapshot / travel / revert",
+          "lines": "L744-L930",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的 Time Travel 插件",
+          "note": "文件变化和代码执行后给 /a0/usr 内工作区拍影子 Git 快照；travel、revert 读取快照把文件改回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/hist_add_tool_result/_90_save_tool_call_file.py",
+          "locator": "SaveToolCallFile.execute",
+          "lines": "L1-L44",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "超过 500 字符的工具结果",
+          "note": "工具结果另写一份到 chats/<id>/messages/N.txt，在结果数据里加 file 路径，原结果仍保留。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Bulk 是否算控制条目是口径判断：它是压缩产物、有独立类型、决定其内部记录不再回放，我按 scope_rule 第（1）（2）条判为控制条目，记 event_log；若认为 summary 只是记录上的摘要标志，则应改记 messages。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "容器或网页服务重启后自动载入全部已保存会话，重建对话历史；中断时正在跑的 monologue 和未完成的工具调用不接续，要用户发下一条消息（或点 nudge，向模型发一条继续提示）由模型重新决定。没有按步骤保存执行位置的检查点。调度任务文件在启动后重新载入、按时启动新运行，属调度，不算恢复。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "load_tmp_chats / _deserialize_context / _deserialize_agents",
+          "lines": "L72-L94",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器启动后",
+          "note": "启动时（initialize.py L53）读回 usr/chats 下全部 chat.json，重建上下文、代理链和历史，用户在界面选中会话后发下一条消息接着跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/initialize.py",
+          "locator": "initialize_chats",
+          "lines": "L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "网页服务启动",
+          "note": "启动流程调用 persist_chat.load_tmp_chats() 载入已保存会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "AgentContext.nudge",
+          "lines": "L253-L259",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "界面 nudge 按钮",
+          "note": "nudge 结束当前进程，再以一条系统提示发起新的模型调用，不重放中断的调用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：chat.json 里的历史（含工具结果消息）整份读回上下文。task_plan：目标存于 usr/plugins/_goal/goals/<context_id>.json，重启后仍按会话编号读取，active 目标每轮注入 extras，并覆盖 response 工具不让循环结束，继续驱动代理。subagent_links：子代理各有自己的 AgentContext，chat.json 的 output_data 存 parent_context_id；重启后父代理用 call_subordinate（默认槽位或指定 context_id）会在 AgentContext.all() 里找到原子代理上下文，带原历史接着做。工作区 /a0/usr 是持久挂载、本来就在，不是恢复动作带回的，不计。外部副作用（已执行的命令、网络请求）不在恢复范围。调度任务按时重新运行，属调度。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "load_tmp_chats / _deserialize_context / _deserialize_agents",
+          "lines": "L72-L94",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器启动后",
+          "note": "启动时（initialize.py L53）读回 usr/chats 下全部 chat.json，重建上下文、代理链和历史，用户在界面选中会话后发下一条消息接着跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/goal.py",
+          "locator": "get_goal / _goal_path",
+          "lines": "L90-L96",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标插件（always_enabled）",
+          "note": "目标按会话编号存在 usr/plugins/_goal/goals/ 下的 JSON 文件，随时读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/response.py",
+          "locator": "ResponseTool.execute",
+          "lines": "L10-L25",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标插件",
+          "note": "有 active 目标时 response 不结束循环，提示模型继续工作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "_find_subordinate / get_or_create_subordinate",
+          "lines": "L74-L172",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册的 call_subordinate",
+          "note": "没有内存登记时按 output_data 的 parent_context_id 在全部上下文里找原子代理，复用其上下文和历史；新建子代理时写入 parent_context_id。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "subagent_links 由代码推断（子代理上下文按非 BACKGROUND 类型保存、重启后按 parent_context_id 匹配），未运行验证，因此 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：_chat_branching 插件（默认开）在界面每条消息旁注入分叉按钮，按切点裁剪历史、以新编号另存新会话，原会话保留在列表里。workspace_snapshot：Time Travel 插件（默认开）在文本编辑写入、补丁、界面文件操作和代码执行后自动拍影子 Git 快照（合并窗口 10 秒），只覆盖 /a0/usr 内工作区与项目，用户在 Time Travel 面板点 travel 或 revert 改回；travel 前先自动拍一份。没有补偿操作；没有找到按调用编号或内容查重、跳过已执行调用的路径（搜了 idempoten、dedup、duplicate 等，命中都与工具调用无关），临界异常重试插件只重试模型调用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_chat_branching/api/branch_chat.py",
+          "locator": "BranchChat.process",
+          "lines": "L96-L156",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的 _chat_branching 插件",
+          "note": "删去 id 后反序列化成新上下文、裁剪到切点、名称加 (branch) 并保存；原会话不动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_time_travel/helpers/time_travel.py",
+          "locator": "TimeTravelService.snapshot / travel / revert",
+          "lines": "L744-L930",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的 Time Travel 插件",
+          "note": "文件变化和代码执行后给 /a0/usr 内工作区拍影子 Git 快照；travel、revert 读取快照把文件改回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_time_travel/extensions/python/tool_execute_after/_50_code_execution_snapshot.py",
+          "locator": "代码执行后快照",
+          "lines": "L1-L27",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的 Time Travel 插件",
+          "note": "代码执行完成后排队拍工作区快照；文本编辑写入、补丁另有 _50_snapshot 扩展。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "Tool Access 插件（always_enabled）让用户在设置界面按全局、项目或代理档位，对每个工具及其动作设允许或禁止（含 MCP 工具默认值），被禁的工具同时从提示和 schema 里去掉。没有按命令文本、路径或网络目标的规则；文档也说明工具权限不是文件系统沙箱。默认 mode inherit、default allow，四个固定动作都直接放行：工作区外指容器内其他路径，代理以 root 运行可写；命令联网不受限。orchestrator 配置里的 allowed_tools 只传给外部命令行代理，不约束本代理，不计。其他环境：Launcher 的 Host access（默认关）开启后命令在主机上执行，不限所选文件夹。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_tool_access/default_config.yaml",
+          "locator": "plugins/_tool_access/default_config.yaml",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具访问策略默认配置",
+          "note": "mode inherit、default allow、mcp_default allow、allowed 与 blocked 为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/tool_policy.py",
+          "locator": "resolve_tool / _resolve_policy_ids / ensure_tool_allowed",
+          "lines": "L206-L297",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具访问策略",
+          "note": "规则按工具编号和工具动作（如 memory 的 load/save、text_editor 的 read/write）匹配 allowed/blocked；mode 不是 custom 时直接放行；被禁止的调用在执行前抛错。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py",
+          "locator": "_resolve_ssh_enabled / 开会话",
+          "lines": "L155-L169",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内默认命令执行",
+          "note": "ssh_enabled=auto 在容器内为假，命令走 LocalInteractiveSession，无逐条审批（L563-L567）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf",
+          "locator": "program:run_ui",
+          "lines": "L61-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "网页服务和代理循环以 root 在容器内运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/agent-profiles.md",
+          "locator": "docs/guides/agent-profiles.md: 工具权限说明（IMPORTANT 提示）",
+          "lines": "L60-L82",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "代理档位的工具权限",
+          "note": "工具权限按工具及其动作设置，官方说明它们不是文件系统沙箱。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认模式下命令、读写文件、联网都不停下等批准：code_execution 直接在容器内本地终端执行，Tool Access 默认放行。可选：infection_check 插件（默认关，带 .toggle-0）开启后由工具模型审查代理输出。Responses 模式下提供方托管 MCP 的审批请求被框架直接拒绝，钉住的 OpenRouter chat 模式不会出现。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py",
+          "locator": "_resolve_ssh_enabled / 开会话",
+          "lines": "L155-L169",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内默认命令执行",
+          "note": "ssh_enabled=auto 在容器内为假，命令走 LocalInteractiveSession，无逐条审批（L563-L567）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_tool_access/default_config.yaml",
+          "locator": "plugins/_tool_access/default_config.yaml",
+          "lines": "L1-L5",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具访问策略默认配置",
+          "note": "mode inherit、default allow、mcp_default allow、allowed 与 blocked 为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "Agent._handle_responses_mcp_approval_request",
+          "lines": "L1316-L1338",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Responses 模式（非默认）",
+          "note": "提供方托管 MCP 的审批请求一律自动拒绝，不交给用户。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "container_policy"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "container_policy：官方 Launcher 与 docker run 路径都把网页服务、代理循环和命令放在 Docker 容器里，以容器内 root 运行，主机只经 /a0/usr 挂载可见，网页端口只绑主机回环（docker run 路径）；容器网络不受限。Launcher 本体源码未读，按官方文档与镜像同一，confidence 取 medium。Tool Access 策略层始终挂在执行前，但默认 mode inherit、无阻止项时直接放行，要用户在设置里加禁止项才会拦，按“可选：”处理，不记 application_check。可选：infection_check（默认关）。其他环境：Host access 开启后命令在主机执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf",
+          "locator": "program:run_ui",
+          "lines": "L61-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "网页服务和代理循环以 root 在容器内运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_code_execution/tools/code_execution_tool.py",
+          "locator": "_resolve_ssh_enabled / 开会话",
+          "lines": "L155-L169",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "容器内默认命令执行",
+          "note": "ssh_enabled=auto 在容器内为假，命令走 LocalInteractiveSession，无逐条审批（L563-L567）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/Dockerfile",
+          "locator": "docker/run/Dockerfile",
+          "lines": "L1-L36",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "镜像基于 agent-zero-base，启动 /exe/initialize.sh，代理在容器内运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_tool_access/extensions/python/tool_execute_before/_10_enforce_tool_policy.py",
+          "locator": "EnforceToolPolicy.execute",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具执行前",
+          "note": "每次工具执行前调用 ensure_tool_allowed；默认策略放行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/tool_policy.py",
+          "locator": "resolve_tool / _resolve_policy_ids / ensure_tool_allowed",
+          "lines": "L206-L297",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具访问策略",
+          "note": "规则按工具编号和工具动作（如 memory 的 load/save、text_editor 的 read/write）匹配 allowed/blocked；mode 不是 custom 时直接放行；被禁止的调用在执行前抛错。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Tool Access 是 always_enabled 的执行前检查，但默认策略下 resolve_tool 在 mode 非 custom 时直接返回放行，没有任何限制规则在起作用；我按“保护要用户改设置才生效”记可选，不进 application_check，这一点另一位编码者可能判法不同。prompt_only 核对：默认模式无交代的限制；没有不改设置就能切换的内置模式（Goal 只是填入命令）；子代理档位 agent0、default、developer、hacker、researcher、tiny-local 都没有被说成只读或只计划；文档列出的限制设置（Tool Access、infection_check、浏览器 host_browser_privacy_policy）都有代码检查。各项判过，记 absent；没有逐个审计全部插件的设置项，confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "没有专门的审计日志，依据是 chat.json 的历史：每条 AI 消息存模型那一步的完整 JSON（thoughts、headline、tool_name、tool_args），紧随其后的工具结果消息带 tool_name 和 tool_result（长结果另附 messages/N.txt 路径），一条回复只执行一个工具，按顺序相邻能唯一对上。界面日志也存进 chat.json。覆盖范围：压缩时中段消息被摘要替换后原文从记录中消失，最旧的 Bulk 会被丢弃；chat.json 每次整份覆盖。没有审批（默认无逐次决定）；网页界面单一登录或无登录，记录里没有人或账户身份。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "Agent.hist_add_ai_response / hist_add_tool_result",
+          "lines": "L777-L829",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环",
+          "note": "模型回复全文（含 thoughts 与工具调用）和工具结果（tool_name、tool_result）各作一条消息追加进历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/persist_chat.py",
+          "locator": "save_tmp_chat / _serialize_context / _serialize_agent",
+          "lines": "L50-L239",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认每轮循环结束保存（extensions/python/message_loop_end/_90_save_chat.py）",
+          "note": "把整个上下文写成 usr/chats/<id>/chat.json：各代理的 history（Bulk、Topic、Message 三种 _cls）、agent.data、output_data 和最近 1000 条界面日志。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/history.py",
+          "locator": "History.to_dict / Bulk.to_dict / Topic.to_dict / Message.to_dict",
+          "lines": "L138-L149",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "历史序列化",
+          "note": "Message 存 content、metadata、summary；Bulk、Topic 以独立 _cls 存放并带 summary（L308-L371、L530-L537）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "“一条回复只执行一个工具”依据 process_tools 只抽取一个工具请求（agent.py L1430-L1445）；parallel 工具内部派生的多次调用记录在子上下文里，按编号对应未逐一核实，因此 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "主代理默认注册 call_subordinate（工具说明默认列在系统提示里）和 parallel 两个委派工具：call_subordinate 用 Agent(parent.number+1, initialize_agent(...)) 新建一个带独立 AgentContext 和历史的下级代理，在 output_data 里记下 parent_context_id、parent_agent_number，并登记在父代理的 _subordinates 里，下级自己跑 monologue 多步调用工具；parallel 可以把 call_subordinate 放进后台作业。另有默认启用的调度器（_scheduler 插件 always_enabled，scheduler 工具默认注册），到点时在专用上下文里直接起一次代理运行，任务状态由调度器跟踪。不计入：a2a_chat 工具与远端 A2A 代理对话（远端代理不由本框架创建和跟踪）；orchestrator 技能让模型经终端调用外部无头命令行代理（经通用命令执行，不是框架创建）；聊天命名、记忆提取、历史整理为只调一次工具模型的辅助调用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "tools/call_subordinate.py：get_or_create_subordinate、run_subordinate",
+          "lines": "L122-L215",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册的委派工具 call_subordinate",
+          "note": "新建带独立上下文的下级代理并记下父上下文编号，下级以 monologue 自己多步运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.tool.call_sub.md",
+          "locator": "prompts/agent.system.tool.call_sub.md：call_subordinate 工具说明",
+          "lines": "L1-L22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主代理系统提示中的工具清单",
+          "note": "工具说明默认给模型，参数含 profile、reset、context_id，A0 派 A1、A1 派 A2 逐层委派。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理调用 call_subordinate，或在 parallel 的 tool_calls 里放 call_subordinate（模型逐次决定，不算 workflow）。event_scheduling：调度器每 60 秒 tick，到期任务由 TaskScheduler._run_task 直接在任务的专用上下文里（dedicated_context 默认 true）新建 AgentContext 并运行代理，不经主代理；默认任务表为空，但 scheduler 工具默认注册、模型可自建任务。user：用户在任务界面新建临时任务并点运行（scheduler_task_run → run_task_by_uuid），框架为它新开专用上下文运行，状态与 last_result 回到任务列表。framework_internal 不记：回合结束的记忆提取、历史整理、聊天命名都只调一次工具模型。其他环境：Telegram、WhatsApp、邮件集成按入站消息开或续对话，需另配凭据。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "tools/call_subordinate.py：Delegation.execute",
+          "lines": "L222-L260",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主代理委派路径",
+          "note": "模型调用工具后由框架创建或续用下级代理并运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/task_scheduler.py",
+          "locator": "helpers/task_scheduler.py：TaskScheduler.tick、__new_context、_run_task、run_task_by_uuid",
+          "lines": "L768-L800",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启用的调度器",
+          "note": "到期任务由调度器直接运行；run_task_by_uuid 供界面“立即运行”调用，任务上下文在 L835-L852 新建。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_scheduler/prompts/agent.system.tool.scheduler.md",
+          "locator": "plugins/_scheduler/prompts/agent.system.tool.scheduler.md：dedicated_context",
+          "lines": "L6-L12",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "scheduler 工具默认参数",
+          "note": "新任务默认用专用上下文。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "user 一项的依据是任务界面的“运行”按钮：它不是对话命令，但属于用户显式发起、框架新开并跟踪、结果回到汇总界面（任务列表的状态和 last_result）的路径，按 F25 对“用户命令新开的对话”的判定记入；若认为调度器界面不算“汇总界面”，这一项应删。框架内部条件派生的、能多步调用工具的辅助代理没有找到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个下级代理有自己的 AgentContext 和 history，只收到父代理写的 message（可附 attachments 路径），在自己的对话里多步工作，结果作为工具结果交回。messages：call_subordinate 的 reset 默认 false，不带 context_id 时续用默认槽里最近的那个已有下级、带 context_id 时续用指定下级（下级正在运行则报错），新消息追加到它保留的历史里。shared_files：下级在同一容器、同一工作目录（/a0/usr/workdir，有项目时激活父代理的同一项目）里读写文件。权限：下级按自己的 profile 用 initialize_agent 初始化，沿用同一全局设置和 tool_access 策略，默认不逐条审批。调度器专用上下文的运行与其他运行之间只经同一工作目录相通。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "tools/call_subordinate.py：get_or_create_subordinate、run_subordinate",
+          "lines": "L122-L215",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径（不传可选参数）",
+          "note": "reset 默认 false 时续用已有下级；新下级独立上下文，只把任务说明作为用户消息加入其历史；激活父代理的项目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/prompts/agent.system.tool.call_sub.md",
+          "locator": "prompts/agent.system.tool.call_sub.md：reset、context_id 参数说明",
+          "lines": "L7-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "委派工具参数",
+          "note": "reset=false 续用默认下级或指定 context_id 的下级。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py",
+          "locator": "helpers/settings.py：默认设置 workdir_path",
+          "lines": "L604",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "全局默认工作目录",
+          "note": "默认工作目录是全局设置 usr/workdir，父子代理共用。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "shared_state 没记：记忆插件的向量库（Memory.index 按 memory_subdir 在进程内共享，plugins/_memory/helpers/memory.py L70-L83）父子代理都能经 memory 工具读写并看到彼此写入，但它是长期记忆而不是任务表、黑板一类运行状态；码本若把共享记忆库算作 shared_state，这里应补。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "synchronous_return：call_subordinate 在子上下文 run_task 后 await task.result()，父代理一直等到子代理最终回复，作为工具结果返回（并附 context_id）。async_wait：parallel 工具的 wait 参数或 action=start/background 由模型自选，作业在后台跑，之后用 job_ids await/collect，框架每轮把在跑作业的摘要注入提示。cancel_propagation：父代理任务被取消时，Delegation 捕获 CancelledError 且当前任务处于取消中，就 kill 子上下文的任务；子代理再委派时同一段代码逐层生效。只在默认委派路径（call_subordinate 前台）成立；parallel 后台作业从主代理发出时不登记为父任务的子任务，停止父代理不会连带取消，要用 parallel action=cancel 显式取消（这条单独命令不记）。调度器运行没有调用方，不参与本字段。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/call_subordinate.py",
+          "locator": "tools/call_subordinate.py：Delegation.execute",
+          "lines": "L222-L260",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "同步等待子任务结果；caller.cancelling() 时 task.kill() 后再抛出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/tools/parallel.py",
+          "locator": "tools/parallel.py：ParallelTool.execute",
+          "lines": "L23-L99",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册的 parallel 工具",
+          "note": "wait 默认 true，action 为 start/background/collect 时不等；可用 job_ids 之后再等或取消。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/parallel_tools.py",
+          "locator": "helpers/parallel_tools.py：start_parallel_jobs",
+          "lines": "L219-L255",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "parallel 后台作业",
+          "note": "只有调用方本身是并行子代理时才 add_child_task，主代理发起的后台作业不随父任务被 kill。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py：AgentContext.remove、kill_process、reset、nudge",
+          "lines": "L172-L260",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "停止、删除、重置父对话",
+          "note": "界面停止（api/stop.py 调 kill_process）、删除对话、重置、nudge 都会 kill 父任务，从而触发上面的连带取消。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 逐项：用户打断当前回合——界面停止按钮或 /stop 走 api/stop.py → kill_process，连带；取消等待中的调用——默认路径上没有只取消这次委派等待的操作（停止子对话是取消子代理本身，父代理收到 RepairableException）；取消父运行——删除对话（AgentContext.remove）、重置对话（reset → kill_process）都 kill 父任务，连带。故 all_ways。cancel_depth 记 whole_tree 依据是每层子代理都经同一 Delegation.execute 委派，取消逐层传递；这是读代码推断，快照里没找到覆盖多层取消的测试，所以 confidence 写 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "whole_tree",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：tools/ 下的 call_subordinate、parallel、response、skills_tool 等写在核心里。plugin_api：Agent.get_tool 按名字在项目、usr/agents、插件 agents、agents、usr、plugins 等目录查找 tools/<name>.py 并加载 Tool 子类，用户在 /a0/usr/plugins/<名>/ 下放带 tools/ 和工具说明的插件即可加入；默认在用：code_execution_tool、memory、browser、search_engine、text_editor、document_query 等由可单独关闭的官方插件（无 always_enabled）注册。external_protocol_service：设置里的 MCP 配置（默认 {\"mcpServers\": {}}）加一条服务即可把服务的工具给模型，默认没有服务。user_script、embedder_declared 不记：A0 CLI 连接后出现的 code_execution_remote 等四个远程工具定义在 _a0_connector 插件里，CLI 只负责执行，不是嵌入方为会话声明工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py：Agent.get_tool",
+          "lines": "L1576-L1609",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具装载",
+          "note": "按名字在多级目录（含 usr 和插件目录，见 helpers/subagents.py get_paths L350-L357）查找工具文件并加载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/AGENTS.md",
+          "locator": "plugins/AGENTS.md：Ownership、Local Contracts（用户插件放 usr/plugins/）",
+          "lines": "L6-L24",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "插件接口",
+          "note": "仓库文档写明自定义插件在 usr/plugins/ 下开发，与内置插件同一套契约。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/mcp-setup.md",
+          "locator": "docs/guides/mcp-setup.md：Add A Connection",
+          "lines": "L41-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 客户端",
+          "note": "在设置的 JSON 里加一条服务器即可接入其工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py",
+          "locator": "helpers/settings.py：mcp_servers 默认值",
+          "lines": "L625",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "默认 MCP 服务列表为空，所以外部协议服务不在 in_use_by_default。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "plugin_api 进 in_use_by_default 是按总则 R2：_code_execution、_memory、_browser 等官方插件不是 always_enabled，可单独停用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "plugin_api"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：默认启用的 _promptinclude 插件在每次构造系统提示时扫描工作目录（有项目时为项目目录）里的 *.promptinclude.md，按预算注入；另有项目指令（激活项目时）和 behavior_adjustment 维护的行为规则。skill_directory：skills_tool 可 list/search/load，从技能根目录（含用户目录）发现 SKILL.md 按需装载。role_template：agent profile 存在 /a0/usr/agents/<id>/（或项目 .a0proj/agents/），用户在界面 Create agent 或写文件新增，可按名派给 call_subordinate 的 profile 参数或用 /profile 切换。prompt_template：_commands 插件从 usr/plugins/_commands/commands/ 等处发现 .command.yaml，文本型展开为一条消息；脚本型由框架运行 run(payload)，返回的文字作为消息，故同时记 executable_items。workflow_definition 不记：命令、技能、调度任务都只展开为一条提示，没有由框架按定义推进多步的文件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_promptinclude/extensions/python/system_prompt/_16_promptinclude.py",
+          "locator": "plugins/_promptinclude/extensions/python/system_prompt/_16_promptinclude.py：PromptInclude.execute",
+          "lines": "L12-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启用插件（无 .toggle-0）",
+          "note": "每次构造系统提示时扫描工作目录的 *.promptinclude.md 并注入。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/skills.md",
+          "locator": "docs/guides/skills.md：开头说明",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "技能",
+          "note": "技能是按需装载的说明；实现见 tools/skills_tool.py L60-L80。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/guides/agent-profiles.md",
+          "locator": "docs/guides/agent-profiles.md：Create or edit a profile；存放位置表",
+          "lines": "L25-L38",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "代理角色",
+          "note": "用户可新建角色，全局放 /a0/usr/agents/<profile-id>/（L195-L201）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_commands/README.md",
+          "locator": "plugins/_commands/README.md：命令文件模型、Script Hook Contract、Scope Resolution",
+          "lines": "L1-L120",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启用的 _commands 插件",
+          "note": "斜杠命令可用文本模板或由框架执行的 Python run(payload)，从项目、全局和插件目录发现。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "role_template 与 prompt_template 都核过；技能目录与命令目录是两条独立装载路径（_commands 有自己的发现代码），所以 skill_directory 与 prompt_template 分别记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "prompt_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "扩展点按目录名挂处理器（extensions/python/<点>/ 或插件的同名目录），另有隐式 @extensible 钩子 _functions/<模块>/<限定名>/start|end，start 可改参数或直接给结果。input：user_message_ui（处理器可改 message，onboarding 借它拦下未配模型时的消息）、hist_add_before，以及 AgentContext.communicate/_process_chain 的 start。model_call：chat_model_call_before/after、util_model_call_before/after、before_main_llm_call、message_loop_result（可改模型回复）。tool_before_after：tool_execute_before/after（tool_access 在 before 抛错拒绝调用）、text_editor_*、workdir_file_mutation_after。end：monologue_end、message_loop_end、process_chain_end。session_start：AgentContext.__init__ 为 @extensible，新建对话或从磁盘载入对话时各触发一次。没有以保存或上下文压缩为本义的事件。默认在用：input（_commands 的 _process_chain start 解析斜杠命令）、model_call（_context_doctor 的 message_loop_result、_memory 的 message_loop_prompts_after）、tool_before_after（_time_travel 的 tool_execute_after）、end（_memory 的 monologue_end 自动记忆）；核心 extensions/python/ 下和 always_enabled 插件的处理器不算。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/AGENTS.md",
+          "locator": "extensions/python/AGENTS.md：Ownership 与 Child DOX Index",
+          "lines": "L8-L68",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "扩展点清单",
+          "note": "每个子目录是一个扩展点，列出 user_message_ui、before_main_llm_call、tool_execute_before/after、monologue_end 等；隐式 @extensible 钩子用 _functions 布局。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/extension.py",
+          "locator": "helpers/extension.py：extensible 装饰器说明",
+          "lines": "L57-L103",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "隐式钩子语义",
+          "note": "start 扩展可改参数或预置结果，end 扩展可改结果或异常。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py：call_chat_model 中的 chat_model_call_before/after；process_tools 中的 tool_execute_before/after；AgentContext.__init__ 的 @extension.extensible",
+          "lines": "L905-L930",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "核心调用点",
+          "note": "模型调用前后事件；工具前后见 L1491-L1508，会话开始见 L63-L64，monologue_end 见 L560-L564。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/api/message.py",
+          "locator": "api/message.py：user_message_ui 调用",
+          "lines": "L65-L71",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户消息提交",
+          "note": "扩展可修改消息和附件，或标记 model_not_configured 拦下。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "session_start 依据是 AgentContext.__init__ 上的隐式钩子（persist_chat 载入对话时 L262 也新建 AgentContext），文档只在仓库内 AGENTS.md 层面说明隐式钩子布局，没有逐个列出可挂的函数，所以 confidence 写 medium。save、context_compaction 查过全部 call_extensions 调用点和 @extensible 函数清单，history 压缩与 persist_chat 都不在内。observe_only 写 []：五个阶段都至少有一个事件能改写或阻断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end"
+        ],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "observe_only": []
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "service_api：网页服务进程同时开放外部 HTTP 接口 /api_message、/api_log_get、/api_terminate_chat、/api_reset_chat、/api_files_get，用 X-API-KEY（mcp_server_token，由持久运行编号和登录凭据派生，设置的 External Services 里可见）鉴权，可建或续对话、发任务。public_protocol：内置 MCP 服务端的 send_message 工具和 A2A 服务端（FastA2A）都把任务交给 context.communicate 跑完整代理循环；两者默认关（mcp_server_enabled、a2a_server_enabled 为 False），要在设置里打开，故不进 via_default_entry。ACP 编辑器接入要经另行安装的 A0 CLI（cli.agent-zero.ai 安装脚本），不属同一源码提交，不另记。没有非交互命令行模式，也没有公开的库。_a0_connector 的 /ws 接口是给官方 CLI 用的会话鉴权接口，不记。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/developer/connectivity.md",
+          "locator": "docs/developer/connectivity.md：External API Basics、MCP And A2A",
+          "lines": "L19-L47",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方对外接口",
+          "note": "列出外部 HTTP 端点和 X-API-KEY 鉴权，并说明 A2A 让别的代理与 Agent Zero 对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/api/api_message.py",
+          "locator": "api/api_message.py：ApiMessage 鉴权要求",
+          "lines": "L13-L30",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认网页服务",
+          "note": "不要网页登录，只要 API 密钥；令牌生成见 helpers/settings.py create_auth_token L851-L859。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/mcp_server.py",
+          "locator": "helpers/mcp_server.py：send_message 工具与启用检查",
+          "lines": "L67-L100",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 服务端（默认关）",
+          "note": "send_message 经 context.communicate（L275）跑代理；L483 检查 mcp_server_enabled。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/settings.py",
+          "locator": "helpers/settings.py：mcp_server_enabled、a2a_server_enabled 默认值",
+          "lines": "L628-L630",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "MCP 服务端与 A2A 服务端默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "service_api 进 via_default_entry 有一处拿不准：接口默认开着，但外部程序要从设置界面抄 API 令牌。令牌不是每次启动随机生成、也不只交给自家前端（文档让外部调用者到 Settings > External Services 取），我按“不另配凭据”判为直接开放；若把抄令牌算另配凭据，应从 via_default_entry 去掉。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：网页界面输入；另有 Telegram、WhatsApp、邮件集成插件（默认启用但要配 bot、号码或邮箱凭据）把人发来的消息开成或续成对话，按总则 R5 一并记入。api：F32 的外部 HTTP 接口，以及默认关的 MCP、A2A 服务端。schedule：调度器原生定时任务，模型经 scheduler 工具或用户在任务界面可建，网页服务启动后每 60 秒 tick。external_event 不记：邮件、Telegram 的入站是人写给代理的消息；没找到网络回调、文件变化等外部事件触发新任务的机制（Time Travel 的文件监视只拍快照）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/job_loop.py",
+          "locator": "helpers/job_loop.py：run_loop、scheduler_tick",
+          "lines": "L16-L45",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启动的任务循环",
+          "note": "每 60 秒执行调度器 tick 和 job_loop 扩展（邮件轮询等）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docs/developer/connectivity.md",
+          "locator": "docs/developer/connectivity.md：External API Basics",
+          "lines": "L19-L33",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "外部 API",
+          "note": "POST /api_message 向 Agent Zero 发消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_email_integration/README.md",
+          "locator": "plugins/_email_integration/README.md：What It Does",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "邮件集成（需配邮箱）",
+          "note": "轮询邮箱，决定续已有对话还是开新对话，并用邮件回复。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "api 进 via_default_entry 照 F32（F32 的 via_default_entry 有 service_api），F32 那处的令牌疑问同样影响这里。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "执行核心是 Docker 容器里 supervisord 管的 run_ui 进程（autorestart=true），容器由 Launcher 创建或 docker run -d 以分离方式启动，网页界面只是连到它的浏览器页；关掉浏览器页，容器和代理任务（服务端 DeferredTask 线程）继续运行。没有找到注册给操作系统服务管理器、开机自启的依据：快速开始的 docker run 不带 --restart，Launcher 创建容器时的重启策略未读其源码（不在快照内）。supervisord 只负责容器内重启，容器本身不由系统服务管理器维持。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/docker/run/fs/etc/supervisor/conf.d/supervisord.conf",
+          "locator": "docker/run/fs/etc/supervisor/conf.d/supervisord.conf：[program:run_ui]",
+          "lines": "L61-L72",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方镜像",
+          "note": "run_ui 由容器内 supervisord 拉起并自动重启。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/README.md",
+          "locator": "README.md：快速开始的 docker run 命令",
+          "lines": "L84-L100",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "与 Launcher 同镜像的安装方式",
+          "note": "docker run -d 以分离方式起容器，未设重启策略。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py：AgentContext.communicate、run_task",
+          "lines": "L269-L298",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "任务执行位置",
+          "note": "任务在服务端 DeferredTask 里运行，与浏览器连接无关。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "入口是 Launcher，其源码不在快照内；按配置记录与 docker run 路径同镜像判。若 Launcher 给容器设了 restart 策略，仍是 Docker 守护进程而非操作系统服务管理器在维持，我仍记 background_daemon。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是调度器：任务定义存在 usr/scheduler/tasks.json（持久工作区内），网页服务重启后 TaskSchedulerList 从文件载入，任务循环每 60 秒 tick，到期任务照常触发（scheduler 工具默认注册，按总则 R3 第一档算）。运行中被崩溃打断的那次运行不会重试，状态可能停在 running。交互层：任务运行中界面上的发送变为排队，消息存进 context.data 的 message_queue，主代理 process_chain 结束后逐条发出；随对话记录写盘，但重启后要用户再发消息或点发送才会处理，按定义记 in_memory。goal 插件的目标存在 usr/plugins/_goal/goals/，重启后不自动续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/task_scheduler.py",
+          "locator": "helpers/task_scheduler.py：_task_file_path、SchedulerTaskList.get、tick",
+          "lines": "L512-L535",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "调度器任务存储",
+          "note": "任务表存盘并在启动时载入；tick（L768-L770）运行到期任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/helpers/job_loop.py",
+          "locator": "helpers/job_loop.py：run_loop",
+          "lines": "L16-L36",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "启动后常驻任务循环",
+          "note": "启动后每 60 秒 tick 调度器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/extensions/python/process_chain_end/_50_process_queue.py",
+          "locator": "extensions/python/process_chain_end/_50_process_queue.py：ProcessQueue",
+          "lines": "L7-L37",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行中提交的消息",
+          "note": "排队消息只在主代理一条处理链结束后发出；队列放在 context.data（helpers/message_queue.py L11-L19）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "调度器“重启后继续触发”是读载入和 tick 代码得出的，文档没有明说；崩溃时停在 running 状态的任务之后会不会一直被跳过，没有查清。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "resumable_todo：goal 工具默认注册（_goal 插件 always_enabled），模型可建目标并在“没有用户输入或外部状态变化就无法继续”时标为 blocked；目标存成 usr/plugins/_goal/goals/ 下的文件，重启后仍在界面目标条上，等用户编辑、恢复或删除。工具说明写着“只在用户要求时用”，代码不拦（总则 R3）。blocking_approval 不记：默认没有命令或文件审批，也没有向用户提问并等待的工具；服务商托管 MCP 的审批请求被自动拒绝。首次使用时第一条消息被拦下、等用户在向导里连好模型后在原对话继续，属一次性设置，未记。message_notification 不记：notify_user 只进网页内的通知管理器（toast、通知列表），没找到系统通知或提示音。structured_handoff 无。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/prompts/agent.system.tool.goal.md",
+          "locator": "plugins/_goal/prompts/agent.system.tool.goal.md：goal 工具说明",
+          "lines": "L1-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册的 goal 工具",
+          "note": "模型可建目标并标 blocked；暂停、恢复、编辑、删除归用户。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_goal/tools/goal.py",
+          "locator": "plugins/_goal/tools/goal.py：GOALS_DIR、状态写盘",
+          "lines": "L200-L256",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标存储",
+          "note": "目标以 JSON 文件写到用户目录下的 goals 目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/plugins/_notify_user/README.md",
+          "locator": "plugins/_notify_user/README.md",
+          "lines": "L1-L7",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "notify_user 工具",
+          "note": "通知经 Agent Zero 的通知管理器发出，属界面内通知。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/agent0ai/agent-zero/blob/ba9b67df0f54ac78106ae85c552ef5d2458f7c9a/agent.py",
+          "locator": "agent.py：_handle_responses_mcp_approval_request",
+          "lines": "L1316-L1340",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "审批",
+          "note": "服务商托管 MCP 的审批请求被自动拒绝，不停下等人。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 的判断依据是在 webui 和 plugins 的前端代码里没找到 Notification API 或提示音调用（只有语音朗读的 Audio）；网页内通知按定义不记。首次模型配置的拦截可否算 blocking_approval（question）是口径问题：它确实让任务停下等用户提供信息再从原处继续，但只在未配模型时出现一次。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": null
+      }
+    }
+  }
+}

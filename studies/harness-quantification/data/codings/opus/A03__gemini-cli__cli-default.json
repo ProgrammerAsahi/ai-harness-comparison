@@ -1,0 +1,1903 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "A03__gemini-cli__cli-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "用户发一条任务后，核心 GeminiClient.processTurn 发请求、Turn 收集模型的 functionCall；界面层 useGeminiStream 把调用交给调度器执行，工具全部完成后 handleCompletedTools 以 isContinuation 把函数结果再交回模型，直到模型回复里没有工具调用。计划模式（enter_plan_mode，需用户批准）、子代理（invoke_agent）都是嵌在这条模型循环里的模型循环，不改变类别。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts#L2356-L2362",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts handleCompletedTools -> submitQuery(isContinuation)",
+          "lines": "L2356-L2362",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口默认路径",
+          "note": "工具完成后框架自动把函数结果作为续接请求交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts#L1776-L1813",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts processGeminiStreamEvents（toolCallRequests 分支）",
+          "lines": "L1776-L1813",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口默认路径",
+          "note": "有工具调用就排给调度器执行，没有就结束本轮。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/reference/commands.md#L13-L480",
+          "locator": "docs/reference/commands.md 斜杠命令清单",
+          "lines": "L13-L480",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "官方命令列表",
+          "note": "命令清单里没有开启工作流执行器或事件调度器的命令。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 照清单判过（docs/reference/commands.md 全部斜杠命令与 packages/cli/src/ui/commands/ 目录、启动参数）：/plan 进入计划模式，仍是模型循环；/agents 列出或直接调起子代理，子代理内部是 local-executor 的模型循环；/resume、/rewind、/restore、/chat、/compress、/clear 只改会话状态；/skills、/mcp、/extensions、/hooks、/tools、/memory、/init 管理内容或一次性生成文件；/shells、/tasks 只看后台进程；-p 非交互、--yolo、--approval-mode、--worktree 只改权限或位置，循环不变。没有命令开出显式工作流或事件调度，故写 []。钩子 AfterAgent 可让框架续发（client.ts sendMessageStream），但默认没有定义钩子，属于添加内容后的扩展。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "value_note": "默认系统提示的工作流第 2 步 Strategy 要求“Formulate a grounded plan based on your research”，交互模式下还要求向用户说明策略；另默认暴露 enter_plan_mode，模型可自行提出进入计划模式（需用户批准，交互模式下策略为 ask_user），计划模式下框架只放行只读类工具并把计划写成文件，exit_plan_mode 由用户批准，批准后不按条目检查执行，仍归仅提示文本。write_todos 在本配置不注册（只在 Gemini 2 系非预览型号且 tracker 关闭时启用；配置记录钉住 auto 解析为 Gemini 3 系）；任务跟踪工具 tracker_* 默认关（可选：experimental 设置 tracker=true）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/prompts/snippets.ts#L754-L770",
+          "locator": "packages/core/src/prompts/snippets.ts workflowStepStrategy",
+          "lines": "L754-L770",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认系统提示（无已批准计划、无 write_todos）",
+          "note": "默认提示明确要求先形成计划并向用户说明策略。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/plan.toml#L34-L38",
+          "locator": "packages/core/src/policy/policies/plan.toml enter_plan_mode 规则",
+          "lines": "L34-L38",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互模式默认策略",
+          "note": "模型调用 enter_plan_mode 时交互模式下询问用户。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts#L1306-L1310",
+          "locator": "packages/core/src/config/config.ts useWriteTodos 初始化",
+          "lines": "L1306-L1310",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钉住型号 auto（Gemini 3 系）",
+          "note": "write_todos 只在 Gemini 2 系非预览型号下启用，本配置不注册。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "可执行流程约束：已批准计划只作为提示里的“single source of truth”，没有框架按条目推进或拦截的代码；结构化任务表：write_todos 和 tracker 都不在默认工具里。若钉住型号改成 Gemini 2 系，本字段会变成 structured_task_list。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "主循环：模型回复不含工具调用即结束本轮。verification_condition 只在子代理：子代理须调用 complete_task 交回结果，带 outputConfig 的（codebase_investigator 等内置子代理）参数按结构校验，不合格作为工具错误交回、子代理继续；不调 complete_task 就停时框架判 ERROR_NO_COMPLETE_TASK_CALL，再给一轮带一分钟宽限的补救回合。budget 也只在子代理：codebase_investigator 50 回合／10 分钟，generalist 20／10，cli_help 10／3（默认值 30／10），到限后给一次宽限回合再结束。主循环 maxSessionTurns 默认 -1 不限。user_interrupt：Esc 取消当前请求。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/complete-task.ts#L82-L108",
+          "locator": "packages/core/src/tools/complete-task.ts validateToolParamValues",
+          "lines": "L82-L108",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "交回结果不合 outputConfig 结构就校验失败，不算完成。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts#L373-L410",
+          "locator": "packages/core/src/agents/local-executor.ts executeTurn（complete_task 判定）",
+          "lines": "L373-L410",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "只有 complete_task 成功才以 GOAL 结束，不调用就判协议违规。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts#L588-L700",
+          "locator": "packages/core/src/agents/local-executor.ts run（maxTurns、DeadlineTimer、checkTermination）",
+          "lines": "L588-L700",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "子代理按回合数和时长上限停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts#L1074-L1082",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts useKeypress（escape -> cancelOngoingRequest）",
+          "lines": "L1074-L1082",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口",
+          "note": "Esc 中止当前请求。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "client.ts 的 MAX_TURNS=100 只约束一次 sendMessageStream 内的递归续发（下一说话人检查默认跳过、钩子默认无、循环恢复），每次界面续接工具结果都重新计，不构成主循环的总预算，未据此给主循环记 budget；记在 F12 value_note。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：retryWithBackoff 对 429、5xx、fetch 失败按退避重发，主模型最多 10 次（auto 下 Pro 策略为 3 次）；流中途的 API 错误与 InvalidStreamError（含空回复、畸形函数调用、MAX_TOKENS 空文本）另重试最多 4 次。model_self_repair：工具出错、找不到工具（附相近名建议）作为函数结果交回；循环检测首次命中时注入纠正提示让模型重想。escalate_to_human：循环检测第二次命中时框架弹框，用户选关闭检测则带原请求重试，选保留则停止；配额终止或型号不存在时弹出 ProQuota 对话框，用户选重试（可换型号）后请求从原处续发（瞬时容量错误在默认 errorVerbosity=low 下自动重试一次、不弹框）。framework_input_repair：工具注册表把旧工具名 search_file_content 映射到 grep_search 后照常执行，范围只此一个别名。参数不做类型转换（Ajv 未开 coerceTypes）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/utils/retry.ts#L448-L475",
+          "locator": "packages/core/src/utils/retry.ts retryWithBackoff（RetryableQuotaError / 5xx 分支）",
+          "lines": "L448-L475",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主模型调用",
+          "note": "限流和 5xx 自动重发，用尽后进入回退处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/client.ts#L1328-L1356",
+          "locator": "packages/core/src/core/client.ts _recoverFromLoop",
+          "lines": "L1328-L1356",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认开启的循环检测",
+          "note": "检测到循环时向模型注入纠正提示再续发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts#L1956-L1987",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts setLoopDetectionConfirmationRequest",
+          "lines": "L1956-L1987",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口",
+          "note": "循环检测停下后请用户选择，选关闭则带原请求重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useQuotaAndFallback.ts#L218-L251",
+          "locator": "packages/cli/src/ui/hooks/useQuotaAndFallback.ts fallbackHandler（setProQuotaRequest）",
+          "lines": "L218-L251",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口，任何登录方式",
+          "note": "配额或型号错误时挂起请求等用户选择重试或停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/tool-registry.ts#L805-L823",
+          "locator": "packages/core/src/tools/tool-registry.ts getTool（TOOL_LEGACY_ALIASES）",
+          "lines": "L805-L823",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具注册表",
+          "note": "旧工具名自动解析为现名后执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "framework_input_repair 只靠一个旧名别名（tool-names.ts L209-L212 注释说是为策略、技能、钩子的向后兼容），但调度器 scheduler.ts L374 对模型请求同样走 getTool，因此模型用旧名也会被执行；口径上算“修整工具名”。认证失效（UnauthorizedError）只弹登录框，看不到登录后自动续发，未据此记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "gemini 先起一个轻量父进程，父进程用 spawn 拉起本机 Node 子进程并继承标准输入输出；Ink 界面、useGeminiStream 和核心 GeminiClient 都在这个子进程里，界面直接调用核心函数。父进程只做监管、重启和传管理设置，不是前端与核心之间的协议层。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/index.ts#L56-L80",
+          "locator": "packages/cli/index.ts run（Lightweight Parent Process）",
+          "lines": "L56-L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认交互入口",
+          "note": "父进程拉起继承 stdio 的子进程运行整个程序。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts#L1933-L1939",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts geminiClient.sendMessageStream",
+          "lines": "L1933-L1939",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认交互入口",
+          "note": "界面钩子直接调用核心客户端的函数。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "读写、搜索文件、网页抓取等工具在核心所在的 Node 进程里直接调用文件系统和网络；run_shell_command 经 node-pty 或 child_process 为每条命令起 shell 子进程（grep_search 用 ripgrep 时也起子进程）；子代理在同一进程内运行。可选：沙箱（tools.sandbox，默认未设）会把执行放进容器或 macOS seatbelt；MCP 服务要用户在 mcpServers 添加，stdio 型由核心拉起。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/shellExecutionService.ts#L1190-L1196",
+          "locator": "packages/core/src/services/shellExecutionService.ts executeWithPty（pty spawn）",
+          "lines": "L1190-L1196",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认、沙箱关闭",
+          "note": "命令在新起的 shell 子进程里执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/shellExecutionService.ts#L700-L706",
+          "locator": "packages/core/src/services/shellExecutionService.ts childProcessFallback（cpSpawn）",
+          "lines": "L700-L706",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "pty 不可用时",
+          "note": "无 pty 时退回 child_process 子进程。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/read-file.ts#L158-L162",
+          "locator": "packages/core/src/tools/read-file.ts ReadFileToolInvocation.execute（processSingleFileContent）",
+          "lines": "L158-L162",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认",
+          "note": "文件读取在核心进程内完成。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "构造请求用核心 GeminiChat 里的历史；核心的 ChatRecordingService 把会话写成项目临时目录下 chats/session-*.jsonl（子代理会话嵌在父会话目录下）。恢复时界面层读出会话文件，一份给界面显示，另一份经 GeminiClient.resumeChat 交回核心继续写入同一文件；界面的显示历史不参与构造请求。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingService.ts#L778-L790",
+          "locator": "packages/core/src/services/chatRecordingService.ts ChatRecordingService 初始化（chats 目录）",
+          "lines": "L778-L790",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认",
+          "note": "会话由核心的记录服务按会话编号写文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/client.ts#L357-L372",
+          "locator": "packages/core/src/core/client.ts resumeChat",
+          "lines": "L357-L372",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "恢复会话",
+          "note": "恢复时历史交回核心，并接续原会话文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useSessionResume.ts#L72-L92",
+          "locator": "packages/cli/src/ui/hooks/useSessionResume.ts loadHistoryForResume",
+          "lines": "L72-L92",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互入口恢复",
+          "note": "界面只装显示历史，模型历史交给核心客户端。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个会话按会话编号写独立的 session 文件；同一进程里用 /clear、/resume 切换会话，不换进程；工作目录与文件系统默认共享。可选：--worktree 需先打开 experimental.worktrees（默认 false）才为会话建 Git 工作树；沙箱容器默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingService.ts#L810-L822",
+          "locator": "packages/core/src/services/chatRecordingService.ts 会话文件命名（SESSION_FILE_PREFIX + 时间 + 短编号）",
+          "lines": "L810-L822",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认",
+          "note": "会话按编号分文件存放。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts#L2234-L2242",
+          "locator": "packages/cli/src/config/settingsSchema.ts experimental.worktrees",
+          "lines": "L2234-L2242",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "工作树隔离默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "value_note": "主执行链只说 Gemini generateContent 一种协议：API 密钥（钉住环境）、Vertex AI、网关（自定义 base URL）都用 @google/genai 的 GoogleGenAI，只差地址和认证；Google 登录与 ADC 走 Code Assist 服务端，converter 只给同一套 contents/tools 外包一层 {model, project, request}。本地 LiteRT（Gemma 路由器，默认关）也用同一 SDK。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/contentGenerator.ts#L293-L310",
+          "locator": "packages/core/src/core/contentGenerator.ts createContentGenerator（Code Assist 分支）",
+          "lines": "L293-L310",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Google 登录／ADC",
+          "note": "Code Assist 路线另建生成器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/contentGenerator.ts#L380-L400",
+          "locator": "packages/core/src/core/contentGenerator.ts createContentGenerator（GoogleGenAI 分支）",
+          "lines": "L380-L400",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "API 密钥、Vertex、网关",
+          "note": "其余认证都用同一个 GoogleGenAI 客户端。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/code_assist/converter.ts#L129-L170",
+          "locator": "packages/core/src/code_assist/converter.ts toGenerateContentRequest / toVertexGenerateContentRequest",
+          "lines": "L129-L170",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Code Assist 路线",
+          "note": "只是外层封装，消息格式不变。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具声明放进请求的 functionDeclarations，Turn 从响应的 functionCalls 字段取调用。MCP：mcpServers 默认空、用户添加一条服务配置即可（受信任目录或用户级设置），DiscoveredMCPTool 把 MCP 工具包装成函数、执行时转成 callTool 请求。出错路径：参数校验失败、找不到工具作为错误函数结果交回模型；finishReason 为 MALFORMED_FUNCTION_CALL 时抛 InvalidStreamError 并自动重试本次请求。没有文本解析回退，没有脚本分派工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/turn.ts#L380-L387",
+          "locator": "packages/core/src/core/turn.ts Turn.run（resp.functionCalls）",
+          "lines": "L380-L387",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "调用取自接口原生的 functionCalls 字段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/mcp-tool.ts#L425-L450",
+          "locator": "packages/core/src/tools/mcp-tool.ts DiscoveredMCPToolInvocation.execute（mcpTool.callTool）",
+          "lines": "L425-L450",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户添加 MCP 服务后",
+          "note": "函数调用被转成 MCP callTool 请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/geminiChat.ts#L1738-L1742",
+          "locator": "packages/core/src/core/geminiChat.ts processStreamResponse（MALFORMED_FUNCTION_CALL）",
+          "lines": "L1738-L1742",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "畸形函数调用作为流错误处理并重试。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "per_request_routing",
+        "failover"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "per_request_routing：auto 下数值分类器按复杂度打分（阈值默认 90，可由服务端下发），高分用 gemini-3.1-pro-preview-customtools、低分用 gemini-3.8-flash，同一工具调用序列沿用已选型号；计划模式选 Pro、已批准计划的实施阶段选 Flash（general.plan.modelRouting 默认 true）。per_role：内置子代理固定型号——codebase_investigator 用 gemini-3-flash-preview，cli_help 用 flash 别名，generalist 继承主型号。failover：auto 下 Pro 的策略链末端是 Flash，瞬时错误重试 3 次后静默换 Flash 重发；终止性配额错误则弹框由用户点选是否换型号（需用户点选）。invoke_agent 只有 agent_name 和 prompt，没有型号参数，模型不能自选型号。可选：/model 切换。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/routing/strategies/numericalClassifierStrategy.ts#L228-L249",
+          "locator": "packages/core/src/routing/strategies/numericalClassifierStrategy.ts getRoutingDecision",
+          "lines": "L228-L249",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "auto 型号、API 密钥",
+          "note": "按复杂度分数在 Pro 与 Flash 之间选型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/codebase-investigator.ts#L54-L58",
+          "locator": "packages/core/src/agents/codebase-investigator.ts CodebaseInvestigatorAgent（model）",
+          "lines": "L54-L58",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "子代理固定用另一个型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/availability/policyCatalog.ts#L74-L105",
+          "locator": "packages/core/src/availability/policyCatalog.ts getModelPolicyChain",
+          "lines": "L74-L105",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "auto 型号",
+          "note": "Pro 瞬时失败的动作是 silent，链末端是 Flash。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/fallback/handler.ts#L80-L96",
+          "locator": "packages/core/src/fallback/handler.ts handleFallback（silent 分支）",
+          "lines": "L80-L96",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "auto 型号",
+          "note": "静默动作直接切到回退型号重发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/agent-tool.ts#L59-L73",
+          "locator": "packages/core/src/agents/agent-tool.ts invoke_agent 参数模式",
+          "lines": "L59-L73",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认",
+          "note": "派生工具没有型号参数。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对清单：标题生成——无独立请求（启动时为前一会话补摘要用 summarizer-default，即 flash-lite 别名，记 per_role，sessionSummaryUtils.ts L460-L542）；上下文压缩——压缩型号别名（Pro 路线 gemini-3-pro-preview，Flash 路线 gemini-3-flash-preview），与主型号名不同，per_role（chatCompressionService.ts L324-L348）；动作审核分类——无（Conseca 默认关）；路由分类器 flash-lite 与循环检测 gemini-3-flash-preview／二次确认 gemini-3-pro-preview 也是固定另一型号，per_role（loopDetectionService.ts L66、L600-L605）；联网搜索与网页抓取——各自固定调 gemini-3-flash-preview，per_role（web-search.ts L92-L101）；媒体理解——无独立调用，图片随主请求；生成类工具——无。failover 依赖策略链走 legacy 路径（experimental.dynamicModelConfiguration 默认 false）和预览权限的判断，所以 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "call_count",
+        "time"
+      ],
+      "facets": {
+        "hard_stop": [
+          "call_count",
+          "time"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "两维都只在子代理：local-executor 按回合数（codebase_investigator 50、generalist 20、cli_help 10，未写时默认 30）和时长（10／10／3 分钟，默认 10）截止，到限后框架给一次一分钟宽限的补救回合让它调用 complete_task，仍未完成即以 MAX_TURNS 或 TIMEOUT 结束，把错误交回主循环。主循环：maxSessionTurns 默认 -1 不限（可选：设正数后到限停下）；client.ts 的 MAX_TURNS=100 只限一次 sendMessageStream 内的递归续发深度，界面每次续接工具结果都重新计。输出：主对话请求不设 maxOutputTokens（由服务端默认），回复被截断时不续写，只有截断且无文本时随通用流错误重试，未记 output_limit。发送前若估算请求超过剩余上下文窗口就停下并提示 /compress，这是窗口检查，未记 total_tokens。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/types.ts#L51-L56",
+          "locator": "packages/core/src/agents/types.ts DEFAULT_MAX_TURNS / DEFAULT_MAX_TIME_MINUTES",
+          "lines": "L51-L56",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理默认上限",
+          "note": "子代理默认 30 回合、10 分钟。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/codebase-investigator.ts#L112-L115",
+          "locator": "packages/core/src/agents/codebase-investigator.ts runConfig",
+          "lines": "L112-L115",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理 codebase_investigator",
+          "note": "内置子代理自带回合与时长上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts#L448-L470",
+          "locator": "packages/core/src/agents/local-executor.ts executeFinalWarningTurn",
+          "lines": "L448-L470",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理到限时",
+          "note": "到限后只给一次宽限回合，随后结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts#L1080-L1086",
+          "locator": "packages/cli/src/config/settingsSchema.ts model.maxSessionTurns",
+          "lines": "L1080-L1086",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "主会话回合上限默认 -1，即不限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/geminiChat.ts#L1749-L1755",
+          "locator": "packages/core/src/core/geminiChat.ts processStreamResponse（MAX_TOKENS 空文本）",
+          "lines": "L1749-L1755",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "主循环",
+          "note": "截断只在无文本时报错，随通用流错误重试。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "output_limit 拿不准：主对话不设输出上限，截断后没有专门续写；MAX_TOKENS 且无文本时归入 InvalidStreamError，被通用的流错误重试（最多 4 次）一并重试，没有针对截断的处理，按“专门的续写、重试”从严未计。若码本认为这类重试算专门处理，则应加 output_limit 并入 hard_stop。上下文窗口溢出检查（client.ts L736-L748）按“上下文压缩触发点归 D 组”的同类口径排除，没有记 total_tokens。子代理到限前没有提前提醒，soft_notice 为空。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次请求前 GeminiChat 从内存里维护的 agentHistory 取 curated 历史（extractCuratedHistory 只滤掉无效的模型回合）后发出；压缩、工具输出遮盖、中断回滚都直接改写这份列表。会话 JSONL 里的 $rewindTo、$patch 只在恢复旧会话时折叠成消息列表，不是每轮的层。可选：experimental.contextManagement（默认 false）打开后改走 contextManager.renderHistory 的处理管线。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/geminiChat.ts",
+          "locator": "GeminiChat.sendMessageStream / getHistoryTurns",
+          "lines": "L659-L663",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环",
+          "note": "每次发送前取 getHistoryTurns(true) 作为请求历史，来源是内存里的 agentHistory 列表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/geminiChat.ts",
+          "locator": "GeminiChat.getHistoryTurns",
+          "lines": "L1318-L1322",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环",
+          "note": "curated 历史由 extractCuratedHistory 对 agentHistory 做过滤，属于修整。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/client.ts",
+          "locator": "GeminiClient.sendMessageStream（上下文管理分支）",
+          "lines": "L679-L734",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "contextManagement 关闭时只走 tryCompressChat 和 tryMaskToolOutputs，二者都改写同一份 chat 历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "experimental.contextManagement",
+          "lines": "L2461-L2468",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "上下文管理管线默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：run_shell_command 和 MCP 文本结果超过阈值（默认 40000 字符，并随剩余窗口缩小）时截成首尾两段、全文另存项目临时目录并留路径；压缩流程先把较早的大工具结果按预算截成末 30 行另存文件，此前压缩失败过时只做这一步。summarization：历史超过窗口的 compressionThreshold（默认 0.5）时调用压缩型号生成 <state_snapshot> 摘要，保留约最近 30% 原文，再发一次自查请求修订。tool_result_replacement：每轮请求前 ToolOutputMaskingService 把保护窗口（最近约 5 万 token 工具输出、最新一回合）之外、累计超过 3 万 token 的旧工具结果整条换成 <tool_output_masked> 标记（附首尾预览和完整内容的文件路径）。阈值在 API 密钥路线下取本地默认，服务端实验旗标可改。可选：/compress 手动压缩；summarizeToolOutput 默认未配置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/scheduler/tool-executor.ts",
+          "locator": "ToolExecutor（truncateToolOutputThreshold 分支）",
+          "lines": "L219-L258",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径",
+          "note": "shell 输出超阈值时另存文件并截短后放进上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "getTruncateToolOutputThreshold / DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD",
+          "lines": "L3855-L3862",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "阈值取 40000 字符与剩余窗口换算值中的较小者。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/context/chatCompressionService.ts",
+          "locator": "truncateHistoryToBudget / compress",
+          "lines": "L521-L563",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "压缩前先按预算截短旧工具结果；失败过则只截短；否则切分后调模型摘要。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/context/chatCompressionService.ts",
+          "locator": "compress（state_snapshot 提示）",
+          "lines": "L586-L603",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "调用模型生成 <state_snapshot> 摘要替换旧历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "model.compressionThreshold",
+          "lines": "L1111-L1120",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "压缩阈值默认 0.5。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/client.ts",
+          "locator": "GeminiClient.tryMaskToolOutputs",
+          "lines": "L1315-L1323",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环",
+          "note": "每轮发请求前对历史调用遮盖服务，无开关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/context/toolOutputMaskingService.ts",
+          "locator": "ToolOutputMaskingService.mask（写文件并换成 tool_output_masked 占位，占位格式见 formatMaskedSnippet L359-L366）",
+          "lines": "L160-L190",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径主循环",
+          "note": "保护窗口外的旧工具结果写入文件，原处换成 tool_output_masked 标记加预览和路径。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "遮盖服务的占位里带首尾各 10 行预览和文件路径，也可以读成“已有内容再截短一次、余下另存文件”（truncation）。我按“只针对已在上下文里的工具结果、整条换成带标签的占位”记 tool_result_replacement；两种读法下 truncation 都已因 shell 截短而在取值里。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：交互输入里的 @路径 由 handleAtCommand 读入文件或目录内容附进请求。keyword：默认注册 grep_search（有 ripgrep 用 RipGrep，否则退回 Grep），模型给正则返回匹配行；glob 只按文件名匹配，list_directory、read_file 是模型自己指定路径，不算检索。read_many_files 有定义但不在默认注册表。子代理 codebase_investigator 用同样的读和搜索工具。未见语义检索或代码结构查询：BaseLlmClient.generateEmbedding 在快照里没有调用方。网页搜索 google_web_search、网页抓取 web_fetch 不计。技能说明常驻上下文、正文经 activate_skill 读入；访问子目录时按需载入该处 GEMINI.md，属说明文件。模型经 run_shell_command 自己跑 rg/grep 不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/atCommandProcessor.ts",
+          "locator": "handleAtCommand",
+          "lines": "L699-L712",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "解析输入中的 @ 引用并把文件内容读进请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "createToolRegistry（maybeRegister RipGrepTool / GrepTool / GlobTool）",
+          "lines": "L4041-L4057",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具注册",
+          "note": "内容搜索工具 grep_search 默认注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/baseLlmClient.ts",
+          "locator": "BaseLlmClient.generateEmbedding",
+          "lines": "L192-L197",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径",
+          "note": "嵌入接口存在，但快照里除测试外没有调用方，不构成语义检索。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每次会话由 MemoryContextManager 读入全局 ~/.gemini/GEMINI.md、受信任工作区的 GEMINI.md 层级、扩展的说明文件和私有项目记忆索引 MEMORY.md（项目临时目录下），放进系统提示。写入只靠系统提示要求模型用 replace/write_file 编辑这些文件，提示明说没有 save_memory 工具（MemoryTool 类存在但未注册），故不计 auto_summary。启动时后台给上一个缺摘要的会话补一句 summary 写回会话文件，供会话列表显示，不带入新会话。可选：experimental.autoMemory（默认 false）后台从旧会话提炼记忆补丁，需用户审核。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/context/memoryContextManager.ts",
+          "locator": "MemoryContextManager.refresh / discoverMemoryPaths",
+          "lines": "L38-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "新会话开始",
+          "note": "启动时发现并载入全局、扩展、工作区说明文件和私有项目 MEMORY.md。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/prompts/snippets.ts",
+          "locator": "toolUsageRememberingFacts",
+          "lines": "L856-L881",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "系统提示",
+          "note": "记忆靠模型直接编辑 markdown 文件，提示写明没有 save_memory 工具，且这些文件每次会话自动载入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "experimental.autoMemory",
+          "lines": "L2432-L2440",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "自动记忆提炼默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "主会话和子代理各自写一份 JSONL（项目临时目录 chats/ 下）：消息行（user/gemini/info 等，gemini 消息内嵌 toolCalls 的参数、结果、状态以及思考摘要、用量、型号），另有 $set 元数据行、$rewindTo 回退行和 $patch 行（removeIds、orderIds 会改变回放时取哪些消息）。中断回滚、压缩或遮盖改写历史时由 updateMessagesFromHistory 自动写 $rewindTo 或 $patch，/rewind 也写 $rewindTo，故记 event_log。state_snapshot：编辑类工具调用的 resultDisplay 里存着改动前后的全文（originalContent/newContent），/rewind 的回退代码读它把文件改回去。external_reference：工具输出超阈值或被遮盖时全文另存 tool-outputs/ 下的文件，记录里只留路径；文件和会话按 general.sessionRetention（默认开启、30 天）清理，跨进程保留。可选：general.checkpointing（默认关）才有 Git 影子仓库快照。另有 logs.json 记用户输入历史，属消息。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingTypes.ts",
+          "locator": "RewindRecord / MessagePatchRecord / MetadataUpdateRecord",
+          "lines": "L123-L154",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话记录格式",
+          "note": "会话文件除消息外有 $rewindTo、$patch（removeIds、orderIds）等独立记录类型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingService.ts",
+          "locator": "ChatRecordingService.updateMessagesFromHistory",
+          "lines": "L1567-L1587",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径",
+          "note": "历史被回滚、删减或重排时自动追加 $rewindTo 或 $patch 记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingService.ts",
+          "locator": "ChatRecordingService.rewindTo",
+          "lines": "L1377-L1410",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "/rewind",
+          "note": "回退时追加 $rewindTo 记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/utils/rewindFileOps.ts",
+          "locator": "revertFileChanges",
+          "lines": "L183-L257",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "/rewind",
+          "note": "从会话记录里工具调用的 fileDiff 取 originalContent 把文件改回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/context/toolOutputMaskingService.ts",
+          "locator": "ToolOutputMaskingService.mask",
+          "lines": "L160-L190",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认路径",
+          "note": "被遮盖的工具输出写入 tool-outputs/session-<id>/ 下的文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "general.sessionRetention",
+          "lines": "L389-L411",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "会话与相关文件按保留期清理，默认开启、30 天。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "state_snapshot 的副本不是单独的快照文件，而是嵌在消息记录工具调用 resultDisplay 里的改动前全文；按“持久副本且回退流程会读取”计入，若码本要求独立的快照存储则应去掉。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "启动参数 --resume [latest|编号]、会话内 /resume 浏览自动保存的会话：读回 JSONL，convertSessionToClientHistory 重建消息历史（含工具调用与结果），resumeChat 以此新起 GeminiChat，等用户下一句；中断时未完成的工具调用不接续。另有 /resume save、/resume resume <tag> 手动存取对话副本，同样是读回历史。可选：checkpointing 打开后 /restore 回到改文件前的快照。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/config.ts",
+          "locator": "--resume 选项",
+          "lines": "L412-L423",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "所选入口",
+          "note": "命令行提供恢复上一会话或按编号恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useSessionResume.ts",
+          "locator": "loadHistoryForResume",
+          "lines": "L57-L92",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认恢复入口",
+          "note": "恢复时把会话记录转成历史并调用 resumeChat 重建对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/utils/sessionUtils.ts",
+          "locator": "convertSessionToClientHistory",
+          "lines": "L107-L127",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认恢复入口",
+          "note": "从保存的消息记录重建客户端历史，工具调用结果按编号并回。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "value_note": "恢复后消息历史和已记录的工具调用结果（functionResponse）回到上下文，并恢复会话里 /dir add 加过的工作区目录。不带回：计划模式的已批准计划路径（只由 exit_plan_mode 设置，计划文件留在磁盘但不自动读回）；write_todos、tracker 工具在本配置不注册；子代理调用只有 agent_name 和 prompt 参数，不能按编号续接原子代理；审批模式回到默认。外部副作用（已执行的命令、已写的文件）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useSessionResume.ts",
+          "locator": "loadHistoryForResume",
+          "lines": "L57-L92",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认恢复入口",
+          "note": "恢复历史、工作区目录，再 resumeChat。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/utils/sessionUtils.ts",
+          "locator": "convertSessionToClientHistory",
+          "lines": "L107-L127",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认恢复入口",
+          "note": "工具调用的结果并回历史，不需要重新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/core/client.ts",
+          "locator": "GeminiClient.resumeChat",
+          "lines": "L357-L377",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认恢复入口",
+          "note": "以重建的历史新起对话，没有其他状态的恢复步骤。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/agent-tool.ts",
+          "locator": "AgentTool 参数定义",
+          "lines": "L61-L72",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理",
+          "note": "调用子代理只需 agent_name 和 prompt，没有续接已有子代理的编号参数。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：/resume save <tag>（旧名 /chat save）把当前对话存成一份带标签的副本，之后可在任一会话用 /resume resume <tag> 载入接着做，原会话仍在自动保存的会话列表里可恢复。workspace_snapshot：/rewind（或连按两次 Esc）选一个旧回合，可回退对话和/或把代理编辑工具做的文件改动改回；依据是会话记录里每次编辑留下的改动前全文，只覆盖 replace/write_file，不覆盖 shell 改动。/rewind 的对话回退是裁掉后续消息，不算分支。可选：general.checkpointing（默认关）开启后改文件前拍 Git 影子快照，/restore 恢复。未见幂等标识：模型请求重试不重放工具调用，恢复时只按编号把已记录结果配对、去重，不重新执行，属修补历史。未见补偿操作。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/commands/chatCommand.ts",
+          "locator": "saveCommand / resumeCheckpointCommand",
+          "lines": "L90-L200",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话内命令",
+          "note": "把当前历史存成带标签的检查点，可以再载入继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/utils/rewindFileOps.ts",
+          "locator": "revertFileChanges",
+          "lines": "L183-L257",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "/rewind",
+          "note": "按记录里的 originalContent 把编辑工具改过的文件改回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/rewind.md",
+          "locator": "Rewind（Usage、Interface、Key considerations）",
+          "lines": "L1-L51",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "/rewind",
+          "note": "官方文档：可同时回退对话和代码改动，只影响 AI 编辑工具做的改动。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "/resume save 的副本是在当前位置复制出的对话，按“在当前位置复制出独立会话、两边都能继续”计 session_branch；但在同一会话里载入标签会用 $patch 改写本会话文件，只有另开会话载入时原路线才完整保留，口径上有一点含糊。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "review",
+        "default_command": "review",
+        "default_outside_write": "deny",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "策略引擎的 TOML 规则（用户、工作区、管理员、扩展各层）按 toolName/mcpName 决定 allow、deny、ask_user（tool_category），run_shell_command 可用 commandPrefix/commandRegex（command_rule），argsPattern 对工具参数 JSON 做正则匹配，内置计划模式规则就用它按 file_path 放行 plans 目录（file_path）；另有 tools.exclude、--allowed-tools、MCP 信任与排除名单、审批模式 default/auto_edit/plan/yolo。路径范围还有 context.includeDirectories 与 /dir add。沙箱配置（默认关）有 open/proxied 档和 allow_network 一类联网开关（network_target）。默认效果：编辑和写文件逐次询问；shell 命令逐次询问；write_file/replace 写工作区外的路径被 validatePathAccess 直接拒绝（项目临时目录和全局 GEMINI.md 例外），经 shell 写则同普通命令询问；命令联网不受限制，但命令本身要逐次批准。“总是允许”会写成优先级 4.95 的规则。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/toml-loader.ts",
+          "locator": "PolicyRuleSchema",
+          "lines": "L40-L66",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "规则格式",
+          "note": "规则字段包括 toolName、mcpName、argsPattern、commandPrefix、commandRegex、decision、modes。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/write.toml",
+          "locator": "默认写类工具规则",
+          "lines": "L30-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "replace、run_shell_command、write_file 默认 ask_user。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/plan.toml",
+          "locator": "计划模式 write_file/replace 的 argsPattern 规则",
+          "lines": "L117-L123",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式",
+          "note": "用 argsPattern 匹配 file_path 参数按路径放行，说明规则能按路径区分。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/reference/policy-engine.md",
+          "locator": "Arguments pattern / Decisions",
+          "lines": "L88-L117",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "规则格式",
+          "note": "官方文档说明 argsPattern 匹配工具参数，deny 的工具会从模型工具清单去掉。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "Config.isPathAllowed",
+          "lines": "L3324-L3383",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "写入路径只允许工作区、项目临时目录和全局 GEMINI.md，其余拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/sandboxPolicyManager.ts",
+          "locator": "沙箱权限模式定义",
+          "lines": "L19-L28",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选沙箱",
+          "note": "沙箱策略有 network、allow_network 联网开关。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "default_outside_write 取了专用写文件工具的路径（validatePathAccess 拒绝、无审批通道）；若按“经 shell 也能写、批准后放行”算则为 review。default_network 记 review 是因为命令本身要批准，联网本身没有单独的关卡。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "whole_task",
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "whole_task",
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "tool_call：默认模式下 replace、write_file、run_shell_command、web_fetch、非内置技能的 activate_skill 在执行前停下，经消息总线弹确认，一次批准放行这一次调用；选“总是允许”等于新增规则。whole_task：模型可用默认注册的 enter_plan_mode 提出进入计划模式（需用户批准），写好计划后调用 exit_plan_mode，用户在 Plan Approval 对话框批准计划时一并选“自动接受编辑”（切到 auto_edit）或“手动接受编辑”（default），决定后续动作的放行方式。默认沙箱关闭，没有执行中逐个效果的审批；沙箱扩展请求为可选。Conseca 安全检查默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/write.toml",
+          "locator": "默认写类工具规则",
+          "lines": "L30-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "写文件、编辑、命令默认 ask_user，在调用执行前询问。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/plan.toml",
+          "locator": "enter_plan_mode / exit_plan_mode 规则",
+          "lines": "L33-L64",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "交互模式下进入计划模式需用户批准，计划模式里退出要用户批准计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/exit-plan-mode.ts",
+          "locator": "ExitPlanModeInvocation.shouldConfirmExecute / execute",
+          "lines": "L156-L222",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "计划审批",
+          "note": "批准计划时把审批模式切到用户选定的档位并记下已批准计划。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/components/ExitPlanModeDialog.tsx",
+          "locator": "ApprovalOption（Auto/Manual；L271-L273 分别调用 onApprove(AUTO_EDIT/DEFAULT)）",
+          "lines": "L58-L59",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "计划审批界面",
+          "note": "批准选项分“自动接受编辑”和“手动接受编辑”，对应 AUTO_EDIT 与 DEFAULT。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "whole_task 依赖模型自己调用 enter_plan_mode 并经用户批准进入计划模式（总则 R3 第一档）；选“手动接受编辑”时后续调用仍逐个审批，只有选自动接受时才算改用批准时选定的档位。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "默认生效的是应用检查：策略引擎按规则对每次调用 allow/deny/ask_user，写类工具的 validatePathAccess 把写入限制在工作区和项目临时目录，计划模式的只读限制也由策略规则强制。可选：tools.sandbox（macOS Seatbelt、Docker/Podman 容器、gVisor 等）和 security.toolSandboxing 默认关闭，命令以启动用户权限直接执行。prompt_only 判 absent，逐项判断见 coder_note。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/write.toml",
+          "locator": "默认写类工具规则",
+          "lines": "L30-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "策略引擎在执行前按规则询问或放行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "Config.isPathAllowed",
+          "lines": "L3324-L3383",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "按路径范围拒绝工作区外写入，属执行前的代码检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "tools.sandbox（security.toolSandboxing 默认 false 见同文件 L1835-L1842）",
+          "lines": "L1557-L1566",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "进程沙箱默认未设，工具级沙箱默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/plan.toml",
+          "locator": "计划模式 catch-all deny",
+          "lines": "L74-L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式",
+          "note": "计划模式下除列出的只读工具外一律拒绝，含 shell。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/codebase-investigator.ts",
+          "locator": "CodebaseInvestigatorAgent toolConfig",
+          "lines": "L118-L124",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置子代理",
+          "note": "只读子代理只拿到 ls、read_file、glob、grep 四个工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认模式——写、改、命令由策略规则询问，代码检查；可切换内置模式——auto_edit 放行编辑有规则，plan 只读由 catch-all deny 强制（shell 也拒绝，只允许写 plans 目录的 .md），yolo 不交代限制；内置子代理——codebase_investigator 的只读靠工具清单限制，cli_help 只有 get_internal_docs，generalist 没交代限制；限制动作的设置（tools.exclude、tools.core、includeDirectories、MCP 排除）都进策略或注册代码。没有逐行审计每条设置的执行点，故 confidence 写 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话 JSONL 里每条 gemini 消息内嵌 toolCalls（id、name、args、result、status、timestamp），同一条消息存着模型文字和思考摘要，前一条是触发它的用户消息，按调用编号能对上意图、操作和结果；子代理另有自己的会话文件。审批：记录只有 status（success/error/cancelled 等），批准与自动放行分不开，被拒只表现为 cancelled，不计。身份：API 密钥路线下记录里没有用户或账户字段，不计。没有专门的审计账本；可选：telemetry（默认关）可把工具调用事件含决定写到本地文件或导出。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/services/chatRecordingTypes.ts",
+          "locator": "ToolCallRecord / ConversationRecordExtra",
+          "lines": "L54-L82",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话记录格式",
+          "note": "工具调用记录含编号、名称、参数、结果和状态，模型消息含思考摘要。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/scheduler/types.ts",
+          "locator": "CoreToolCallStatus",
+          "lines": "L26-L34",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话记录格式",
+          "note": "状态只有执行阶段和结果类别，没有批准方式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "invoke_agent（AgentTool）默认注册，主代理调用它派出内置子代理 codebase_investigator、cli_help、generalist；每个子代理由 LocalAgentExecutor 建自己的对话、多步调用工具，必须调用 complete_task 交回结果。可选：autoMemory（默认关）开启后会在后台起技能／记忆抽取代理；浏览器子代理默认关；远程 A2A 子代理要用户添加代理定义文件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts createToolRegistry：Register Subagent Tool",
+          "lines": "L4134-L4137",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具注册",
+          "note": "AgentTool（invoke_agent）在默认工具注册表里注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/registry.ts",
+          "locator": "packages/core/src/agents/registry.ts loadBuiltInAgents",
+          "lines": "L288-L291",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认内置子代理",
+          "note": "三个内置子代理默认注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts",
+          "locator": "packages/core/src/agents/local-executor.ts runInternal",
+          "lines": "L583-L680",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理有自己的轮数上限、超时、对话对象和工具清单，是独立的多步模型循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts experimental.autoMemory",
+          "lines": "L2432-L2440",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "后台抽取代理开关",
+          "note": "autoMemory 默认 false，后台抽取代理属可选路径。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "主代理调用 invoke_agent 创建子代理。用户在提示开头写 @代理名 时，框架只在提示里注入一段 system_note 要求主模型调用该代理，仍由主代理发出创建调用，记 main_agent。/agents 命令只做列出、重载、启停和配置，不直接起代理。可选：autoMemory 打开后由框架后台起抽取代理（framework_internal）；没有原生定时器或事件触发的代理运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/agent-tool.ts",
+          "locator": "packages/core/src/agents/agent-tool.ts AgentTool.createInvocation / DelegateInvocation.buildChildInvocation",
+          "lines": "L80-L125",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "模型以 agent_name、prompt 调用工具，框架按定义建子代理调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/atCommandProcessor.ts",
+          "locator": "packages/cli/src/ui/hooks/atCommandProcessor.ts agentNudge",
+          "lines": "L739-L745",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "@代理名 语法",
+          "note": "@ 语法只注入提示要求模型调用该代理，不直接创建。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/core/subagents.md",
+          "locator": "docs/core/subagents.md Forcing a subagent (@ syntax)",
+          "lines": "L36-L50",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "@代理名 语法",
+          "note": "文档写明 @ 语法注入 system note 推动主模型调用子代理工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "@代理名 是用户显式点名，但创建调用仍由模型发出，按“只看直接发出创建调用的一方”记 main_agent。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理新建自己的对话，只收到按定义模板展开的任务说明（另加会话记忆文件 GEMINI.md 内容和运行时元数据），看不到父对话；结束时只交回 complete_task 的结果。子代理的工具是父工具注册表的克隆，作用于同一工作区目录，与主代理读写同一批文件。子代理不能再调用代理工具（防递归）。权限：子代理工具经自己的消息总线走同一套策略引擎，需审批的动作照样弹给用户。可选：modelSteering（默认关）打开后，用户在运行中输入的提示会广播给正在运行的本地子代理；agentSessionSubagentEnabled（默认关）时改走会话式子代理实现。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts",
+          "locator": "packages/core/src/agents/local-executor.ts runInternal：createChatObject 与 initialParts",
+          "lines": "L620-L680",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "子代理新建对话，初始消息为会话记忆加模板化的任务 query。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts",
+          "locator": "packages/core/src/agents/local-executor.ts create：registerToolInstance",
+          "lines": "L201-L244",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理工具",
+          "note": "子代理工具克隆自父注册表（同一工作区），并排除代理类工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/core/subagents.md",
+          "locator": "docs/core/subagents.md Isolation and recursion protection",
+          "lines": "L384-L394",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理隔离",
+          "note": "文档写明子代理有独立历史、不能调用其他子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts agentSessionSubagentEnabled",
+          "lines": "L1389-L1390",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话式子代理开关",
+          "note": "会话式子代理默认关闭，默认走 LocalSubagentInvocation。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "messages 未记：每次委派都新建 LocalAgentExecutor，没有给已派出子代理续发消息的工具。shared_state 未记：没有多个代理共读写的任务表或键值存储（tracker 默认关）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "invoke_agent 的 execute 等待 executor.run 结束，把“Termination Reason + Result”作为这次工具调用的结果交回；委派工具没有后台参数，子代理也不走后台执行服务。同一回复里的多个代理调用可并行调度，但父代理要等结果才继续推理。用户按 Esc／Ctrl+C 中断回合时，回合的 AbortController 中止，信号传进子代理的 combinedSignal，子代理以 ABORTED 结束。子代理自己的超时（默认 10 分钟）和轮数上限（默认 30）触发时给一次宽限让它交回结果，不属于取消传播。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-invocation.ts",
+          "locator": "packages/core/src/agents/local-invocation.ts LocalSubagentInvocation.execute",
+          "lines": "L276-L322",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "等待 executor.run(params, signal) 完成，结果作为工具结果交回；ABORTED 时抛 AbortError。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/local-executor.ts",
+          "locator": "packages/core/src/agents/local-executor.ts runInternal：combinedSignal",
+          "lines": "L609-L613",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "子代理取消",
+          "note": "子代理把父工具调用的 signal 与自己的超时信号合并。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts cancelOngoingRequest",
+          "lines": "L827-L889",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户中断回合",
+          "note": "中断时 abort 回合控制器并取消全部工具调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/AppContainer.tsx",
+          "locator": "packages/cli/src/ui/AppContainer.tsx handleFinalSubmit",
+          "lines": "L1641-L1657",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行中的斜杠命令",
+          "note": "代理运行中只执行标为 isSafeConcurrent 的命令（about、stats、vim 等），/clear 一类不会在运行中执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式逐项判：用户打断当前回合（Esc／Ctrl+C）连带取消；单独取消等待中的调用：界面没有只取消一个工具调用的入口，默认路径上没有；取消父运行（不退出程序）：运行中 /clear、/resume 等非并发安全命令不执行（submitQuery 在响应中直接返回），默认路径上没有。故记 all_ways。cancel_depth：子代理不能再派代理，树只有一层，记 direct_children。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "user_script",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具在 core 里实现并注册；MCP 服务加一条 mcpServers 配置即可接入；设置 tools.discoveryCommand／callCommand 后，框架按发现命令输出把每个工具注册成 DiscoveredTool，调用时运行 callCommand；ACP 模式（--acp）下客户端在 session/new 里为会话提供 MCP 服务，其工具交给模型调用，记 embedder_declared。扩展（gemini-extension.json）只打包 MCP 服务、命令、技能、钩子、子代理、策略，不能在进程内注册工具，不记 plugin_api。SDK 包 @google/gemini-cli-sdk 的 GeminiCliAgentOptions.tools 也能声明工具，但该包是否随发行版发布不清（见 F32），这里不另依赖它。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts createToolRegistry",
+          "lines": "L4094-L4140",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置工具",
+          "note": "内置工具在核心代码里逐个注册，随后调用 discoverAllTools。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/tools/tool-registry.ts",
+          "locator": "packages/core/src/tools/tool-registry.ts discoverAndRegisterToolsFromCommand",
+          "lines": "L370-L400",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "发现命令",
+          "note": "按 tools.discoveryCommand 输出注册可按名调用的工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/reference/tools.md",
+          "locator": "docs/reference/tools.md Under the hood",
+          "lines": "L203-L211",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具扩展方式",
+          "note": "文档写明可经 tools.discoveryCommand 或连接 MCP 服务扩展工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts mcpServers / tools.discoveryCommand",
+          "lines": "L1720-L1726",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "discoveryCommand 默认未设；mcpServers（L161 起）默认空，都靠用户添加内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/acp/acpSessionManager.ts",
+          "locator": "packages/cli/src/acp/acpSessionManager.ts newSessionConfig：合并客户端 mcpServers",
+          "lines": "L384-L425",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "ACP 模式",
+          "note": "ACP 客户端为会话提供的 MCP 服务并入该会话配置。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/extensions/reference.md",
+          "locator": "docs/extensions/reference.md gemini-extension.json",
+          "lines": "L109-L170",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "扩展格式",
+          "note": "扩展清单只声明 mcpServers、contextFileName、excludeTools 等，没有进程内注册工具的接口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "plugin_api 判没有：扩展清单和扩展文档（reference.md 各节：命令、钩子、技能、子代理、策略、主题）都没有进程内注册工具的代码接口。ACP 客户端提供的工具经 MCP 服务交回客户端，按 embedder_declared 的例外记，不记 external_protocol_service 的第二次。in_use_by_default 只记 internal_code：mcpServers 默认空、没有随包扩展、IDE 集成默认关。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service",
+          "user_script"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "GEMINI.md 分层上下文文件每个会话自动装载；技能从内置、扩展、~/.gemini/skills、~/.agents/skills、.gemini/skills、.agents/skills 发现，只把名称和描述放进系统提示，模型调用 activate_skill 装入全文（非内置技能需用户批准）；~/.gemini/agents、.gemini/agents 的 Markdown 代理定义（正文为系统提示，可限工具和型号）由主代理按名委派；~/.gemini/commands、.gemini/commands 的 TOML 自定义命令由用户按 /名 调用、展开为一条提示，支持 {{args}}、@{文件} 和 !{shell} 注入，!{...} 由框架在展开时执行（需用户确认）。项目级目录只在文件夹受信任时加载。没有由框架逐步推进的工作流定义文件。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/gemini-md.md",
+          "locator": "docs/cli/gemini-md.md Understand the context hierarchy",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "上下文文件",
+          "note": "GEMINI.md 随每次提示发送给模型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/skills.md",
+          "locator": "docs/cli/skills.md How it works / Discovery tiers",
+          "lines": "L15-L47",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "技能",
+          "note": "按目录发现技能，模型经 activate_skill 按需装载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/core/subagents.md",
+          "locator": "docs/core/subagents.md Creating custom subagents / Agent definition files",
+          "lines": "L313-L330",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "代理定义",
+          "note": "用户可在代理目录写 Markdown 代理定义，正文成为该代理系统提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/custom-commands.md",
+          "locator": "docs/cli/custom-commands.md File locations and precedence",
+          "lines": "L8-L22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "自定义命令",
+          "note": "TOML 命令按名调用；!{...} 由 CLI 执行并把输出注入提示。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/custom-commands.md",
+          "locator": "docs/cli/custom-commands.md Executing shell commands with !{...}",
+          "lines": "L165-L180",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "自定义命令",
+          "note": "TOML 命令按名调用；!{...} 由 CLI 执行并把输出注入提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/agents/registry.ts",
+          "locator": "packages/core/src/agents/registry.ts 项目级与用户级代理目录加载",
+          "lines": "L171-L240",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "代理定义装载",
+          "note": "从 .gemini/agents 与 ~/.gemini/agents 装载代理定义。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "workflow_definition 未记：命令、技能、代理定义都只展开成提示或系统提示，没有由框架按步推进的定义文件。GEMINI_SYSTEM_MD 环境变量可整份替换系统提示，属改环境变量的第三档，未记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "prompt_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "钩子事件共 11 个：BeforeAgent（用户提交后、可拒绝或补上下文）→input；BeforeModel、AfterModel、BeforeToolSelection（可改写请求、替换回复、限工具）→model_call；BeforeTool、AfterTool、Notification（ToolPermission 权限提醒）→tool_before_after；AfterAgent（可拒绝回复强制重试）、SessionEnd（仅尽力通知）→end；PreCompress（异步、只能观察）→context_compaction；SessionStart（startup、resume、clear 时触发，可注入 additionalContext）→session_start。钩子系统默认开启但默认没有定义任何钩子。用户在 ~/.gemini/settings.json 写一条钩子（带命令）属添加内容，故全部事件点经所选入口直接开放；项目级钩子要文件夹受信任。非交互 stream-json 输出的事件流不新增阶段。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/hooks/types.ts",
+          "locator": "packages/core/src/hooks/types.ts HookEventName",
+          "lines": "L43-L55",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钩子事件",
+          "note": "列出全部 11 个钩子事件名。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/hooks/reference.md",
+          "locator": "docs/hooks/reference.md Agent hooks / Model hooks / Lifecycle & system hooks",
+          "lines": "L143-L299",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钩子能力",
+          "note": "写明各事件可否阻断、改写、注入；PreCompress、Notification、SessionEnd 为仅观察。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/hooks/reference.md",
+          "locator": "docs/hooks/reference.md Tool hooks：BeforeTool / AfterTool",
+          "lines": "L92-L141",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具钩子",
+          "note": "BeforeTool 可拒绝执行，AfterTool 可改写结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts hooksConfig.enabled / hooks",
+          "lines": "L2548-L2601",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "钩子系统默认开启，hooks 默认为空对象。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "observe_only 只放 context_compaction：end 阶段有 AfterAgent 可干预，tool_before_after 阶段有 BeforeTool 可阻断，session_start 的 SessionStart 能注入 additionalContext，算注入型干预。save 未记：没有会话记录或检查点写盘事件。in_use_by_default 写 []：默认没有钩子，也没有随包扩展。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "context_compaction"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "cli_subprocess：-p 或非 TTY 标准输入进入无头模式，--output-format 可选 text、json、stream-json（JSONL 事件）；管道输入不加参数即进入，算所选入口直接开放。public_protocol：gemini --acp 以 Agent Client Protocol（JSON-RPC over stdio）作服务端，编辑器作客户端发 prompt、cancel 等。另有单独发布的 @google/gemini-cli-a2a-server（Agent2Agent 协议服务端），README 只写“实验性”，没有用法文档，同属 public_protocol，不另增取值。子维度未确认：library——@google/gemini-cli-core 的 npm 文档只说“需要时可作独立包用”，未给入口；@google/gemini-cli-sdk 的 README 给出 GeminiCliAgent 入口，但快照里的发布流程只发布 core、cli、a2a-server，SDK 是否随发行版发布查不清。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/headless.md",
+          "locator": "docs/cli/headless.md Technical reference / Output formats",
+          "lines": "L1-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "无头模式",
+          "note": "非 TTY 或 -p 触发无头模式，输出 JSON 或 JSONL 事件流。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/acp-mode.md",
+          "locator": "docs/cli/acp-mode.md ACP Mode",
+          "lines": "L1-L12",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "ACP 模式",
+          "note": "--acp 以 ACP 服务端身份接受客户端的 prompt、cancel 等请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/acp-mode.md",
+          "locator": "docs/cli/acp-mode.md Core methods",
+          "lines": "L81-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "ACP 模式",
+          "note": "--acp 以 ACP 服务端身份接受客户端的 prompt、cancel 等请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/config.ts",
+          "locator": "packages/cli/src/config/config.ts interactive 判定",
+          "lines": "L793-L804",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "入口模式",
+          "note": "--acp 走 ACP；无 -p 且非无头时为交互。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/releases.md",
+          "locator": "docs/releases.md 发布包表",
+          "lines": "L26-L27",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "发行包",
+          "note": "发布包含 core 与 a2a-server，未列 SDK。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/sdk/README.md",
+          "locator": "packages/sdk/README.md Usage",
+          "lines": "L1-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "SDK",
+          "note": "SDK README 给出 GeminiCliAgent 入口，但发布情况不明。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "library 写进 unresolved：core 包文档只说可作独立包使用、没有入口名；SDK 有 README 但发布流程（.github/actions/publish-release）里看不到它。service_api 未记：a2a-server 的 HTTP 接口是公共协议 A2A，归 public_protocol；IDE 集成是 CLI 连 IDE 的 MCP 服务，方向相反。host_extension_api 未记：vscode-ide-companion 的 activate 不导出接口。needs_official_package 写 []：public_protocol 经 ACP 在同一包内即可用（a2a-server 需另装，但 public_protocol 已由 ACP 成立）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "cli_subprocess"
+        ],
+        "needs_official_package": [],
+        "unresolved": [
+          "library"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在终端输入框提交任务；api 按 F32：无头模式（管道输入即进入）与 ACP。/setup-github 生成 GitHub Actions 工作流，由外部平台触发后再调 CLI，按 api 记。没有原生定时器，也没有网络回调接收端或文件监视去触发新任务。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/cli/headless.md",
+          "locator": "docs/cli/headless.md Technical reference",
+          "lines": "L1-L10",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "无头模式",
+          "note": "程序可经非 TTY 或 -p 提交任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/docs/reference/commands.md",
+          "locator": "docs/reference/commands.md /setup-github",
+          "lines": "L415-L418",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "命令清单",
+          "note": "命令清单里只有设置 GitHub Actions 的命令，没有定时或事件订阅命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/AppContainer.tsx",
+          "locator": "packages/cli/src/ui/AppContainer.tsx handleFinalSubmit",
+          "lines": "L1629-L1706",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互输入",
+          "note": "用户提交的输入作为新任务发给模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "schedule、external_event 判没有：命令清单、设置参考和源码（core、cli、a2a-server）里没有 cron 类定时器或外部事件订阅；技能 MCP 通知不会起新任务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "gemini 入口由轻量父进程 spawn 一个本机 Node 子进程（stdio 继承、不 detached）运行主程序；关闭终端两者一起结束，没有后台守护或系统服务注册。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/index.ts",
+          "locator": "packages/cli/index.ts 子进程拉起",
+          "lines": "L63-L75",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认启动",
+          "note": "子进程以继承的 stdio 拉起，未脱离终端。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "代理运行中提交的消息进入 React 状态里的 messageQueue，回到空闲时合并成一条发送；进程退出即丢。没有计划任务或待重试请求的存放处（任务跟踪 tracker、checkpointing 默认关）；会话记录可 /resume，但不会自动接着执行未完成的工作项。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useMessageQueue.ts",
+          "locator": "packages/cli/src/ui/hooks/useMessageQueue.ts useMessageQueue",
+          "lines": "L38-L83",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "交互输入队列",
+          "note": "队列是内存状态，空闲时合并提交。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/AppContainer.tsx",
+          "locator": "packages/cli/src/ui/AppContainer.tsx handleFinalSubmit",
+          "lines": "L1641-L1706",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行中提交",
+          "note": "非空闲时调用 addMessage 放进队列。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "持久层只按功能清单排除（tracker、checkpointing 默认关，无定时器），没有逐行核对恢复会话时是否重放未完成的工具调用；从 cancelOngoingRequest 的注释看，中断时会补写已取消的 functionResponse，未见重启后自动续跑。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：replace、write_file、run_shell_command、web_fetch、非内置技能激活默认逐次询问；ask_user 工具默认注册，模型可停下提问；检测到循环时框架停下请求，弹窗让用户选保留检测或关闭检测并重试。message_notification：dynamicWindowTitle 默认开，等待确认时把终端窗口标题设为“✋ Action Required”（OSC 0 标题序列，依赖终端显示标题）。可选：enableNotifications（默认关）开启后发 OSC 9 系统通知或 BEL。没有持久待办或结构化交接对象。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/policy/policies/write.toml",
+          "locator": "packages/core/src/policy/policies/write.toml",
+          "lines": "L31-L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认审批模式",
+          "note": "写入、执行类工具默认 ask_user。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/core/src/config/config.ts",
+          "locator": "packages/core/src/config/config.ts createToolRegistry：AskUserTool",
+          "lines": "L4094-L4095",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具",
+          "note": "ask_user 提问工具默认注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/ui/hooks/useGeminiStream.ts",
+          "locator": "packages/cli/src/ui/hooks/useGeminiStream.ts 循环检测确认",
+          "lines": "L1956-L1985",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "循环检测",
+          "note": "检测到循环后停下，弹窗让用户选择是否关闭检测并重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/utils/windowTitle.ts",
+          "locator": "packages/cli/src/utils/windowTitle.ts computeTerminalTitle",
+          "lines": "L57-L66",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "终端标题",
+          "note": "等待确认时标题为 Action Required。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts general.enableNotifications",
+          "lines": "L274-L281",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "动态窗口标题默认开，终端通知默认关。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/google-gemini/gemini-cli/blob/5a5c7180ff3f0a02511f54b54db7f228d4982a30/packages/cli/src/config/settingsSchema.ts",
+          "locator": "packages/cli/src/config/settingsSchema.ts ui.dynamicWindowTitle",
+          "lines": "L579-L587",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "动态窗口标题默认开，终端通知默认关。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 记得有把握不足：窗口标题序列严格说是“标题”，但这里的内容专门表示等待人处理（✋ Action Required），按“终端状态序列表示需要人注意时记”判入；若口径要求只收通知序列（OSC 9／BEL），这项应改为可选。resumable_todo、structured_handoff 判没有：tracker 默认关，没有持久待办或目标存储；无头 json 输出的固定字段面向程序，不是本入口交给人看的交接对象。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,1953 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.7",
+  "synthetic": false,
+  "round": "batch-3",
+  "config_id": "A11__kilo-code__vscode-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v8",
+    "coded_at": "2026-11-13"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-13",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "侧边栏默认代理 code：每一步在 SessionPrompt 主循环里由模型回复决定，框架执行工具后把结果交回模型，直到 finish 不是 tool-calls 且没有工具调用才退出。目标续跑（/goal 或模型用默认 allow 的 goal 工具自己启动）是在回合之间自动续发、每回合内部仍是同一模型循环，按 scope_rule 算模型循环的外层，不另记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts，SessionPrompt 主循环 while (true)",
+          "lines": "L1555-L1636",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认代理 code 的主执行链",
+          "note": "循环每步读回消息，模型最后一条回复无工具调用且 finish 非 tool-calls 时退出，否则继续调用模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/goal/tool.ts",
+          "locator": "packages/opencode/src/kilocode/session/goal/tool.ts，GoalTool",
+          "lines": "L21-L50",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑",
+          "note": "goal 工具启动目标后由目标循环在回合后自动续发，每回合仍是模型循环。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 逐入口判过（命令表取 command/index.ts 的 init、review、goal、resume-claude、resume-codex，内置 compact/summarize，以及 CLI 文档命令表与 VS Code 文档的 /agents 切换、Agent Manager）：/init、/review、自定义命令（.kilo/commands 工作流）只展开成提示交给模型循环；/compact 只压缩；/agents 切换到 plan、ask、debug、orchestrator 等代理，内部都是模型循环；orchestrator 按模型派子代理，仍是模型循环；Agent Manager 只是并行开多个顶层会话；cron_create/schedule_wakeup 到点往会话投提示，属任务发起（F33），不是任务内部的事件调度；code mode（脚本执行）实验开关默认关，只写“可选”。均不改变推进方式，故写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "todowrite 工具随 VS Code 客户端默认注册，code 代理按底座 \"*\": \"allow\" 放行，模型自己决定何时写待办，框架存表并在界面显示，不按表强制顺序。可选：用户用 /agents、下拉或 Cmd+. 切到 plan 代理（只读出计划、plan_exit 后询问是否执行），属总则 R3 第二档；code 代理的 plan_enter 权限为 allow，但快照的注册表里没有 plan_enter 工具，模型不能自己进入。general 子代理 todowrite 被 deny。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts，ToolRegistry state 的 builtin 列表",
+          "lines": "L311-L336",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册工具",
+          "note": "builtin 列表无条件含 tool.todo（todowrite）与 tool.plan（plan_exit），没有 plan_enter。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/todo.ts",
+          "locator": "packages/opencode/src/tool/todo.ts，TodoWriteTool",
+          "lines": "L20-L50",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册工具",
+          "note": "待办条目带状态，由 Todo 服务保存并更新。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/agent/agent.ts",
+          "locator": "packages/opencode/src/agent/agent.ts，baseDefaults 与 build 代理权限",
+          "lines": "L136-L180",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式（code 代理由 build 改名）",
+          "note": "底座 \"*\": \"allow\"，todowrite 默认放行；build（即 code）另开 plan_enter: allow。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "按判定顺序先看 executable_flow_constraint：只有 plan 代理在 plan_exit 后由框架停下并询问（prompt.ts L1597-L1613），属用户切换的可选路径，code 默认路径里没有按条目推进或拦下的机制，故取 structured_task_list。未逐字查 kilo-auto/free 实际用的系统提示文本，因 structured_task_list 已在判定顺序上优先。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "主循环在模型回复无工具调用、finish 非 tool-calls 时结束；VS Code 面板的停止按钮经 handleAbort 停止会话（可按会话或整棵子代理树）。目标续跑（模型可用默认 allow 的 goal 工具自行启动，总则 R3 第一档）：模型调用 goal_report 报 complete 后框架停止续发，同属 model_end_signal；文档明说完成不经独立核验，故无 verification_condition；目标循环没有回合数或用量上限。code 代理与 general/explore 子代理默认无 steps（agent.steps 为空即 Infinity），无 budget。可选：在代理配置里设 steps 后到上限注入 MAX_STEPS 提示；设置 kilo-code.new.maxCost（默认 0 关闭）后超额弹非阻塞提醒，用户选择后可中止。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts，主循环退出判定与 maxSteps",
+          "lines": "L1616-L1636",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认代理 code",
+          "note": "无工具调用且 finish 非 tool-calls 时 break，即模型结束信号；L1715 maxSteps = agent.steps ?? Infinity。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/KiloProvider.ts",
+          "locator": "packages/kilo-vscode/src/KiloProvider.ts，handleAbort",
+          "lines": "L4968-L4973",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 侧边栏",
+          "note": "面板发来的中止消息调用 stopSession 停止当前会话或会话树。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/goals.md",
+          "locator": "Session Goals：Agent-started goals、Goal statuses、Completion reports",
+          "lines": "L53-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑",
+          "note": "goal 权限默认 allow；完成由模型用 goal_report 报告、Kilo 不独立核验。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "verification_condition 查过：StructuredOutput 只在请求 format 为 json_schema 时出现，VS Code 面板与 task 工具都不传结构；plan_exit 的停顿只在 plan 代理。budget 查过：代理 steps、目标循环、maxCost 默认都不生效；压缩次数耗尽后结束本轮属出错处理（F04）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "call_retry：SessionRetry 对 429/5xx/过载等可重试错误按指数退避（初始 2 秒，倍数 2）自动重发，默认最多 5 次；不完整响应另重试至多 2 次。model_self_repair：工具出错作为 error 结果回传模型继续循环；连续畸形工具调用到阈值后框架中止本轮（malformedToolGuard）。escalate_to_human：同一工具以相同参数连续调用 3 次时框架发 doom_loop 权限询问（默认 ask），用户批准后从原处继续；目标续跑里回合出错或没有成功动作时框架把目标置为 paused/blocked，用户用 /goal resume 或控件恢复后带原历史接着做。framework_input_repair：experimental_repairToolCall 把大小写不符的工具名改成已注册的小写名后照常执行。权限被拒（主会话）默认结束本轮，不另记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/retry.ts",
+          "locator": "packages/opencode/src/session/retry.ts，RETRY_* 常量与 policy",
+          "lines": "L26-L185",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型调用",
+          "note": "可重试错误按退避自动重发，无显式 limit 时超过 RETRY_MAX_RETRIES=5 停止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/processor.ts",
+          "locator": "packages/opencode/src/session/processor.ts，工具出错处理与 doom loop 检测",
+          "lines": "L300-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认代理 code",
+          "note": "工具错误写成 error 状态交回模型；拒绝类错误置 blocked；畸形调用连续出现时中止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/processor.ts",
+          "locator": "packages/opencode/src/session/processor.ts，DOOM_LOOP_THRESHOLD 与 permission.ask(doom_loop)",
+          "lines": "L505-L535",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "最近 3 次同名同参调用触发 doom_loop 询问；agent.ts L138 默认 doom_loop: ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/goal/runner.ts",
+          "locator": "packages/opencode/src/kilocode/session/goal/runner.ts，目标回合结束后的 settle",
+          "lines": "L479-L546",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标续跑",
+          "note": "被拒或失败、或没有成功动作时框架把目标置为 blocked/paused，等用户恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/llm.ts",
+          "locator": "packages/opencode/src/session/llm.ts，experimental_repairToolCall",
+          "lines": "L421-L431",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 AI SDK 调用路径",
+          "note": "工具名只差大小写时改成已注册名照常执行，其余返回 null 交回错误。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "认证失效、请求过大分支未逐条追到底：请求过大走压缩（D 组），压缩次数耗尽时结束本轮并报错，不等用户；认证失效的处理没在主循环里看到暂停等待登录的分支，没据此加项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "value_note": "扩展宿主里的 ServerManager 把随包的 bin/kilo 作为子进程 kilo serve --port 0 拉起，随机密码做基本认证，经本机回环端口上的 HTTP 与 SSE 通信；扩展 dispose 时 SIGTERM（5 秒后 SIGKILL）结束它，子进程还按 KILO_PARENT_PID 看守父进程，随扩展启停。同一扩展实例内的侧边栏、Agent Manager 等复用这一个实例，不是跨前端常驻服务。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts，getServer 与 spawn",
+          "lines": "L58-L175",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展入口",
+          "note": "已有实例就复用，否则生成随机密码并以子进程启动 kilo serve --port 0，传入 KILO_PARENT_PID。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts，dispose",
+          "lines": "L279-L296",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展入口",
+          "note": "扩展释放时结束子进程组，核心随前端退出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "词表口径疑问：subprocess_protocol 写“经标准输入输出或管道”，local_service_api 写“本机常驻服务、可供几个前端共用”。本例生命周期是子进程（随扩展启停、按父 PID 看守），传输却是本地端口上的 HTTP+SSE（带每次随机生成的密码）。按生命周期和“前端拉起核心”取 subprocess_protocol；建议码本写明传输方式和生命周期冲突时以哪条为准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "read、write、edit、glob、grep 等文件工具在 kilo serve 进程（执行核心）里直接调文件系统接口；bash 工具经 ChildProcessSpawner 为每条命令起 shell 子进程，background_process 工具也起子进程。沙箱默认关，没有容器。可选：用户添加本地 MCP 服务配置后，由核心经 stdio 拉起为子进程；远程 MCP 走 HTTP。云端执行（Cloud Agent）不在默认路径。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/shell.ts",
+          "locator": "packages/opencode/src/tool/shell.ts，spawner.spawn",
+          "lines": "L603-L603",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "bash 工具",
+          "note": "命令经 spawner 另起 shell 子进程执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/read.ts",
+          "locator": "packages/opencode/src/tool/read.ts，fs.realPath / readDirectoryEntries",
+          "lines": "L90-L116",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "文件工具",
+          "note": "读文件工具在核心进程内用文件系统服务直接读取。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "会话、消息与片段由 kilo serve 核心写进数据目录的 SQLite（稳定通道为 kilo.db），主循环每步从库里读回消息构造请求；扩展经 HTTP 客户端读取显示。会话云同步默认开（登录 Kilo 后同步到 ingest.kilosessions.ai），属云端镜像，关掉后照常工作，不算 state_service。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/storage/db.ts",
+          "locator": "packages/opencode/src/storage/db.ts，getChannelPath",
+          "lines": "L33-L40",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "稳定通道",
+          "note": "核心把状态库放在 Global.Path.data/kilo.db。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts，主循环读回消息",
+          "lines": "L1559-L1562",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认代理 code",
+          "note": "每步由核心从数据库按会话编号读回消息（filterCompactedEffect）。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "侧边栏会话共用同一个 kilo serve 进程和同一工作区目录，靠会话编号在库里分开历史与状态。可选：Agent Manager 里用户新建 worktree 会话时每个会话有独立 Git 工作树。快照按项目和工作树存，不按会话分。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/schema.ts",
+          "locator": "packages/opencode/src/session/schema.ts，SessionID",
+          "lines": "L7-L8",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话管理",
+          "note": "会话以框架生成的 SessionID 标识。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts，getServer 复用实例",
+          "lines": "L58-L62",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展入口",
+          "note": "所有会话复用同一个核心进程，新会话不换进程。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心用 Vercel AI SDK 的统一接口，随包带 Anthropic、OpenAI、Google、Bedrock、OpenAI 兼容、OpenRouter 等多个适配包，转成不同的接口协议，作为库在 kilo serve 进程内运行。钉住环境实际走 @kilocode/kilo-gateway 提供方，请求发往 Kilo 网关；网关是厂商云服务，不是本机网关进程。另有实验开关 experimentalNativeLlm 的原生路径，默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/provider/provider.ts",
+          "locator": "packages/opencode/src/provider/provider.ts，BUNDLED_PROVIDERS",
+          "lines": "L135-L162",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "随包内置多家 @ai-sdk 适配包，加上 KILO_BUNDLED_PROVIDERS。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/provider/provider.ts",
+          "locator": "packages/opencode/src/kilocode/provider/provider.ts，KILO_BUNDLED_PROVIDERS",
+          "lines": "L33-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "钉住环境（Kilo 账户）",
+          "note": "Kilo 网关提供方 @kilocode/kilo-gateway 也作为进程内适配包加载。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "工具定义以 JSON Schema 放进 AI SDK 的 tools，模型经原生工具调用字段发出调用。MCP 默认开放，用户只需添加一条服务配置，核心就把 MCP 工具转成模型可调用的函数（McpCatalog.convertTool）。解析失败：工具名只差大小写的修正后执行（记 F04），其余错误作为工具错误交回模型；畸形调用连续出现时中止本轮。code mode（脚本分派）实验开关默认关，只写“可选”；没有找到文本解析回退。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/llm.ts",
+          "locator": "packages/opencode/src/session/llm.ts，streamText 的 tools 与 activeTools",
+          "lines": "L421-L441",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 AI SDK 调用路径",
+          "note": "工具以结构化定义交给接口，修复钩子只处理工具名。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/tools.ts",
+          "locator": "packages/opencode/src/session/tools.ts，MCP 工具转换",
+          "lines": "L472-L583",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 扩展点",
+          "note": "把 MCP 客户端提供的工具转成模型工具，调用时转回 MCP 请求。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "text_parsing 查过 session、kilocode/session、provider 目录，没有从文本抽调用的代码；invalid 工具被 activeTools 排除，不作文本回退。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "task 工具无条件带 model、provider、variant 参数，主模型可为子代理指定型号或推理强度，框架只校验和执行；工具说明写“只在用户明确要求时设置”，代码不拦（总则 R3）。钉住环境的 Kilo 网关列出多种型号，可选型号不止一个（具体列表由服务端下发）。不指定时子代理沿用父会话型号，无按角色默认分配。主型号 kilo-auto/free 由 Kilo 网关在服务端按请求分流到免费型号（客户端发 x-kilocode-mode 头），型号由服务端决定，不算本框架的路由。没找到换型号重发的失败回退。辅助：会话标题用 getSmallModel 取 kilo-auto/small 槽位，型号由服务端决定，记 per_role。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/task.ts",
+          "locator": "packages/opencode/src/kilocode/tool/task.ts，KiloTask.ModelFields 与 resolveModel",
+          "lines": "L42-L58",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "task 工具（code 代理默认 allow）",
+          "note": "子代理的 model、provider、variant 参数与说明。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts，Parameters 与 KiloTask.resolveModel 调用",
+          "lines": "L66-L75",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "task 工具",
+          "note": "Parameters 无条件合入 ModelFields，L176-L190 按参数解析子代理型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts，标题生成取型号",
+          "lines": "L329-L340",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "辅助调用：会话标题",
+          "note": "title 代理没配型号时用 provider.getSmallModel，Kilo 提供方返回 kilo-auto/small。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/compaction.ts",
+          "locator": "packages/opencode/src/session/compaction.ts，压缩取型号",
+          "lines": "L427-L430",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "辅助调用：压缩",
+          "note": "compaction 代理默认无型号，用当前用户消息的型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 逐项判过：标题生成 kilo-auto/small 槽位（per_role，型号由服务端决定）；压缩用主型号（同一型号）；动作审核分类：无；联网搜索 websearch 走 Kilo 托管服务、内部型号客户端选不了，不计，webfetch 不调模型；媒体理解：无；生成类工具：图像生成默认不注册。session/summary.ts 的 summarize 只算差异，未见模型调用。行内自动补全（Mercury Edit）不属任务内调用，未计。model_selected_delegation 的“可选型号不止一个”依赖服务端下发的型号列表，免费账户能否真调到付费型号快照核不了，故 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "每次请求的 maxOutputTokens 默认取 min(型号 limit.output, OUTPUT_TOKEN_MAX=32000)，并按剩余上下文再压低（KiloLLM.capOutputTokens）；只对 Claude 系首方路由放宽到型号上限。截断（finish=length）只记警告，没有专门续写。其他维默认不设：代理 steps 默认空（Infinity），目标续跑无回合或用量上限。可选：代理配置 steps 后到上限注入 MAX_STEPS 提示；kilo-code.new.maxCost 默认 0（关闭），设了之后超额弹非阻塞提醒、用户可选择中止。服务端的免费档限流（每 IP 每小时 200 次）属服务商限额，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/provider/transform.ts",
+          "locator": "packages/opencode/src/provider/transform.ts，OUTPUT_TOKEN_MAX 与 maxOutputTokens",
+          "lines": "L1795-L1797",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认模型调用",
+          "note": "输出上限取型号上限与 32000（L22）中的较小值。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/llm/request.ts",
+          "locator": "packages/opencode/src/session/llm/request.ts，params.maxOutputTokens",
+          "lines": "L159-L162",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认模型调用",
+          "note": "请求默认带 KiloLLM.outputTokens 算出的输出上限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/package.json",
+          "locator": "packages/kilo-vscode/package.json，kilo-code.new.maxCost",
+          "lines": "L1160-L1165",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 设置",
+          "note": "金额提醒默认 0，即关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "kilo-auto/free 的 limit.output 由网关型号列表下发；但 32000 的上限写在客户端代码里，非 Claude 系路由时始终生效，所以按客户端默认上限计入。服务端把 kilo-auto/free 路由到哪个底层型号看不到，若被识别为 Claude 系首方路由则上限改用服务端给的型号上限，故 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环每一步都从数据库重读本会话的消息与分片（MessageV2.filterCompactedEffect → stream），再经 toModelMessages 整份转换。记录里的控制条目是挂在用户消息下的 compaction 分片（还有 snapshot、patch 分片）；filterCompacted 只用最近一次已完成的 compaction 定位起点：tail_start_id 之前一概不发，之后的照原样发（顺序重排为压缩提示、摘要、保留尾部、新消息），属定位起点；compaction 分片被一对一换成固定文字“What did we do so far?”，subtask 分片同样换成固定文字，snapshot/patch/step-finish 等流程分片不进请求。旧工具结果的 time.compacted、assistant 的 summary 标志、text 的 ignored 都是消息元数据，只导致一对一占位或按摘要位置一刀切（trimBeforeLastSummary）。因此按 scope_rule 记顺序消息。会话 revert 状态在回合入口由 SessionRevert.cleanup 直接删除被回退消息，不在构造请求时解释。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts SessionPrompt loop：while(true) 内 filterCompactedEffect、PromptQueue.scope、trimBeforeLastSummary",
+          "lines": "L1555-L1565",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主循环每一步构造请求",
+          "note": "每一步都从存储重读消息列表，再做定位起点和修整。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/message-v2.ts",
+          "locator": "packages/opencode/src/session/message-v2.ts filterCompacted",
+          "lines": "L667-L719",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主循环每一步构造请求",
+          "note": "compaction 分片只用来确定起点（含保留尾部），起点之前一概不发，之后原样保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/message-v2.ts",
+          "locator": "packages/opencode/src/session/message-v2.ts toModelMessagesEffect：compaction/subtask 分片与 compacted 工具结果的转换",
+          "lines": "L359-L430",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主循环每一步构造请求",
+          "note": "控制分片被一对一换成固定文字，已清除的工具结果换成占位，属于修整。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "每轮从库重读并整份转换，但控制条目（compaction 分片）只用来定位起点、自身被一对一换成固定文字；按 scope_rule 判 sequential_messages。filterCompacted 会把保留尾部重排到摘要之后，这算重排而不是按类型删除同一侧条目，判为定位起点；若主控认为“重排”应算逐类解释，可改为 typed_event_rebuild。layers 只写一层：每轮现转、不跨轮保留的列表不另算一层。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "truncation：工具输出统一经 Truncate.output，超过 2000 行或 50 KB 截成预览，全文写入数据目录 tool-output 下的文件并在结果里留路径（保留 7 天）；toModelMessages 还对工具输出做 truncateToolOutput；非当前回合的图片/PDF 附件被换成占位文字（maybeStripHistoricalMedia）。summarization：自动压缩默认开（compaction.auto 只有显式 false 才关），上一条回复的用量达到可用窗口时由 compaction 代理写摘要，默认保留最近 2 个回合原文（tail_turns）；可选：/compact 手动压缩。tool_result_replacement：compaction.prune 把较早的工具结果标为 compacted，请求里换成“[Old tool result content cleared]”；默认在压缩之后（post-compaction）和请求体超过 1,250,000 字节时（payload-limit）触发，回合结束时的常规 prune 要设 compaction.prune=true（可选）。segment_selection：代码库语义检索默认关，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/truncate.ts",
+          "locator": "packages/opencode/src/tool/truncate.ts MAX_LINES/MAX_BYTES、Truncate.output",
+          "lines": "L12-L145",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具输出",
+          "note": "超限工具输出被截短，全文另存文件并留路径。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts 循环内 isOverflow → compaction.create(auto: true)",
+          "lines": "L1676-L1704",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认自动压缩",
+          "note": "上下文超限时自动建压缩任务，由模型写摘要。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/overflow.ts",
+          "locator": "packages/opencode/src/session/overflow.ts isOverflow",
+          "lines": "L22-L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认自动压缩",
+          "note": "只有 compaction.auto 显式为 false 才不压缩。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/compaction.ts",
+          "locator": "packages/opencode/src/session/compaction.ts SessionCompaction.prune",
+          "lines": "L305-L370",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 payload-limit 与 post-compaction 清理",
+          "note": "较早的工具结果整条标为 compacted；常规回合清理需显式开启，其余原因默认生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts REQUEST_PRUNE_BYTES 检查后调用 compaction.prune(reason: payload-limit)",
+          "lines": "L1830-L1845",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认请求体过大时",
+          "note": "请求体超过上限时把旧工具结果换成占位后重新转换。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_specified：VS Code 输入框 @ 提及文件、@terminal、@git-changes、Past chats，拖入文件或图片附件。keyword：默认注册的 grep 工具（模型给正则，返回匹配文件和行）；glob 只按文件名匹配。扩展还自动带上当前焦点文件和打开的编辑器标签信息（自动编辑器上下文，非检索）。可选：semantic_search 依赖代码库索引，索引默认关、要按项目或全局开启（第三档）。structural_index：lsp 工具只在实验开关下注册，不计。网页抓取 webfetch、websearch 不计；技能目录（说明常驻、正文按需由 skill 工具读取）不计。检索过往会话的 kilo_local_recall 归 F16。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/context-mentions.md",
+          "locator": "Context Mentions：@-Mention Autocomplete、Drag and Drop、Automatic Editor Context",
+          "lines": "L8-L69",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展默认",
+          "note": "用户可用 @ 提及或拖入文件，文件内容随消息附进请求；模型另用 read、grep、glob 自行发现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts 内置工具表（grep、glob 默认；lsp 受 experimentalLspTool 控制）",
+          "lines": "L312-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具注册",
+          "note": "grep 默认注册给模型；lsp 只在实验开关下注册。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/context/codebase-indexing.md",
+          "locator": "Codebase Indexing 开头说明",
+          "lines": "L8-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认关闭的语义检索",
+          "note": "代码库索引默认关闭，要显式按项目或全局开启。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "retrieval_store"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：全局配置目录的 AGENTS.md、项目内 AGENTS.md（及已弃用的 CONTEXT.md）每次会话自动读入系统提示；CLAUDE.md 要开 claudeCodeCompat（可选）。retrieval_store：默认注册的 kilo_local_recall 工具按词检索本项目及其工作树的本地历史会话（库里有 recall_part_search_idx 索引），按会话编号读回记录，只载入命中的片段或选中的会话；权限默认 ask，需用户批准。可选：Kilo Memory（项目记忆，含 session digest 自动摘要和 kilo_memory_save/recall）默认关闭、按项目开启。用户还可在输入里 @ Past chats 把某个旧会话整段带入（用户指定，记在 F15）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/instruction.ts",
+          "locator": "packages/opencode/src/session/instruction.ts 指令文件发现",
+          "lines": "L63-L77",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认指令文件",
+          "note": "全局与项目的 AGENTS.md 默认加载进每个会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/recall.ts",
+          "locator": "packages/opencode/src/tool/recall.ts RecallTool（kilo_local_recall）search/read",
+          "lines": "L32-L72",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认注册工具，权限 ask",
+          "note": "模型可按查询词检索并读回本项目过去会话的记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/agent/index.ts",
+          "locator": "packages/opencode/src/kilocode/agent/index.ts prepare：recall: ask、kilo_memory_*: ask",
+          "lines": "L378-L392",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限",
+          "note": "recall 默认需用户批准，不是 deny。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/context/memory.md",
+          "locator": "Kilo Memory：Opt-in and project-only",
+          "lines": "L8-L11",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认关闭的项目记忆",
+          "note": "项目记忆默认关闭，按项目开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "kilo_local_recall 检索的是原始会话记录（不是专门整理的记忆条目），检索方式是对会话库做子串匹配加排序，库里另建了 recall_part_search_idx 索引。我按 retrieval_store 的“跨会话内容存进可检索的库、新会话按当前任务检索取回、不整份载入”计入；若码本认为原始会话记录不算“记忆”，这一项应移出。另：它要用户批准，按 R3 第一档算默认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "event_log：会话存在本机 SQLite（session、message、part、todo 等表），消息下挂独立分片类型，其中 compaction 分片是压缩边界、snapshot/patch 分片记录检查点，满足控制条目两条；另有 durable 事件表 event 按序记会话事件。state_snapshot：Git 仓库内默认在模型流开始前与每步结束时用独立 git 目录（数据目录 snapshot/<项目 id>/<工作树哈希>）拍工作区快照，revert 读取它恢复文件。external_reference：工具输出超限时全文另存数据目录 tool-output 下，结果里只留路径，跨进程保留 7 天后清理（条件：超过 2000 行或 50 KB）。待办清单单独存 todo 表（只记子对象，不另计）。会话云同步默认把消息、分片、差异同步到 Kilo 服务端（记录在服务端，不在本机）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/schema/src/v1/session.ts",
+          "locator": "packages/schema/src/v1/session.ts Part 联合类型（SnapshotPart、PatchPart、CompactionPart 等）",
+          "lines": "L402-L415",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话记录格式",
+          "note": "记录里除消息内容外还有压缩边界、快照、补丁等独立分片类型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/core/src/session/sql.ts",
+          "locator": "packages/core/src/session/sql.ts SessionTable、MessageTable、PartTable、TodoTable",
+          "lines": "L24-L135",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "本机会话存储",
+          "note": "会话、消息、分片、待办都持久化在 SQLite。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/snapshot/index.ts",
+          "locator": "packages/opencode/src/snapshot/index.ts 快照目录与默认开启条件",
+          "lines": "L103-L109",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Git 仓库内默认快照",
+          "note": "工作区快照存在数据目录的独立 git 仓库里，跨进程保留。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/snapshot/index.ts",
+          "locator": "packages/opencode/src/snapshot/index.ts enabled 判断",
+          "lines": "L225-L228",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Git 仓库内默认快照",
+          "note": "仓库是 git 且 snapshot 不为 false 即拍快照。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/truncate.ts",
+          "locator": "packages/opencode/src/tool/truncate.ts RETENTION、cleanup、Truncate.output",
+          "lines": "L12-L145",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "工具输出超限时",
+          "note": "超限输出存成文件、结果留路径，按 7 天保留期清理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "VS Code 侧边栏 History 里重开本地会话，从数据库读回消息接着对话；被中断的回合可在输入为空时点 Continue，经 resumeSession 用原型号和代理发起一次新的模型请求，并附一条“[TASK RESUMPTION]…先检查当前状态再重试被中断的工具”的提示；中断时运行中的工具调用被记为 “Tool execution aborted”，由模型重新决定，不接续执行。内存中的待批权限请求不跨进程保留。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/vscode/index.md",
+          "locator": "VS Code 平台页：停止后点 Continue 恢复被中断的回合",
+          "lines": "L69",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展默认恢复入口",
+          "note": "Continue 发起新的模型请求，不撤销已执行的工具动作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/continuation.ts",
+          "locator": "packages/opencode/src/kilocode/session/continuation.ts KiloSessionContinuation.context",
+          "lines": "L41-L50",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "恢复被中断的回合",
+          "note": "恢复时只补一条提示，让模型自己检查并决定是否重试中断的工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/session-history.md",
+          "locator": "Search session history in VS Code",
+          "lines": "L36-L44",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 会话历史",
+          "note": "可在 History 里重开本地会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：重开会话后消息与工具结果从库里读回进上下文（已被 prune 清除的旧结果只剩占位，压缩前的历史只剩摘要）。task_plan：todowrite 维护的待办存在 todo 表，按会话读回，模型和界面可接着更新。目标（goal）存在会话元数据 kilo.goal，重启后原为 active 的目标被投影为 paused，要用户再启动才驱动代理，写在这里不另计。subagent_links：task 工具可传原 task_id 续接同一子会话（子会话记录在库，校验必须是当前会话的子会话），带着原上下文接着做。workspace：恢复不自动改回文件，回退归 F20。外部副作用（已执行的命令、网络请求）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/todo.ts",
+          "locator": "packages/opencode/src/session/todo.ts Todo.update / Todo.get",
+          "lines": "L30-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认待办工具",
+          "note": "待办清单按会话写入并从库读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts 参数 task_id 与续接已有子会话",
+          "lines": "L58-L61",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 task 工具",
+          "note": "传原 task_id 时继续同一子代理会话，而不是新开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts 读取 task_id 对应会话并校验父子关系",
+          "lines": "L165-L171",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 task 工具",
+          "note": "子会话从存储读回，跨进程后仍可续接。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/goal/state.ts",
+          "locator": "packages/opencode/src/kilocode/session/goal/state.ts GoalState.project",
+          "lines": "L126-L131",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "目标状态投影",
+          "note": "不在本进程运行的 active 目标显示为 paused。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "tool_results 和 conversation 走同一份消息记录读回，按词表分别计。目标在重启后变 paused、不自动驱动，按 task_plan 的“恢复后仍驱动代理继续工作”不计目标，task_plan 只凭待办清单计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "session_branch：聊天视图的 Fork 按钮和逐条消息的分叉，把会话（或截至某条消息）复制成新会话，原会话留在列表里可继续。workspace_snapshot：Git 仓库内默认快照，用户消息上的 Revert to here 把工作区文件恢复到该消息之前，并把对话回卷（可 Redo/Redo All）；在回退状态下发新消息会永久删除被回退的消息（裁掉后续，不算分支）。compensation：无为外部副作用登记的反向步骤。idempotency_key：恢复时被中断的工具调用标为 aborted 后交模型重新决定，没有按调用编号查重跳过的路径，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/features/checkpoints.md",
+          "locator": "Checkpoints：Reverting with \"Revert to here\"、The Revert Banner、Making a Revert Permanent",
+          "lines": "L122-L167",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 默认快照与回退",
+          "note": "Revert to here 恢复工作区文件并回卷对话，发新消息后被回退的消息被删除。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/revert.ts",
+          "locator": "packages/opencode/src/session/revert.ts SessionRevert.revert（按 patch 分片与快照恢复）",
+          "lines": "L42-L80",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认回退入口",
+          "note": "回退读取 patch 分片和快照把文件改回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/kilo-provider/fork-session.ts",
+          "locator": "packages/kilo-vscode/src/kilo-provider/fork-session.ts handleForkSession",
+          "lines": "L15-L45",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 侧边栏分叉",
+          "note": "侧边栏可把会话（可指定消息）分叉成新会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/webview-ui/src/components/chat/ChatView.tsx",
+          "locator": "packages/kilo-vscode/webview-ui/src/components/chat/ChatView.tsx Fork 按钮",
+          "lines": "L301-L310",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 侧边栏界面",
+          "note": "聊天视图有分叉会话按钮。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "规则写在 kilo.jsonc 的 permission（全局、项目、按代理），每个工具 allow/ask/deny，可带 glob 模式，后匹配者胜；内置代理（code、plan、ask、debug、orchestrator）按工具类别放行或拒绝。command_rule：bash 按命令文本模式匹配。file_path：edit/read/external_directory 按路径模式。network_target：webfetch 的模式匹配规范化后的 URL（仅限该工具，不管命令联网）；另有默认关闭的沙箱设置 sandbox.network 与 allowed_hosts 按主机限制命令联网（可选）。运行中批准时的“始终允许”把模式加进规则。默认效果（code 代理、VS Code、无用户规则）：编辑默认 allow；bash 默认 ask（只读类及 touch、mkdir、cp、mv、tsc、tar 等放行）；工作区外路径 external_directory ask；命令联网按 bash 规则 ask，沙箱默认关。其他环境：JetBrains 客户端编辑默认 ask。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/agent/agent.ts",
+          "locator": "packages/opencode/src/agent/agent.ts baseDefaults",
+          "lines": "L136-L158",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限底座",
+          "note": "除少数项外一律 allow；external_directory 与 .env 读取为 ask。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/agent/index.ts",
+          "locator": "packages/opencode/src/kilocode/agent/index.ts bash 默认规则",
+          "lines": "L55-L67",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 bash 规则",
+          "note": "bash 默认 * 为 ask，只放行列举的命令前缀。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/getting-started/settings/auto-approving-actions.md",
+          "locator": "Auto-Approving Actions：Glob-Pattern Rules、Rule Precedence、Defaults",
+          "lines": "L84-L140",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户可写的权限规则",
+          "note": "每个工具可写 glob 模式规则匹配命令或路径，后匹配者胜。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/webfetch.ts",
+          "locator": "packages/opencode/src/tool/webfetch.ts ctx.ask(permission: webfetch, patterns: [url])",
+          "lines": "L40-L51",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "webfetch 工具",
+          "note": "webfetch 的权限模式按 URL 匹配。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/getting-started/settings/sandboxing.md",
+          "locator": "Sandboxing：默认关闭；sandbox.network、allowed_hosts、writable_paths",
+          "lines": "L8-L46",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选沙箱",
+          "note": "沙箱默认关，开启后可按主机放行网络、按路径放行写入。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认 code 代理下，命中 ask 的调用（未放行的 bash 命令、工作区外路径、读 .env、doom_loop、kilo_local_recall、browser_open 等）在执行前经 ctx.ask 停下，面板给出批准一次／始终允许／拒绝；一次批准只放行这次调用（bash 在执行前一并解析出命令模式和外部目录再询问）。“始终允许”相当于新增规则。批准者只有用户：运行时自动批准护盾与 autoApprove 默认关，没有自动审核器。可选：开启沙箱后，git 变更命令的 sandbox_escalation 另询问。plan 代理的 plan_exit 计划审核只在 plan 模式（第二档）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/shell.ts",
+          "locator": "packages/opencode/src/tool/shell.ts ask：external_directory 与 bash 模式询问",
+          "lines": "L296-L325",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 bash 工具",
+          "note": "命令执行前按模式请求批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/tools.ts",
+          "locator": "packages/opencode/src/session/tools.ts 工具上下文 ask → KiloSessionPrompt.askPermission",
+          "lines": "L120-L165",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具调用",
+          "note": "每次工具调用的批准请求带调用编号，结果记到该调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/package.json",
+          "locator": "packages/kilo-vscode/package.json kilo-code.new.autoApprove.enabled",
+          "lines": "L1155-L1159",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 默认设置",
+          "note": "自动批准默认关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "权限引擎在工具执行前按规则放行、询问或拒绝（bash 先用语法树解析命令，含重定向的按未知处理）。可选：操作系统沙箱（macOS/Linux）默认关闭，要在设置里开启。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/shell.ts",
+          "locator": "packages/opencode/src/tool/shell.ts collect/ask：语法树解析、file_redirect 判为 unknown",
+          "lines": "L375-L420",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认 bash 检查",
+          "note": "命令在执行前被解析并按规则检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/agent/index.ts",
+          "locator": "packages/opencode/src/kilocode/agent/index.ts readOnlyBash、planGuard、askGuard、orchestrator bash deny",
+          "lines": "L87-L165",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "内置模式与子代理",
+          "note": "只读类模式的限制由权限规则在代码里强制。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/getting-started/settings/sandboxing.md",
+          "locator": "Sandboxing 开头说明",
+          "lines": "L8-L14",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "可选沙箱",
+          "note": "操作系统沙箱默认关闭。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 核对：默认 code 代理——限制（bash ask、外部目录 ask、.env ask）都由权限引擎检查；plan——edit 只放行计划文件、bash 限 readOnlyBash 白名单、其余 *: deny（planGuard）；ask——*: deny 加 readOnlyBash 与 askEditGuard；debug——沿用默认规则，无额外只读声明；orchestrator——bash 在用户规则之后强制 deny；explore 子代理——readOnlyBash 再禁 gh、find（代码检查）；general 子代理——无只读声明；设置项——permission 规则与沙箱都是代码强制。shell 对重定向按 unknown 处理，未见材料承认白名单可绕过。readable 白名单里个别命令（如带写参数的工具）能否写文件没有逐条核实，因此 confidence 取 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "本机 SQLite 会话记录：同一条 assistant 消息下按顺序存 reasoning、text 与 tool 分片，tool 分片带 callID、工具名、完整输入、状态、输出或错误；触发它的用户消息以 parentID 对上。approval：工具上下文 ask 之后把放行来源（manual 人工、或规则来源 agent/global/project/session/default/yolo）写进该调用分片的 metadata.approval，被规则拒绝的也记 classifyDenial；用户手动拒绝只留错误结果。没有单独的审计账本；permission.replied 事件不落盘（导出功能 SessionExport.enabled=false）。identity：本机记录不含账户；会话云同步默认把记录同步到登录账户名下的服务端，账户只在服务端可见，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/tools.ts",
+          "locator": "packages/opencode/src/session/tools.ts askPermission 后写 metadata.approval",
+          "lines": "L133-L165",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认工具调用",
+          "note": "每次调用的放行来源（人工或规则）记到该调用的分片上，拒绝也记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/permission/provenance.ts",
+          "locator": "packages/opencode/src/kilocode/permission/provenance.ts Source、Approval",
+          "lines": "L1-L30",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "放行来源标记",
+          "note": "区分 manual 与各类规则来源。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/schema/src/v1/session.ts",
+          "locator": "packages/schema/src/v1/session.ts ToolPart 与 ToolState（pending/running/completed/error）",
+          "lines": "L290-L360",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话记录格式",
+          "note": "工具分片存调用编号、输入、输出与错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session-export/session-export.ts",
+          "locator": "packages/opencode/src/kilocode/session-export/session-export.ts enabled",
+          "lines": "L35",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话导出",
+          "note": "记录权限答复事件的导出功能在本版本关闭。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认主代理 code 能调用默认注册、默认 allow 的 task 工具派出子代理（内置 general、explore），子代理有独立子会话、能多步调用工具，框架登记 parentID 并跟踪运行；VS Code 入口另有 agent_manager 工具可开 Agent Manager 会话。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts TaskTool.execute（sessions.create 子会话）",
+          "lines": "L220-L235",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主代理 code 调用 task 工具",
+          "note": "task 工具以 parentID=当前会话新建子会话并登记父子关系，子代理在自己的会话里多步运行"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts 内置工具注册表",
+          "lines": "L312-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认注册的工具",
+          "note": "task 随核心默认注册；code 代理按权限底座 allow"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理调用 task 工具（默认前台）；也可调用 agent_manager 工具让 VS Code 开 Agent Manager 工作树会话（工具说明写“只在用户明确要求时”，按总则 R3 第一档计入）。user：用户写的命令文件带 subtask:true 或 agent 指向子代理模式时，框架直接执行 task（用户添加内容，总则 R2）。用户在消息里写 @代理名 只是给模型追加合成提示，由主代理发起创建，记 main_agent。cron_create、schedule_wakeup 到点只是给本会话投一条提示，不直接起子代理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts TaskTool.execute（sessions.create 子会话）",
+          "lines": "L220-L235",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主代理 code 调用 task 工具",
+          "note": "task 工具以 parentID=当前会话新建子会话并登记父子关系，子代理在自己的会话里多步运行"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts SessionPrompt.command（isSubtask）",
+          "lines": "L2451-L2463",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户命令文件（.kilo/commands）",
+          "note": "命令 frontmatter subtask:true 或指向 subagent 模式的代理时，框架把命令转成 subtask 片段，由主循环直接执行 task 工具，不经主代理模型决定"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts createUserMessage（part.type === agent）",
+          "lines": "L1345-L1360",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户 @代理名 提及",
+          "note": "@提及只给模型追加一句“调用 task 工具派这个子代理”的合成提示，创建仍由主代理发出"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/registry.ts",
+          "locator": "packages/opencode/src/kilocode/tool/registry.ts KiloToolRegistry 追加工具",
+          "lines": "L352-L382",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端",
+          "note": "agent_manager 只在 KILO_CLIENT=vscode 时注册，可开新的 Agent Manager 会话"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "官方文档 custom-subagents.md 称 @提及“creates a subtask”，代码是让主代理去调 task；按代码记 main_agent。framework_internal 查过：compaction、title、summary 三个隐藏代理工具全 deny，只调一次模型；回合结束只有标题与修剪；记忆生命周期默认关；未发现框架按内部条件起的多步代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "independent_context：子代理在自己的子会话里运行，只带任务说明。messages：父代理可用 task_id 续派给已完成的子代理；后台运行中的同 id 任务可追加上下文（background.extend）；另有默认开启的共享代理看板 board_post/board_read，主会话和子代理按编号互发消息；用户在界面里直接给子代理发消息时，框架经看板通知父代理（kilocode/session/steering.ts）。shared_files：task 子代理不建工作树，和主代理共用工作目录。权限：子会话权限由父会话权限与子代理定义合成，父代理的编辑、bash、MCP 限制作为上限继承（kilocode/tool/task.ts KiloTask.inherited），question 对子代理关闭。agent_manager 开的会话各在自己的工作树里，彼此隔离，可经 replyTo 互发请求和回复。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts TaskTool.runTask（ops.prompt）",
+          "lines": "L256-L275",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "子会话只收到 params.prompt 解析出的片段，question 工具对子代理关闭；不复制父对话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts Parameters.task_id / 续派校验",
+          "lines": "L58-L62",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "task_id 让父代理续用同一子会话（只限自己的子会话），子代理保留上下文接着做"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/board.ts",
+          "locator": "packages/opencode/src/kilocode/tool/board.ts board_read / board_post 工具说明",
+          "lines": "L80-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享代理看板（默认开）",
+          "note": "主会话与其 task 子代理共用一块框架维护的看板，可按参与者编号或 ALL 发 INFO/ASK/RESULT/HOLD/VETO 消息，执行中互相读取"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/board/enabled.ts",
+          "locator": "packages/opencode/src/kilocode/board/enabled.ts BoardEnabled.resolve",
+          "lines": "L1-L19",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认配置",
+          "note": "看板默认开启，只有 shared_agent_board=false 或实验开关显式关闭才关"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/task.ts",
+          "locator": "packages/opencode/src/kilocode/tool/task.ts KiloTask.usageDescription",
+          "lines": "L38-L40",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "task 派出的子代理属于当前会话，不建工作树，与主代理在同一工作目录读写"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "共享看板既像消息通道（有收件人、类型）又像框架维护的黑板（所有参与者读同一张表、看到彼此的帖子），按词表先后归入 messages，没有另记 shared_state；两者界线可在码本里写清。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "shared_board",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "synchronous_return：默认前台委派，task 调用阻塞到子代理结束，最后一条非合成文本作为结果返回。async_wait：模型可自行传 background=true（后台子代理开关默认开），子代理在后台跑，完成后框架把结果注入父会话；前台任务也可在界面里被转到后台（waitForPromotion）。shared_board：默认开启的共享代理看板，子代理可发 RESULT 等类型的帖子，父代理用 board_read 汇总。cancel_propagation：用户按 Stop（scope=session）会中断父运行器，正在前台等待的 task 调用被中断并取消子会话；删除父会话会取消其后台任务并递归删除子会话。后台任务在 scope=session 的 Stop 下不随之取消（代码注释写明只有显式停止或删除才取消）；转到后台后的任务同样不随 Stop 取消。代码里的取消是递归的（cancelTree、cancelBackgroundJobs、remove），但默认 subagent_depth=1，代理树只有一层，按 direct_children 记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts TaskTool.run 前台等待",
+          "lines": "L466-L491",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径（不传 background）",
+          "note": "前台委派时 task 调用一直等到子代理结束，结果作为工具返回值交回；子代理被取消返回“Task cancelled by the user”"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts notify / inject 后台结果",
+          "lines": "L303-L333",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "模型传 background=true",
+          "note": "后台子代理完成后框架把结果作为合成消息注入父会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/effect/runtime-flags.ts",
+          "locator": "packages/opencode/src/effect/runtime-flags.ts experimentalBackgroundSubagents",
+          "lines": "L47-L51",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认运行时开关",
+          "note": "后台子代理开关 KILO_EXPERIMENTAL_BACKGROUND_SUBAGENTS 默认 true，只作关闭开关"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/board.ts",
+          "locator": "packages/opencode/src/kilocode/tool/board.ts board_read / board_post 工具说明",
+          "lines": "L80-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "共享代理看板（默认开）",
+          "note": "主会话与其 task 子代理共用一块框架维护的看板，可按参与者编号或 ALL 发 INFO/ASK/RESULT/HOLD/VETO 消息，执行中互相读取"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts onAbort / 中断时 cancelForeground",
+          "lines": "L455-L503",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认委派路径",
+          "note": "父工具调用的 abort 信号或 Effect 中断会取消正在前台等待的子会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/webview-ui/src/context/session.tsx",
+          "locator": "packages/kilo-vscode/webview-ui/src/context/session.tsx abort()",
+          "lines": "L2400-L2418",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 面板 Stop 按钮",
+          "note": "面板停止按钮发 scope=session 的中止；任务卡上的停止对子会话发 scope=tree"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/session.ts",
+          "locator": "packages/opencode/src/session/session.ts Session.remove",
+          "lines": "L712-L726",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "删除父会话",
+          "note": "删除会话时先取消其后台任务，再递归删除子会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/task.ts",
+          "locator": "packages/opencode/src/tool/task.ts subagent_depth 检查",
+          "lines": "L121-L139",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认配置",
+          "note": "subagent_depth 默认 1，子代理不能再派子代理（canTask=false）"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/prompt.ts",
+          "locator": "packages/opencode/src/kilocode/session/prompt.ts KiloSessionPrompt.cancelTree",
+          "lines": "L162-L203",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话中止（scope=tree 时连带后代）",
+          "note": "中止按 scope 处理；tree 时递归找出全部后代会话一并取消"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 逐项：用户打断当前回合（面板 Stop）——连带，前台子代理随父运行器中断被取消；取消等待中的调用——面板任务卡的停止按钮直接对子会话发 scope=tree 中止，父代理的等待随即以“Task cancelled by the user”结束，算连带（这里把“取消等待中的调用”理解为在任务卡上停掉这次委派，拿不准）；取消父运行（删除父会话）——连带，Session.remove 递归删子会话并取消后台任务。三种都连带，记 all_ways。shared_board 是否满足“调用方从那里汇总”只看工具说明，父代理默认仍以 task 返回值拿结果。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：read、edit、bash、task 等写在核心注册表。plugin_api：用户插件模块的 tool 钩子，或 .kilo/tool/ 下导出 tool() 的独立文件，进程内注册。external_protocol_service：kilo.jsonc 的 mcp 键加一条服务即可。默认没有用户插件或 MCP 服务提供工具：默认注入的代码库索引插件返回空钩子，atomic-chat 等内部插件只挂认证、配置、事件和 chat.params，不注册工具，且直接导入编进核心。嵌入方声明工具：公开的 @kilocode/sdk 只是 HTTP 客户端，没有为会话声明工具的接口；sdk-next 有 tools.register 但包标为 private，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts 内置工具注册表",
+          "lines": "L312-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认注册的工具",
+          "note": "task 随核心默认注册；code 代理按权限底座 allow"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts custom tool 目录扫描与插件 tool 钩子",
+          "lines": "L245-L270",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "配置目录与插件",
+          "note": "扫描各配置目录的 {tool,tools}/*.{js,ts} 注册为工具，并把已加载插件 p.tool 里的定义加入工具表"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts MCP 工具并入",
+          "lines": "L383",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "MCP 配置",
+          "note": "MCP 服务的工具按权限过滤后并入模型工具清单"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/automate/extending/plugins.md",
+          "locator": "packages/kilo-docs/pages/automate/extending/plugins.md 小节：Custom tools / Alternative: standalone tool files",
+          "lines": "L458-L499",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "CLI 与 VS Code 扩展",
+          "note": "插件可用 tool() 注册模型可调用的工具，或在 .kilo/tool/ 放独立工具文件；文档写明插件在 CLI 与 VS Code 扩展里都生效"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/automate/mcp/using-in-kilo-code.md",
+          "locator": "packages/kilo-docs/pages/automate/mcp/using-in-kilo-code.md 小节：配置 MCP 服务",
+          "lines": "L32-L60",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "在 kilo.jsonc 的 mcp 键下加一条服务即可接入"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/plugin/index.ts",
+          "locator": "packages/opencode/src/plugin/index.ts internalPlugins",
+          "lines": "L69-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "默认初始化的内部插件是直接导入、编进核心的提供方或认证插件，只能用 KILO_DISABLE_DEFAULT_PLUGINS 整体关"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "user_script 查过：独立工具文件是 JS/TS 模块经 tool() 注册，按 plugin_api 记，没有把任意脚本注册成工具的机制。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：AGENTS.md（全局、项目）与 .kilo/rules 每会话装载。skill_directory：.agents/skills 与配置目录的技能，模型按需装载，也可按名调用（同一份技能，只记本项）。role_template：.kilo/agents/*.md 自定义代理，可按名选用或派给子代理。prompt_template：.kilo/commands/*.md 斜杠命令（官方称 workflows），展开成一条提示，subtask:true 时交给子代理但仍是一条提示。executable_items：命令模板里的 !`cmd` 由框架执行；技能正文的 !`cmd` 只对可信来源（全局目录）执行，需批准。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/instruction.ts",
+          "locator": "packages/opencode/src/session/instruction.ts 指令文件清单",
+          "lines": "L63-L77",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认配置",
+          "note": "全局 AGENTS.md、项目 AGENTS.md 与已弃用的 CONTEXT.md 默认作为指令加载"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/custom-rules.md",
+          "locator": "packages/kilo-docs/pages/customize/custom-rules.md 小节：Rule Location（VSCode）",
+          "lines": "L29-L58",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "项目规则写在 .kilo/rules/ 或经 instructions 键指向的文件，对所有交互生效"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/skill/index.ts",
+          "locator": "packages/opencode/src/skill/index.ts 技能扫描",
+          "lines": "L219-L256",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认配置",
+          "note": "扫描全局与项目 .agents/skills 及配置目录下的 SKILL.md"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/skills.md",
+          "locator": "packages/kilo-docs/pages/customize/skills.md 小节：How Skills Work / When Skills Are Loaded",
+          "lines": "L23-L45",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "技能按描述由代理按需装载"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/custom-subagents.md",
+          "locator": "packages/kilo-docs/pages/customize/custom-subagents.md 小节：Method 2: Markdown Files",
+          "lines": "L89-L97",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "在 .kilo/agents/ 或 ~/.config/kilo/agents/ 写带 frontmatter 的 Markdown，文件名就是代理名，可选用或派给子代理"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/customize/workflows.md",
+          "locator": "packages/kilo-docs/pages/customize/workflows.md 小节：Creating Workflows / Optional Frontmatter",
+          "lines": "L13-L61",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "所谓工作流就是 .kilo/commands/ 下的 Markdown 斜杠命令，展开成一条提示，可指定 agent、model、subtask"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts SessionPrompt.command 模板中的 !`cmd`",
+          "lines": "L2387-L2405",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "命令模板",
+          "note": "命令模板里的 !`cmd` 由框架执行并把输出填进提示；技能来源的模板只在可信时执行"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/skill.ts",
+          "locator": "packages/opencode/src/tool/skill.ts SkillTool shell 注入",
+          "lines": "L45-L53",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "技能装载",
+          "note": "技能正文里的 !`cmd` 在技能可信且未关闭时由框架执行（需批量批准）"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workflow_definition 查过：官方叫 workflows 的其实是命令文件，框架不按步骤推进，归 prompt_template；目标（goal）由框架续跑但不是保存在文件里的指导。skill_directory 进 executable_items 依据是可信技能的 !`cmd` 注入，项目内技能默认不可信不执行。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "prompt_template",
+          "skill_directory"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "input：chat.message、command.execute.before 可改写用户消息或命令展开结果。model_call：chat.params、chat.headers、experimental.chat.messages.transform、experimental.chat.system.transform、experimental.text.complete、tool.definition。tool_before_after：tool.execute.before/after、permission.ask（可自动放行或拒绝）、shell.env。end：session.idle 事件，只能经 event 钩子观察。context_compaction：experimental.session.compacting、experimental.compaction.autocontinue。session_start：session.created 事件，只能观察。in_use_by_default 为空：默认初始化的 atomic-chat 等内部插件挂了 event、chat.params、config、auth，但直接导入编进核心，只能用 KILO_DISABLE_DEFAULT_PLUGINS 整体关，按总则 R2 不算在用；默认注入的代码库索引插件返回空钩子。未见类似其他工具的配置式钩子脚本。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/plugin/src/index.ts",
+          "locator": "packages/plugin/src/index.ts Hooks 接口",
+          "lines": "L226-L336",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "插件接口",
+          "note": "插件可挂 event、chat.message、chat.params、chat.headers、permission.ask、command.execute.before、tool.execute.before/after、shell.env、experimental.chat.messages.transform、experimental.chat.system.transform、experimental.session.compacting、experimental.compaction.autocontinue、experimental.text.complete、tool.definition"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/automate/extending/plugins.md",
+          "locator": "packages/kilo-docs/pages/automate/extending/plugins.md 小节：Hooks reference / Events",
+          "lines": "L358-L446",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "CLI 与 VS Code 扩展",
+          "note": "官方逐个说明钩子能否改写；event 钩子收全部总线事件（session.created、session.idle、session.compacted 等）"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/prompt.ts",
+          "locator": "packages/opencode/src/session/prompt.ts chat.message 触发",
+          "lines": "L1390-L1395",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "用户消息进入",
+          "note": "用户消息交给模型前触发 chat.message，可改 parts"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/llm/request.ts",
+          "locator": "packages/opencode/src/session/llm/request.ts chat.params / chat.headers 触发",
+          "lines": "L139-L170",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每次模型请求",
+          "note": "请求发出前触发，可改参数和请求头"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/compaction.ts",
+          "locator": "packages/opencode/src/session/compaction.ts experimental.session.compacting 触发",
+          "lines": "L443-L449",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "上下文压缩",
+          "note": "压缩前触发，可补上下文或替换压缩提示"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/session/session.ts",
+          "locator": "packages/opencode/src/session/session.ts Session.create 发布 session.created",
+          "lines": "L658-L665",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "会话开始",
+          "note": "新会话创建时发布 session.created 事件，只能经 event 钩子观察"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/plugin/index.ts",
+          "locator": "packages/opencode/src/plugin/index.ts internalPlugins",
+          "lines": "L69-L95",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认安装",
+          "note": "默认初始化的内部插件是直接导入、编进核心的提供方或认证插件，只能用 KILO_DISABLE_DEFAULT_PLUGINS 整体关"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "save 查过：事件表里 session.updated、message.updated、session.diff 都是顺带落盘的通知，快照写盘没有专属事件，不记。experimental.* 前缀的钩子由核心无条件触发，未见开关，按默认开放记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end",
+          "context_compaction",
+          "session_start"
+        ],
+        "observe_only": [
+          "end",
+          "session_start"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "service_api",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "value_note": "同一提交发布的 @kilocode/cli：cli_subprocess（kilo run --format json）、service_api（kilo serve 的 HTTP 接口，文档给 curl 用法和 @kilocode/sdk 客户端；SDK 只包装 HTTP，不另记 library）、public_protocol（kilo acp）。所选 VS Code 入口自动拉起的 kilo serve 用随机密码保护、只给自家前端，按总则 R5 不算直接开放；扩展不导出 API，没有 host_extension_api。扩展虽随包带 kilo 二进制，官方文档给的命令行入口是另装 @kilocode/cli，故三项记 needs_official_package。sdk-next 在调用方进程内运行核心但包标 private，不记 library。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md 小节：kilo run",
+          "lines": "L174-L200",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI",
+          "note": "kilo run 非交互运行，--format json 输出原始 JSON 事件"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/session-history.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/agents/session-history.md 小节：Search through the API or SDK",
+          "lines": "L225-L270",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI kilo serve",
+          "note": "kilo serve 开有文档的 HTTP 接口（基本认证），@kilocode/sdk 暴露同样的端点"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md 小节：kilo acp",
+          "lines": "L10-L22",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI",
+          "note": "kilo acp 启动 ACP（Agent Client Protocol）服务端"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/cli.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/platforms/cli.md 小节：安装说明",
+          "lines": "L379",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI",
+          "note": "CLI 以 npm 包 @kilocode/cli 单独发布安装"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts spawn kilo serve",
+          "lines": "L129-L171",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展默认启动",
+          "note": "扩展自动拉起 kilo serve --port 0，用每次随机生成的 KILO_SERVER_PASSWORD 保护，只交给自家前端"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/extension.ts",
+          "locator": "packages/kilo-vscode/src/extension.ts activate",
+          "lines": "L66-L943",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展",
+          "note": "activate 不返回任何导出对象，扩展没有给其他扩展的编程接口"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "needs_official_package 拿不准：VS Code 扩展包里自带同一个 kilo 二进制，技术上可直接运行，但不是有文档的用法；按包身份（kilocode.Kilo-Code 与 @kilocode/cli 不同名、分开发布）记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": [
+          "cli_subprocess",
+          "service_api",
+          "public_protocol"
+        ]
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：VS Code 面板输入框（另有 CLI 终端、kilo remote 手机中继）。api：按 F32 的 kilo run、kilo serve、kilo acp，以及 GitHub Actions 里调 kilo github run。schedule：默认注册的 cron_create、schedule_wakeup，到点给本会话投提示开新一轮。external_event：@kilocode-bot、Slack、Linear 等由厂商云端托管，不属同一发行版；background_process 的 monitor 是通用后台命令，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md 小节：kilo run",
+          "lines": "L174-L200",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI",
+          "note": "kilo run 非交互运行，--format json 输出原始 JSON 事件"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/session-history.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/agents/session-history.md 小节：Search through the API or SDK",
+          "lines": "L225-L270",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI kilo serve",
+          "note": "kilo serve 开有文档的 HTTP 接口（基本认证），@kilocode/sdk 暴露同样的端点"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/platforms/cli-reference.md 小节：kilo github",
+          "lines": "L837-L870",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "Kilo CLI",
+          "note": "kilo github run 在 GitHub 一侧按事件运行代理（外部平台触发再调 CLI）"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/cron-create.txt",
+          "locator": "packages/opencode/src/kilocode/tool/cron-create.txt cron_create 工具说明",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认工具",
+          "note": "模型可建 cron 或一次性定时任务，到点由框架以给定提示恢复本会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/tool/registry.ts",
+          "locator": "packages/opencode/src/tool/registry.ts 内置工具注册表",
+          "lines": "L312-L335",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认注册的工具",
+          "note": "task 随核心默认注册；code 代理按权限底座 allow"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/wakeup/index.ts",
+          "locator": "packages/opencode/src/kilocode/wakeup/index.ts Wakeup.adopt",
+          "lines": "L563-L590",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "实例启动",
+          "note": "启动时读回存盘的唤醒与 cron 记录，过期的立即触发，其余重新上定时器"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 的 api 按 F32 的 via_default_entry 为空而不进。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "代理核心是扩展宿主拉起的 kilo serve 子进程（spawn 时 detached:true 只为整组发信号），扩展停用时 SIGTERM/SIGKILL 整个进程组，宿主被强杀时子进程的父进程看门狗也会让它退出；关掉 VS Code 窗口，正在跑的任务随之停止。只关侧边栏面板不会停进程。可选：CLI 另有 kilo daemon 常驻进程，不是 VS Code 入口的默认启动方式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts spawn kilo serve",
+          "lines": "L129-L171",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展默认启动",
+          "note": "扩展自动拉起 kilo serve --port 0，用每次随机生成的 KILO_SERVER_PASSWORD 保护，只交给自家前端"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts ServerManager.dispose",
+          "lines": "L279-L296",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 退出",
+          "note": "扩展停用时向进程组发 SIGTERM，5 秒后 SIGKILL"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/parent-watchdog.ts",
+          "locator": "packages/opencode/src/kilocode/parent-watchdog.ts startParentWatchdog",
+          "lines": "L1-L40",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "扩展宿主被强杀",
+          "note": "kilo serve 轮询 KILO_PARENT_PID，扩展宿主不在就自行退出"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "持久层：模型用默认工具 schedule_wakeup、cron_create 建的唤醒和定时任务写入存储，进程重启后实例启动时 adopt 读回，过期的立即触发、其余按计划继续。交互层：运行中提交的消息排在内存队列，崩溃后不会自动重跑，记 interactive_queue=in_memory。目标（goal）存于会话元数据，但后端重启后活动目标变为暂停，要人恢复，不算持久队列。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/tool/cron-create.txt",
+          "locator": "packages/opencode/src/kilocode/tool/cron-create.txt cron_create 工具说明",
+          "lines": "L1-L15",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认工具",
+          "note": "模型可建 cron 或一次性定时任务，到点由框架以给定提示恢复本会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/wakeup/index.ts",
+          "locator": "packages/opencode/src/kilocode/wakeup/index.ts Wakeup.adopt",
+          "lines": "L563-L590",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "实例启动",
+          "note": "启动时读回存盘的唤醒与 cron 记录，过期的立即触发，其余重新上定时器"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/bootstrap.ts",
+          "locator": "packages/opencode/src/kilocode/bootstrap.ts KilocodeBootstrap.init",
+          "lines": "L63-L72",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "每次实例启动",
+          "note": "每次实例启动都调用 wake.adopt 接管本目录已存的唤醒"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/prompt-queue.ts",
+          "locator": "packages/opencode/src/kilocode/session/prompt-queue.ts KiloSessionPromptQueue",
+          "lines": "L20-L41",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "运行中提交的消息",
+          "note": "运行中提交的后续消息排在进程内存的 Map 里（waiting、tails），当前一轮结束后依次执行"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "persistent 依据的是定时与唤醒记录；这些只有模型主动调用工具后才有，默认路径上没有预置任务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：bash 非白名单命令、项目外路径、.env 读取、doom_loop 等 ask 规则停下等用户批准；模型可调 question 工具提问，等用户回答。resumable_todo：模型可用默认注册的 goal 工具自行开目标，目标被拒绝或阻塞时标为 blocked、等人解决后恢复，目标和最后报告存于会话元数据，重启后仍在（活动目标变暂停）。可选：提示音、VS Code 通知和系统通知开关默认关闭；notify_user 工具要开远程功能。goal_report 的 status、reason 两个字段是给目标状态用的，未记 structured_handoff。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/agent/index.ts",
+          "locator": "packages/opencode/src/kilocode/agent/index.ts bash 默认规则",
+          "lines": "L55-L67",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认权限模式",
+          "note": "bash 默认 ask，只有只读类命令等白名单放行"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/agent/agent.ts",
+          "locator": "packages/opencode/src/agent/agent.ts code 代理权限（question allow）",
+          "lines": "L168-L183",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认主代理 code",
+          "note": "code 代理放行 question 工具；扩展启动时设 KILO_ENABLE_QUESTION_TOOL=true"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/src/services/cli-backend/server-manager.ts",
+          "locator": "packages/kilo-vscode/src/services/cli-backend/server-manager.ts spawn kilo serve",
+          "lines": "L129-L171",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 扩展默认启动",
+          "note": "扩展自动拉起 kilo serve --port 0，用每次随机生成的 KILO_SERVER_PASSWORD 保护，只交给自家前端"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-docs/pages/code-with-ai/agents/goals.md",
+          "locator": "packages/kilo-docs/pages/code-with-ai/agents/goals.md 小节：Goal statuses / Automatic pauses",
+          "lines": "L59-L81",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 与 CLI",
+          "note": "目标被阻塞时等人解决后恢复；目标与最后的报告随会话保存，重启后仍在，活动目标重启后变暂停"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/opencode/src/kilocode/session/goal/tool.ts",
+          "locator": "packages/opencode/src/kilocode/session/goal/tool.ts GoalTool / GoalReportTool",
+          "lines": "L20-L58",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "VS Code 客户端默认工具",
+          "note": "模型可自行用 goal 工具开始或恢复目标，用 goal_report 报 complete 或 blocked"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/Kilo-Org/kilocode/blob/03a6f07d053cd7e6aa88fa1e258e93510335259f/packages/kilo-vscode/package.json",
+          "locator": "packages/kilo-vscode/package.json kilo-code.new.attention.*",
+          "lines": "L1208-L1222",
+          "retrieved_at": "2026-11-13",
+          "configuration_scope": "默认设置",
+          "note": "提示音、VS Code 通知、系统通知三个开关默认都是 false"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "resumable_todo 拿不准：目标主要由代理自己推进，只有 blocked 或 paused 状态时才是等人决定是否恢复；按“暂停后等人处理或决定是否恢复”记入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}
