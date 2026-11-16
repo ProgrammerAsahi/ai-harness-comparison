@@ -1,0 +1,672 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "C08__lobehub__docker-default",
+  "round": "batch-4",
+  "tool_id": "C08",
+  "product": "LobeHub",
+  "view": "configured",
+  "version_or_commit": "v2.3.3；提交 69f8dcdfae1c59a5ffb703b3a0187223987bcd56",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "官方快速开始（README『Self Hosting → A Docker Compose (recommended)』，与 docs/self-hosting/platform/docker-compose.mdx 一致）：mkdir lobehub && cd lobehub；bash <(curl -fsSL https://lobe.li/setup.sh) -l en（交互提示默认选本地模式）；docker compose up -d；浏览器打开 http://localhost:3210，用邮箱/密码注册登录后，与默认助手 Lobe AI（内置 inbox agent）对话。入口取 Docker Compose 自托管后的网页界面，与默认助手对话（研究负责人 2026-11-15 确认）。compose 默认 ENABLE_AGENT_GATEWAY=1 且配好 AGENT_GATEWAY_URL，Gateway Mode 生效：Agent 运行在 lobe 容器的服务端执行，经 gateway 容器（浏览器连 ws://localhost:8787）流式回传，不在浏览器里跑",
+  "install_method": "command: mkdir lobehub && cd lobehub && bash <(curl -fsSL https://lobe.li/setup.sh) -l en && docker compose up -d；platform: macOS / Linux（需先装 Docker 与 Docker Compose；官方一键脚本仅支持 Unix，Windows 须 WSL 2）；source: README.md L286-L293、docs/self-hosting/platform/docker-compose.mdx L27-L116（只作记录，未执行）。setup.sh 从 main 分支下载 docker-compose/deploy 的 compose 文件与 .env 模板并自动生成密钥；拉起 lobe（主镜像写作 lobehub/lobehub，无标签即 :latest）、gateway（ghcr.io/lobehub/lobehub-gateway:0.5.0）、postgresql（paradedb/paradedb:latest-pg17）、redis:7-alpine、rustfs/rustfs:latest、rustfs-init（rustfs/rc:latest）、searxng/searxng（无标签）；Elasticsearch 为可选 profile，默认不启动",
+  "permission_mode": "工具审批模式缺省 manual：按每个工具自带的 humanIntervention 策略处理，多数内置工具无审批直接执行；lobe-agent 的 createPlan/createTodos/clearTodos 为 required（要用户批准，auto-run 模式可绕过），askUserQuestion 为 always（不可绕过）；用户可在输入框切换 auto-run/allow-list，另有 headless 仅供后台异步任务。默认 web 入口不注册宿主机/设备文件系统与设备 shell 工具：lobe-local-system（readFile/writeFile/editFile/runCommand 等）与 lobe-browser 只在有设备经设备网关注册、在线且自动激活时才注册，默认安装没有连接任何设备，故不出现；启用后 runCommand 为 required，readFile/searchFiles 等走 pathScopeAudit 动态审计（范围内 never、范围外 required）。但 always-on 的 lobe-skills 默认注册沙箱命令入口 runCommand、execScript 与 exportFile（runCommand/execScript 为 required，要用户批准）：无已路由设备的回合保留这三个 API，命令经服务端转给远端云沙箱执行，可用性取决于沙箱服务、认证与额度，未运行验证；已路由设备的回合隐藏 runCommand/exportFile，execScript 改在设备上执行。写操作主要落在服务自身数据库（记忆、任务、文档、画布等），由服务端进程直接执行。联网：lobe-web-browsing 的 search/crawlSinglePage/crawlMultiPages 默认注册（searchMode 缺省 auto），搜索经 compose 自带的 SearXNG 容器出网；容器自身对外网无限制。云沙箱专用工具 lobe-cloud-sandbox 在默认执行目标下不启用，但 lobe-skills 的沙箱命令仍经同一远端沙箱服务（SANDBOX_PROVIDER 缺省 market）执行另有全局危险操作黑名单审计：命中且未显式设 policy 按 always 处理，优先于 auto-run、allowList 与工具自身 never，不可绕过；headless 遇不可绕过审批返回阻断结果。",
+  "operating_system": "macOS、Linux（官方一键部署脚本支持 Unix；Windows 需 WSL 2）；Docker Compose 方式需先装 Docker。服务端为容器内 Node.js 进程（Dockerfile 以 node slim 构建、最终阶段 FROM scratch），监听 3210",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-15",
+  "note": "版本钉住说明：快速开始的 setup.sh 从 main 分支（SOURCE_URL，setup.sh L28）下载 compose 与 .env 模板，主镜像写作 lobehub/lobehub 无标签（docker-compose.yml L4，即 :latest）；发布流水线对非 prerelease 发布打 latest 与 semver 标签（release-docker.yml L46-L47）。2026-11-15 经 GitHub 发布接口与 Docker Hub 标签接口核对：lobehub/lobehub 的 releases/latest 为 v2.3.3（2026-11-12 发布，非预发布），Docker Hub 上 lobehub/lobehub 的 latest 与 2.3.3 两个标签是同一摘要 sha256:0981b4653a233d8d2b226416fdad0bf34875fcabb1dedc7f5c3320d8c8d23c60（2026-11-12 更新），故当天执行快速开始装到的无标签主镜像即 v2.3.3；setup.sh 从 main 分支下载的 compose 与 .env 是否与本提交一致未核实。gateway 镜像钉 0.5.0，paradedb:latest-pg17、rustfs:latest、rustfs/rc:latest、searxng 无标签 likewise 滚动，当天指向未核实。仓库已由 LobeChat 改名 LobeHub（package 名 @lobehub/lobehub，品牌常量 BRANDING_NAME='LobeHub'，默认助手名 Lobe AI）；LICENSE 为 LobeHub Community License（Apache 2.0 加附加条件），但 package.json 的 license 字段仍写 MIT，两处不一致。subagents_enabled=true 属『默认就能派子代理』：agent 模式缺省开启，lobe-agent 为 always-on 工具，其 callSubAgent 无需改设置即可用。定时任务与外部触发：产品有任务定时（lobe-task 的 setTaskSchedule，cron/heartbeat；lobe-task 在普通新会话首轮不注册，经激活或任务场景注入启用后才可调用，全新安装没有任何已配置的任务）、IM 频道与邮件触发的运行（channel、agent-mail 等服务），默认安装未配置任何此类触发，空闲时不因此发模型请求；其调度器细节未逐一核实编码前由第二位读者（GPT-6.1 Sol）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-16）改了 6 处：①把『默认 web 入口没有 shell 与文件系统工具』收窄为宿主机/设备工具未注册，补明 lobe-skills 默认注册沙箱 runCommand/execScript/exportFile（两命令需审批，无已路由设备时经服务端走远端云沙箱，可用性未运行验证）；②更正首轮工具面：lobe-task/lobe-canvas 在普通新 inbox 会话首轮不注册（可经 activator 发现激活，项目协调员回合注入 lobe-task），lobe-remote-device 在本部署默认注册（设备列表可能为空），setTaskSchedule 随 lobe-task 启用后才可调用，『默认未安装』为界面/目录标记而非运行时硬门槛；③更正自托管 DeepSeek 提供方最终 enabled=true（全局配置显式 enabled 优先于环境层按密钥取值），enabled 标记不保证调用成功，沿用内置默认型号仍需 DeepSeek 密钥；④更正默认可列出/加载的内置技能为 lobe-artifacts、lobehub、lobe-agent-browser 三项（门槛为设备能力计划 isDeviceCapablePlan，含未绑定设备的 device-unrouted；列出/加载不代表执行成功）；⑤更正版本查询默认开启（check_updates=true，用户面板从 npmmirror 拉版本）、用户 telemetry 偏好默认 true，第三方分析/追踪是否外发仍由部署端开关决定，生产轨迹写入本部署 S3 另计；⑥补记默认机制并收窄相关表述：型号 functionCall/搜索标记改变工具面、回合级工具注入与 page scope 沙箱免审批、全局危险操作黑名单审计、每步 Redis 检查点与生产 S3 轨迹、任务 Verify 与 Goal 交付模型审阅、沙箱工作目录；另新增 24 张证据小卡。",
+  "synthetic": false,
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "工具注册机制：默认安装为 agent 模式（DEFAULT_AGENT_CHAT_CONFIG.enableAgentMode=true），前端 createAgentToolsEngine 与服务端 createServerAgentToolsEngine 共用同一注册表；defaultToolIds 默认把 14 个内置工具列入候选：lobe-activator、lobe-skills、lobe-skill-store、lobe-web-browsing、lobe-knowledge-base、lobe-attachments、lobe-user-memory、lobe-local-system、lobe-browser、lobe-cloud-sandbox、lobe-agent-documents、lobe-task、lobe-agent、lobe-canvas，其中 lobe-agent、lobe-activator、lobe-skills、lobe-skill-store 为 always-on（仅 agent 模式；chat 模式整组丢弃）。型号标记会改变工具面：functionCall=false 的模型过滤全部候选工具（服务端查 model-bank 标记，查不到默认 true）；搜索路由取型号/提供方元数据，internal 原生搜索的型号在 searchMode 非 off 时自动用原生搜索、不再注册 lobe-web-browsing，故 searchMode=auto 不等同于一律走 SearXNG（默认 deepseek-v4-flash functionCall=true、无 internal 搜索）。",
+    "默认 web 入口实际注册给模型的内置工具（经运行时规则过滤后，按源码注册表与 resolveToolRules 列出）：lobe-agent（analyzeMedia、createPlan、updatePlan、createTodos、updateTodos、clearTodos、askUserQuestion、callSubAgent、vent）；lobe-activator（activateTools、activateSkill）；lobe-skills（activateSkill、readReference、runCommand、execScript、exportFile；runCommand/execScript 需审批，无已路由设备时命令在远端云沙箱执行）；lobe-skill-store（searchSkill、importSkill、importFromMarket）；lobe-web-browsing（search、crawlSinglePage、crawlMultiPages）；lobe-user-memory（addActivityMemory、addContextMemory、addExperienceMemory、addIdentityMemory、addPreferenceMemory、queryTaxonomyOptions、removeIdentityMemory、searchUserMemory、updateIdentityMemory）；lobe-remote-device（listOnlineDevices、activateDevice；门槛为有设备网关且运行未锁定设备，本部署默认满足故注册，设备列表可能为空）；lobe-agent-documents（createDocument、createFolder、copyDocument、listDocuments、modifyNodes、moveDocuments、readDocument、removeDocument、renameDocument、replaceDocumentContent、updateLoadRule）；另有默认助手 inbox 运行时注入的 lobe-user-interaction（askUserQuestion、cancelUserResponse、getInteractionState、skipUserResponse、submitUserResponse）。lobe-task 与 lobe-canvas 不在普通新 inbox 会话首轮注册（候选表无缺省启用规则，启用检查器对无规则标识返回 false），可经 lobe-activator 发现并激活，项目协调员回合会注入 lobe-task；界面『默认未安装』标记不构成服务端运行时注册的硬门槛。",
+    "条件注册、默认不出现的工具：lobe-knowledge-base 仅当用户有已启用知识库（全新安装没有）；lobe-attachments 仅当会话带超大附件（readAttachment 分页读预览）；lobe-local-system 与 lobe-browser 仅当执行目标 local 且有经设备网关连接的设备在线并自动激活（默认无设备）；lobe-cloud-sandbox 仅当执行目标 sandbox/auto 或 page scope；lobe-image-generation 与 lobe-video-generation 要用户手动 pin（有原生图像输出的模型不给图像回退）；lobe-dashboard 要 feature flag enableDashboard=true（fail-closed，缺省关）。回合级注入另计：bot 会话注入 message 工具、续聊未完成 goal proposal 注入 goal、项目协调员回合注入 lobe-task；agent-account 仅拥有身份账户时注入；群聊/子代理运行裁掉 lobe-agent 的 callSubAgent。页面编辑 scope 自动合入 page-agent，沙箱可用且 page-agent 注入时该 scope 的 editFile/executeCode/moveFiles/writeFile 与不含 lh 的 runCommand 不询问（含 lh 仍 required，全局审计另算），这不是普通 inbox 对话的缺省权限。",
+    "技能：内置技能共 4 个——lobe-artifacts、lobehub、task、lobe-agent-browser；task 为产品内部驱动（不对用户/模型列出），lobe-agent-browser 的门槛是运行具有设备能力计划（isDeviceCapablePlan，含未绑定设备的 device-unrouted，不要求已有在线激活设备），本部署第一方网页默认回合满足，故默认可列出/激活的内置技能是 lobe-artifacts、lobehub 与 lobe-agent-browser 三项；列出/加载 agent-browser 不代表已连接设备或浏览器命令执行成功，none/sandbox 计划下不列出；技能激活模式缺省按 auto 处理（manual 模式会把 lobe-activator 与 lobe-skill-store 从默认中移除）；注册表另把不在推荐清单里的可见内置工具（如 lobe-calculator、lobe-creds、lobe-canvas）列为『默认未安装』，该标记用于界面与工具目录（officialTools 的 installed 字段），不是服务端运行时注册/激活的统一硬门槛。",
+    "默认开着与默认关着的开关：enableAgentMode=true（agent 模式）；searchMode='auto'（联网搜索开，实现缺省 searxng，compose 已配 SEARXNG_URL 并带 SearXNG 容器）；记忆默认开（用户设置未置时 memorySettings?.enabled !== false 判为开）；enableCompressHistory=true、enableContextCompression=true（上下文压缩开）；enableStaleToolResultTrim=true；enableStreaming=true；selfIteration.enabled=false；enableFollowUpChips=false；enableHistoryCount=false（historyCount=20）；图像/视频生成默认不注入；Elasticsearch 全文检索默认关（用 PostgreSQL pg_search，COMPOSE_PROFILES 未启用）；Composio 集成默认关（enableComposio 取决于 COMPOSIO_API_KEY，缺省无）；市场可信客户端默认关（enableLobehubSkill 取决于 MARKET_TRUSTED_CLIENT_ID/SECRET，缺省无）。",
+    "默认会自发的模型请求：保存话题时自动生成话题标题（fire-and-forget，用系统代理 topic 槽位，缺省 gpt-5.6-luna@openai）；上下文压缩在历史超窗时用 compressionModel 或当前运行模型发摘要请求（默认开）；提示词改写 promptRewrite 缺省 enabled=true（用户点改写才触发，gpt-5.6-luna@openai）；记忆写入的嵌入用 text-embedding-3-small@openai；输入补全 inputCompletion 默认关、跟进问题 followUpAction 默认关、话题自动摘要 topicAutoSummary 默认关；频道决策 channelRouting 缺省 enabled=true（jev-1.14.0@typesafe，仅频道/bot 场景）；后台自学习/记忆复盘（agentSignal）要 preference.lab.enableSelfLearning===true，默认关。另有条件触发的自动模型审阅：带验收（resolvedAcceptance）且未显式 enabled=false 的任务启用 Verify，异步结算驱动任务交付，schedule/heartbeat 任务跳过；Goal 图任务通过 Verify 后还自动调 reviewGoalDelivery 对必要检查项做模型预测（单项失败重试一次）。这些需用户先创建任务/Goal/验收，不以 enableSelfLearning 为门槛，全新空库闲置不因此发请求。",
+    "外部工具服务接入：默认安装没有任何预置 MCP 服务器或第三方插件（installedPlugins 来自数据库，全新库为空）；MCP 市场安装、Composio（需 COMPOSIO_API_KEY）都要用户另配；lobe-skill-store 默认注册，模型可从 LobeHub 市场搜索并导入技能（importFromMarket），导入会访问市场 API。",
+    "入口代码的执行位置：主服务（Next.js 应用 + apps/server 服务）在 lobe 容器内以 Node.js 进程运行，数据在 PostgreSQL（./data 绑定挂载）与 RustFS/Redis 卷；gateway 容器（lobehub-gateway:0.5.0）只做 WebSocket 中继（8787）与设备路由（8788），状态在内存；web-browsing/搜索、记忆、任务、文档、画布等工具在服务端进程执行（搜索经 SearXNG 容器）；lobe-local-system/lobe-browser 在经 lh connect 连接的用户设备上执行（默认没有）；lobe-cloud-sandbox 是远端沙箱服务（SANDBOX_PROVIDER 缺省 'market'，即 LobeHub 云沙箱，自托管默认不启用该专用工具，所需凭据未核实），但 lobe-skills 的 runCommand/execScript/exportFile 默认注册并经该沙箱服务执行（无已路由设备时）；模型推理在所配置的提供方接口，不在本容器。运行状态与轨迹默认分层保存：每步运行检查点写 compose 的 Redis（agent_runtime_state/meta/steps:<operationId>，2 小时 TTL，步骤历史保留最近 200 条，Redis 开 AOF 并挂数据卷）；镜像 NODE_ENV=production 且未设 ENABLE_AGENT_S3_TRACING 时默认建 S3 轨迹存储，每步追加 agent-traces/_partial/{operationId}.json.zst 并后台上传，结束写 agent-traces/{agentId}/{topicId}/{operationId}.json.zst 到本部署 RustFS（final 键另写数据库运行记录），上传失败 best-effort；gateway 容器『状态在内存』仅指该中继容器自身，不涵盖主服务的 Redis/S3/数据库保存。这是运行状态/轨迹保存，不是 Git 回滚或宿主文件系统快照，持久化成功与断点恢复未运行验证。",
+    "默认的外网调用：各方块统计默认全关（Plausible/PostHog/Umami/Clarity/Vercel/Google Analytics 均由环境变量决定，缺省未配置）；技能/代理市场浏览与导入访问 LobeHub 市场 API；搜索经 SearXNG 容器出网；模型请求出网到所配提供方；版本查询默认开启（feature flag check_updates=true，官方文档亦列 Enabled）：用户面板经 useNewVersion 从 https://registry.npmmirror.com/@lobehub/chat/latest 拉取最新版本；用户 general.telemetry 偏好默认 true，但所列分析 SDK 与 Langfuse 是否外发仍由各部署端环境变量开关决定，默认模板未配置这些第三方统计服务；生产 Agent 轨迹默认写入本部署自己的 S3（RustFS），属运行数据保存，不是第三方分析外发（见执行位置条）。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/lobehub/lobehub/releases/tag/v2.3.3",
+      "locator": "GitHub Release v2.3.3",
+      "version": "v2.3.3",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "版本",
+      "note": "发布标签 v2.3.3 对应提交 69f8dcdfae1c59a5ffb703b3a0187223987bcd56；源码 package.json version=2.3.3 与之吻合。2026-11-15 经 GitHub 发布接口核对：releases/latest 为 v2.3.3（2026-11-12 发布，非预发布）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/package.json#L3",
+      "locator": "package.json",
+      "lines": "L3",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "版本",
+      "note": "version=2.3.3，包名 @lobehub/lobehub，仓库地址 github.com/lobehub/lobehub（L18-L24）；license 字段写 MIT（L25），与 LICENSE 文件不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/LICENSE#L1-L20",
+      "locator": "LICENSE",
+      "lines": "L1-L20",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "版本",
+      "note": "LobeHub Community License：自 1.0 起基于 Apache 2.0 加附加条件（商业使用可未经修改部署；衍生作品分发需商业授权）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/.github/workflows/release-docker.yml#L45-L49",
+      "locator": ".github/workflows/release-docker.yml",
+      "lines": "L45-L49",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "镜像 lobehub/lobehub 在发布时打 semver {{version}} 标签；非 prerelease 同时更新 latest。快速开始拉无标签镜像即 :latest；2026-11-15 经 Docker Hub 标签接口核对，latest 与 2.3.3 两个标签为同一摘要 sha256:0981b4653a233d8d2b226416fdad0bf34875fcabb1dedc7f5c3320d8c8d23c60（2026-11-12 更新），当天装到的即 v2.3.3。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/README.md#L279-L293",
+      "locator": "README.md：Self Hosting → A Docker Compose (recommended)",
+      "lines": "L279-L293",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "官方快速开始把 Docker Compose 列为推荐自托管方式：mkdir lobehub && cd lobehub；bash <(curl -fsSL https://lobe.li/setup.sh) -l en；docker compose up -d；打开 http://localhost:3210。带 PostgreSQL、Redis、RustFS、SearXNG 与 agent gateway；Linux/macOS，Windows 走 WSL 2。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/self-hosting/platform/docker-compose.mdx#L27-L116",
+      "locator": "docs/self-hosting/platform/docker-compose.mdx：Quick Start / Local Mode",
+      "lines": "L27-L116",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "官方 Docker Compose 指南：本地模式为默认（脚本提示直接回车），端口 3210/9000/9001/8787/8788；docker compose up -d 后访问 http://localhost:3210；Gateway Mode 让 agent 运行在服务端而非浏览器。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/setup.sh#L28",
+      "locator": "docker-compose/setup.sh",
+      "lines": "L28",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "SOURCE_URL=https://raw.githubusercontent.com/lobehub/lobehub/main：一键脚本从 main 分支下载 compose 与 .env 模板（L515-L568），不是钉住的 v2.3.3；下载内容是否与本提交一致未核实，lobe.li/setup.sh 短链的实际内容也未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/setup.sh#L664-L670",
+      "locator": "docker-compose/setup.sh：部署模式选择",
+      "lines": "L664-L670",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "ask \"(0,1,2)\" \"2\"：部署模式缺省答案为 2（本地模式，仅本机访问）；0 域名、1 端口模式需另答。密钥（KEY_VAULTS_SECRET、AUTH_SECRET、GATEWAY_SERVICE_TOKEN、JWKS_KEY 等）由脚本自动生成。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml#L3-L48",
+      "locator": "docker-compose/deploy/docker-compose.yml：lobe 服务",
+      "lines": "L3-L48",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "主镜像写作 lobehub/lobehub（无标签=:latest，L4）；SEARXNG_URL=http://searxng:8080（L33）；ENABLE_AGENT_GATEWAY=1（L40）、AGENT_GATEWAY_INTERNAL_URL=http://gateway:8787（L41）；数据卷与 PostgreSQL/Redis/RustFS 依赖。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml#L52-L72",
+      "locator": "docker-compose/deploy/docker-compose.yml：gateway 服务",
+      "lines": "L52-L72",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "gateway 镜像钉 ghcr.io/lobehub/lobehub-gateway:0.5.0；8787 agent gateway（WebSocket 中继服务端运行）、8788 device gateway（lh connect 设备路由）；状态在内存，重启丢失在途运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml#L74-L172",
+      "locator": "docker-compose/deploy/docker-compose.yml：postgresql/redis/rustfs/searxng",
+      "lines": "L74-L172",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "paradedb/paradedb:latest-pg17（L74）、redis:7-alpine（L104）、rustfs/rustfs:latest（L124）、rustfs/rc:latest（L151）、searxng/searxng 无标签（L166）；Elasticsearch 及其 reindex/sync 服务都在 profile 后，默认不启动（L186 起注释与 profiles）。Redis 以 --appendonly yes 开 AOF 并挂 redis_data 数据卷（L111-L113）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/.env.example#L15-L90",
+      "locator": "docker-compose/deploy/.env.example",
+      "lines": "L15-L90",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "预设 LOBE_PORT=3210、APP_URL=http://localhost:3210；密钥由 setup.sh 自动生成；AGENT_GATEWAY_URL=http://localhost:8787、DEVICE_GATEWAY_URL=http://gateway:8788；不含任何模型提供方密钥；Elasticsearch 段全部注释（默认 pg_search）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/business/const/src/index.ts#L7",
+      "locator": "packages/business/const/src/index.ts",
+      "lines": "L7",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "版本",
+      "note": "ENABLE_BUSINESS_FEATURES=false：本源码为社区版构建，商业/云功能开关关闭；品牌与默认模型常量仍取本包。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/business/const/src/branding.ts#L19",
+      "locator": "packages/business/const/src/branding.ts",
+      "lines": "L19",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "BRANDING_INBOX_TITLE='Lobe AI'：默认助手（inbox agent）的显示名；BRANDING_NAME='LobeHub'（L7）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-agents/src/agents/inbox/index.ts#L10-L25",
+      "locator": "packages/builtin-agents/src/agents/inbox/index.ts",
+      "lines": "L10-L25",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "INBOX 是通用对话的默认助手；model/provider 故意不定义，跟随用户默认设置；运行时注入 lobe-agent-documents 与 lobe-user-interaction 插件。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/business/const/src/llm.ts#L5-L10",
+      "locator": "packages/business/const/src/llm.ts",
+      "lines": "L5-L10",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "DEFAULT_MODEL='deepseek-v4-flash'、DEFAULT_PROVIDER='deepseek'；DEFAULT_MINI_MODEL='gpt-5.6-luna'、DEFAULT_MINI_PROVIDER='openai'；DEFAULT_EMBEDDING_PROVIDER='openai'。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/agent.ts#L20-L55",
+      "locator": "packages/const/src/settings/agent.ts：DEFAULT_AGENT_CONFIG",
+      "lines": "L20-L55",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "默认 Agent：model/provider 取 DEFAULT_MODEL/DEFAULT_PROVIDER；enableAgentMode=true、enableCompressHistory=true、enableContextCompression=true、searchMode='auto'、selfIteration.enabled=false、enableFollowUpChips=false、plugins=[]。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/env/src/llm.ts#L271-L300",
+      "locator": "packages/env/src/llm.ts",
+      "lines": "L271-L300",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "ENABLED_OPENAI/ENABLED_GOOGLE/ENABLED_ANTHROPIC 缺省 true（除非显式 =0，L271/L289/L300），但密钥缺省空；ENABLED_DEEPSEEK=!!DEEPSEEK_API_KEY（L286）仅为环境层取值；自托管全局配置另给 deepseek 显式 enabled=true 且生成器优先显式值（见 globalConfig 小卡），故最终提供方标记为启用，调用仍需 DeepSeek 密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/self-hosting/start.mdx#L97-L113",
+      "locator": "docs/self-hosting/start.mdx：Prerequisites / Required",
+      "lines": "L97-L113",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "官方自托管前提：至少一家 AI 提供方密钥，列序 OpenAI（OPENAI_API_KEY）、Anthropic、Google；未指定默认型号。数据库 PostgreSQL 14+（compose 自带）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/env/src/auth.ts#L121-L124",
+      "locator": "packages/env/src/auth.ts",
+      "lines": "L121-L124",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "AUTH_EMAIL_VERIFICATION 默认 false、AUTH_ALLOWED_EMAILS 缺省空（允许所有邮箱注册）、AUTH_DISABLE_EMAIL_PASSWORD 默认 false：默认开放邮箱/密码注册，无邮箱验证。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/index.ts#L64-L105",
+      "locator": "packages/builtin-tools/src/index.ts：defaultToolIds / alwaysOnToolIds",
+      "lines": "L64-L105",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "defaultToolIds 14 项（lobe-activator、lobe-skills、lobe-skill-store、lobe-web-browsing、lobe-knowledge-base、lobe-attachments、lobe-user-memory、lobe-local-system、lobe-browser、lobe-cloud-sandbox、lobe-agent-documents、lobe-task、lobe-agent、lobe-canvas）；alwaysOnToolIds=lobe-agent、lobe-activator、lobe-skills、lobe-skill-store，仅 agent 模式生效。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/index.ts#L123-L144",
+      "locator": "packages/builtin-tools/src/index.ts：chatModeAllowedToolIds",
+      "lines": "L123-L144",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "chat 模式（enableAgentMode=false）白名单仅 lobe-attachments、lobe-knowledge-base、lobe-user-memory、lobe-web-browsing、lobe-image-generation、lobe-video-generation，且各自仍过运行时门槛；默认不是 chat 模式。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/toolSet/resolveToolRules.ts#L55-L130",
+      "locator": "packages/mecha/src/toolSet/resolveToolRules.ts",
+      "lines": "L55-L130",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "agent 模式逐工具门槛：搜索 searchMode!=='off' 即开（L60）；知识库要 hasEnabledKnowledgeBases；附件要 hasOversizedFiles；记忆要 memoryEnabled；local-system/browser 要 runtimeMode local 且 localExecutionReady；cloud-sandbox 要 cloud/auto/pageScope；图像/视频要手动 pin；设备选择器要网关且未锁设备。lobe-task/lobe-canvas 无缺省启用规则，启用检查器对无规则标识返回 false，普通首轮不注册；设备选择器门槛（网关+未锁设备）在本部署默认满足；agent-account 仅 hasIdentityAccount 时注入（L108-L117）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/Mecha/AgentToolsEngine/index.ts#L126-L172",
+      "locator": "apps/server/src/modules/Mecha/AgentToolsEngine/index.ts",
+      "lines": "L126-L172",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "服务端事实装配：hasDeviceProxy=!!deviceContext.gatewayConfigured（L128）；有设备网关时 platform 按 desktop 处理（L131）；localExecutionReady 要求网关+设备在线+自动激活（L169-L171），默认安装无设备故本地工具不启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/helpers/executionTarget.ts#L130-L201",
+      "locator": "src/helpers/executionTarget.ts：resolveExecutionTarget",
+      "lines": "L130-L201",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "执行目标缺省：desktop→local、web→none（L147 注释、L201 代码）；compose 配了 DEVICE_GATEWAY_URL 的服务端按有客户端执行能力处理，缺省解析 local，但无设备在线时本地工具门槛不过；cloud sandbox 为远端执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/globalConfig/index.ts#L157-L175",
+      "locator": "apps/server/src/globalConfig/index.ts",
+      "lines": "L157-L175",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "enableGatewayMode=ENABLE_BUSINESS_FEATURES||(ENABLE_AGENT_GATEWAY&&AGENT_GATEWAY_URL)（L157-L158）：compose 两者皆备，Gateway Mode 默认开；deviceGatewayConfigured=!!DEVICE_GATEWAY_URL（L175）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/helpers/gatewayMode.ts#L33-L42",
+      "locator": "src/helpers/gatewayMode.ts",
+      "lines": "L33-L42",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "Gateway Mode 生效判定：agentGatewayUrl 与 enableGatewayMode 同真且用户/agent 未设 disableGatewayMode（缺省未设=启用）；不满足时发送回落到浏览器端路径。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/types/src/tool/intervention.ts#L131-L145",
+      "locator": "packages/types/src/tool/intervention.ts：UserInterventionConfig",
+      "lines": "L131-L145",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "审批模式四档：auto-run（全自动）、allow-list（白名单）、manual（按工具自身 humanIntervention 配置，注释标明为默认）、headless（后台异步任务全自动、黑名单工具跳过）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/user/slices/settings/selectors/toolIntervention.ts#L12-L17",
+      "locator": "src/store/user/slices/settings/selectors/toolIntervention.ts",
+      "lines": "L12-L17",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "用户未设置时 approvalMode 解析为 'manual'（mode || 'manual'）；服务端 execTurn/foregroundIntervention 同样缺省 manual。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts#L54-L55",
+      "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts",
+      "lines": "L54-L55",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "createPlan humanIntervention='required'；同文件 createTodos（L109-L110）、clearTodos（L177-L178）亦 required，askUserQuestion（L196-L197）为 always；其余 API 无审批标记。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts#L234-L281",
+      "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts：callSubAgent",
+      "lines": "L234-L281",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "子代理",
+      "note": "callSubAgent：派单个隔离上下文的子代理处理长任务，可继承消息、后台运行、续聊同一子代理；无审批门槛。lobe-agent 为 always-on，默认 agent 模式即可用；子代理模型缺省跟随父运行模型（packages/const/src/settings/llm.ts resolveSubAgentModel）。群聊/子代理运行经 resolveLobeAgentManifest 裁掉 callSubAgent（packages/builtin-tool-lobe-agent/src/resolveManifest.ts L25-L34）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-local-system/src/manifest.ts#L240-L243",
+      "locator": "packages/builtin-tool-local-system/src/manifest.ts",
+      "lines": "L240-L243",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "runCommand humanIntervention='required'；readFile/searchFiles 等为 pathScopeAudit 动态审计（default never、policy required，L21-L28）。该工具默认 web 入口不注册（需连接设备）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/pipeline/runSettings.ts#L29-L37",
+      "locator": "apps/server/src/services/aiAgent/pipeline/runSettings.ts",
+      "lines": "L29-L37",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "记忆开关：agent 级优先，否则用户设置 memory.enabled !== false 即开——全新安装未设置时记忆默认开，lobe-user-memory 注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentSignal/featureGate.ts#L13-L17",
+      "locator": "apps/server/src/services/agentSignal/featureGate.ts",
+      "lines": "L13-L17",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "后台自学习（agentSignal 的记忆/技能后台写入与复盘）仅当 preference.lab.enableSelfLearning===true，默认关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/systemAgent.ts#L22-L117",
+      "locator": "packages/const/src/settings/systemAgent.ts：DEFAULT_SYSTEM_AGENT_CONFIG",
+      "lines": "L22-L117",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "系统代理槽位：topic/generationTopic/thread/translation/memoryAnalysis 等用 flash 档 gpt-5.6-luna@openai；promptRewrite enabled=true；inputCompletion、followUpAction、topicAutoSummary enabled=false；channelRouting enabled=true（jev-1.14.0@typesafe）；userMemoryEmbedding=text-embedding-3-small@openai；verify=glm-5.3-flash@zhipu。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/slices/topic/action.ts#L385-L388",
+      "locator": "src/store/chat/slices/topic/action.ts：saveToTopic",
+      "lines": "L385-L388",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "保存话题即 fire-and-forget 调 summaryTopicTitle 自动生成标题；L506 取 systemAgentSelectors.topic 槽位模型（缺省 gpt-5.6-luna@openai）发结构化生成请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/compressContext.ts#L158-L186",
+      "locator": "packages/agent-runtime/src/executors/compressContext.ts",
+      "lines": "L158-L186",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "上下文压缩用 modelRuntimeConfig.compressionModel，未另配则用当前运行模型发摘要请求；compressionConfig.enabled 取 enableContextCompression ?? true（runtimeFactory.ts L220）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/search/index.ts#L42",
+      "locator": "apps/server/src/services/search/index.ts",
+      "lines": "L42",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_SEARCH_IMPLS=['searxng']：未另配搜索提供方时用 SearXNG；compose 已带 searxng 容器并设 SEARXNG_URL，故默认搜索可用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/featureGates.ts#L4-L21",
+      "locator": "packages/builtin-tools/src/featureGates.ts",
+      "lines": "L4-L21",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "FEATURE_GATED_TOOLS：lobe-dashboard（含旧 id）仅在用户 flag enableDashboard===true 时存在；fail-closed，未设置即隐藏。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/toolSet/builtinSkillGate.ts#L1-L33",
+      "locator": "packages/mecha/src/toolSet/builtinSkillGate.ts",
+      "lines": "L1-L33",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "内置技能门槛：lobe-agent-browser 按 canExecuteOnDevice 列出，服务端传入的是设备能力计划 isDeviceCapablePlan（含 device-unrouted），不要求已路由设备；task 技能产品内部、不对用户/模型列出；lobe-artifacts、lobehub 默认可列出。本部署默认回合三项可列出（见 operationSkillSet 小卡）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-skills/src/manifests.ts#L13-L18",
+      "locator": "packages/builtin-skills/src/manifests.ts",
+      "lines": "L13-L18",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "内置技能注册表共 4 项：AgentBrowser（lobe-agent-browser）、Artifacts（lobe-artifacts）、LobeHub（lobehub）、Task（task）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/index.ts#L632-L642",
+      "locator": "packages/builtin-tools/src/index.ts：defaultUninstalledBuiltinTools",
+      "lines": "L632-L642",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "非隐藏且不在 RECOMMENDED_SKILLS 的内置工具默认列为『未安装』；该清单用于界面工具 store 与 officialTools 目录的 installed 标记，未见其作为服务端运行时启用/激活的硬门槛。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/sandbox/deployment.ts#L5-L16",
+      "locator": "apps/server/src/services/sandbox/deployment.ts",
+      "lines": "L5-L16",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "SANDBOX_PROVIDER 缺省 'market'（LobeHub 云沙箱），另可选 onlyboxes（需自配 URL 与签名密钥）；默认 web 执行目标下云沙箱工具本就不启用，market 沙箱所需凭据未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/env/src/analytics.ts#L39-L63",
+      "locator": "packages/env/src/analytics.ts",
+      "lines": "L39-L63",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "Plausible/PostHog/Umami/Clarity/Google Analytics 均由对应环境变量是否配置决定，Vercel Analytics 要 ENABLE_VERCEL_ANALYTICS=1：默认安装全部关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-task/src/manifest.ts#L436-L442",
+      "locator": "packages/builtin-tool-task/src/manifest.ts：setTaskSchedule",
+      "lines": "L436-L442",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "setTaskSchedule 可把任务设为 cron/heartbeat 周期运行；lobe-task 在普通新会话首轮不注册（无缺省启用规则），经激活或任务场景注入启用后才可调用；全新安装没有任何已配置任务，空闲不触发模型请求。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://lobehub.com/llms-full.txt",
+      "locator": "官方文档站的全文导出（https://lobehub.com/llms-full.txt，2026-11-15 取得）：About LobeHub / Open Source（L18-L30、L82-L84）",
+      "lines": "L18-L30",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "版本",
+      "note": "官网自述：LobeHub 为 agent 协作平台，开源仓库 github.com/lobehub/lobehub 称 Community Edition；文案仍追溯 LobeChat 的多模型支持（改名事实）。该导出为官网首页级内容，不含自托管快速开始正文；快速开始以仓库内 docs/ 为准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-skills/src/manifest.ts#L15-L31",
+      "locator": "packages/builtin-tool-skills/src/manifest.ts",
+      "lines": "L15-L31",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "lobe-skills 注册五个 API：activateSkill、readReference、runCommand、execScript、exportFile；runCommand（manifest.base.ts）与 execScript 的 humanIntervention='required'。该工具为 always-on，默认 agent 模式即注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-skills/src/resolveManifest.ts#L124-L160",
+      "locator": "packages/builtin-tool-skills/src/resolveManifest.ts",
+      "lines": "L124-L160",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "按执行环境解析 lobe-skills 工具面：已路由设备（executionEnv=device）隐藏 runCommand/exportFile（DEVICE_HIDDEN_API_NAMES，L27-L30），execScript 在设备执行；device-unrouted（未绑定/未选定设备）保留全部五个 API，命令走远端云沙箱并在描述中披露回退环境。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/skills.ts#L339-L391",
+      "locator": "apps/server/src/services/toolExecution/serverRuntimes/skills.ts",
+      "lines": "L339-L391",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "服务端 runCommand 经 createSandboxService 转远端沙箱执行；已路由设备时拒绝沙箱 runCommand（提示改用 execScript 或 lobe-local-system）。execScript 同样按有无 activeDeviceId 分流（L683-L705），device-unrouted 保留沙箱路径（L964-L983 注释）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/engine/tools/enableCheckerFactory.ts#L35-L50",
+      "locator": "packages/context-engine/src/engine/tools/enableCheckerFactory.ts",
+      "lines": "L35-L50",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "统一启用检查器：显式激活（lobe-activator）可绕过规则；有规则按规则取值；无规则的标识默认返回 false（禁用）。lobe-task/lobe-canvas 在 agentModeRules 无条目，故普通首轮不注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/toolSet/discoveryPool.ts#L35-L48",
+      "locator": "packages/mecha/src/toolSet/discoveryPool.ts",
+      "lines": "L35-L48",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "resolveInvocationToolIds 在 agent 自身候选之外总把 lobe-remote-device（及未禁用时的 local-system/Computer Use）列入运行候选，是否启用交给规则层；发现池另收录 discoverable 的内置工具（如 lobe-task、lobe-canvas）供 activator 中途激活（L149-L178）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-remote-device/src/manifest.ts#L6-L33",
+      "locator": "packages/builtin-tool-remote-device/src/manifest.ts",
+      "lines": "L6-L33",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "lobe-remote-device 提供 listOnlineDevices、activateDevice 两个 API，humanIntervention='never'；启用门槛为设备能力目标+有设备网关+运行未锁定设备，本部署默认满足，设备列表为空时工具仍注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/globalConfig/index.ts#L65-L134",
+      "locator": "apps/server/src/globalConfig/index.ts",
+      "lines": "L65-L134",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "getAiProviderSpecificConfig 给 deepseek 显式 enabled:true（L78-L79）；仅 ENABLE_BUSINESS_FEATURES=true 时才把各提供方 enabled 改写为仅 LobeHub 启用（L125-L131），社区版构建（false）保留 deepseek enabled=true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/globalConfig/genServerAiProviderConfig.ts#L69-L74",
+      "locator": "apps/server/src/globalConfig/genServerAiProviderConfig.ts",
+      "lines": "L69-L74",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "生成服务端提供方配置时，显式 providerConfig.enabled 优先于环境层 ENABLED_* 取值；故自托管 deepseek 最终 enabled=true，与是否配置 DEEPSEEK_API_KEY 无关（密钥仍决定能否成功调用）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/pipeline/operationSkillSet.ts#L266-L290",
+      "locator": "apps/server/src/services/aiAgent/pipeline/operationSkillSet.ts",
+      "lines": "L266-L290",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "服务端技能池以 canExecuteOnDevice=isDeviceCapablePlan(executionPlan) 作内置技能门槛（L282）；isDeviceCapablePlan 含 device/device-unrouted/device-wakeable（packages/types/src/agent/executionTargetRules.ts L33-L34）。第一方网页允许设备访问（deviceAccessPolicy.ts L96-L98），本部署配好设备网关、缺省目标 local、未绑定设备时计划为 device-unrouted（src/helpers/executionTarget.ts L600、L626），故 lobe-agent-browser 默认可列出/加载；命令执行另受设备/沙箱条件约束。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/app-config/src/featureFlags/schema.ts#L212",
+      "locator": "packages/app-config/src/featureFlags/schema.ts",
+      "lines": "L212",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "自托管 feature flag 缺省表 check_updates=true（L212），经 enableCheckUpdates 下发（L325）；用户面板 UserPanel 调 useNewVersion（src/features/User/UserPanel/index.tsx L29、useNewVersion.tsx L10-L11）触发版本检查。官方文档 docs/self-hosting/advanced/feature-flags.mdx L39 亦列 check_updates 默认 Enabled。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/services/global.ts#L12-L23",
+      "locator": "src/services/global.ts",
+      "lines": "L12-L23",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "getLatestVersion 从 https://registry.npmmirror.com/@lobehub/chat/latest 拉取最新版本号；由 useCheckLatestVersion（src/store/global/actions/general.ts L253-L256）在 check_updates 启用时调用，即默认安装下用户面板会向 npmmirror 发起版本查询。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/common.ts#L14",
+      "locator": "packages/const/src/settings/common.ts",
+      "lines": "L14",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_COMMON_SETTINGS.telemetry=true：用户遥测偏好默认开；是否实际外发仍取决于各分析 SDK 的部署端环境变量开关（packages/env/src/analytics.ts），默认模板未配置。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/AgentStateManager.ts#L441-L491",
+      "locator": "apps/server/src/modules/AgentRuntime/AgentStateManager.ts",
+      "lines": "L441-L491",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "saveStepResult 每步把状态写 agent_runtime_state:<operationId>、步骤摘要 lpush 到 agent_runtime_steps:<operationId> 并 ltrim 保留最近 200 条、更新 agent_runtime_meta:<operationId>，均刷新 2 小时 TTL（前缀与 TTL 见 L237-L244）；状态 blob 通常剔除 messages（从数据库重建），仅存在未落库消息时例外保留。Redis 取 compose 的 REDIS_URL，无 Redis 时构造即抛错。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/snapshotStore.ts#L7-L45",
+      "locator": "apps/server/src/services/agentRuntime/snapshotStore.ts",
+      "lines": "L7-L45",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "ENABLE_AGENT_S3_TRACING 未设置时按 NODE_ENV 判定：production 默认建 S3SnapshotStore（镜像 Dockerfile L157 设 NODE_ENV=production），development 用文件存储；S3 创建失败仅记日志并禁用轨迹（best-effort），不阻断运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentTracing/S3SnapshotStore.ts#L27-L43",
+      "locator": "apps/server/src/modules/AgentTracing/S3SnapshotStore.ts",
+      "lines": "L27-L43",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "轨迹对象键：final 为 agent-traces/{agentId}/{topicId}/{operationId}.json.zst，partial 为 agent-traces/_partial/{operationId}.json.zst（L70-L72），zstd 压缩后经 FileS3 写入本部署 S3（compose 指向 RustFS）；final 键另写入数据库运行记录（CompletionLifecycle/persistence.ts）。等待人工/异步工具时保留 partial，真正结束才删除。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/executeStep/runStep.ts#L196-L260",
+      "locator": "apps/server/src/services/agentRuntime/AgentRuntimeService/executeStep/runStep.ts",
+      "lines": "L196-L260",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "每步结束经 coordinator.saveStepResult 保存运行检查点（L254）；等待人工批准时先把 INTERVENTION_LIFECYCLE_CHECKPOINT_KEY 的 pending 状态与 stepIndex 写入 metadata 再保存（L198-L206）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/OperationTraceRecorder.ts#L144-L175",
+      "locator": "apps/server/src/services/agentRuntime/OperationTraceRecorder.ts",
+      "lines": "L144-L175",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "appendStep 每步追加轨迹并安排后台上传；跨请求交接/暂停前 flushPartial 落盘，finalize 写 final 快照、非等待态才删 partial（L324-L335）；client wait 只 flush 不 finalize（executeStep/completion.ts L68-L91）。上传失败按 best-effort 记日志。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/engine/tools/ToolsEngine.ts#L197-L210",
+      "locator": "packages/context-engine/src/engine/tools/ToolsEngine.ts",
+      "lines": "L197-L210",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "模型 functionCall=false 时过滤全部候选工具（不注册任何工具）；服务端查 model-bank 标记，查不到默认 true（toolDiscovery/index.ts L336-L339）。默认 deepseek-v4-flash 的 functionCall=true（packages/model-bank/src/aiModels/deepseek.ts）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-bank/src/utils.ts#L26-L49",
+      "locator": "packages/model-bank/src/utils.ts",
+      "lines": "L26-L49",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "resolveSearchDecision：searchMode 非 off 且型号/提供方搜索实现为 internal 时自动用模型原生搜索，useApplicationBuiltinSearchTool=false（不再注册 lobe-web-browsing）；服务端按型号/提供方元数据解析（searchDecision.ts L41-L64）。故 searchMode=auto 不等于一律走 SearXNG，取决于所选型号。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/pipeline/toolDiscovery/turnContext.ts#L74-L79",
+      "locator": "apps/server/src/services/aiAgent/pipeline/toolDiscovery/turnContext.ts",
+      "lines": "L74-L79",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "回合级注入：bot 会话加 message 工具；续聊未完成 goal proposal 加 goal；项目协调员回合加 lobe-task。群聊/子代理运行经 resolveLobeAgentManifest 裁掉 callSubAgent（packages/builtin-tool-lobe-agent/src/resolveManifest.ts L25-L34）；agent-account 仅拥有身份账户时注入（resolveToolRules.ts L108-L117）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/pageScope.ts#L15-L30",
+      "locator": "packages/builtin-tools/src/pageScope.ts",
+      "lines": "L15-L30",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "页面编辑 scope 自动合入 page-agent（resolveAgentConfig.ts L403-L438、L562-L565），沙箱可用且 page-agent 注入时开放 page scope 沙箱工具：editFile/executeCode/moveFiles/writeFile 不询问，runCommand 除含 lh 命令外也不询问（lh 作用于用户账户，仍 required）；全局危险操作审计另算。这不是普通 inbox 对话的缺省权限。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts#L195-L284",
+      "locator": "packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+      "lines": "L195-L284",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "每工具策略之外另有全局审计（默认 DEFAULT_SECURITY_BLACKLIST，audit/defaultSecurityBlacklist.ts）：命中且未显式设 policy 按 always 处理，优先于 auto-run/allowList 与工具自身 never，不可绕过；全局 required 在 manual/allow-list 下也强制审批（L275）；headless 遇不可绕过审批返回阻断结果（L741-L748）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskRunner/buildTaskPrompt.ts#L398-L405",
+      "locator": "apps/server/src/services/taskRunner/buildTaskPrompt.ts",
+      "lines": "L398-L405",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "任务带验收（resolvedAcceptance）且未显式 enabled=false 时启用 Verify（verifyEnabled，L405）；schedule/heartbeat 等 automationMode 任务跳过验收计划。Verify 异步结算并驱动任务终态（taskLifecycle/index.ts L279-L290），不以 enableSelfLearning 为门槛。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/verify/goalReview.ts#L160-L198",
+      "locator": "apps/server/src/services/verify/goalReview.ts",
+      "lines": "L160-L198",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Goal 图任务通过 Verify 后自动调 reviewGoalDelivery（verify/settle.ts L201-L204），对必要检查项用所配模型做预测（predictor.predict），单项审阅失败重试一次；需用户先创建任务/Goal/验收，全新空库闲置不因此发请求。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "本地自托管账户：Better Auth 邮箱/密码注册，默认开放注册、无邮箱验证、无云端订阅或付费档位；角色是工作区内的 owner/admin/member，没有『首个注册用户成为全局管理员』的机制。模型提供方账户另算，见 credentials",
+    "default_model": "内置默认助手（inbox）与默认 Agent 配置为 deepseek-v4-flash@deepseek（business-const DEFAULT_MODEL/DEFAULT_PROVIDER，经 DEFAULT_AGENT_CONFIG 引用）；但默认安装不带任何提供方密钥：自托管全局配置把 deepseek 提供方显式标为 enabled=true（非 business 构建；环境层 ENABLED_DEEPSEEK 虽按 DEEPSEEK_API_KEY 取值，生成器优先显式 enabled），OpenAI/Google/Anthropic 缺省 enabled 却无密钥，用户须先在环境变量或界面设置里配一家密钥（或改选模型），实际可用默认型号取决于所配提供方，仅有 enabled 标记不保证调用成功。辅助任务缺省 gpt-5.6-luna@openai（flash 档）、嵌入 text-embedding-3-small@openai。官方快速开始未指定默认型号，Prerequisites 把 OpenAI 列在最前",
+    "host_os": "macOS 或 Linux（容器经 Docker 运行；官方一键脚本仅支持 Unix，Windows 走 WSL 2）",
+    "workspace": "默认 web 聊天没有宿主机工作目录这一层：常驻服务，配置与数据在运行 setup.sh 的 lobehub 目录（PostgreSQL 数据 ./data 绑定挂载，Redis/RustFS 用命名卷）；聊天没有 Git 仓库概念，文件经上传进 RustFS/知识库。经 lh connect 连接设备执行时有设备侧工作目录；lobe-skills 的沙箱命令在远端沙箱自己的工作目录（sandboxCwd/sandboxWorkingDir）中执行，均不落宿主机目录",
+    "trust": "没有按目录的信任提示；首次打开是注册/登录页（Better Auth），注册后即进入主界面与默认助手 Lobe AI 对话；工具审批按缺省 manual 模式逐工具策略处理，首次使用不需要回答任何信任问题",
+    "credentials": "官方自托管前提（docs/self-hosting/start.mdx Prerequisites）要求至少一家 AI 提供方密钥，把 OpenAI（OPENAI_API_KEY）列在最前，本记录取 OpenAI 这一家（研究负责人 2026-11-15 确认）；Anthropic、Google 及其他提供方是官方列出的备选。内置默认助手型号 deepseek-v4-flash 要另配 DeepSeek 密钥才可用，另一条路是配 DeepSeek 密钥沿用该内置默认型号，本记录不取。compose 的 .env 模板不含任何模型密钥，需用户在环境变量或界面设置里配置。另需 setup.sh 自动生成的 KEY_VAULTS_SECRET、AUTH_SECRET、GATEWAY_SERVICE_TOKEN、JWKS_KEY/JWKS_PUBLIC_KEY、POSTGRES_PASSWORD、RUSTFS 密钥（均非模型凭据）",
+    "other": "执行运行时：compose 默认 ENABLE_AGENT_GATEWAY=1 + DEVICE_GATEWAY_URL，Agent 运行在服务端（Gateway Mode）；执行目标缺省解析为 local（有设备网关时），但默认无设备连接，本地工具不可用；可选云沙箱（远端服务，SANDBOX_PROVIDER 缺省 market）、连接设备（lh connect）、桌面应用。部署模式脚本默认本地模式（另有端口/域名模式）。全文检索默认 PostgreSQL pg_search，Elasticsearch 默认关。镜像标签：主镜像无标签=:latest、gateway 钉 0.5.0、paradedb:latest-pg17、redis:7-alpine、rustfs:latest、rustfs/rc:latest、searxng 无标签"
+  }
+}

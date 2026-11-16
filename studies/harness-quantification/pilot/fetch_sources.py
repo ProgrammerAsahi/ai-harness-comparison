@@ -18,7 +18,10 @@ repository from an evidence URL carrying that commit, downloads GitHub's source 
   <out>/<config_id>/docs-pages.txt            only for tools whose docs site has no full-text export: the pages its own
                                               index lists (a chosen part of them), fetched one by one as Markdown and
                                               joined, each under a "Source: <page URL>" line; SOURCE.txt lists the
-                                              indexes, the selection, the page count and any page that failed
+                                              indexes, the selection, the page count and any page that failed. A site
+                                              that serves only HTML has each page's <article> reduced to plain text
+                                              (headings, list items and table cells marked; code samples may lose
+                                              their line breaks), which SOURCE.txt says
 
 A closed-source product has no commit; its record is served by the docs export alone.
 
@@ -33,6 +36,7 @@ import re
 import subprocess
 import sys
 import urllib.request
+from html.parser import HTMLParser
 from pathlib import Path
 
 STUDY = Path(__file__).resolve().parents[1]
@@ -48,9 +52,14 @@ DOCS = {
     "A15__openhands": "https://docs.openhands.dev/llms-full.txt",
     "A16__grok-build": "https://docs.x.ai/llms-full.txt",
     "B10__factory-droid": "https://docs.factory.com/llms-full.txt",
+    "B18__codecompanion-nvim": "https://codecompanion.olimorris.dev/llms-full.txt",
+    "B21__paradev": "https://docs.paradev.com/llms-full.txt",
     "C06__open-webui": "https://docs.openwebui.com/llms-full.txt",
+    "C07__librechat": "https://www.librechat.ai/llms-full.txt",
+    "C08__lobehub": "https://lobehub.com/llms-full.txt",
     "C10__nanoclaw": "https://docs.nanoclaw.dev/llms-full.txt",
     "D01__dify": "https://docs.dify.ai/llms-full.txt",
+    "D02__n8n": "https://docs.n8n.io/llms-full.txt",
 }
 # Docs sites with a page index but no full-text export. Per tool: (index URL, pattern a page must match, URL
 # template that returns the page as Markdown, URL template to cite); "{}" is the matched text. Only the parts
@@ -69,9 +78,25 @@ DOC_PAGES = {
          r"|manage-your-account|configure-content-exclusion|troubleshoot-copilot|provide-context|set-up))(?:/[\w.-]+)*",
          "https://docs.github.com/api/article/body?pathname={}", "https://docs.github.com{}"),
     ],
+    # The IDE entry point: the pages of the other surfaces (Crew, enterprise administration, web, mobile) are left out.
+    "B04__kiro": [
+        ("https://kiro.dev/llms.txt",
+         r"https://kiro\.dev/docs/(?!(?:crew|enterprise|web|mobile)(?:/|\.md))[\w./-]+\.md", "{}", "{}"),
+    ],
+    # The sitemap lists the pages under their old address; the site serves them, as HTML only, under /docs/.
+    "B05__junie": [
+        ("https://junie.jetbrains.com/docs/sitemap.xml", r"(?<=<loc>https://www\.jetbrains\.com/help/junie/)[\w.-]+\.html",
+         "https://junie.jetbrains.com/docs/{}", "https://junie.jetbrains.com/docs/{}"),
+    ],
+    # The index links each page's Markdown rendition (/docs/markdown/...); pages are cited by their reading address.
+    "B09__amp": [
+        ("https://ampcode.com/llms.txt", r"(?<=https://ampcode\.com/docs/markdown)(?:/[\w-]+)*(?![\w/-])",
+         "https://ampcode.com/docs/markdown{}", "https://ampcode.com/docs{}"),
+    ],
 }
-# Closed-source products whose version string carries a 40-hex build identifier that is not a public commit.
-NO_PUBLIC_SOURCE = {"B01__cursor"}
+# Closed-source products whose version string carries a 40-hex identifier that is not a commit of the product's
+# source: a build identifier, or a commit of a repository that only distributes installers and release metadata.
+NO_PUBLIC_SOURCE = {"B01__cursor", "B04__kiro", "B05__junie", "B09__amp"}
 AGENT = {"User-Agent": "harness-study-source-fetch"}
 
 
@@ -87,6 +112,53 @@ def get(url):
     return urllib.request.urlopen(urllib.request.Request(url, headers=AGENT), timeout=120).read()
 
 
+class _ArticleText(HTMLParser):
+    """Plain text of a page's <article>: headings marked with #, list items with -, table cells with |."""
+
+    def __init__(self):
+        super().__init__()
+        self.out, self.depth, self.skip, self.pre = [], 0, 0, 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "article":
+            self.depth += 1
+        if tag in ("script", "style", "nav", "svg", "button"):
+            self.skip += 1
+        if not self.depth or self.skip:
+            return
+        if tag in ("h1", "h2", "h3", "h4", "h5"):
+            self.out.append("\n\n" + "#" * int(tag[1]) + " ")
+        elif tag in ("p", "div", "tr", "section", "dt", "dd", "br"):
+            self.out.append("\n")
+        elif tag == "li":
+            self.out.append("\n- ")
+        elif tag in ("td", "th"):
+            self.out.append(" | ")
+        elif tag == "pre":
+            self.pre += 1
+            self.out.append("\n```\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "nav", "svg", "button"):
+            self.skip = max(0, self.skip - 1)
+        if tag == "pre" and self.depth:
+            self.pre = max(0, self.pre - 1)
+            self.out.append("\n```\n")
+        if tag == "article":
+            self.depth = max(0, self.depth - 1)
+
+    def handle_data(self, data):
+        if self.depth and not self.skip:
+            self.out.append(data if self.pre else re.sub(r"\s+", " ", data))
+
+
+def article_text(page):
+    """The text of an HTML page's <article>; an empty string for a page that fills it in by script."""
+    parser = _ArticleText()
+    parser.feed(page)
+    return re.sub(r"\n{3,}", "\n\n", "".join(parser.out)).strip()
+
+
 def fetch_pages(config_id, dest):
     """Join the selected pages of an index-only docs site into docs-pages.txt; describe them in SOURCE.txt."""
     parts, notes = [], []
@@ -97,17 +169,25 @@ def fetch_pages(config_id, dest):
         else:
             found = [m.group(0) for m in re.finditer(pattern, text)]
         found = list(dict.fromkeys(found))
-        failed = []
+        failed, as_text = [], False
         for item in found:
             try:
                 body = get(page_url.format(item)).decode("utf-8", "replace")
             except Exception as error:  # a page the index lists but the site does not serve
                 failed.append(f"{item} ({type(error).__name__})")
                 continue
+            if body.lstrip()[:15].lower().startswith(("<!doctype", "<html")):
+                body, as_text = article_text(body), True
+                if not body:  # a page rendered by script: nothing to read without running it
+                    failed.append(f"{item} (no text in the served HTML)")
+                    continue
             parts.append(f"Source: {re.sub(r'[.]md$', '', cite_url.format(item))}\n\n{body.strip()}\n")
         missing = f", failed: {'; '.join(failed)}" if failed else ""
         notes.append(f"docs pages: index {index}, pages matching {pattern}: {len(found)} listed, "
                      f"{len(found) - len(failed)} fetched{missing}\n")
+        if as_text:
+            notes.append("docs pages: served as HTML only; each page's <article> was reduced to plain text, so code "
+                         "samples may have lost their line breaks and there are no line numbers to cite\n")
         print(f"{config_id}: {index}: {len(found) - len(failed)} of {len(found)} pages")
     data = ("\n\n" + "=" * 80 + "\n").join(parts).encode("utf-8")
     (dest / "docs-pages.txt").write_bytes(data)

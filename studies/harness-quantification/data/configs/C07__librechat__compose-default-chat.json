@@ -1,0 +1,456 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "C07__librechat__compose-default-chat",
+  "round": "batch-4",
+  "tool_id": "C07",
+  "product": "LibreChat",
+  "view": "configured",
+  "version_or_commit": "v0.8.8；提交 e8f3be08623663d4ad7f7241e693c94469b63bb0",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "官方快速开始（文档 Quick Start 的 Local Setup Guide + Your First Chat）：克隆仓库后 cp .env.example .env，docker compose up -d 拉起默认 compose 栈，浏览器打开 http://localhost:3080，注册账户（单租户部署第一个注册用户成为管理员），在网页界面里为所选提供方填自己的 API key（.env.example 预置 user_provided），然后在普通对话里从顶部选择器选端点与模型发消息；默认端点为 OpenAI（端点默认顺序第一）。入口取普通聊天（官方快速开始的默认路径），不取 Agents（研究负责人 2026-11-15 确认）。另一条路是在对话里使用 Agents（代理构建器建的代理），本记录不取：全新安装没有任何已保存代理，Agents 要在 Agent Builder 里另行创建后才可选用。",
+  "install_method": "command: git clone https://github.com/LibreChat-AI/LibreChat.git && cd LibreChat && cp .env.example .env && docker compose up -d；platform: macOS / Linux（先装 Docker Desktop 或 Docker Engine；文档也支持 Windows Docker Desktop，本记录取 macOS/Linux）；source: https://www.librechat.ai/docs/quick_start/local_setup（Step 1-3）与钉住提交的 docker-compose.yml（只作记录，未执行）。默认 compose 栈六个服务：api=registry.librechat.ai/librechat-ai/librechat-dev:latest、admin-panel=registry.librechat.ai/clickhouse/librechat-admin-panel:latest、mongodb=mongo:8.0.20、meilisearch=getmeili/meilisearch:v1.35.1、vectordb=pgvector/pgvector:0.8.0-pg15-trixie、rag_api=registry.librechat.ai/librechat-ai/librechat-rag-api-dev-lite:latest；三个 :latest 是浮动标签，当天指向哪个构建未核实。默认不挂载 librechat.yaml（示例文件 librechat.example.yaml 不生效），全部行为取源码内置默认。",
+  "permission_mode": "没有逐次工具审批：工具审批（endpoints.agents.toolApproval / HITL）默认关闭，模型发出的工具调用直接执行；但默认安装的普通聊天不注册任何工具，模型只能生成文本，没有 shell、文件系统或命令执行能力。服务端不读写宿主机项目目录：用户数据在 MongoDB 与容器绑定目录（./uploads、./images、./logs、./skill、./data-node、./meili_data_v1.35.1）及命名卷（librechat-data、pgdata2）里；聊天没有工作区/Git 仓库概念，仓库内容只能作为附件上传（或另配非默认的 attached code workspace）。代码执行：execute_code 能力默认开，但 Code Interpreter 是需另行部署的外部服务（ClickHouse/code-interpreter），默认 compose 不含、LIBRECHAT_CODE_BASEURL/API_KEY 默认未设，所以默认装不上代码执行；attached code environments（非默认）的文件写入与命令执行默认 ask（逐次询问），Full access 要管理员显式放行。联网：服务端只向用户配置的模型提供方（默认 OpenAI，用户自填 key）发请求；web_search 开关默认可见但没有配置任何搜索/抓取/重排提供方与密钥，不生效；RAG 嵌入默认走 OpenAI、user_provided 时需另配 RAG_OPENAI_API_KEY。账户与角色：注册默认开放（ALLOW_REGISTRATION=true），第一个注册用户成为 ADMIN 并拥有全部功能权限，之后的用户默认 USER 角色（可用/建代理与技能，MCP 服务器只可用、不可创建；记忆 USE/CREATE/UPDATE/READ/OPT_OUT 与 Run Code、Web Search、File Search 的 USE 权限默认均为 true——roles.ts 里的空对象是 schema 解析前的输入，解析时按 permissions.ts 的默认值补齐；默认记忆未配置、代码执行与搜索缺服务或凭据而不可用，并非 USER 无权限）。内容审核默认关（OPENAI_MODERATION=false）。消息搜索默认关（SEARCH=false）。管理面板在默认 compose 里但 ADMIN_PANEL_SESSION_SECRET 默认为空、面板拒绝启动。容器以 user: \"${UID}:${GID}\" 运行而 UID/GID 默认注释掉，镜像默认用户是 node（非 root），未设 UID/GID 时的实际运行用户未核实。MongoDB 在栈内以 --noauth 运行、vectordb 用硬编码 myuser/mypassword，均不对外发布端口。",
+  "operating_system": "macOS、Linux（经 Docker Desktop 或 Docker Engine 运行容器；文档也支持 Windows Docker Desktop）。默认 compose 的 MongoDB 8.0 镜像要求 CPU 支持 AVX（文档提示旧 x86 需改用 mongo:4.4.18）；容器至少 1 GiB RAM / 1 vCPU，全套建议给 Docker 2 GB 以上。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-15",
+  "note": "版本：v0.8.8，提交 e8f3be08623663d4ad7f7241e693c94469b63bb0（研究负责人 2026-11-15 确认）。GitHub 发布列表核对（2026-11-15）：LibreChat-AI/LibreChat 的所有发布都带 prerelease 标记，releases/latest 接口因此返回 404；最新的发布是 v0.8.9-rc1（2026-10-26），不带 rc 的最新发布是 v0.8.8（2026-10-01），本记录取 v0.8.8。安装命令实际装到的版本：快速开始 docker compose up -d 拉取的 api 镜像是 registry.librechat.ai/librechat-ai/librechat-dev:latest（docker-compose.yml L12），admin-panel 与 rag_api 也是 :latest（L42、L87），都是浮动标签，当天指向哪个构建未核实；本记录编码按钉住提交的源码。入口：官方快速开始（Local Setup Guide + Your First Chat）带用户走的是普通聊天（选端点+模型），不取 Agents（研究负责人 2026-11-15 确认）；全新安装没有已保存代理。默认安装没有 librechat.yaml（compose 不挂载），librechat.example.yaml 只是示例，本记录所有默认值以源码为准。子代理：部署级 subagents 能力默认开，但每个代理默认关（defaultAgentFormValues.subagents=undefined，要在构建器里添加 Subagents 工具并打开开关），所以 subagents_enabled=false，属“有功能但默认关”；Handoffs 也要显式配置。定时任务 schedules 默认关（实验性，interface 默认里刻意不含），事件触发的 Agents API/triggers 需另配，均不归 subagents_enabled 管。文档与源码口径差异：文档 Admin Panel 页写面板镜像为 registry.librechat.ai/librechat-ai/librechat-admin-panel:latest，钉住提交的 compose 实际是 registry.librechat.ai/clickhouse/librechat-admin-panel:latest（L42）；agents 端点的 schema 默认模型是占位的 gpt-3.5-turbo-test（schemas.ts L789-L791），构建器要求显式选模型。普通聊天默认模型：不钉具体型号，只记机制（研究负责人 2026-11-15 确认）：user_provided 时不在线拉模型列表，取内置列表第一个 gpt-6-astra（config.ts L3378、L3491-L3535；parsers.ts L198）；内置型号在用户 OpenAI 账户下的可用性未核实；openAISettings 的 schema 回退默认是 gpt-4o-mini（schemas.ts L444-L446）。提供方选择：快速开始让用户在 OpenAI/Anthropic/Google/Assistants（均 user_provided）里任选，也可经 librechat.yaml 加 Ollama/OpenRouter 等自定义端点；官方端点顺序与 first_chat 文档示例都把 OpenAI 排在最前，本记录取 OpenAI 密钥这一家（研究负责人 2026-11-15 确认）；另一条路是其余提供方与自定义端点，本记录不取。文档站：官方文档在仓库外 https://www.librechat.ai/docs（docs.librechat.ai 同站），本记录用官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得，1943237 字节）；official_doc 小卡的 lines 是该导出里的行号。仓库内 docs/ 目录只有三份补充文档（permissions、run_files.md、skills-management-api.md），不是完整官方文档，未作为口径依据。编码前由第二位读者（GPT-6.1 Sol）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-16）改了 6 处：①更正 USER 角色权限——roles.ts 的空对象是 schema 解析前输入，解析后记忆 USE/CREATE/UPDATE/READ/OPT_OUT 与 Run Code/Web Search/File Search 的 USE 默认 true，更正 permission_mode、联网搜索与记忆两条扩展及 roles.ts 证据注释，新增 permissions.ts 默认值证据；②补附件上传的自动路由（文本/代码提取全文、图像/PDF 可直送提供方，文件检索才走 RAG），收窄工作区前提的附件括注，新增扩展条目与源码、文档证据；③补型号路由——原生 OpenAI 取 gpt-6-astra 时默认走 Responses API，不附带工具，写入 default_model 并加 llm.ts 证据；④补默认后台过期文件清扫（启动一次、默认每小时、leader 检查），并入定时与事件触发条目并加 sweep.ts 证据；⑤补共享运行时内部 step-budget hook 与执行检查点/摘要边界（默认无 checkpointer，启用后主 MongoDB、24 小时窗口），新增扩展条目与 run.ts、checkpoints/config.ts、compaction.ts 证据；⑥账户档位说法收窄为需能创建 API key 的档位、是否足以调用所取模型未核实。",
+  "synthetic": false,
+  "subagents_enabled": false,
+  "enabled_extensions": [
+    "默认注册给模型的工具：无。普通聊天不带工具；代理的工具只在构建器里选中后才加载（defaultAgentFormValues.tools=[]，execute_code/file_search/web_search/memory 均 false），loadToolDefinitionsWrapper 在 agent.tools 为空时直接返回空工具表。",
+    "部署级默认开启的代理能力（defaultAgentCapabilities，源码注册表）：deferred_tools、execute_code、file_search、web_search、artifacts、subagents、actions、context、skills、memory、ask_user_question、tools、chain、ocr；programmatic_tools、stateful_code_sessions、run_in_background、tool_intents 不在默认列表，需管理员显式加入（能力开≠工具注册，仍要在代理上选中并满足各自前提）。",
+    "原生工具注册表（nativeTools，不在插件 manifest 里）：execute_code（界面名 Run Code）、file_search、web_search、memory；另有 artifacts、context（File Context）、ocr、ask_user_question、skills、subagents 等按能力与代理配置注入；全部默认不注册给任何模型。",
+    "内置集成工具清单（api/app/clients/tools/manifest.json，代理选中且配好凭据才加载，默认一个都不注册）：traversaal_search、google、image_gen_oai、wolfram、dalle、tavily_search_results_json、calculator、ask_user_question、stable-diffusion、azure-ai-search、open_weather、flux、gemini_image_gen。",
+    "联网搜索：普通聊天的 composer 里 Web Search 开关默认可见（interface.webSearch=true），但 searchProvider 无默认值、SERPER/TAVILY/FIRECRAWL/SEARXNG/JINA/COHERE 等密钥默认全空，不配置提供方就不返回结果；USER 角色默认有 web_search 的 USE 权限（角色默认值经 schema 解析为 true，ADMIN 同样有；搜索不可用是缺提供方与密钥，不是角色权限）；safeSearch 默认 moderate。",
+    "代码执行：execute_code 能力默认开、interface.runCode 默认 true，但 Code Interpreter 服务（ClickHouse/code-interpreter）不在默认 compose 里，LIBRECHAT_CODE_BASEURL 与 LIBRECHAT_CODE_API_KEY 默认未设，代码执行默认不可用；Stateful code sessions、attached workers、Programmatic Tool Calling、Background execution 均为 opt-in，默认关。",
+    "文件检索（RAG）：默认 compose 含 rag_api（librechat-rag-api-dev-lite:latest）与 vectordb（pgvector），RAG_API_URL 由 compose 注入；file_search 能力默认开，普通聊天（除 Assistants）与代理都可用，但嵌入默认 OpenAI text-embedding-3-small，key 为 user_provided 时需另配 RAG_OPENAI_API_KEY，默认没有——上传做文件检索会在嵌入一步缺凭据；全新安装没有任何已索引文件。",
+    "记忆：默认关。需要 librechat.yaml 的 memory 段（默认安装没有该文件），且代理上启用 memory、用户未 opt-out、角色有 CREATE+UPDATE 权限；USER 角色默认有记忆 USE/CREATE/UPDATE/READ/OPT_OUT 权限（满足 CREATE+UPDATE 要求，记忆不可用是缺 memory 配置，不是角色权限）；后台记忆代理是另外的 opt-in，默认没有。",
+    "MCP 与外部工具服务：默认没有任何 MCP 服务器（librechat.example.yaml 的 mcpServers 全被注释，默认安装不加载 yaml）；interface.mcpServers.use/create 默认 true（ADMIN 可建，USER 只可用），Actions（OpenAPI 工具）同样要用户自建；默认安装没有外部工具服务。",
+    "技能与插件：skills 能力默认开，但每个代理 skills_enabled 默认 undefined（关）；部署技能目录 skill/（挂载到 /app/skill）里只有 README，没有技能；Agent Plugins 目录 ./plugin 不存在，启动时不加载任何插件；DEPLOYMENT_PLUGIN_HOOKS 默认关。",
+    "默认会自发的模型请求：标题生成默认开（TITLE_CONVO=true，timing 默认 immediate，第一条消息起与回复并行生成，用当前聊天端点/模型，titleModel/titleEndpoint 默认未设）；自动摘要/压缩默认开（summarization.enabled!==false，用代理自己的提供方与模型，trigger 未设时在剪枝丢弃消息即触发，另有手动 Compact context）；活动标题 activityLabel 与推理标签 reasoningLabel 默认关（示例 yaml 里被注释）；没有默认开启的后台记忆复盘、审批分类器或自动补全。",
+    "定时与事件触发：schedules（定时聊天）默认关——interface 默认对象刻意不含 schedules（实验性，避免默认开启计费运行）；Agents API 的事件驱动 triggers 需另行配置，默认没有。另有默认后台文件维护：启动时先执行一次过期文件清扫，之后默认每小时一次（FILE_RETENTION_SWEEP_INTERVAL_MS 未设取 1 小时，设 0 关闭），经 leader 检查后清理到期文件；这是文件维护任务，不是 schedules 管的计费定时聊天，也不发起模型请求。",
+    "默认的外网调用：只向用户配置的模型提供方发请求（默认 OpenAI api.openai.com，用户自填 key）；OTEL 遥测默认关（OTEL_TRACING_ENABLED/OTEL_LOGS_ENABLED 未设），SCARF_ANALYTICS=false（Dockerfile），MEILI_NO_ANALYTICS=true（compose）；服务端源码未见版本检查请求（前端是否有其他外呼未核实）；内容审核默认关（OPENAI_MODERATION=false）。",
+    "消息搜索：Meilisearch 容器默认随栈启动，但 SEARCH=false、MEILI_MASTER_KEY 空，搜索功能默认关，界面不出现搜索框。",
+    "管理面板：admin-panel 服务在默认 compose 里（端口 3000），但 SESSION_SECRET 取自默认为空的 ADMIN_PANEL_SESSION_SECRET，面板拒绝启动——默认安装实际没有可用的管理面板；主界面的管理功能仍可用（ADMIN 角色）。",
+    "入口代码的执行位置：Node.js API 进程在 Docker 容器内运行（镜像 librechat-dev:latest，Dockerfile USER node、CMD npm run backend，compose 另设 user ${UID}:${GID}），前端是同一进程服务的静态构建产物；用户数据在 MongoDB 容器与绑定目录/命名卷；RAG API 是独立的 Python FastAPI 容器；模型推理在用户配置的云端提供方（默认 OpenAI），不在本机容器里；Code Interpreter 沙箱与 attached workers 默认不存在。",
+    "附件上传的自动路由：默认文件配置不禁用上传（fileConfig 各端点 disabled=false）；未设 legacyFileUploadUX 时用统一上传入口，按文件类型与提供方能力自动选择——文本/代码/Markdown/CSV/JSON/Word/Excel 提取全文随消息发送，图像/音频/视频/PDF 在提供方接受时直送（不接受 PDF 则提取文本）；打开 File Search/Run Code 时文件只在运行需要时交给工具。缺 RAG 嵌入 key 只影响文件检索，不等于所有附件不可读；附件上传不赋予模型读取宿主目录的能力。",
+    "共享运行时的内部机制：createRun 无条件注册内部 PostToolBatch 的 step-budget hook，把剩余步数提示加入上下文（不是部署插件，也不调用模型）。执行检查点（durable checkpointer）默认不附加：普通无工具聊天没有；仅在启用可暂停审批、顶层聊天选入 Ask User（子代理与无恢复界面的调用会剥除该工具）或另配 event actor 时才进入附加分支，saver 默认用主 MongoDB（集合 agent_checkpoints / agent_checkpoint_writes，窗口默认 24 小时），且只保留带 interrupt 或真实状态增量的检查点，干净结束的无写入检查点被跳过，不是每轮拍项目快照。摘要作为消息的 summary part 保留，并作为后续上下文读取的边界；摘要的最终 SDK 调度与落库全链路未独立核实。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/releases/tag/v0.8.8",
+      "locator": "GitHub Release v0.8.8（本记录钉住的发布标签）",
+      "version": "v0.8.8",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "版本",
+      "note": "发布标签 v0.8.8，提交 e8f3be08623663d4ad7f7241e693c94469b63bb0，源码归档 sha256 740638be…。GitHub 发布列表核对（2026-11-15）：LibreChat-AI/LibreChat 的所有发布都带 prerelease 标记，releases/latest 接口因此返回 404；最新的发布是 v0.8.9-rc1（2026-10-26），不带 rc 的最新发布是 v0.8.8（2026-10-01），本记录取 v0.8.8（研究负责人 2026-11-15 确认）。README 的 What's New in v0.8.8 与该标签一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/docker-compose.yml#L5-L38",
+      "locator": "docker-compose.yml：api 服务",
+      "lines": "L5-L38",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "api 镜像 registry.librechat.ai/librechat-ai/librechat-dev:latest（L12，浮动标签，当天指向哪个构建未核实）；user \"${UID}:${GID}\"（L14）；端口 ${PORT}:${PORT}（PORT 默认 3080）；MONGO_URI、MEILI_HOST、RAG_API_URL 指向同栈容器；挂载 ./.env、./images、./uploads、./logs、./skill 与命名卷 librechat-data；没有挂载 librechat.yaml。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/docker-compose.yml#L40-L55",
+      "locator": "docker-compose.yml：admin-panel 服务",
+      "lines": "L40-L55",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "面板镜像 registry.librechat.ai/clickhouse/librechat-admin-panel:latest（L42），SESSION_SECRET=${ADMIN_PANEL_SESSION_SECRET}（L52），注释明说没有它面板拒绝启动；.env.example L62 该值为空，所以默认安装面板不启动。文档 Admin Panel 页写的镜像命名空间是 librechat-ai，与这里的 clickhouse 不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/docker-compose.yml#L56-L99",
+      "locator": "docker-compose.yml：mongodb / meilisearch / vectordb / rag_api",
+      "lines": "L56-L99",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "安装",
+      "note": "mongo:8.0.20 以 mongod --noauth 运行（L58、L63）；meilisearch v1.35.1、MEILI_NO_ANALYTICS=true（L66、L71）；vectordb pgvector/pgvector:0.8.0-pg15-trixie，POSTGRES_USER/PASSWORD=myuser/mypassword（L77-L81），不发布端口；rag_api 镜像 librechat-rag-api-dev-lite:latest（L87）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/Dockerfile#L27",
+      "locator": "Dockerfile：USER node",
+      "lines": "L27",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "镜像默认以非 root 的 node 用户运行；compose 又设 user ${UID}:${GID}，而 .env.example L212-L213 的 UID/GID 默认注释掉，未设时的实际运行用户未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/Dockerfile#L78-L80",
+      "locator": "Dockerfile：EXPOSE 与 CMD",
+      "lines": "L78-L80",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "EXPOSE 3080、CMD [\"npm\",\"run\",\"backend\"]：入口是容器内的 Node.js API 进程，前端静态构建由同一进程服务（L61 npm run frontend）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/quick_start/local_setup",
+      "locator": "Local Setup Guide：Step 1-3（下载项目 / 安装 Docker / 运行应用）；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L29-L88",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "官方快速开始：git clone 或下载 ZIP → 装 Docker Desktop → cp .env.example .env（默认值开箱即用）→ docker compose up -d；Step 4 指向 Your First Chat（注册、加 key、聊天）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/quick_start/first_chat",
+      "locator": "Your First Chat：Create your account / Give a model an API key / Send your first message；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L104-L190",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "打开 http://localhost:3080 注册（ALLOW_REGISTRATION=true 默认开，无默认凭据）；单租户部署第一个账户是 admin；.env.example 把 OPENAI/ANTHROPIC/GOOGLE key 预置为 user_provided，用户在界面 Set API Key 里填自己的 key；然后从选择器选端点和模型发第一条消息——快速开始默认路径是普通聊天，不是 Agents。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/.env.example#L438-L618",
+      "locator": ".env.example：预置提供方密钥",
+      "lines": "L438-L618",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "四家预置提供方都是 user_provided：ANTHROPIC_API_KEY（L438）、GOOGLE_KEY（L532）、OPENAI_API_KEY（L597）、ASSISTANTS_API_KEY（L618）；ENDPOINTS 默认注释（L403），默认端点全部加载。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/services/AuthService.js#L415-L426",
+      "locator": "api/server/services/AuthService.js：注册逻辑",
+      "lines": "L415-L426",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "无租户且 countUsers()===0 时新用户 role=ADMIN，否则 USER——第一个注册用户成为管理员。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/parsers.ts#L78-L99",
+      "locator": "packages/data-provider/src/parsers.ts：getEnabledEndpoints",
+      "lines": "L78-L99",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "默认端点顺序 openAI、agents、assistants、azureAssistants、azureOpenAI、google、anthropic、bedrock；ENDPOINTS 未设时按此顺序。loadDefaultEConfig.js L29-L35 按该顺序赋 order，客户端 getDefaultEndpoint.ts L52-L64 取第一个可用端点 → 默认端点 openAI。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/endpoints/models.ts#L400-L427",
+      "locator": "packages/api/src/endpoints/models.ts：getOpenAIModels",
+      "lines": "L400-L427",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "OPENAI_MODELS 未设且 key 为 user_provided 时直接返回内置 defaultModels[openAI]，不在线拉取；列表第一个是 gpt-6-astra（config.ts L3378 responsesOnlyOpenAIModels、L3491-L3535 defaultModels）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/parsers.ts#L196-L199",
+      "locator": "packages/data-provider/src/parsers.ts：parseConvo 默认模型",
+      "lines": "L196-L199",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "新对话模型取 getFirstDefinedValue(models)（列表第一个）；buildDefaultConvo.ts L36-L48 无历史选择时直接用可用列表。openAISettings.model.default='gpt-4o-mini'（schemas.ts L443-L446）只是 schema 回退值。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/schemas.ts#L375-L424",
+      "locator": "packages/data-provider/src/schemas.ts：defaultAgentFormValues",
+      "lines": "L375-L424",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "新建代理默认：tools=[]，execute_code/file_search/web_search/memory 均 false，subagents: undefined（L413 注释 feature disabled by default, no subagent tool injected），skills_enabled: undefined——新代理默认没有任何工具，子代理与技能默认关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/services/Endpoints/agents/initialize.js#L1370-L1373",
+      "locator": "api/server/services/Endpoints/agents/initialize.js：子代理注入门槛",
+      "lines": "L1370-L1373",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "子代理",
+      "note": "仅当 subagentsAvailableForRun（L948-L949：能力开且未到线程深度上限）并且 agent.subagents?.enabled===true 才注入子代理 spawn 工具；allowSelf 默认 true（L1373）。能力默认开（config.ts L830-L847 含 subagents），但每代理默认关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/services/ToolService.js#L742-L747",
+      "locator": "api/server/services/ToolService.js：nativeTools 注册表",
+      "lines": "L742-L747",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "nativeTools = execute_code、file_search、web_search、memory（不在 manifest 里的原生工具）；loadToolDefinitionsWrapper L817-L818：agent.tools 为空直接返回空工具表——默认没有工具注册给模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/app/clients/tools/manifest.json#L1-L177",
+      "locator": "api/app/clients/tools/manifest.json：内置集成工具清单",
+      "lines": "L1-L177",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "manifest 工具（代理选中且配好凭据才加载）：traversaal_search、google、image_gen_oai、wolfram、dalle、tavily_search_results_json、calculator、ask_user_question、stable-diffusion、azure-ai-search、open_weather、flux、gemini_image_gen；默认一个都不注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/config.ts#L830-L847",
+      "locator": "packages/data-provider/src/config.ts：defaultAgentCapabilities",
+      "lines": "L830-L847",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "部署级默认能力：deferred_tools、execute_code、file_search、web_search、artifacts、subagents、actions、context、skills、memory、ask_user_question、tools、chain、ocr；programmatic_tools 被注释掉，与 stateful_code_sessions、run_in_background、tool_intents 同为显式 opt-in（librechat.example.yaml L676-L679）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/agents/hitl/policy.ts#L85-L103",
+      "locator": "packages/api/src/agents/hitl/policy.ts：isHITLEnabled",
+      "lines": "L85-L103",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "注释 HITL remains default-off for the rollout；isHITLEnabled 要求 policy.enabled===true——工具审批默认关，工具调用直接执行。attached code environment 例外地自动获得审批基线（L65-L81）；librechat.example.yaml L772 也写 Disabled by default。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/code/approval.ts#L7-L52",
+      "locator": "packages/data-provider/src/code/approval.ts：代码审批模式",
+      "lines": "L7-L52",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "ask/acceptEdits/fullAccess 三档；allowedModes 缺省 ['ask']，fileWrite 与 commandExecution 缺省 'ask'——attached 代码环境（非默认安装）写文件与执行命令默认逐次询问，Full access 需管理员在 configSchema 里显式放行 allow。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/services/Endpoints/agents/title.js#L50-L51",
+      "locator": "api/server/services/Endpoints/agents/title.js：TITLE_CONVO",
+      "lines": "L50-L51",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "TITLE_CONVO 默认 true：标题生成默认开；timing 默认 immediate（librechat.example.yaml L622-L627），用当前聊天端点/模型（titleModel/titleEndpoint 可另配，默认未设）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/agents/run.ts#L1460-L1466",
+      "locator": "packages/api/src/agents/run.ts：summarization enabled 解析",
+      "lines": "L1460-L1466",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "enabled = config?.enabled !== false（且 provider/model 可解析）：自动摘要默认开，默认用代理自己的提供方与模型；trigger 未设时在剪枝丢弃消息即触发（文档 Summarization 节），手动 Compact context 在启用时可用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/services/Endpoints/agents/initialize.js#L303-L316",
+      "locator": "api/server/services/Endpoints/agents/initialize.js：记忆门槛",
+      "lines": "L303-L316",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "记忆工具要求 memory 能力开、appConfig.memory 已配置、用户未 opt-out，且角色有 CREATE+UPDATE 权限；默认安装没有 librechat.yaml（无 memory 段），记忆默认关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/config.ts#L2397-L2465",
+      "locator": "packages/data-provider/src/config.ts：interface 默认值",
+      "lines": "L2397-L2465",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "interface 默认：modelSelect/parameters/presets/multiConvo/bookmarks/memories 面板/agents.use+create/temporaryChat/runCode/webSearch/contextUsage/feedback/fileSearch/fileCitations/mcpServers.use+create/skills.use+create 均 true；marketplace.use、remoteAgents.use、contextCost 为 false；schedules 刻意不在默认对象里（实验性、默认关，注释说明避免默认启用计费运行）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/roles.ts#L225-L283",
+      "locator": "packages/data-provider/src/roles.ts：USER 角色默认权限",
+      "lines": "L225-L283",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "权限",
+      "note": "USER 的这段（L225-L285）是 defaultRolesSchema.parse（L143）前的输入：显式写出的 AGENTS use/create、SKILLS use/create、MCP_SERVERS use（create=false）、PROMPTS use/create、SHARED_LINKS、SCHEDULES use/create 为 true；MEMORIES、RUN_CODE、WEB_SEARCH、FILE_SEARCH、MULTI_CONVO、TEMPORARY_CHAT、BOOKMARKS、FILE_CITATIONS 写作空对象，但解析时按 permissions.ts 的 schema 默认补成 true（记忆 USE/CREATE/UPDATE/READ/OPT_OUT，其余各项 USE），并非无权限。数据库初始化用解析后的 roleDefaults（packages/data-schemas/src/methods/role.ts L104-L108、L134）。ADMIN（L144-L224）全部权限为 true；第一个注册用户是 ADMIN。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/api/server/telemetry.js#L7-L13",
+      "locator": "api/server/telemetry.js：遥测开关",
+      "lines": "L7-L13",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "OTEL 遥测仅在 OTEL_TRACING_ENABLED 或 OTEL_LOGS_ENABLED 为 true 时启用，默认都未设→关；Dockerfile L13 SCARF_ANALYTICS=false；compose L71 MEILI_NO_ANALYTICS=true。服务端源码未见版本检查外呼（前端其他外呼未核实）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/.env.example#L715-L720",
+      "locator": ".env.example：SEARCH 与 Meilisearch",
+      "lines": "L715-L720",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "SEARCH=false：消息搜索默认关（要 SEARCH=true 加唯一 MEILI_MASTER_KEY 才启用）；MEILI_MASTER_KEY 默认空。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/.env.example#L737-L742",
+      "locator": ".env.example：Code Interpreter 连接",
+      "lines": "L737-L742",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "LIBRECHAT_CODE_API_KEY（L737）与 LIBRECHAT_CODE_BASEURL（L742）默认注释掉：未连接 Code Interpreter 服务；默认 compose 也不含该服务（需另部署 ClickHouse/code-interpreter），代码执行默认不可用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/.env.example#L784-L790",
+      "locator": ".env.example：RAG 默认",
+      "lines": "L784-L790",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "RAG_API_URL 由 compose 注入（http://rag_api:8000）；RAG_OPENAI_API_KEY 默认注释（L786），EMBEDDINGS_PROVIDER 默认 openai、EMBEDDINGS_MODEL 默认 text-embedding-3-small（L788-L789 注释里的默认值）——key 为 user_provided 时文件检索嵌入需另配 RAG_OPENAI_API_KEY。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/.env.example#L888-L906",
+      "locator": ".env.example：注册登录与临时密钥",
+      "lines": "L888-L906",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "环境前提",
+      "note": "ALLOW_EMAIL_LOGIN=true、ALLOW_REGISTRATION=true、ALLOW_UNVERIFIED_EMAIL_LOGIN=true；JWT_SECRET/JWT_REFRESH_SECRET 默认空（L906-L907，留空用 .env.temp 生成的临时密钥）；CREDS_KEY/CREDS_IV 默认空（L634-L635，加密用户自填 key 用，同样生成临时值）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/skill/README.md#L1-L12",
+      "locator": "skill/README.md：部署技能目录",
+      "lines": "L1-L12",
+      "retrieved_at": "2026-11-14",
+      "configuration_scope": "扩展",
+      "note": "skill/ 是部署技能目录（compose 挂载到 /app/skill），启动时加载、只读暴露给启用 Skills 的用户；归档里该目录只有这份 README，没有技能。Agent Plugins 目录 ./plugin 在归档中不存在，启动不加载插件（文档 Agent Plugins 节：目录不存在则无插件继续启动）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/features/web_search",
+      "locator": "Web Search：Setup / Adding your own API keys；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L38213-L38356",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Web search 默认可用（普通聊天 composer 开关），但要先有搜索提供方与抓取器密钥（管理员服务端配置或留给用户填）；默认没有任何密钥。safe search 默认 moderate；代理的 web_search 在构建器里启用。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/configuration/rag_api",
+      "locator": "RAG API：Docker Quick Start / OpenAI (default) embeddings；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L31638-L31758",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "默认 docker-compose.yml 与 deploy-compose.yml 已接好 rag_api 与 vectordb；嵌入默认 OpenAI，key 为 user_provided 时要补 RAG_OPENAI_API_KEY；文件检索在代理与普通聊天（除 Assistants）可用，需 file_search 能力（默认开）与角色 File Search 权限。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/features/memory",
+      "locator": "User Memory：Setup；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L38308-L38356",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Memory is off until an admin adds a memory section to librechat.yaml（L38351）；后台记忆代理是另行 opt-in、需要自己的模型。默认安装两者都没有。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/features/subagents",
+      "locator": "Subagents：Turn it on for an agent / Setup；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L37681-L37771",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "子代理",
+      "note": "子代理要在 Agent Builder 里添加 Subagents 工具并打开开关（Beta）；Allow self-spawn 默认开；部署级能力默认可用、管理员可关；detached 子代理要 run_in_background 能力（opt-in）。与源码一致：每代理默认关。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/local/docker",
+      "locator": "Docker：Prerequisites / Installation；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L441-L535",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "Docker Compose 是官方推荐安装方式；默认 compose 启动 MongoDB、Meilisearch、RAG API + pgvector，admin panel 只在设了 ADMIN_PANEL_SESSION_SECRET 后启动；MongoDB 8.0 需要 AVX；第一个注册账户是管理员；librechat.yaml 要另用 override 挂载（默认不挂）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/configuration/admin_panel",
+      "locator": "Admin Panel：Bundled with LibreChat；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L29030-L29063",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "面板随官方 compose 提供（docker-compose.yml 发布在 ADMIN_PANEL_PORT 默认 3000），没有 session secret 拒绝启动；文档写的镜像是 registry.librechat.ai/librechat-ai/librechat-admin-panel:latest，与钉住提交 compose 的 clickhouse 命名空间不一致（以源码为准）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/permissions.ts#L178-L229",
+      "locator": "packages/data-provider/src/permissions.ts：权限 schema 默认值",
+      "lines": "L178-L229",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "MEMORIES 的 USE/CREATE/UPDATE/READ/OPT_OUT 默认 true（L178-L184）；RUN_CODE（L205-L207）、WEB_SEARCH（L210-L212）、FILE_SEARCH（L227-L229）的 USE 默认 true；BOOKMARKS、MULTI_CONVO、TEMPORARY_CHAT、FILE_CITATIONS 的 USE 也默认 true。permissionsSchema（L276-L294）组合这些 schema，USER 角色经 roles.ts L143 的 defaultRolesSchema.parse 补齐空对象；数据库初始化用解析后的 roleDefaults（packages/data-schemas/src/methods/role.ts L104-L108、L134），启动时 updateInterfacePermissions 再按界面默认更新（api/server/index.js L270-L273、packages/api/src/app/permissions.ts L345-L357、L383-L388）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/endpoints/openai/llm.ts#L880-L910",
+      "locator": "packages/api/src/endpoints/openai/llm.ts：GPT-6 默认 Responses 路由",
+      "lines": "L880-L910",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "第一方 OpenAI/Azure 端点上，prefersResponsesApiByModel（file-config.ts L242-L243，gpt-6 家族含 astra）为真且未显式设置或退出时，useResponsesApi 默认置 true（L904-L910），无需 librechat.yaml；原生 web_search 注入仍需 enableWebSearch（L843-L851），默认不附带浏览器、代码或搜索工具。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/data-provider/src/file-config.ts#L566-L585",
+      "locator": "packages/data-provider/src/file-config.ts：默认文件配置",
+      "lines": "L566-L585",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "fileConfig 各端点（含 default 与 agents）disabled=false，默认不禁用上传；前端未设 legacyFileUploadUX 时走统一上传模式（client/src/utils/files.ts L611-L614），getViableUploadOptions（L616-L652）按文件类型与能力在直送提供方、file_search、execute_code、context 间自动路由。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://www.librechat.ai/docs/features/upload_as_text",
+      "locator": "Upload Files as Text：Attaching a file；行号取自官方文档站的全文导出（https://www.librechat.ai/llms-full.txt，2026-11-15 取得）",
+      "lines": "L38404-L38417",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "统一入口不选目的地，由 LibreChat 按文件决定：文本/代码/Markdown/CSV/JSON/Word/Excel 提取全文发送；图像/音频/视频/PDF 在提供方接受时直送，不接受 PDF 则提取文本；File Search/Run Code 打开时工具只在运行需要时拿到文件。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/agents/run.ts#L2787-L2868",
+      "locator": "packages/api/src/agents/run.ts：checkpointer 附加条件与 step-budget hook",
+      "lines": "L2787-L2868",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "仅 hitl（可暂停审批）、asksUserQuestions（顶层且 HITL 可用）或 eventActorCheckpointing 为真才附加 checkpointer（L2797-L2802），普通无工具聊天默认没有；ask_user_question 在子代理与无恢复界面的调用里被剥除（L2497-L2512）。PostToolBatch 的 step-budget hook 无条件注册（L2860-L2868，internal），把剩余步数提示加入上下文，不是部署插件，也不调用模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/agents/checkpoints/config.ts#L4-L30",
+      "locator": "packages/api/src/agents/checkpoints/config.ts：checkpointer 默认",
+      "lines": "L4-L30",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "默认 type=mongo（主 MongoDB），集合 agent_checkpoints / agent_checkpoint_writes（L4-L5），TTL 默认 24 小时（stream/checkpoints.ts L3）；LazyMongoSaver 只保留带 interrupt 或真实状态增量的检查点，跳过干净结束的无写入检查点（checkpointer.ts L192-L210）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/files/sweep.ts#L397-L430",
+      "locator": "packages/api/src/files/sweep.ts：过期文件清扫",
+      "lines": "L397-L430",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "startExpiredFileSweep 启动即执行一次、再按间隔定时（L426-L428），默认间隔 1 小时（L9、L82-L94，FILE_RETENTION_SWEEP_INTERVAL_MS 未设），设 0 关闭；经 isLeader 检查后以系统身份清理到期文件（L415-L418）。由 api/server/index.js L259 在启动时调用；是文件维护任务，不发起模型请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/LibreChat-AI/LibreChat/blob/e8f3be08623663d4ad7f7241e693c94469b63bb0/packages/api/src/agents/compaction.ts#L107-L136",
+      "locator": "packages/api/src/agents/compaction.ts：摘要作为上下文边界",
+      "lines": "L107-L136",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "摘要作为消息的 summary content part 保留（getSummaryPartText L26-L46），resolveCheckpointMessage 以摘要为历史读取停点，保留摘要及其后的 parts 进入提示；最终 SDK 调度与落库全链路未独立核实。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "本地自托管账户：网页邮箱+密码注册（默认开放注册、无需邮箱验证即可登录），没有云端账户或订阅；单租户部署第一个注册用户成为 ADMIN，本记录以该管理员账户为基准。模型提供方账户另算：用户自己的 OpenAI API 账户（需能创建 API key 的档位，按量计费；该档位是否足以调用所取模型未核实），见 credentials",
+    "default_model": "普通聊天默认端点 OpenAI（端点默认顺序第一，parsers.ts L78-L99 + loadDefaultEConfig.js）。不钉具体型号，只记机制（研究负责人 2026-11-15 确认）：key 为 user_provided 时不在线拉模型列表，取内置列表第一个 gpt-6-astra（config.ts L3378、L3491-L3535；parsers.ts L198 getFirstDefinedValue）。schema 回退默认 gpt-4o-mini（schemas.ts L444-L446）只在列表缺失时兜底。gpt-6-astra 在用户 OpenAI 账户下是否实际可用、线上模型列表是否变化，未核实。型号路由：取内置首项 gpt-6-astra 且走原生 OpenAI 端点时，服务端按型号默认改用 Responses API（llm.ts L880-L910，型号判断 prefersResponsesApiByModel 见 file-config.ts L242-L243），无需另配 librechat.yaml；这不附带浏览器、代码或搜索工具，原生 web_search 注入仍需显式打开 web_search 参数（llm.ts L843-L851）",
+    "host_os": "macOS 或 Linux（容器经 Docker Desktop 或 Docker Engine 运行；文档也支持 Windows Docker Desktop）",
+    "workspace": "常驻服务，工作目录由工具自己决定：安装目录是克隆的仓库根目录（docker compose 在此运行），数据在 MongoDB 容器、绑定目录 ./uploads、./images、./logs、./skill、./data-node、./meili_data_v1.35.1 与命名卷 librechat-data、pgdata2。聊天没有项目目录或 Git 仓库概念，不读取宿主机仓库；需要处理仓库内容时只能把文件作为附件上传（附件按类型与提供方能力自动路由：文本/代码等提取全文、图像/PDF 等可直送提供方，文件检索才走 RAG），或另配非默认的 attached code workspace",
+    "trust": "没有按目录的信任提示。首次打开是登录/注册页：注册默认开放（ALLOW_REGISTRATION=true），无默认凭据，自己设邮箱密码；第一个账户成为管理员。没有“是否信任此工作区”一类对话",
+    "credentials": "官方快速开始要求用户为所选提供方填自己的 API key；.env.example 把 OpenAI、Anthropic、Google、Assistants 四家都预置为 user_provided，官方端点顺序与 first_chat 文档示例把 OpenAI 排在最前，本记录取 OpenAI 密钥这一家（研究负责人 2026-11-15 确认）：用户在网页 Set API Key 对话框填自己的 OPENAI key（服务端不存共享 key）。另一条路是其余可选提供方与自定义端点（Ollama/OpenRouter 等），本记录不取。另：CREDS_KEY/CREDS_IV、JWT_SECRET 默认留空由服务生成临时密钥（.env.temp）；ADMIN_PANEL_SESSION_SECRET 默认空（面板不启动）；RAG 嵌入需另配 RAG_OPENAI_API_KEY（默认未配）",
+    "other": "执行运行时：快速开始默认用 docker-compose.yml 的本机容器栈（api + mongodb + meilisearch + vectordb + rag_api + admin-panel），模型推理在云端提供方（默认 OpenAI），不在本机；deploy-compose.yml（nginx 前置）与 npm 方式是官方列出的其他路径，本记录不取。Code Interpreter 沙箱、attached code workers、远端代码环境都不在默认安装里。api/admin-panel/rag_api 镜像为 :latest 浮动标签，当天指向哪个构建未核实；编码按钉住提交 e8f3be08 的源码"
+  }
+}

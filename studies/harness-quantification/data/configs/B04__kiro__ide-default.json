@@ -1,0 +1,512 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "B04__kiro__ide-default",
+  "round": "batch-4",
+  "tool_id": "B04",
+  "product": "Kiro",
+  "view": "configured",
+  "version_or_commit": "Kiro IDE 1.4.178（发布日期 2026-11-12；闭源，无公开源码提交）。依据：官方更新日志页 https://kiro.dev/changelog/（2026-11-15 取得，最新条目在前）的 Nov 12, 2026 / 1.4.178 / IDE 条目，标题 Follow Workflow Runs, Skills After Compaction, and Readable Diagrams，是该页最新的 IDE 条目；同页同日另有 Kiro CLI 3.3.0 与 Kiro Mobile for Android 条目，不属本入口。文档站各页为 2026-11-15 当天内容，不一定逐条对应 1.4.178；凡文档注明某版本起、逐步推出或实验的功能，本记录照原话带上限定。",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "Kiro IDE（桌面编辑器）里的代理对话（研究负责人 2026-11-15 确认）。官方安装页把 IDE 排在五个界面选项卡（IDE、CLI、Web、Mobile、Crew）之首，快速开始路径为：从 kiro.dev 下载并运行安装包 → 首次启动登录 → 可选导入 VS Code 设置 → 选主题 → 允许 shell 集成 → File > Open Folder 打开仓库 → 聊天面板默认打开、每个会话从 Default 代理开始（free-flow 对话，可另选 Spec／Plan／Bug Fix／Quick Spec）。同一产品还有 Kiro CLI（本机终端，V3／V2 harness，另有 headless 与 ACP）、Kiro Web（app.kiro.dev，托管云沙箱）、Kiro Mobile（Android 正式版／iOS TestFlight 早期访问，接云会话）、Kiro Crew（本机常驻个人代理），以及 IDE／CLI 可创建或接入的云会话和第三方 ACP 编辑器（JetBrains、Zed）；本记录只写 IDE 本机入口，别的入口独有功能只在 note 里提。",
+  "install_method": "installer: 从 kiro.dev 下载对应操作系统安装包并运行（macOS Intel／Apple Silicon；Windows 10/11 x64／ARM64；Linux Ubuntu 24+、Debian 13+、Fedora 40+、Arch、Mint 22+，x86_64／ARM64；安装页对 IDE 只写下载并运行安装包，未列包格式细节，文中的 .deb／RPM／zip 等替代安装方式属 CLI），首次启动在浏览器完成登录。alternatives: 同一账户可另装 Kiro CLI（brew install kiro-cli；curl -fsSL https://cli.kiro.dev/install | bash；Windows 用 irm https://cli.kiro.dev/install.ps1 | iex，需 Windows 11 与 Windows Terminal／PowerShell）、Kiro Web（免安装）、Kiro Mobile（Google Play／TestFlight）、Kiro Crew（桌面安装包或 Python 3.9+ 源码装）；本配置不取。只作记录，未执行安装。",
+  "permission_mode": "权限模式（聊天输入的权限模式菜单，三选一）：Supervised——每轮含文件编辑后停下，按文件／按 hunk 接受或拒绝；Accept file changes——直接创建、编辑、删除文件，运行命令前仍询问，除非规则已允许（1.4.154 前名 Autopilot，行为相同）；Approve for me——规则未覆盖的动作交模型判定，判安全放行、判不安全拦下、拿不准问你，放行的动作在工具卡上标 Approved for you。新会话起始模式由 Settings → Agent → Agent Autonomy（设置键 kiroAgent.agentAutonomy）决定，其取值仍名 Autopilot 与 Supervised，文档未给出该设置的默认值；privacy-and-security.md 仍按旧口径写两种模式并称 Autopilot mode (default)（1.4.154 起 Autopilot 改名 Accept file changes），与权限页／模式页的三模式口径不一致；本记录按较新的 permissions.md 口径记：未信任的工作区从 Supervised 起、Approve for me 默认关（研究负责人 2026-11-15 确认），新装后新会话实际的默认权限模式未核实。Approve for me 默认关：What's new 的 Use Approve for me by default 开关、命令面板 Kiro: Approve For Me (User)...／(Workspace)... 都显示 Turn on (currently off)；未信任工作区一律从 Supervised 开始且 Approve for me 关；该模式只在 Kiro 提供它的会话里出现，未提供时保留 Autopilot 开关并继续逐次询问；组织可托管或强制。读：无 permissions.yaml 时默认策略允许 fs_read 于 ./**（工作区内读文件静默通过），工作区外读要询问；忽略文件命中的路径在读与搜索结果里都被挡。写：默认策略不含 fs_write 允许，故写文件要询问（Accept file changes 模式下文件改动不再逐次审批，但 deny／ask 规则仍生效）；Kiro 层硬拒绝写 ~/.kiro/settings/、.kiro/settings/、~/.kiro/workspace-roots/、任意深度的 .kiroignore、已安装 Power 的 mcp.json 与 Kiro 自身状态存储（~/.kiro/sandbox-state/、web-session/、cloud-cache/、sandbox-curl/）；硬询问写 .git/**、.vscode/**、**/*.code-workspace 以及 .kiro 与 ~/.kiro 下的 agents／hooks／workflows／powers 目录（任何 allow 都取消不了）；未信任工作区另对 .kiro/steering、.kiro/skills、.kiro/extensions、.kiro/specs 目录本身与未声明的 .kiro 目录询问。执行命令：默认只放行常见只读 git（git status／log／diff／branch 等）与系统信息命令（pwd／whoami／uname 等），其余 shell 命令一律询问；复合命令按 ; && || | 拆分逐段判定，IDE 1.4.51 起无法充分解析的 bash／PowerShell 命令被挡回让代理改写（cmd.exe 仍走询问）；未信任工作区每条命令（含后台进程）都询问并显示完整命令；本机命令沙箱默认关，开启后只约束 shell 命令及其子进程（可选包 stdio MCP 进程），networkAccess 默认 DEFAULT_BLOCKED，代理本体与内置文件工具不在沙箱内。联网：web_search／web_fetch 属其余一律询问，本机 IDE 会话的 web_fetch 从本机发出并遵循 HTTP_PROXY／HTTPS_PROXY／ALL_PROXY／NO_PROXY；MCP 工具调用默认询问（autoApprove 可预批），未信任工作区每次 MCP 调用与每次 Power 激活／内容读／工具调用都询问；沙箱开启时沙箱内命令的出网按 sandbox_network 规则（首条匹配生效，不属 all 元能力）。子代理：每次子代理工具调用同时受父会话策略与子代理自身 permissions 约束，取更严者，父会话无规则即询问，子代理的 allow 不能越权；subagent 规则只决定是否免提示启动。规则优先级 deny > ask > allow > evaluate，跨作用域取最严；作用域为 Kiro（硬编码）、administration（企业 managed-settings.json）、user（~/.kiro/settings/permissions.yaml）、workspace（~/.kiro/workspace-roots/<hash>/permissions.yaml，存在仓库外）、agent、session。",
+  "operating_system": "macOS（Intel 与 Apple Silicon）或 Linux（官方列 Ubuntu 24+、Debian 13+、Fedora 40+、Arch、Mint 22+，x86_64／ARM64）；Windows 10/11（x64／ARM64）官方也支持，但本研究环境前提统一取 macOS 或 Linux。本机命令沙箱的平台前提：macOS 用内置 Seatbelt（sandbox-exec），无额外依赖；Linux 需 PATH 上有 bwrap，COMMON_DEPENDENCIES 与带允许主机的 DEFAULT_BLOCKED 还需 socat；Windows 需一次管理员设置。沙箱默认关，故默认安装不带这些前提。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-15",
+  "note": "闭源产品，没有公开源码提交，证据只用官方文档页（kiro.dev/docs/<页面>.md 的 Markdown 原文，2026-11-15 取得）与官方更新日志页（https://kiro.dev/changelog/，2026-11-15 取得）。行号约定：证据小卡的 lines 是各页 .md 原文里的行号；更新日志页为 HTML，没有行号，用 locator 写条目；未安装、未运行，所有默认值均按文档记载，文档没写的一律写明文档未涉及，不拿同类产品常见做法补。文档口径不一致处：privacy-and-security.md 仍写 Autopilot／Supervised 两模式、称 Autopilot 为默认（1.4.154 起 Autopilot 改名 Accept file changes）、并让用户配置 Kiro Agent: Trusted Commands，而 permissions.md 与 ide/chat/autopilot.md 写三模式加 permissions.yaml，ide/0x-reference.md 与 ide/whats-new-v1/permissions.md 明说 1.0 已用 permissions.yaml 取代 trustedCommands／commandDenylist；默认权限模式按较新的 permissions.md 记：未信任的工作区从 Supervised 起、Approve for me 默认关（研究负责人 2026-11-15 确认），两页不一致，新装后新会话实际的默认权限模式未核实；Supervised 的审阅时序也不一致：permissions.md 的 Permission modes 段与 ide/chat/autopilot.md 的 Working with permissions 段写动作前询问，ide/chat/autopilot.md 的 Supervised 模式定义写每轮含文件编辑后停下审阅，privacy-and-security.md 的 How supervised mode works 写修改先落盘、回合末审阅，同页 What supervised mode provides 段又称修改应用前审批，实现时序未核实；hooks.md 的 v1 schema 写 timeout 默认 60 秒，而较旧的钩子页写 timeout_ms 默认 30,000ms；mcp.md 与 getting-started/first-project.md 的 MCP JSON 示例残缺（丢换行、只剩收尾花括号），first-project.md 关于预置 fetch 服务的那句仍可读。文档未涉及的：kiroAgent.agentAutonomy 与 kiroAgent.agentIgnoreFiles 的默认值、IDE 首次打开目录的信任提示形态、IDE 上下文压缩的触发阈值与摘要所用型号、会话标题是否自动生成、IDE 会话文件的具体磁盘路径（权限页只提到代理会话存储默认 ~/.kiro/sessions/）、Tab 补全／inline 建议的默认开关与所用型号、Agent 通知各类型的默认勾选状态、IDE 是否预装技能或扩展、发行包的 Powers 与钩子预装清单。IDE 会自动在后台下载更新，下载完成后提示用户重启应用（安装页 Upgrading 节，手动检查用 Check for Updates）；这是本机更新行为、不是后台模型请求，默认安装可能因此更新到比本记录钉住的版本更新的版本。带限定的功能：Validation 子代理在 IDE 与 CLI V3 逐步推出（账号未轮到就不提供，无需改设置）；Approve for me 只在 Kiro 提供它的会话里出现；Workflows 各客户端都 opt-in，账号未开放则看不到开关；Agent Focus Mode 标为 experimental 但无需 opt-in，默认视图仍是 Editor View；Tool Search 与本机命令沙箱均自 IDE 1.3 起；压缩后重载 skills／steering 与 ≥30,000 字符整份加载自 IDE 1.4.178 起；云会话自 IDE 1.0.293 起且需 Pro 及以上。别的入口独有、未写进 enabled_extensions 的功能：CLI 的 V3／V2 harness 选择、headless／--no-interactive、API key 登录、/compact、/rewind、code 与 knowledge 工具、/sandbox setup、/autonomous、compaction.autoCompactionThreshold（默认 80）；Web 的云沙箱内默认全放行、Autonomous 模式、定时任务、PR 交付、Approve for me 开关；Mobile 接云会话（需 Pro+）；Crew 的常驻网关、定时任务与聊天渠道、自带技能目录与两个托管 MCP 服务、prompt optimizer、默认关闭并隐藏的 Workflows 应用；IDE／CLI 的云会话（需 Pro+，IDE 入口在 Agent Focus Mode，云端无检查点／Revert 与 #File／#Folder／#Terminal／#Problems）；第三方 ACP 编辑器可请求 allow-only 策略预设（edit-workspace、dev-shell 等），本配置不涉及。环境前提统一取 macOS 或 Linux、已有提交的 Git 仓库根目录；账户取最低够用的 Kiro Free；登录方式官方未标默认，取安装页与首启页排在最前的 Google（研究负责人 2026-11-15 确认）。编码前由第二位读者（GPT-6.1 Sol）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-16）改了 8 处：①Powers“默认没有预装”收窄为本配置不手动添加、文档未公布预装清单（enabled_extensions[9]）；②Hooks“默认没有预置钩子”同样收窄，并补 hooks.md、how-kiro-works.md、configuration.md 三页对全局钩子是否及于 IDE 的口径分歧（enabled_extensions[12]）；③“默认会自发的辅助模型请求”改为条件自动发生的路由／上下文机制与辅助模型请求，写明 Auto 路由与技能／steering auto 匹配是否另起独立推理请求未公布（enabled_extensions[22]）；④Free 可用模型清单给 Claude Sonnet 4.0 加 EOL 限定（environment_premises.account_tier、evidence[6].note）；⑤补模型不可用／拒绝时的条件回退机制及其持续范围（environment_premises.default_model、evidence[7].note）；⑥note 补 Supervised 审阅时序的跨页冲突；⑦note 补 IDE 后台自动下载更新机制；⑧note“文档未涉及的”清单补 Powers 与钩子预装清单。另新增 5 张证据小卡（安装页 Upgrading、models.md Model fallback notices、available-models.md Claude Sonnet 4.0 EOL、how-kiro-works.md Consistent upgrades、configuration.md File paths 的 Hooks 行）。新增的五张证据卡行号原先多数了一行（把页首的来源行算了进去），2026-11-16 对照快照逐张减一。",
+  "synthetic": false,
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "内置工具（默认代理可用全部内置工具，自定义代理才可裁剪）：文档列名的跨面工具为 read_file、list_directory、file_search、grep_search、fs_write、fs_append、str_replace、delete_file、execute_bash（Windows 为 execute_pwsh）、remote_web_search（显示为 web_search）、web_fetch、invoke_sub_agent、disclose_context、introspect；IDE 另有 control_bash_process／control_pwsh_process、get_process_output、list_processes、kiro_powers、createHook，以及编辑器原生的 read_code（AST 分析）与语义重命名；CLI 独有的 code、knowledge 与 2.x 遗留工具不在 IDE。文档说明该目录按面与引擎有差异，未给出 IDE 内部注册表的完整清单。",
+    "内置代理（默认可用、无需配置）：Default（每个会话的起点，通用编码助手）、Spec、Quick Spec（三阶段一次生成、无审批门）、Bug Fix、Plan（只读规划，可读文件／代码智能／搜索／网页搜索，不能写文件、跑命令或用 MCP 工具）；Guide 与 Help 仅 CLI。",
+    "内置子代理（默认自动调用，无需配置）：Context gathering（探索项目结构、收集相关文件）与 General purpose（用默认代理配置并行处理任务）；Validation 在 IDE 与 CLI V3 逐步推出，轮到账号后由默认代理在改动较大且未自证时自行发起，启动不提示、其文件与命令沿用会话审批；Introspect 仅 CLI V3。",
+    "权限模式开关：聊天输入的模式菜单 Supervised／Accept file changes／Approve for me；Settings → Agent → Agent Autonomy（kiroAgent.agentAutonomy）决定新会话起始模式，取值仍名 Autopilot 与 Supervised，默认值文档未给出；privacy-and-security.md 仍称 Autopilot 为默认（旧口径）。",
+    "Approve for me（模型代批）：默认关，需在 What's new 打开 Use Approve for me by default 或用命令面板 Kiro: Approve For Me (User)...／(Workspace)...（1.4.178 起；1.4.154 为 Enable Approve For Me）；开启后由信任分类器判定规则未覆盖的动作，分类器不可用时继续询问；未信任工作区强制 Supervised 且该模式关。",
+    "权限规则文件：默认无需配置即生效一套默认策略（工作区读、只读 git、系统信息命令、实用工具静默放行，其余询问）；用户级 ~/.kiro/settings/permissions.yaml 与工作区级 ~/.kiro/workspace-roots/<hash>/permissions.yaml 默认不存在，新建规则是叠加而非替换默认；Kiro 层硬拒绝与硬询问路径见 permission_mode。",
+    "工作区信任：默认未信任，未信任时不加载仓库内自定义代理、steering、MCP 配置、Skills、Workflows，且每条 shell 命令与每次 MCP／Power 调用都询问，也不能增改删记忆与知识库；信任决定存在仓库外（workspaceTrusted）；文档只描述 CLI 的 Trust this workspace? 屏幕，IDE 的信任提示界面文档未涉及。",
+    "本机命令沙箱：默认关（IDE 1.3 起提供，状态栏 Sandbox 项打开配置）；开启后 networkAccess 默认 DEFAULT_BLOCKED、mcpSandboxing 默认 false；配置文件为 ~/.kiro/settings/sandbox.json 与 <workspace>/.kiro/settings/sandbox.json，项目文件只能收紧不能放宽全局策略；只包 shell 命令与可选的 stdio MCP 进程，代理本体、内置文件工具、远程 HTTP／SSE MCP 不在内。",
+    "MCP 服务：默认预置 fetch 服务但未连接（first-project.md 原话：By default, Kiro ships with the fetch MCP server. Set disabled to false to connect to it.）；用户自加服务的 disabled 默认 false、autoApprove 默认空、disabledTools 默认空；配置在 ~/.kiro/settings/mcp.json 与 .kiro/settings/mcp.json，代理级 mcpServers 优先；IDE 1.3 起自动按需加载 MCP 工具（Tool Search），无 MCP 服务时不起作用。",
+    "Powers：本配置不手动添加 Power；文档只写从 kiro.dev/powers 目录一键安装、GitHub URL 或本地目录导入，IDE 内 Powers 面板 + Install，未公布预装清单，发行包是否预装 Powers 未核实；安装后按对话关键词自动激活，kiro_powers 工具在 IDE 为 GA；Agent Plugins（plugin.json）格式的 MCP 由 Kiro 内部管理、随 Power 启停，legacy POWER.md 格式注册进 ~/.kiro/settings/mcp.json；Power 的工具调用走同一套权限。",
+    "Skills：默认自动从 .kiro/skills/（工作区）与 ~/.kiro/skills/（全局）发现，启动只读 name／description，请求匹配描述时加载全文，也可 / 直接调用；同名时工作区优先；文档未列出 IDE 预装技能（只有 Crew 写明自带技能目录）；自定义代理默认不加载技能，需在 resources 里写 skill://；1.4.178 起 ≥30,000 字符的技能在有空间时整份加载。",
+    "Steering 与 AGENTS.md：机制默认可用，工作区 .kiro/steering/ 与全局 ~/.kiro/steering/，冲突时工作区优先；product.md／tech.md／structure.md 三个基础文件需在 Kiro 面板点 Generate Steering Docs（或 + → Foundation steering files）生成，生成后默认每次交互都带上；inclusion 默认 always，另有 fileMatch／manual／auto；AGENTS.md（仓库根、各子目录、~/.kiro/steering/）总是包含、不支持 inclusion 模式；自定义代理默认不带 steering，需 resources 显式加；本配置仓库不带这些文件。",
+    "Hooks：本配置不手动添加钩子；文档只写用户在 .kiro/hooks/<id>.json 定义，文件存在即自动生效，未公布预置钩子清单，发行包是否带预置钩子未核实；hooks.md 写 CLI V3 另读 ~/.kiro/hooks/，但 how-kiro-works.md 写全局钩子一次到达所有面，configuration.md 的 File paths 表也列全局 ~/.kiro/hooks/ 且未区分面，IDE 是否加载全局钩子文档口径不一；createHook 工具在 IDE 为 GA，可在对话里创建；v1 schema 的 enabled 默认 true、command 动作 timeout 默认 60 秒（较旧钩子页写 timeout_ms 默认 30,000ms，口径不同）；触发器含 PreToolUse／PostToolUse／PostFileSave／PromptSubmit／Stop 等。",
+    "Specs：默认可用，Spec／Quick Spec／Bug Fix 代理在 .kiro/specs/ 下生成 requirements／design／tasks 文档，Spec 各阶段间有审批门、Quick Spec 无门；聊天输入有 Build with spec 按钮，/quick-spec、/bug-fix、/architecture-selection 三个预置 steering 命令只在 Spec 会话出现。",
+    "声明式 Workflows：默认关（每个客户端都 opt-in；IDE 需要在 Workspace Configuration → Workflows 启用 kiroAgent.workflows.enabled，账号未开放则看不到该项，改动对新会话生效）；开启后每个符合条件的顶层会话有 Use workflows 控件，初始默认 Only when asked（另有 Only for large tasks、As much as possible）；Kiro 自带三个配方 investigate、feature-pipeline、publish-pr；关闭时委派走直接子代理并行、主代理等全部完成。",
+    "记忆（Memory）：IDE 用户设置默认 Off，四档为 Use and learn／Use but don't learn／Use only／Off；开启后同机 IDE 与 CLI 共享按用户账户存的本地记忆（~/.kiro/memories/），工作区级设置无效；未信任工作区不能增改删记忆；1.4.121 起子代理可读父会话记忆但不能写。",
+    "检查点与回退：默认开（文档未给开关），每次发送提示自动建检查点，Restore 同时回退文件与上下文；Revert 只撤最近一轮的文件改动；只跟踪内置文件修改工具的改动，不跟踪 MCP 工具、shell 命令或用户手动改动；CLI 的 /rewind 与实验性文件检查点不在 IDE。",
+    "上下文压缩：IDE 自动触发、无手动 /compact，接近模型上下文上限时把较早历史压成结构化摘要、保留最近消息，会话不中断；IDE 的触发阈值与摘要所用型号文档未给出（CLI V3 的 compaction.autoCompactionThreshold 默认 80、excludeMessages 默认 2 等只属 CLI）；压缩单向不可恢复；1.4.178 起压缩后告知代理被丢弃的 skills／steering 并重载用户要的那些。",
+    "忽略文件：全局 ~/.kiro/settings/kiroignore 与 Git 全局忽略（仅 git 仓库）存在即自动生效；工作区 .kiroignore 在 IDE 由 Agent Ignore Files 设置（kiroAgent.agentIgnoreFiles，文件名数组）决定读哪些，该设置的默认值文档未给出（文档让用户把 .kiroignore 加进数组，设 [] 关闭工作区级忽略）；命中文件在读与内容／文件名搜索结果里都被挡。",
+    "联网工具：web_search（remote_web_search）与 web_fetch 默认可用，权限上属其余一律询问；本机 IDE 会话的 web_fetch 从本机发出并遵循标准代理环境变量，IDE 会保留查询串与片段、把 HTTP 升级为 HTTPS、去掉 URL 里的用户名密码；fetch 默认 selective 模式（未指定内容时用 truncated），上限 10 MB、30 秒、10 次重定向、仅 text/HTML；企业管理员可整体关闭。",
+    "后台进程与开发服务器：IDE 独有的 control_bash_process／control_pwsh_process、get_process_output、list_processes 为 GA，长命令自动进专用终端后台运行、同命令同目录复用、可随时读输出或停止；本地代理终端命令默认超时由 kiroAgent.terminalCommandTimeout 控制，未设时内置默认 120000 毫秒（低于 1000／小数／非数字视为未设，高于 1800000 截到 1800000）。",
+    "代码智能与编辑器能力：IDE 用编辑器原生 read_code（AST 分析）与语义重命名，依托编辑器已运行的语言服务器；CLI 的 code 工具（tree-sitter 18 语言、可选 LSP）与 knowledge 工具不在 IDE；# 上下文提供器默认可用（#codebase、#file、#folder、#git diff、#terminal、#problems、#url、#code、#repository、#current、#steering、#docs、#spec、#mcp），并自动分析编辑器中打开的文件及其依赖。",
+    "条件自动发生的路由／上下文机制与辅助模型请求：Auto 路由（选 Auto 时由 Kiro 把请求路由到具体模型，带自动回退能力）与技能、steering 的 auto 匹配激活是条件性的路由／上下文机制，文档未写它们各自另起独立的推理请求、所用型号也未公布，且本配置仓库不带技能与 steering 文件；上下文压缩摘要、Context gathering／General purpose 子代理、轮到账号后的 Validation 子代理经模型调用生成内容，但内部调用次数、型号与成本未公布；Approve for me 的信任分类器默认关故默认不发生。会话标题是否自动生成、Tab 补全／inline 建议是否默认开启及其所用型号，文档未涉及。",
+    "用户触发的额外模型请求（不属自发）：源代码管理面板 🪄 生成提交信息（Conventional Commits 格式，最多读 8,000 字符改动，>1 MB 与二进制文件只列名，忽略规则命中的文件按名与内容排除）、Generate Steering Docs 生成三个基础 steering 文件、/quick-spec 等工作流；导出对话为 markdown 由右键标签 Export Conversation 手动发起。",
+    "代码执行位置：代理 harness 是独立进程，默认在本机运行，IDE 通过 ACP（本机 stdio）连接；文件操作用编辑器 API、shell 命令在本机 shell、构建用本机工具链与凭据；模型推理在 Kiro 后端（Amazon Bedrock，跨区推理，Free 与个人订阅内容存 us-east-1）；云会话（托管沙箱、需 Pro+、IDE 入口在实验性 Agent Focus Mode）不在本配置。",
+    "遥测与内容收集：Free 与个人订阅默认开启用量数据、错误、崩溃报告等指标以及用于服务改进的内容收集，可在 Settings → User → Application → Telemetry and Content 分别取消两项；企业用户自动退出；Free 档输入可能为滥用检测留存至多 60 天；遥测发往所选 profile 所在区域的 Kiro 端点，无端点则丢弃。",
+    "代码引用（code references）：默认关，需在 Settings → User → Kiro → Code References: Reference Tracker 勾选 Allow Kiro to generate code with references；企业可由管理员统一退出且用户不可改。",
+    "扩展市场与通知：扩展默认从 https://open-vsx.org 安装，可用 OS 策略（Windows 注册表 ExtensionGalleryServiceUrl、macOS mobileconfig、Linux /etc/kiro/policy.json）改私有 registry，文档未写预装扩展；Agent 通知（Action Required／Success／Failure）在 Settings 搜 Agent: Notifications 按类型勾选，各类型默认勾选状态文档未给出。",
+    "会话、产物与实验性视图：会话历史与执行历史可搜索、恢复、删除，Artifacts 按会话存在全局应用存储（不在项目 .kiro 内，单件上限 12 MB，HTML 不跑脚本），IDE 会话文件的具体磁盘路径文档未给出（权限页提到代理会话存储默认 ~/.kiro/sessions/）；Agent Focus Mode 标为 experimental 但无需 opt-in，用右上角 Agent Focus 按钮切换，默认仍是 Editor View，云会话入口在该模式内。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://kiro.dev/changelog/",
+      "locator": "Kiro IDE 1.4.178（Nov 12, 2026）：Follow Workflow Runs, Skills After Compaction, and Readable Diagrams",
+      "version": "1.4.178",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "版本",
+      "note": "官方更新日志页（https://kiro.dev/changelog/，2026-11-15 取得）最新的 IDE 条目是 1.4.178，日期 Nov 12, 2026，内容为 Workflow 运行逐步跟随、压缩后重载 skills／steering、Mermaid 大图可读，以及权限变更后冻结等修复；同日另有 CLI 3.3.0 与 Mobile for Android 条目。闭源，无公开源码提交。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/getting-started/installation.md",
+      "locator": "Installation：System requirements；Install Kiro → IDE（Download Kiro／Run the installer／Sign in／Import settings／Open a project）",
+      "lines": "L11-L57",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "五个界面选项卡按 IDE、CLI、Web、Mobile、Crew 排列，IDE 第一；IDE 支持 macOS（Intel＋Apple Silicon）、Windows 10/11（x64／ARM64）、Linux（Ubuntu 24+、Debian 13+、Fedora 40+、Arch、Mint 22+，x86_64／ARM64）；路径为下载安装包、运行安装、首次打开时选提供商登录（Google、GitHub、AWS Builder ID 或组织身份）、可选导入 VS Code 设置、打开文件夹。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/setup.md",
+      "locator": "Setup & First Run：First launch；Open a project；Get oriented；Starting a session",
+      "lines": "L11-L83",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "首启四步：登录（Google、GitHub、AWS Builder ID、组织身份）、可选导入 VS Code 设置、选 Kiro Dark／Light 主题、允许 shell 集成；聊天面板默认打开；每个会话从 default 代理开始，Let's build 屏可选 Spec／Plan／Bug Fix／Quick Spec；0.x 的 Vibe／Spec 二选一已移除，现在默认进对话模式。该页未提信任提示。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/getting-started/first-project.md",
+      "locator": "Your first project：Open your project（IDE）；Automate workflows with hooks 前的 MCP 小节（预置 fetch 服务）",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "安装",
+      "note": "IDE 路径：File > Open Folder（或拖拽、或 kiro .）→ 点活动栏 Kiro Ghost 图标 → 聊天面板默认打开；同页写 By default, Kiro ships with the fetch MCP server. Set disabled to false to connect to it.，即预置 fetch 服务默认未连接。该页的 MCP JSON 示例残缺（丢换行、只剩收尾花括号）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/getting-started/authentication.md",
+      "locator": "Authentication：提供商可用性表；How sign-in works",
+      "lines": "L7-L29",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "GitHub、Google、AWS Builder ID、AWS IAM Identity Center、外部身份提供商在 IDE／CLI／Web／Mobile 都可用，API key 仅 CLI（CI／headless）；登录在浏览器完成，GitHub 上授权的应用名为 kirodotdev；组织路径需 Start URL 与 AWS Region 或工作邮箱。官方未标默认提供商，表里 GitHub 排第一，安装页与首启页把 Google 排第一。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/billing.md",
+      "locator": "Billing：开头（新用户起点）；Tier comparison；Credit reset",
+      "lines": "L9-L25",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "五档：Free 50 credits、Pro 1,000、Pro+ 2,000、Pro Max 5,000、Power 10,000；新用户起点是永久 Free 档，Free 不能买加量包，只有部分模型可用；2026-11-01 起首次从 Free 升级有免费试用（当月 Pro 免费＋500 试用 credits，按秒 prorating）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/models.md",
+      "locator": "Models：Quick comparison（Free 列）；How to switch models（IDE）；Best practices；Reasoning effort",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "Free 列打勾的只有 Auto、Claude Sonnet 4.5／4.0、DeepSeek 3.2、MiniMax M2.5／M2.1、GLM-5、Qwen3 Coder Next；IDE 用聊天里的模型下拉切换，选择对该会话后续消息生效；最佳实践写 Start with Auto；IDE 的推理强度用 Model 面板里的 Effort 滑杆，选择作用于后续消息。该页未写新装默认选中哪个模型或哪个 effort 档。Free 列仍给 Claude Sonnet 4.0 打勾，但 available-models.md 标注其 2026-10-14 到达 EOL（见另卡），是否已移除未核实。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/models/available-models.md",
+      "locator": "Available models：Auto (recommended)",
+      "lines": "L41-L47",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "Auto 是 Kiro 的模型路由，标为 recommended：Free 档得到 Claude Sonnet 级或更好、付费档得到 Opus 级或更好；Auto 可路由到用户可用的任何 Active 模型（含管理员批准清单之外的），不路由 Experimental 模型，同段并写 Auto 的路由带自动回退能力。这是文档里最接近默认选择的表述，但没有明写新装默认值。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/permissions.md",
+      "locator": "Permissions：Default behavior；Trust invariants",
+      "lines": "L264-L289",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "无 permissions.yaml 时默认允许 fs_read 于 ./**、常见只读 git 命令、系统信息命令与实用工具（diagnostics、knowledge 之类），其余一律询问；Kiro 层硬拒绝写自身配置与状态存储、任意深度 .kiroignore、已安装 Power 的 mcp.json，硬询问写 .git/**、.vscode/**、**/*.code-workspace 与 .kiro／~/.kiro 的 agents／hooks／workflows／powers 目录；新建 permissions.yaml 是叠加而非替换默认。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/permissions.md",
+      "locator": "Permissions：Workspace trust；Trust a workspace in Kiro CLI",
+      "lines": "L290-L330",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "工作区在你信任之前视为未信任：不加载仓库内自定义代理、steering、MCP 配置、Skills、Workflows；每条 shell 命令（含后台进程）、每次 MCP 调用与 Power 激活都询问；拒绝写记忆库与会话存储；信任决定存在仓库外的 ~/.kiro/workspace-roots/。Trust this workspace? 屏幕明写属 Kiro CLI（2.33 起，非交互与 V1／V2 不受门控），IDE 的信任提示形态文档未描述。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/permissions.md",
+      "locator": "Permissions：Managing permissions by surface → Permission modes；Interactive approval flow",
+      "lines": "L332-L369",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "聊天输入的模式菜单设 Supervised／Accept file changes／Approve for me；未提供 Approve for me 的会话显示 Autopilot 开关；Settings → Agent → Agent Autonomy（kiroAgent.agentAutonomy）设新会话起始模式，取值仍名 Autopilot 与 Supervised（该页未给默认值）；权限层在模式之后生效，批准提示可保存为 always allow／always deny 规则。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/permissions.md",
+      "locator": "Permissions：Approve for me（IDE 部分）；Security and trust",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "Approve for me 在 IDE 会话、CLI 2.36+ 本机 V3 交互会话与 Web 中按会话提供；新会话默认关，需在 What's new 打开 Use Approve for me by default，或用命令面板 Kiro: Approve For Me (User)...／(Workspace)...（1.4.178 起，显示 Turn on (currently off)；1.4.154 为 Enable Approve For Me）；未信任工作区从 Supervised 开始且该模式关；它通过 evaluate 效果与信任分类器工作，分类器不可用时预设不贡献规则、继续询问；工作区外的文件操作不由它判定。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/autopilot.md",
+      "locator": "Permission modes：What are permission modes?；How it works；Switching between modes；Working with permissions",
+      "lines": "L7-L51",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "三模式定义：Supervised 每轮编辑后逐 hunk 审批；Accept file changes 直接增删改文件、跑命令前仍问（1.4.154 前名 Autopilot，行为相同）；Approve for me 由模型判定规则未覆盖的动作。模式可随时切换、只影响该会话；未提供 Approve for me 的会话与 1.4.154 之前版本显示 Autopilot 开关。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/privacy-and-security.md",
+      "locator": "Privacy and security：Autopilot versus supervised mode；Autopilot mode (default)；Trusted commands；Protected paths",
+      "lines": "L23-L122",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "该页仍写 Kiro offers two interaction modes, Autopilot and Supervised，小节标题为 Autopilot mode (default)，并写 By default, Kiro requires approval before running any command、让用户配置 Kiro Agent: Trusted Commands 与保护路径；与 permissions.md／ide/chat/autopilot.md 的三模式加 permissions.yaml 口径不一致（0x-reference 与 whats-new-v1 说明 1.0 已替换旧设置）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/permissions.md",
+      "locator": "Permissions：How it works（能力与效果）；Scopes；Shell command parsing；Sub-agents",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "能力含 fs_read、fs_write、shell、web_fetch、web_search、mcp、subagent、skill、power、context、diagnostics、sandbox_network；效果 deny > ask > allow > evaluate，跨作用域取最严；复合 shell 命令拆分逐段判定，IDE 1.4.51 起无法充分解析的 bash／PowerShell 命令被挡回让代理改写，cmd.exe 仍询问；子代理调用同时受父会话与自身策略约束，父会话无规则即询问。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/sandbox.md",
+      "locator": "Local command sandbox：开头 Info（默认关）；What the sandbox covers；Platform requirements；Use the sandbox（IDE）；Configuration → Keys；Network modes",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "权限",
+      "note": "本机命令沙箱自 IDE 1.3 与 CLI 2.31 本机 V3 起提供，默认关；只包 shell 命令及子进程与可选的 stdio MCP 进程，代理本体、内置文件工具、远程 MCP 不在内；macOS 用 Seatbelt 无额外依赖，Linux 需 bwrap（代理过滤还需 socat），Windows 需一次管理员设置；enabled 必填，networkAccess 默认 DEFAULT_BLOCKED，mcpSandboxing 默认 false；项目文件只能收紧全局策略。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/tools.md",
+      "locator": "Built-in tools：At a glance；Tool catalog；Surface availability；File tools；Shell tools；Context tools；Session tools",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "默认代理可用全部内置工具；列名工具见 enabled_extensions 第一条；IDE 独有后台进程控制与输出、dev-server 编排、编辑器原生 read_code 与语义重命名；code 与 knowledge 只给非 IDE 客户端；createHook 在 IDE 与 CLI 为 GA，kiro_powers 在 IDE 与 Web 为 GA；文档未给 IDE 内部注册表完整清单。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/custom-agents/built-in.md",
+      "locator": "Built-in agents：代理可用性表；Default agent；Spec agents；Plan agent；Validation sub-agent → Availability",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 与 CLI 都有 Default、Spec、Quick Spec、Bug Fix、Plan；Guide／Help 仅 CLI；Default 是每个会话的起点、可用全部内置工具与 MCP；Plan 只读（可读文件、代码智能、搜索、网页搜索，不能写文件、跑命令、用 MCP）；Validation 子代理在 IDE 与 CLI V3 逐步推出，无需改设置，账号未轮到则不提供，启动不提示、沿用会话审批，Plan／Spec／Quick Spec／Bug Fix 不用它。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/custom-agents/subagents.md",
+      "locator": "Invoking as sub-agents：能力表；How sub-agents work；Built-in sub-agents；Tool availability；Sub-agent permissions；Surface-specific behavior（IDE）",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "子代理",
+      "note": "IDE 支持自动与显式子代理调用、自定义代理作子代理、并行执行；内置 Context gathering、General purpose、Validation（逐步推出）、Introspect（CLI V3），无需配置由主代理按需使用；默认子代理与主代理同样有 read、write、shell、web_search、web_fetch 与已配置 MCP 工具；IDE 里 Workflows 关闭时子代理并行、主代理等全部完成，开启时委派变成后台 workflow 运行。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/skills.md",
+      "locator": "Agent Skills：能力表；How skills work；Using skills（IDE）；Skill scope；Custom agents and skills",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 支持技能激活、工作区 .kiro/skills/ 与全局 ~/.kiro/skills/；启动只加载 name／description，请求匹配描述时加载全文，也可 / 调用；默认自动从两处加载，自定义代理默认不加载需 skill:// 资源；1.4.178 起 ≥30,000 字符的技能在有空间时整份加载。该页未列出 IDE 预装技能。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/steering.md",
+      "locator": "Steering：能力表；Steering file scope；Project steering files；Agents.md；Inclusion modes → Always included (default)",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "工作区 .kiro/steering/ 与全局 ~/.kiro/steering/，冲突时工作区优先；product.md／tech.md／structure.md 三个基础文件由 IDE 的 Generate Steering Docs 生成，生成后默认每次交互都包含；AGENTS.md 放在全局 steering 目录、仓库根或各子目录都会被自动拾取且总是包含；inclusion 默认 always，另有 fileMatch／manual／auto；自定义代理需 resources 显式加 steering。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/hooks.md",
+      "locator": "Hooks：能力表；How hooks work；Hook file schema → Field reference",
+      "lines": "L7-L95",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "钩子是用户在 .kiro/hooks/<id>.json 里定义的事件驱动自动化（CLI V3 另读 ~/.kiro/hooks/），文件放好即自动生效；v1 schema 的 enabled 默认 true、command 动作 timeout 默认 60 秒、matcher 默认全匹配；IDE 支持事件钩子、shell 与 agent 动作、在对话里让代理创建钩子。文档未写有预置钩子；较旧钩子页另写 timeout_ms 默认 30,000ms。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/workflows.md",
+      "locator": "Workflows：Start from the agent（自带三个配方）；Turn it on（IDE）；Background delegation and sub-agents；Find or create recipes",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Workflows 在每个客户端都 opt-in：IDE 在 Workspace Configuration → Workflows 启用 kiroAgent.workflows.enabled，看不到该项即账号尚未开放，改动对新会话生效；1.4.26 起每个符合条件的顶层会话有 Use workflows 控件，初始默认 Only when asked；Kiro 自带 investigate、feature-pipeline、publish-pr 三个配方，且声明自带配方不保证每个客户端版本都有；Workflows 关闭时主会话可用直接子代理。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/memory.md",
+      "locator": "Memory：开头；Control learning and recall（IDE）；Review what you remembers（IDE）",
+      "lines": "L7-L72",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 的记忆由一个用户设置控制，默认 Off，四档 Use and learn／Use but don't learn／Use only／Off；记忆按用户账户存在本机（~/.kiro/memories/），同机 IDE 与 CLI 共享但各有开关；工作区级设置无效；未信任工作区不能增改删记忆；1.4.121 起子代理可读父会话记忆但不能写。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/checkpoints.md",
+      "locator": "Checkpoints and rewind：能力表；Using checkpoints and rewind（IDE）；What checkpoints track；Reverts vs. checkpoints",
+      "lines": "L7-L57",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 每次发送提示都建检查点，Restore 同时回退代码库与上下文；Revert 只撤最近一轮的文件改动；只快照内置文件修改工具改过的文件，不跟踪 MCP 工具、bash 命令或用户手动改动；/rewind 与实验性文件检查点属 CLI，IDE 无。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/compaction.md",
+      "locator": "Compaction：能力表；How it works；Triggering compaction（IDE）；Configuration；Limitations",
+      "lines": "L7-L95",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 自动压缩、无手动触发，接近模型上下文上限时生成结构化摘要替换较早历史、保留最近消息，会话不中断；1.4.178 起告知代理被丢弃的 skills／steering 并重载用户要的那些，≥30,000 字符者在有空间时整份加载；阈值与保留量设置（autoCompactionThreshold 默认 80、excludeMessages 默认 2、excludeContextWindowPercent 默认 2）明写属 CLI V3；压缩单向不可恢复。IDE 的阈值与摘要型号文档未给出。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/kiroignore.md",
+      "locator": "Kiroignore：能力表；Setting up workspace ignore（IDE）；Global ignore files",
+      "lines": "L7-L76",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 支持工作区 .kiroignore 与全局 ~/.kiro/settings/kiroignore，并在受支持的代理工具间统一生效、搜索结果也过滤；IDE 读哪些忽略文件名由 kiroAgent.agentIgnoreFiles 数组决定（文档让用户把 .kiroignore 加进去，设 [] 关闭），该设置默认值文档未给出；全局 Kiro 忽略与 Git 全局忽略（仅 git 仓库）存在即自动生效。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/mcp.md",
+      "locator": "MCP：能力表；Setting up MCP → Adding an MCP server（IDE）；Agent configuration；Troubleshooting",
+      "lines": "L7-L82",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 支持本地 stdio 与远程 HTTP/SSE MCP、远程 OAuth 登录、JSON 配置文件、服务端 prompts 与 resources；配置经命令面板 Kiro: Open workspace／user MCP config (JSON) 或 Kiro 面板的 Open MCP Config 打开，保存后自动重连；kiro:// 一键安装链接会先弹确认对话框列出命令与环境变量名。该页的 JSON 示例残缺。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/mcp/configuration.md",
+      "locator": "MCP configuration：本地与远程服务字段表（disabled／autoApprove／disabledTools）；Disabling servers",
+      "lines": "L45-L75",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "用户自加服务的 disabled 默认 false，autoApprove 为需免提示的工具名数组（* 表示全部），disabledTools 为不暴露给代理的工具；这些是用户配置项的默认值，与 first-project.md 所说预置 fetch 服务需设 disabled 为 false 才连接并不矛盾（预置项默认未连接）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/mcp/tool-search.md",
+      "locator": "Tool Search：启用情况（IDE 1.3 起自动）",
+      "lines": "L13-L51",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Kiro IDE 1.3 及以后自动使用 Tool Search（按需加载 MCP 工具定义），本机 V3 会话自 CLI 2.31 起默认如此；没有配置 MCP 服务时不起作用；V2 的阈值（上下文 5% 或 50,000 tokens）与开关属 CLI。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/powers.md",
+      "locator": "Powers：能力表；How powers work；What's in a power?；Use cloud-synced Powers in the IDE",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Power 按对话关键词动态激活，打包 plugin.json（或 legacy POWER.md）、skills/ 与可选 mcp.json；IDE 支持安装与使用、创建；云端同步的 Power 自 IDE 1.0.437 起出现在已安装列表，其 MCP 配置随 Power 启停，不是独立同步的 MCP 服务。文档未写有预装 Power。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/powers/installation.md",
+      "locator": "Install powers：Install curated powers（From kiro.dev／From the IDE）；Powers with MCPs；Security and trust",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "安装是手动动作：kiro.dev/powers 点 Add to Kiro 唤起 IDE，或 IDE Powers 面板搜索后 + Install，也可从 GitHub URL 或本地目录导入；Agent Plugins 格式的 MCP 由 Kiro 内部管理、不写进 ~/.kiro/settings/mcp.json，legacy 格式注册进该文件的 Powers 段；Power 的工具调用走同一套权限，本机 MCP 服务以用户权限运行。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/tools/web.md",
+      "locator": "Web tools：开头与网络／代理行为；web_search；web_fetch → Fetch modes、URL handling、Limitations；Governance (enterprise)",
+      "lines": "L7-L88",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "web_search 与 web_fetch 在所有面可用；本机 IDE 与 CLI 会话的 web_fetch 从本机发出并遵循 HTTP_PROXY／HTTPS_PROXY／ALL_PROXY／NO_PROXY，云会话则在托管沙箱内；fetch 默认 selective（未指定内容时 truncated），上限 10 MB、30 秒、10 次重定向、仅 text/HTML；IDE 保留查询串与片段、HTTP 升 HTTPS、去掉 URL 内凭据；企业管理员可整体关闭（客户端侧 enforcement）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/dev-servers.md",
+      "locator": "Dev servers：Overview；How it works；Starting a dev server；Process reuse；Monitoring process output",
+      "lines": "L7-L53",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "代理识别长命令后自动建专用终端（如 Kiro: npm run dev）、后台启动、立即交还控制并跟踪进程；同命令同目录复用已有进程；可随时读输出、列进程、停止；这些能力对应 IDE 独有的后台进程工具。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/terminal.md",
+      "locator": "Terminal：命令超时设置（kiroAgent.terminalCommandTimeout）",
+      "lines": "L41-L53",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "本地代理运行的终端命令默认超时由 kiroAgent.terminalCommandTimeout 控制：低于 1000、小数、非数字视为未设，高于 1800000 截到 1800000，设置为空时用内置默认 120000 毫秒（两分钟）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat.md",
+      "locator": "Chat：Getting started；Context management → Context providers；Sessions and history；Exporting a conversation",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "聊天面板可用 Cmd/Ctrl+L、命令面板 Kiro: Open Chat 或侧栏图标打开；自动分析编辑器中打开的文件及其依赖，另有 #codebase、#file、#folder、#git diff、#terminal、#problems、#url、#code、#repository、#current、#steering、#docs、#spec、#mcp 提供器；会话可新建、切换、看 History 与 Task list，执行历史可搜索、恢复、删除；右键标签 Export Conversation 导出 markdown。该页未写会话标题是否自动生成。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/slash-commands.md",
+      "locator": "Slash commands：Available commands → Steering files／Agents／Skills／Declarative workflows；How IDE commands differ from CLI",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "IDE 的 / 菜单来自 steering、代理、技能三类，无需注册；预置 steering 命令 /architecture-selection、/quick-spec、/bug-fix 只在 Spec 会话出现；内置子代理 /context-gatherer、/general-task-execution 也在菜单里；IDE 1.3 起有 /workflow-run；CLI 的 /clear、/model、/compact 不在 IDE 菜单，IDE 的 /bug-fix 等也不在 CLI。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/editor/source-control.md",
+      "locator": "Source Control：Commit message generation；How to generate commit messages；What Kiro reads；Message format",
+      "lines": "L11-L52",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "提交信息由用户点 🪄（或命令 Kiro: Generate Commit Message）触发生成，按 Conventional Commits 格式；最多读 8,000 字符改动，二进制与 >1 MB 文件只列名，忽略规则命中的文件按名与内容排除并报告数量；无改动时明确提示。属用户触发的模型请求，不是自发调用。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/privacy-and-security/code-references.md",
+      "locator": "Code references：Turn code references on and off；View the code reference log",
+      "lines": "L15-L38",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "代码引用默认关闭，需在 Settings → User → Kiro → Code References: Reference Tracker 勾选 Allow Kiro to generate code with references；开启后 Output 面板才有 code-references 日志；企业管理员可统一退出且用户不可覆盖。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/privacy-and-security/data-protection.md",
+      "locator": "Data protection：Data storage → Storage by user type、AWS regions；Opt out of data sharing（IDE）；Types of telemetry collected；Kiro Abuse Detection",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "Free 与个人订阅默认收集用量数据、错误、崩溃报告等指标以及用于服务改进的内容，可在 Settings → User → Application → Telemetry and Content 取消两项；企业用户自动退出；Free 与个人订阅内容存 US East（N. Virginia），Free 档输入可能为滥用检测留存至多 60 天；遥测发往所选 profile 区域的端点，无端点则丢弃；性能指标覆盖登录、Tab 补全、代码生成、steering、hooks、spec 生成、工具、MCP。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/editor/extension-registry.md",
+      "locator": "Custom extension registry：开头（默认市场）；Windows／macOS／Linux 策略",
+      "lines": "L7-L17",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "默认使用 https://open-vsx.org 作为 IDE 扩展市场，可用 OS 策略（Windows 注册表 ExtensionGalleryServiceUrl、macOS mobileconfig、Linux /etc/kiro/policy.json）指向私有 registry；文档未写有预装扩展。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/notifications.md",
+      "locator": "Agent Notifications：Agent notification types；Configuring agent notifications",
+      "lines": "L7-L34",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "三类系统级通知 Action Required／Success／Failure，在命令面板搜 Agent: Notifications 后按类型勾选或取消；文档未给出各类型的默认勾选状态，也未写默认是否开启。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/chat/artifacts.md",
+      "locator": "Agent Artifacts：Overview；Supported content；Storage and project boundaries",
+      "lines": "L7-L41",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "Artifacts 是会话产物（Markdown、Mermaid、代码、SVG、HTML、图片、PDF、Office），不写进仓库；单件上限 12 MB，HTML 不跑脚本，pptx 显示为文本大纲；按会话存在全局应用存储、不在项目 .kiro 内。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/ide/experimental.md",
+      "locator": "Experimental features：What experimental means；Agent Focus Mode",
+      "lines": "L7-L21",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "实验性功能可用且无需 opt-in，行为与界面可能随版本变化；Agent Focus Mode 是聊天优先布局，支持 Autopilot 与 Supervised，用右上角按钮与 Editor View 互切，两视图可同时运行、会话互通。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/how-kiro-works.md",
+      "locator": "How Kiro works：One harness, many surfaces；The boundary is a protocol；Anatomy of a turn；Where the agent runs；Your setup travels with you",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "统一代理 harness 是独立进程而非编进各应用的库，客户端经 ACP（本机 stdio，Web／Mobile 用 WebSocket）连接；IDE 与 CLI 默认在本机运行 harness，工具操作本机文件系统、shell 命令在本机 shell、构建用本机工具链与凭据，可开本机命令沙箱，也可创建或接入云会话；IDE 另用编辑器自身 API 做文件操作并加编辑器原生代码分析；配置分项目 .kiro/、用户 ~/.kiro/、云端同步与 ~/.kiro/workspace-roots/<hash>/。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/cloud-sessions.md",
+      "locator": "Cloud sessions：开头 Info（并发与版本要求）；Prerequisites；Work with cloud sessions（IDE）；What works differently from local sessions",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "云会话需 Pro／Pro+／Pro Max／Power，最多 10 个并发，IDE 创建与接入需 1.0.293 及以上；IDE 入口在 Agent Focus Mode 的 Cloud Sessions 区；云端文件在沙箱内，故本机相关能力（编辑器打开文件／diff、检查点与 Revert、#File／#Folder／#Terminal／#Problems、钩子配置链接、spec 任务点击）不可用，重命名与 Supervised 尚未提供。本配置取 Free 档本机路径，不含云会话。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/configuration.md",
+      "locator": "Configuration scopes：能力表；Scopes；KIRO_HOME",
+      "lines": "L7-L30",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "三层作用域：全局 ~/.kiro/、项目 <project-root>/.kiro/、代理 ~/.kiro/agents/ 或 .kiro/agents/，越靠近当前上下文优先级越高；云端配置对 IDE 是 opt-in；KIRO_HOME 可改全局目录（V3 存配置、登录、会话与代理状态）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/getting-started/installation.md",
+      "locator": "Installation：Upgrading → IDE（后台自动下载更新；Check for Updates）",
+      "lines": "L237-L239",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "版本",
+      "note": "Upgrading 节的 IDE 选项卡写：Kiro IDE downloads updates automatically in the background. When an update is ready, you'll see a notification to restart and apply it. 手动检查用 Kiro 菜单的 Check for Updates...（Windows／Linux 用命令面板 Kiro: Check for Updates）。这是本机更新下载行为，不是后台模型请求；默认安装可能经后台下载更新到比记录钉住版本更新的版本。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/models.md",
+      "locator": "Models：Model fallback notices",
+      "lines": "L146-L157",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "模型不可用或拒绝请求时，Kiro 可把该回合转到回退模型，转录里点名作答的模型；部分模型带供应商推荐的回退、仅用于拒绝，用户自设的回退替换它并兼覆盖不可用，不可用且未设回退时该回合以报错结束；不可用的回退只作用该回合、下一回合回到所选模型，拒绝后会话留在回退模型上。文档未列出 Free／Auto 实际命中的具体回退链。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/models/available-models.md",
+      "locator": "Available models：Claude Sonnet 4.0；Model lifecycle → What end of life means；End-of-life dates；Launch dates（Claude Sonnet 4.0 行）",
+      "lines": "L90-L218",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "环境前提",
+      "note": "Claude Sonnet 4.0 段写其于 October 14, 2026 到达 end of life；End-of-life dates 表列 Claude Sonnet 4.0／October 14, 2026，Launch dates 表标其状态 EOL。EOL 说明写 Kiro 移除模型后对它的请求失败、不自动切换所选模型，EOL 标记与实际移除不是同一件事。models.md 的 Free 对照表仍给 Claude Sonnet 4.0 打勾，截至 2026-11-15 是否已实际移除未核实。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/how-kiro-works.md",
+      "locator": "How Kiro works：What this means in practice → Consistent upgrades",
+      "lines": "L121",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "该节写 harness 改进集中落地，Global hooks in ~/.kiro/hooks/ and improved compaction both shipped this way, arriving on all surfaces at once；与 hooks.md 只写 CLI V3 另读全局钩子的口径不一致，IDE 是否加载全局钩子文档未明说。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://kiro.dev/docs/configuration.md",
+      "locator": "Configuration：File paths（Hooks 行）",
+      "lines": "L69",
+      "retrieved_at": "2026-11-15",
+      "configuration_scope": "扩展",
+      "note": "File paths 表把 Hooks 的全局作用域列为 ~/.kiro/hooks/、项目作用域列为 .kiro/hooks/，未区分面；与 hooks.md 的“CLI V3 另读全局钩子”、how-kiro-works.md 的“全局钩子一次到达所有面”并读，三页口径不一，IDE 是否加载全局钩子未核实。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "Kiro 账户登录，最低够用为 Kiro Free（永久免费档，官方明写新用户起点，每月 50 credits，不能买加量包，只有部分模型可用：Auto、Claude Sonnet 4.5／4.0、DeepSeek 3.2、MiniMax M2.5／M2.1、GLM-5、Qwen3 Coder Next；其中 Claude Sonnet 4.0 被 available-models.md 标注 2026-10-14 到达 EOL 并列 EOL 状态，而 models.md 的 Free 对照表仍打勾，截至 2026-11-15 是否已实际移除未核实）。Free 档可用 IDE 本机代理对话；云会话（IDE 内创建／接入、Web、Mobile）需 Pro／Pro+／Pro Max／Power，故本配置不含云会话。付费档 credits 为 Pro 1,000、Pro+ 2,000、Pro Max 5,000、Power 10,000；2026-11-01 起首次从 Free 升级有免费试用（当月 Pro 免费＋500 试用 credits，按秒 prorating），本研究不升级。Free 与个人订阅默认开启内容收集用于服务改进（可退），企业档不用于服务改进。",
+    "default_model": "新装不改设置时的默认型号按 Auto 记（研究负责人 2026-11-15 确认）。文档没有明写新装的默认值，依据只是模型页的两处表述：available-models.md 把 Auto 标为 Auto (recommended)（Kiro 的模型路由，Free 档得到 Claude Sonnet 级或更好、付费档 Opus 级或更好，1.0x 计费基准，Free 档可用），models.md 最佳实践写 Start with Auto。新装后模型选择器的实际默认值未核实。推理强度：IDE 用 Model 面板中模型列表下方的 Effort 滑杆，选择作用于该会话后续消息，默认档位文档未给出；模型选择只对聊天（交互与非交互）可用。模型回退：models.md 写模型不可用或拒绝请求时，Kiro 可把该回合转到回退模型，转录里点名作答的模型；部分模型带供应商推荐的回退、仅用于拒绝，用户自设的回退会替换它并兼覆盖不可用，不可用且未设回退时该回合以报错结束；不可用的回退只作用该回合、下一回合回到所选模型，拒绝后会话留在回退模型上。available-models.md 的 Auto 段写其路由带自动回退能力；本配置 Free／Auto 实际命中的具体回退链文档未列出。",
+    "host_os": "macOS 或 Linux（不含 Windows）。macOS 支持 Intel 与 Apple Silicon；Linux 官方列 Ubuntu 24+、Debian 13+、Fedora 40+、Arch、Mint 22+（x86_64／ARM64）。若开本机命令沙箱：macOS 用内置 Seatbelt（sandbox-exec）无额外依赖，Linux 需 PATH 上有 bwrap（COMMON_DEPENDENCIES 与带允许主机的 DEFAULT_BLOCKED 还需 socat）；沙箱默认关，故默认安装无此前提。",
+    "workspace": "已有提交的 Git 仓库，用 File > Open Folder（或拖拽文件夹、或在仓库目录跑 kiro .）打开仓库根目录；聊天面板默认打开，会话从 Default 代理开始。仓库不带项目级代理配置（.kiro/ 下 steering、specs、agents、hooks、skills、workflows、settings/mcp.json、settings/sandbox.json，以及 AGENTS.md、.kiroignore）；用户级 ~/.kiro/ 为新建默认状态（无 permissions.yaml、无自定义代理／技能／steering／钩子，预置 fetch MCP 未连接）。",
+    "trust": "文档把工作区默认视为未信任：信任后才加载仓库内自定义代理、steering、MCP 配置、Skills、Workflows；未信任时每条 shell 命令（含后台进程）、每次 MCP 调用与 Power 激活都询问，写 .kiro/steering、.kiro/skills、.kiro/extensions、.kiro/specs 目录本身与未声明的 .kiro 目录也询问，且不能增改删记忆与知识库（读仍可）。信任决定存在仓库外（~/.kiro/workspace-roots/<hash>/permissions.yaml 的 workspaceTrusted），仓库不能自授信任。文档只描述 Kiro CLI 的 Trust this workspace? 首启屏幕（明写该屏幕属 CLI，2.33 起），IDE 首次打开目录是否弹信任提示、默认怎样答，文档未涉及；IDE 首启引导只列登录、可选导入 VS Code 设置、选主题、允许 shell 集成。本配置按信任打开的这个仓库记录（研究负责人 2026-11-15 确认）；IDE 首次打开目录时有没有信任提示及其形态，文档未涉及，未核实。",
+    "credentials": "只配官方快速开始要求的一家：Kiro 账户登录（首次启动在浏览器完成，GitHub 上授权的应用名为 kirodotdev）。安装页与首启页列 Google、GitHub、AWS Builder ID、组织身份（AWS IAM Identity Center 或外部 IdP 如 Okta／Microsoft Entra ID）四选，官方未标默认；本记录取这两页排在最前的 Google（研究负责人 2026-11-15 确认）。不配 API key（仅 CLI，且需付费档并由管理员启用）、不配 GitHub／GitLab 仓库连接（那是 Web 与云会话路径）、不配第三方模型密钥；组织身份需管理员给的 Start URL 与 AWS Region 或工作邮箱，本配置不取。",
+    "other": "快速开始默认在本机执行：代理 harness 是独立进程，IDE 经 ACP（本机 stdio）连接，文件操作用编辑器 API、shell 命令在本机 shell、构建用本机工具链与凭据；模型推理在 Kiro 后端（Amazon Bedrock，跨区推理；Free 与个人订阅内容存 us-east-1，遥测发往所选 profile 区域端点）。不取云会话（需 Pro+，IDE 入口在实验性 Agent Focus Mode，云端无检查点／Revert 与 #File／#Folder／#Terminal／#Problems）、不取 CLI／Web／Mobile／Crew、不取第三方 ACP 编辑器（JetBrains、Zed）；本机命令沙箱默认关，故 shell 命令默认无 OS 级隔离，仅靠权限规则与逐次审批。"
+  }
+}
