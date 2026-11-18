@@ -1,0 +1,2003 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.8",
+  "synthetic": false,
+  "round": "batch-4",
+  "config_id": "C08__lobehub__docker-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v9",
+    "coded_at": "2026-11-18"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-18",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "默认入口（网页与默认助手对话，Gateway Mode 在 lobe 容器服务端跑）由 GeneralChatAgent 主循环决定下一步：模型给工具调用就执行并把结果交回模型，没有工具调用即结束。secondary_modes 的 explicit_workflow 指目标（goal）路径：用户输入 /goal，或模型经默认注册的 activator 启用 builtin-goal（模型自行启用后，需用户批准 activateTools 与 createGoal），批准后由目标协调器按任务图（模型现写：主代理规划节点与边）选下一个可派任务、事件驱动推进，模型只在任务和规划回合内部工作。callSubAgent 子代理是同一种模型循环，不另记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "GeneralChatAgent 类注释与 llm_result 分支",
+          "lines": "L72-L83",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 agent 模式、Gateway Mode 服务端主循环",
+          "note": "llm_result 有工具调用就执行工具并把结果交回 call_llm，没有工具调用就 finish：模型输出决定下一步。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/features/ChatInput/InputEditor/ActionTag/types.ts",
+          "locator": "CommandType / BUILTIN_COMMANDS",
+          "lines": "L14-L51",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "网页输入框内置命令",
+          "note": "输入框内置命令只有 newTopic、compact、goal 三个，另有 skill/tool 标签。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-goal/src/manifest.ts",
+          "locator": "GoalManifest.createGoal",
+          "lines": "L19-L76",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径（模型经 activator 启用 builtin-goal 后）",
+          "note": "createGoal humanIntervention=always；批准后建目标、写验收标准，由协调器派任务并给每个任务配验证器；参数含 criteria（agent/llm/program 验证器、onFail）、maxIterations、maxTotalCost、deadline。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tools/src/index.ts",
+          "locator": "builtinTools：GoalManifest 条目",
+          "lines": "L570-L578",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径的启用方式",
+          "note": "goal 工具对工具面板隐藏但未标 discoverable:false，注释写明 activator 可在用户口头要求目标时启用它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/goal/advanceGoal.ts",
+          "locator": "STOP_OUTCOMES 注释与 MAX_TICKS_PER_ADVANCE",
+          "lines": "L14-L35",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标协调器",
+          "note": "协调器为事件驱动：任务执行中时下一步属于该任务的完成事件；advance 循环按图推进。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "核对清单：输入框内置命令 newTopic（新话题，不改推进方式）、compact（压缩上下文，不改）、goal（进入目标协调器，计 explicit_workflow）；skill/tool 标签只给本条消息注入技能或工具（不改）；agent/chat 模式与 Gateway Mode 开关属于设置（chat 模式仍是模型循环，Gateway 关闭只改执行位置）；群聊编排（GroupOrchestrationRuntime）要用户另建群聊，不在本入口；lobe-task 的定时属任务发起（F33）。没有官方命令表，用 ActionTag 内置命令表代替。疑问：目标协调器由事件（任务结算）触发、按依赖图选下一步，又有模型规划回合能改图，explicit_workflow 和 event_scheduling 难分；按“由框架代码按节点推进下一步”取 explicit_workflow。另：环境前提里默认型号 deepseek-v4-flash 要 DeepSeek 密钥，而凭据只钉了 OpenAI，两者对不上，交主控核对。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "always-on 的 lobe-agent 默认注册 createTodos/updateTodos/clearTodos（带条目和状态）与 createPlan/updatePlan（计划文档），模型自己决定何时调用；createPlan、createTodos、clearTodos 需用户批准。框架保存条目（从消息历史重建或写进话题计划文档）并在界面显示，不按条目推进或拦截。目标路径（模型自行启用后、需用户批准）的任务图由协调器推进，按本字段 scope_rule 属于由框架推进的工作流定义，不因它记 executable_flow_constraint，已在 F01 记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "LobeAgentManifest：createTodos / updateTodos / clearTodos",
+          "lines": "L106-L178",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "always-on lobe-agent 工具",
+          "note": "默认注册带条目的待办工具：createTodos（required）、updateTodos 按条目更新状态、clearTodos（required）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "LobeAgentManifest：createPlan / updatePlan",
+          "lines": "L52-L100",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "always-on lobe-agent 工具",
+          "note": "createPlan（humanIntervention=required）写一份计划文档，updatePlan 更新。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts",
+          "locator": "LobeAgentServerRuntime 计划/待办",
+          "lines": "L260-L282",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端执行",
+          "note": "待办状态由运行时从消息历史重建（ctx.currentTodos），或落到话题的计划文档；框架保存条目，不按条目推进。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "默认系统提示未逐字核对是否明确要求先写计划；因已命中结构化任务表，按判定顺序不影响取值。目标任务图算“计划”还是“工作流定义”有歧义，按 F02 scope_rule 末句归工作流。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "model_end_signal：回复无工具调用即 finish。user_interrupt：界面停止按钮触发 human_abort，框架收尾后结束。budget：同一调用连续 20 次或单回合超过 50 个工具调用时框架清空调用并结束运行（与 F12 call_count 对应）；网页聊天不设默认 maxSteps 和 costLimit。verification_condition：目标路径（模型经 activator 启用 builtin-goal 后，需用户批准）里每个任务配验证器（agent/llm/program），未通过验证时协调器不把任务算完成、走 recover_verification 再做；目标的 maxRounds、maxTotalCost、deadline 只在设定时生效（可选）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "GeneralChatAgent.runner：llm_result 无工具调用",
+          "lines": "L856-L863",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "模型回复不含工具调用时返回 finish（reason completed）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "GeneralChatAgent.runner：human_abort",
+          "lines": "L1031-L1048",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "用户中止运行时，框架收尾未决工具调用后以 user_requested 结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/callLlmFinalizer.ts",
+          "locator": "finalizeCallLlmTurn：stoppedByRepeatLimit",
+          "lines": "L302-L328",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "同一调用连续 20 次或一回合请求超过 50 个工具调用时，清空工具调用、finishReason=tool_call_repeat_limit，运行结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-goal/src/manifest.ts",
+          "locator": "GoalManifest.createGoal",
+          "lines": "L19-L76",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径（模型经 activator 启用 builtin-goal 后）",
+          "note": "createGoal humanIntervention=always；批准后建目标、写验收标准，由协调器派任务并给每个任务配验证器；参数含 criteria（agent/llm/program 验证器、onFail）、maxIterations、maxTotalCost、deadline。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/goal/decideNextMove.ts",
+          "locator": "decideTask：recover_verification",
+          "lines": "L631-L648",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径的验收",
+          "note": "任务未通过验证（VERIFICATION_FAILED）时协调器走 recover_verification 再派一次，不让任务就此算完成。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/goal/decideNextMove.ts",
+          "locator": "decideTask：budget_exhausted",
+          "lines": "L683-L692",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径的预算",
+          "note": "轮数或费用到上限时不再派新任务（budget_exhausted）；maxRounds、maxTotalCost 只在设定时生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/stepPolicy.ts",
+          "locator": "shouldContinueExecution / determineCompletionReason",
+          "lines": "L27-L94",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "预算",
+          "note": "costLimit、maxSteps 只在状态里有值时生效；重复调用守卫命中时完成原因记 tool_call_repeat_limit。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "单回合超过 50 个工具调用的上限按 F12 call_count 的“只按次数停止”部分记，同时记 budget；同一调用连续 20 次按重复检测归 F04。verification_condition 只来自目标/任务验收路径，依赖把 activator 启用 goal 算作总则 R3 第一档。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：模型调用可重试错误默认最多重发 5 次（指数退避），服务端工具执行归为 retry 的失败最多重发 2 次。model_self_repair：工具出错作为结果回传；参数 JSON 无效或截断时不执行工具、把错误交回模型；工具名解析不了时把拒绝结果交回模型改正，最多两轮后抛错结束。framework_input_repair：工具名分隔符写坏时 ToolNameResolver 按比较键唯一匹配到已提供工具后照常执行（另有 lobe-goal 旧标识映射到 builtin-goal）。escalate_to_human：目标路径（模型自行启用后、需用户批准）里任务失败且不属于租约丢失、验证失败一类可自动恢复的，协调器停在 failure_decision 等用户决定，决定后目标按原图接着走。重复调用守卫（同一调用连续 20 次）直接结束本轮、不注入纠正提示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/utils/runtimeRetry.ts",
+          "locator": "DEFAULT_LLM_MAX_RETRIES / shouldRetryLLM",
+          "lines": "L1-L36",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "模型调用",
+          "note": "模型调用默认最多重试 5 次，指数退避 1–30 秒，只对分类为 retry 的错误重发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/callLlm.ts",
+          "locator": "callLlm 重试循环",
+          "lines": "L118-L140",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "模型调用",
+          "note": "调用失败且可重试时发 stream_retry 事件、等待后不经模型重发同一请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/adapters/ServerToolTransport.ts",
+          "locator": "executeToolWithRetry 调用处",
+          "lines": "L341-L354",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端工具执行",
+          "note": "服务端工具执行失败且归为 retry 时自动重发，TOOL_MAX_RETRIES=2（executorHelpers.ts L48）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/builtin.ts",
+          "locator": "内置工具参数解析失败",
+          "lines": "L147-L178",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端内置工具执行",
+          "note": "参数 JSON 解析失败或被截断时不执行工具，返回 TRUNCATED_ARGUMENTS/INVALID_JSON_ARGUMENTS 错误交回模型重写。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "UNRESOLVED_TOOL_FEEDBACK_LIMIT 与 resolve_blocked_tools",
+          "lines": "L56-L64",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "工具名解析不了时把拒绝结果交回模型改正，最多两轮，之后抛错结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/engine/tools/ToolNameResolver.ts",
+          "locator": "ToolNameResolver.resolve / repairToolName",
+          "lines": "L137-L212",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端解析工具调用",
+          "note": "工具名分隔符被模型写坏时，按去掉非字母数字后的比较键唯一匹配到已提供的工具，再照常解析执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/adapters/serverCallLlmAttempt.ts",
+          "locator": "onToolsCalling",
+          "lines": "L323-L334",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Gateway Mode 服务端主循环",
+          "note": "服务端流式收到结构化工具调用后用 ToolNameResolver 按本轮提供的工具名解析，再附上执行器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/goal/decideNextMove.ts",
+          "locator": "decideTask：failure_decision",
+          "lines": "L649-L655",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "目标路径的任务失败处理",
+          "note": "任务失败或取消且不属于可自动恢复的类型时，协调器返回 waiting_human（failure_decision），目标停在待人决定处。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/callLlmFinalizer.ts",
+          "locator": "finalizeCallLlmTurn：stoppedByRepeatLimit",
+          "lines": "L302-L328",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "同一调用连续 20 次或一回合请求超过 50 个工具调用时，清空工具调用、finishReason=tool_call_repeat_limit，运行结束。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "sanitizeToolCallArguments 用 partial-json 修补的是存档和回放给提供方的参数，执行时内置工具仍按原参数解析失败报错，故归 model_self_repair 不归 framework_input_repair。目标验收的 onFail（auto_repair/manual）是按验收项预设的失败去向，未记 workflow_branch；escalate_to_human 只来自目标路径。认证失效（提供方密钥错误）只见报错结束，未见暂停后原处接着走的依据。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "执行核心（Next.js 服务与 apps/server 的代理运行时）在 lobe 容器内常驻，由容器运行时以 restart: always 维持，浏览器关掉后仍在；浏览器经 http://localhost:3210 的 HTTP 接口发起运行，Gateway Mode 下运行流经 gateway 容器（ws://localhost:8787）中继回浏览器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml",
+          "locator": "docker-compose.yml：lobe 服务",
+          "lines": "L3-L48",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker Compose 默认安装",
+          "note": "主服务 lobehub/lobehub 容器监听 3210，restart: always，ENABLE_AGENT_GATEWAY=1、AGENT_GATEWAY_INTERNAL_URL 指向 gateway 容器，DATABASE_URL 指向 postgresql、REDIS_URL 指向 redis、SEARXNG_URL 指向 searxng。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml",
+          "locator": "docker-compose.yml：gateway 服务",
+          "lines": "L52-L69",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker Compose 默认安装",
+          "note": "gateway 容器 8787 把 Gateway Mode 的运行经 WebSocket 中继给浏览器，状态在内存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/helpers/gatewayMode.ts",
+          "locator": "evaluateGatewayModeEnabled",
+          "lines": "L32-L39",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "所选入口",
+          "note": "服务端配了 agentGatewayUrl 且 enableGatewayMode、用户未关时启用 Gateway Mode，运行在服务端。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "container"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认在用的内置工具（联网搜索与抓取、记忆、文档、计划待办、子代理、activator 等）由服务进程内的 server runtime 执行，核心和这些工具同在 lobe 容器里。联网搜索在服务进程里经 HTTP 请求 compose 自带的 SearXNG 容器。lobe-skills 的 runCommand/execScript 在无已路由设备时转远端云沙箱（SANDBOX_PROVIDER 缺省 market），属云端执行，不计入本地基线，可用性取决于沙箱服务与凭据。可选：用户添加的 HTTP MCP 服务按其部署方式；经 lh connect 连接设备后 lobe-local-system 在设备上执行；stdio MCP 要桌面设备。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/index.ts",
+          "locator": "Server Runtime Registry / getServerRuntime",
+          "lines": "L1-L8",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端工具执行",
+          "note": "内置工具（网页浏览、记忆、文档等）的服务端运行时在服务进程内按标识实例化执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml",
+          "locator": "docker-compose.yml：lobe 服务",
+          "lines": "L3-L48",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker Compose 默认安装",
+          "note": "主服务 lobehub/lobehub 容器监听 3210，restart: always，ENABLE_AGENT_GATEWAY=1、AGENT_GATEWAY_INTERNAL_URL 指向 gateway 容器，DATABASE_URL 指向 postgresql、REDIS_URL 指向 redis、SEARXNG_URL 指向 searxng。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/search/impls/searxng/client.ts",
+          "locator": "SearXNGClient.search",
+          "lines": "L62",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认联网搜索",
+          "note": "搜索工具在服务进程里经 HTTP 请求 compose 自带的 SearXNG 容器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/skills.ts",
+          "locator": "runCommand / execScript 沙箱分流",
+          "lines": "L339-L391",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "lobe-skills 沙箱命令",
+          "note": "无已路由设备时 runCommand 经 createSandboxService 转远端沙箱执行（云端，不在本机）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "SearXNG 是常驻的独立本机容器，搜索的实际检索在它里面完成；它更像工具调用的后端服务而不是工具服务器，未记 local_service，按字段口径可能有分歧。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "state_service",
+      "unknown_reason": null,
+      "value_note": "消息与话题存在 PostgreSQL 容器（messages/topics 表），每步运行状态按 operationId 写 Redis 容器；服务端主循环构造请求时经 MessageModel 从数据库读历史，浏览器界面也经服务端接口从同一数据库读。两份存储都在独立于前端和核心进程的容器里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/adapters/ServerMessageTransport.ts",
+          "locator": "ServerMessageTransport",
+          "lines": "L23-L27",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端主循环读写消息",
+          "note": "服务端主循环的消息读写委托给 MessageModel，即数据库。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/message.ts",
+          "locator": "messages 表：topicId",
+          "lines": "L95-L137",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "会话存储",
+          "note": "消息存在 PostgreSQL 的 messages 表，按 topic_id 归属话题。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml",
+          "locator": "docker-compose.yml：postgresql / redis",
+          "lines": "L73-L104",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker Compose 默认安装",
+          "note": "PostgreSQL（paradedb）与 Redis 各在独立容器里运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/AgentStateManager.ts",
+          "locator": "saveStepResult",
+          "lines": "L441-L491",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "运行状态",
+          "note": "每步运行状态按 operationId 写 Redis（agent_runtime_state 等键）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "前端的网页由同一个服务进程提供、数据也经它读，和 execution_core 的界线在于数据库是否算“独立服务”；compose 把 PostgreSQL、Redis 拆成独立容器，按 state_service 记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话（话题）以数据库编号区分，消息按 topic_id 归属，运行状态按 operationId 分键；新会话不新开进程、工作目录或本机容器。远端云沙箱按话题分配属云端执行，不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/topic.ts",
+          "locator": "topics 表",
+          "lines": "L27",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "会话划分",
+          "note": "话题（会话）是数据库里按编号区分的一行记录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/message.ts",
+          "locator": "messages 表：topicId",
+          "lines": "L95-L137",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "会话存储",
+          "note": "消息存在 PostgreSQL 的 messages 表，按 topic_id 归属话题。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/AgentStateManager.ts",
+          "locator": "saveStepResult",
+          "lines": "L441-L491",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "运行状态",
+          "note": "每步运行状态按 operationId 写 Redis（agent_runtime_state 等键）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "执行核心进程内的 model-runtime 随默认安装附带多种接口协议的转换：OpenAI Chat Completions 与 Responses、Anthropic Messages、Google Gemini 等，添加提供方密钥即可启用。钉住环境用 OpenAI，按型号或搜索开关走 Responses 或 Chat Completions。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-runtime/src/runtimeMap.ts",
+          "locator": "providerRuntimeMap",
+          "lines": "L96-L143",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "服务端模型调用",
+          "note": "随安装附带 anthropic、google、bedrock、ollama、openai 等提供方运行时，进程内按提供方选取。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-runtime/src/core/protocols/anthropicMessages/messages.ts",
+          "locator": "buildAnthropicMessages / buildAnthropicTools",
+          "lines": "L336-L470",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Anthropic 协议适配",
+          "note": "把内部消息和工具转成 Anthropic Messages 格式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-runtime/src/core/contextBuilders/google.ts",
+          "locator": "buildGoogleMessages / buildGoogleTool",
+          "lines": "L366-L536",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Google 协议适配",
+          "note": "把内部消息和工具转成 Gemini contents/functionDeclarations 格式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-runtime/src/providers/openai/index.ts",
+          "locator": "params.chatCompletion.handlePayload",
+          "lines": "L30-L40",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钉住环境 OpenAI 提供方",
+          "note": "OpenAI 按型号或搜索开关走 Responses API，否则走 Chat Completions。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "工具定义放进请求的工具列表，模型以原生结构化调用返回，服务端用 ToolNameResolver 按工具名解析后执行。protocol_translation：用户添加一条 MCP 服务（扩展点默认开放）后，服务端把 MCP 工具包装成函数、调用时转成 MCP 请求。型号不支持函数调用时直接不注册工具，没有文本解析回退。参数解析失败把错误交回模型（F04）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/adapters/serverCallLlmAttempt.ts",
+          "locator": "onToolsCalling",
+          "lines": "L323-L334",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Gateway Mode 服务端主循环",
+          "note": "服务端流式收到结构化工具调用后用 ToolNameResolver 按本轮提供的工具名解析，再附上执行器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/index.ts",
+          "locator": "ToolExecutionService：case 'mcp' / executeMCPTool",
+          "lines": "L191-L362",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "用户添加的 MCP 服务",
+          "note": "type=mcp 的工具由服务端经 MCPService.callTool 转成 MCP 请求；stdio 或仅本机可达的 MCP 要桌面设备。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/engine/tools/ToolsEngine.ts",
+          "locator": "ToolsEngine：functionCall=false 过滤",
+          "lines": "L197-L210",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工具面",
+          "note": "型号不支持函数调用时过滤全部工具，没有文本调用回退。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "lobe-skills 的 execScript 在远端沙箱跑脚本，沙箱里有 lh 命令可回调平台，但未见脚本内调用本轮工具、由框架接回的路径，且属云端执行，未记 script_dispatch。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用代理配置的型号；callSubAgent 子代理未另配时跟随父运行型号，派生参数里没有型号选项；未见失败换型号或按请求换型号。目标路径的规划回合用系统 goal 槽位（缺省 DEFAULT_MODEL，和默认聊天型号同为 deepseek-v4-flash），可选：验收用 verify 槽位 glm-5.3-flash@zhipu，其他环境：需智谱凭据，钉住环境只有 OpenAI 凭据。辅助调用：话题标题等 flash 槽位用 gpt-5.6-luna@openai（per_role）；记忆嵌入 text-embedding-3-small@openai；上下文压缩用当前运行型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/llm.ts",
+          "locator": "resolveSubAgentModel",
+          "lines": "L24-L35",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理型号",
+          "note": "callSubAgent 子代理未另配型号时跟随父运行的型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/systemAgent.ts",
+          "locator": "DEFAULT_SYSTEM_AGENT_ITEM / SERVICE_MODEL_TIER_SLOTS",
+          "lines": "L21-L135",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "辅助调用型号",
+          "note": "topic、thread 等 flash 槽位缺省 DEFAULT_MINI_MODEL（gpt-5.6-luna@openai），goal 槽位缺省 DEFAULT_MODEL，verify 槽位单列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/business/const/src/llm.ts",
+          "locator": "DEFAULT_MODEL / DEFAULT_MINI_MODEL / DEFAULT_VERIFY_MODEL",
+          "lines": "L7-L75",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认型号",
+          "note": "DEFAULT_MODEL=deepseek-v4-flash@deepseek，DEFAULT_MINI_MODEL=gpt-5.6-luna@openai，DEFAULT_VERIFY_MODEL=glm-5.3-flash@zhipu。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/compressContext.ts",
+          "locator": "compressContext",
+          "lines": "L158-L186",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "上下文压缩",
+          "note": "压缩用 compressionModel，未配置则用当前运行型号；服务端未见设置 compressionModel。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/helpers/mediaAvailability.ts",
+          "locator": "isMultimodalUnderstandingConfigured",
+          "lines": "L28-L37",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "媒体理解",
+          "note": "媒体理解（analyzeMedia）要设 MULTIMODAL_UNDERSTANDING_PROVIDER/MODEL 环境变量才启用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "辅助核对清单：标题生成 per_role（topic 槽位）；上下文压缩与主型号相同；动作审核分类 无（审批按工具策略和黑名单）；联网搜索与网页抓取 无模型（SearXNG 与抓取器）；媒体理解 要设环境变量才启用，默认无；生成类工具 默认不注入。环境前提的默认型号 deepseek-v4-flash 与只钉 OpenAI 凭据矛盾，主型号实际是用户改选的 OpenAI 型号时，goal 槽位会和主型号不同（per_role 可能成立），请主控核对环境前提。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "call_count：单回合请求超过 50 个工具调用时框架清空调用、结束运行（写死 TOOL_CALL_BURST_LIMIT=50），属强制截止。同一调用连续 20 次的守卫按重复检测归 F04。网页聊天不设默认 maxSteps、costLimit；output_limit：钉住的 OpenAI 路径只在 enableMaxTokens 打开时带 max_tokens（默认未开），截断后无专门续写，不计入；其他环境：Anthropic/Bedrock 按 model-bank maxOutput 或写死回退值设上限。可选：目标的 maxRounds、maxTotalCost、deadline 只在设定时生效；callSubAgent 文档说默认超时 30 分钟，但服务端只在传入 timeout 时设截止。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/utils/toolCallRepeatGuard.ts",
+          "locator": "TOOL_CALL_REPEAT_LIMIT / TOOL_CALL_BURST_LIMIT",
+          "lines": "L11-L20",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "重复上限 20、单回合工具调用上限 50 写死在代码里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/callLlmFinalizer.ts",
+          "locator": "finalizeCallLlmTurn：stoppedByRepeatLimit",
+          "lines": "L302-L328",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认主循环",
+          "note": "同一调用连续 20 次或一回合请求超过 50 个工具调用时，清空工具调用、finishReason=tool_call_repeat_limit，运行结束。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/core/runtime.ts",
+          "locator": "AgentRuntime.step：maxSteps",
+          "lines": "L106-L115",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "步数上限",
+          "note": "只有 state.maxSteps 有值时才检查步数；网页聊天的 execTurn 不设默认 maxSteps。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/stepPolicy.ts",
+          "locator": "shouldContinueExecution / determineCompletionReason",
+          "lines": "L27-L94",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "预算",
+          "note": "costLimit、maxSteps 只在状态里有值时生效；重复调用守卫命中时完成原因记 tool_call_repeat_limit。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/resolveAgentConfig.ts",
+          "locator": "applyParamsFromChatConfig",
+          "lines": "L41-L63",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "输出上限",
+          "note": "max_tokens 只在 chatConfig.enableMaxTokens 为真时带上；DEFAULT_AGENT_CHAT_CONFIG 未设该项。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/model-runtime/src/core/protocols/anthropicMessages/resolveMaxTokens.ts",
+          "locator": "resolveMaxTokens",
+          "lines": "L10-L35",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Anthropic/Bedrock 提供方",
+          "note": "Anthropic/Bedrock 按 model-bank 的 maxOutput 或写死的回退值设 max_tokens（钉住的 OpenAI 不走这里）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "单回合工具调用上限是否算 call_count 有疑问：它数的是一次回复里的工具调用数，不是模型调用、轮数或步数；因字段写明同一段代码里“只按次数停止”的部分记本项，暂记 call_count。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "服务端每一步执行前都从数据库按话题重读消息行，经 conversation-flow 解析成扁平消息列表写入运行状态，再交上下文引擎做追加和修整（系统提示、文档注入、工具结果裁剪），每一步读取的是同一份消息列表。已压缩的消息靠消息行上的 messageGroupId 过滤，压缩组整条换成一条摘要消息（属于修整和定位起点）；分支靠父消息元数据 activeBranchIndex 选路。Redis 里的运行状态不存消息，每步从数据库补回。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts",
+          "locator": "apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts queryStepEntryMessages",
+          "lines": "L233-L291",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "每一步从数据库重读消息并解析成 flatList，写入 state.messages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/AgentStateManager.ts",
+          "locator": "apps/server/src/modules/AgentRuntime/AgentStateManager.ts saveAgentState（剥离 messages）",
+          "lines": "L254-L300",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "Redis 状态不带消息，每步从数据库重新补回消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/models/message/queryWithWhere.ts",
+          "locator": "packages/database/src/models/message/queryWithWhere.ts messageGroupId 过滤与组节点合并",
+          "lines": "L155-L158",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "已归入压缩组的消息按消息行字段过滤，组节点按时间插回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/processors/CompressedGroupRoleTransform.ts",
+          "locator": "packages/context-engine/src/processors/CompressedGroupRoleTransform.ts CompressedGroupRoleTransform",
+          "lines": "L37-L68",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "压缩组节点一对一换成带摘要包装的 user 消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/adapters/serverCallLlmContextBuilder.ts",
+          "locator": "apps/server/src/modules/AgentRuntime/adapters/serverCallLlmContextBuilder.ts contextEngineInput → serverMessagesEngine",
+          "lines": "L180-L285",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "请求由消息列表加上下文引擎处理器拼出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "每步重读的是数据库里的消息表，而不是含多种条目类型的事件记录：压缩组记在独立的 message_groups 表，消息行只多一个 messageGroupId 字段。按“只做追加和修整”判为顺序消息；若码本把“按组表过滤再插入摘要”视作逐类解释条目，可能改判 typed_event_rebuild，请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "截断：工具结果入库前超过 25000 字符的只留前段并另存为代理文档（agent-documents 工具除外）；陈旧的联网搜索、抓取结果在总量超 10 万字符时只保留前 1000 字符。摘要：GeneralChatAgent 按模型窗口检查预算，超出时调 compress_context，用当前或指定压缩型号把除最新用户消息外的历史写成摘要组（enableContextCompression 默认开）。工具结果替换：激活工具、技能的结果在已注入系统提示后换成简短确认。可选：按条数截历史（enableHistoryCount 默认关）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/prompts/src/toolResult/index.ts",
+          "locator": "packages/prompts/src/toolResult/index.ts DEFAULT_TOOL_RESULT_MAX_LENGTH",
+          "lines": "L12-L18",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "工具结果默认上限 25000 字符，agent-documents 豁免。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/archiveToolResult.ts",
+          "locator": "apps/server/src/services/toolExecution/archiveToolResult.ts 截取前段并归档",
+          "lines": "L116-L140",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "超长结果截取前段，全文存成代理文档。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "packages/agent-runtime/src/agents/GeneralChatAgent.ts checkContextBudget / compress_context",
+          "lines": "L523-L580",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "超出窗口预算时发出压缩指令，压缩默认开启。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/compressContext.ts",
+          "locator": "packages/agent-runtime/src/executors/compressContext.ts compressContext 执行器",
+          "lines": "L58-L170",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "保留最新用户消息，其余消息调模型摘要后建压缩组。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/processors/StaleToolResultTrim.ts",
+          "locator": "packages/context-engine/src/processors/StaleToolResultTrim.ts staleCrawlResult 规则",
+          "lines": "L583-L590",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "陈旧搜索抓取结果截成前 1000 字符并标注裁掉字数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/processors/ActivationResultTrim.ts",
+          "locator": "packages/context-engine/src/processors/ActivationResultTrim.ts trimMessage",
+          "lines": "L146-L165",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "激活工具、技能的结果换成简短确认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/const/src/settings/agent.ts",
+          "locator": "packages/const/src/settings/agent.ts enableStaleToolResultTrim",
+          "lines": "L31",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "陈旧结果裁剪默认开启。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "StaleToolResultTrim 里 readFile、页面快照换占位的规则只针对本地系统和浏览器工具，默认收件箱代理在网关模式下不开放，未计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "semantic_retrieval"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "用户在输入里上传或拖入的文件、图片由框架读入消息内容。语义检索：用户有已启用的知识库时，知识库工具进入可发现池，模型经激活器启用后调用 searchKnowledgeBase 做向量检索；需要用户先建知识库并放入内容。联网搜索、抓取和技能不算项目材料检索；没有框架自带的关键词或代码结构检索工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/processors/MessageContent.ts",
+          "locator": "packages/context-engine/src/processors/MessageContent.ts fileList / imageList 注入",
+          "lines": "L234-L316",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "用户消息附带的文件和图片被拼进请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/pipeline/toolDiscovery/index.ts",
+          "locator": "apps/server/src/services/aiAgent/pipeline/toolDiscovery/index.ts hasEnabledKnowledgeBases",
+          "lines": "L359-L365",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "有启用的知识库时开放知识库工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/toolSet/discoveryPool.ts",
+          "locator": "packages/mecha/src/toolSet/discoveryPool.ts 可发现内置工具加入激活池",
+          "lines": "L165-L177",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "隐藏但可发现的内置工具可由模型激活。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/knowledgeBase.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/knowledgeBase.ts semanticSearchForChat",
+          "lines": "L63-L72",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "知识库检索走语义搜索。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "知识库检索要用户先建库、模型先激活工具，按 R3 视为默认可达（模型自行启用、无须用户命令）；若认为空库时不算开放，可能只剩 user_specified。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "structured_records",
+        "retrieval_store"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "记忆工具默认开启：模型可按层级和类别写入事实、偏好等记忆条目，并用 searchUserMemory 按查询向量检索（OpenAI text-embedding-3-small）。代理文档里设为 always 的文档每步内联注入，其余给索引；人设文档存在时在会话开始注入。可选：后台工作流自动从会话抽取记忆（依赖 QStash，Docker 默认未配置）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-memory/src/manifest.ts",
+          "locator": "packages/builtin-tool-memory/src/manifest.ts searchUserMemory / add*Memory",
+          "lines": "L96-L101",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "记忆工具提供按层级、类别的检索与写入接口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/memory.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/memory.ts embedding 检索",
+          "lines": "L208-L235",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "记忆检索用向量嵌入。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/context-engine/src/providers/AgentDocumentInjector/shared.ts",
+          "locator": "packages/context-engine/src/providers/AgentDocumentInjector/shared.ts always 文档内联与索引",
+          "lines": "L390-L401",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "代理文档按策略注入新会话的请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/pipeline/operationPrep.ts",
+          "locator": "apps/server/src/services/aiAgent/pipeline/operationPrep.ts 人设文档注入",
+          "lines": "L551-L569",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "人设文档存在时在开头注入。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "代理文档是存在数据库里的文档而非普通文件，按“用户编写、每次新会话自动读入”记 user_maintained_files，请复核；自动抽取记忆依赖 QStash，按 R1 未计 auto_summary。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "消息表之外有 message_groups 压缩组条目（压缩边界，带摘要），工具调用表还存审批状态，按含控制条目记 event_log。运行状态每步写入 Redis 检查点（2 小时有效），重启后由陈旧操作回收器读取。超长工具结果另存为代理文档，消息里只留路径；上传文件存对象存储。生产环境还可把执行轨迹写入 S3。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/message.ts",
+          "locator": "packages/database/src/schemas/message.ts message_groups / messagePlugins",
+          "lines": "L37-L200",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "压缩组和带审批状态的工具调用与消息一起持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/AgentStateManager.ts",
+          "locator": "apps/server/src/modules/AgentRuntime/AgentStateManager.ts saveAgentState 检查点",
+          "lines": "L441-L491",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "每一步把执行状态写入 Redis。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/StaleOperationReaper.ts",
+          "locator": "apps/server/src/services/agentRuntime/StaleOperationReaper.ts redrive",
+          "lines": "L100-L122",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "回收器从 Redis 状态重新驱动卡住的操作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/archiveToolResult.ts",
+          "locator": "apps/server/src/services/toolExecution/archiveToolResult.ts 归档后返回路径",
+          "lines": "L238-L243",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "消息里只留归档文档的引用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Redis 检查点的读者（redrive）在默认本地队列下不触发执行，见 F18；仍按“恢复流程会读取它”记 state_snapshot，请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "用户回到原话题继续时，服务端从数据库读回消息、重建上下文，从下一条用户输入接着跑。服务端虽每步存 Redis 检查点，陈旧操作回收器也会据此重新入队，但 Docker 默认使用本地队列实现，新进程实例上没有执行回调，重入不会真正执行。待批准的工具调用在界面上仍可批准后继续。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts",
+          "locator": "apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts queryStepEntryMessages",
+          "lines": "L233-L291",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "继续时从数据库重建消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/queue/impls/index.ts",
+          "locator": "apps/server/src/services/queue/impls/index.ts 默认队列实现选择",
+          "lines": "L24-L36",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "未配置外部队列时用本地实现。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/queue/impls/local.ts",
+          "locator": "apps/server/src/services/queue/impls/local.ts LocalQueueServiceImpl",
+          "lines": "L60-L64",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "新实例没有执行回调，重入无效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/StaleOperationReaper.ts",
+          "locator": "apps/server/src/services/agentRuntime/StaleOperationReaper.ts redrive / scheduleMessage",
+          "lines": "L100-L122",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "按检查点重新入队的路径存在。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "其他环境：配置外部队列（QStash 等）时，回收器可按 Redis 检查点从中断步骤继续，接近 checkpoint_resume。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "继续原话题时消息历史回到上下文；计划文档和待办从消息里恢复并注入；工具结果作为工具消息仍在历史中，超长的可按归档路径读回；callSubAgent 可按 subAgentId 给先前的子代理续发指令，子代理沿用自己的历史。工作区文件不随继续自动回滚。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/mecha/src/contextEngineering/facts/gatherContextFacts.ts",
+          "locator": "packages/mecha/src/contextEngineering/facts/gatherContextFacts.ts 计划与待办恢复",
+          "lines": "L208-L242",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "计划文档和待办从历史消息中重建。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts callSubAgent subAgentId",
+          "lines": "L236-L265",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "可按原编号继续先前的子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts",
+          "locator": "apps/server/src/services/agentRuntime/AgentRuntimeService/messages.ts queryStepEntryMessages",
+          "lines": "L233-L291",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "工具消息随历史一起读回。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "重新生成或编辑消息会形成分支，原分支保留，可按父消息上的 activeBranchIndex 切回。代理改写代理文档前自动存一版 llm_call 历史，文档编辑器的历史面板可恢复到该版本。重入的步骤先按 tool_call_id 查已持久化的工具消息，找到就复用结果、不再执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/features/Conversation/store/slices/data/action.ts",
+          "locator": "src/features/Conversation/store/slices/data/action.ts switchMessageBranch",
+          "lines": "L260-L273",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "可在保存的分支之间切换。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentDocuments/bodyWrite.ts",
+          "locator": "apps/server/src/services/agentDocuments/bodyWrite.ts 预编辑版本",
+          "lines": "L41-L79",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "代理写文档前自动保存旧版本。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/const/documentHistory.ts",
+          "locator": "src/const/documentHistory.ts 历史来源",
+          "lines": "L9-L15",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "llm_call 是文档历史的一种来源。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/executors/toolReplay.ts",
+          "locator": "packages/agent-runtime/src/executors/toolReplay.ts resolveToolReplay",
+          "lines": "L6-L60",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "按 tool_call_id 复用已持久化的工具结果。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "本配置没有宿主机工作区，代理能改的“文件”是数据库里的代理文档；按“改文件前留快照并有内置恢复入口”记 workspace_snapshot，请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "review",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "用户可在设置里选审批模式（自动执行、允许列表、手动，默认手动）并维护按“工具标识/接口名”写的允许列表。内置命令黑名单（正则匹配危险命令）写死在代码里，未增加取值。四个默认效果：本配置没有宿主机工作区，改文件、运行命令、写外部、命令联网都要经技能工具的 runCommand/execScript 在远端沙箱里执行，手动模式下先过用户批准。其他环境：桌面端本地系统工具有路径范围审核。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/types/src/tool/intervention.ts",
+          "locator": "packages/types/src/tool/intervention.ts UserInterventionConfig",
+          "lines": "L131-L150",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "用户可配置审批模式和按工具的允许列表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/user/slices/settings/selectors/toolIntervention.ts",
+          "locator": "src/store/user/slices/settings/selectors/toolIntervention.ts approvalMode 默认值",
+          "lines": "L16",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "未设置时为手动审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-skills/src/manifest.base.ts",
+          "locator": "packages/builtin-tool-skills/src/manifest.base.ts runCommandApi humanIntervention",
+          "lines": "L63-L67",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "运行命令需要人工批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/audit/defaultSecurityBlacklist.ts",
+          "locator": "packages/agent-runtime/src/audit/defaultSecurityBlacklist.ts DEFAULT_SECURITY_BLACKLIST",
+          "lines": "L11-L40",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "内置危险命令黑名单写死在代码里。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "代理文档的编辑工具默认直接放行；若把代理文档当作“工作区内文件”，default_edit 应为 allow。按“改工作区文件要靠沙箱命令”记 review，请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call",
+          "whole_task"
+        ],
+        "approver": [
+          "user"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "手动模式下，标为 required 的工具调用发出前停下等用户批准或拒绝，一次只放行这一次调用。createPlan 也需批准，界面呈现为计划审批，但批准后不放行后续调用，所以只计入界面层。没有自动审核器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "packages/agent-runtime/src/agents/GeneralChatAgent.ts 审批检查",
+          "lines": "L246-L298",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "工具调用执行前按策略和用户配置决定是否待批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/HumanInterventionHandler.ts",
+          "locator": "apps/server/src/services/agentRuntime/HumanInterventionHandler.ts 批准与拒绝处理",
+          "lines": "L28-L80",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "用户的批准或拒绝写回调用记录后继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts createPlan humanIntervention",
+          "lines": "L54-L55",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "创建计划需要用户批准。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "沙箱里执行脚本的中途没有再发授权请求的路径，未计 specific_operation。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "container_policy"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "应用检查：框架按工具策略、用户审批模式和内置命令黑名单在执行前放行、待批或拒绝。容器策略：Docker 部署中代理运行时在 lobe 容器里以非 root 用户运行、只连内部网络；命令本身在远端市场沙箱执行，沙箱细节不在快照内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "packages/agent-runtime/src/agents/GeneralChatAgent.ts securityBlacklist 与审批模式",
+          "lines": "L179-L192",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "默认带黑名单和手动审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/audit/createSecurityBlacklistAudit.ts",
+          "locator": "packages/agent-runtime/src/audit/createSecurityBlacklistAudit.ts 黑名单审计",
+          "lines": "L15-L23",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "黑名单由代码执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/Dockerfile",
+          "locator": "Dockerfile adduser nextjs / USER nextjs",
+          "lines": "L147-L367",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "镜像以非 root 用户运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-memory/src/resolveRestrictedManifest.ts",
+          "locator": "packages/builtin-tool-memory/src/resolveRestrictedManifest.ts resolveMemoryRestrictedManifest",
+          "lines": "L15-L28",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "只读记忆模式靠代码裁掉写接口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 核对：手动审批默认（代码）；自动执行、允许列表、无头模式（代码）；聊天模式去掉工具（代码）；记忆只读受限清单（代码）；callSubAgent 的用途说明没有具名角色，按一般建议处理。容器只隔离服务进程，代理没有容器内 shell，记 container_policy 是否合适请复核。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result",
+        "identity"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "工具调用表按 toolCallId 存工具标识、接口名、参数、执行状态、错误和 intervention（含 approved/rejected 状态）以及 userId；结果作为工具消息存储；触发的用户消息和模型推理文本同在消息表。没有独立的审计日志，生产环境可另有 S3 执行轨迹。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/message.ts",
+          "locator": "packages/database/src/schemas/message.ts messagePlugins",
+          "lines": "L181-L200",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "工具调用的参数、审批状态、错误和用户编号被持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/types/src/message/common/tools.ts",
+          "locator": "packages/types/src/message/common/tools.ts intervention status",
+          "lines": "L7-L28",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "审批状态区分待批、批准、拒绝、中止和无需审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/database/src/schemas/message.ts",
+          "locator": "packages/database/src/schemas/message.ts messages.reasoning / userId",
+          "lines": "L106-L130",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Docker 自托管、网关模式、默认收件箱代理",
+          "note": "模型推理和用户编号随消息保存。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "status none 表示无需审批（自动放行），可与人工批准区分；身份为单用户自托管实例的账户编号。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "路径：inbox 代理默认加载的 lobe-agent 工具含 callSubAgent，主代理可在服务端派出隔离线程子代理（前台停等或后台运行）；另有单个 @代理 直接提及、任务心跳定时运行和任务验收代理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts callSubAgent",
+          "lines": "L234-L281",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "默认加载的 lobe-agent 工具声明 callSubAgent：隔离上下文、subAgentId 续派、runInBackground、默认 30 分钟超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts callSubAgent",
+          "lines": "L290-L385",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "服务端执行 callSubAgent：拒绝嵌套，前台返回 deferred 让父操作挂起，后台走 startBackgroundSubAgent 返回回执。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/subAgentRuns.ts",
+          "locator": "apps/server/src/services/aiAgent/subAgentRuns.ts execAgentThreadRun",
+          "lines": "L185-L400",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "子代理在同一话题下新建 Isolation 线程运行，提示为 instruction，审批配置默认 headless，完成后恢复父代理。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "配置记录 subagents_enabled=true，与代码一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "value_note": "user：单个 @代理 提及由框架直接以隔离任务运行目标代理（要先建另一个代理，属添加内容）；main_agent：callSubAgent，多个提及时 supervisor 另得 callAgent；event_scheduling：任务心跳定时器到点直接 runTask→execAgent（任务由用户在任务界面创建，或模型自行启用 lobe-task 后设定）；framework_internal：任务带代理型验收项时框架自动起验收代理。可选：Cron 定时要 QSTASH_TOKEN。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/slices/agentRun/actions/dispatch/directMentionExecutor.ts",
+          "locator": "src/store/chat/slices/agentRun/actions/dispatch/directMentionExecutor.ts direct mention",
+          "lines": "L53-L61",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "用户单个 @代理 提及时，框架直接把目标代理作为隔离任务运行，答复投回父会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts callSubAgent",
+          "lines": "L290-L385",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "服务端执行 callSubAgent：拒绝嵌套，前台返回 deferred 让父操作挂起，后台走 startBackgroundSubAgent 返回回执。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskRunner/heartbeatTick.ts",
+          "locator": "apps/server/src/services/taskRunner/heartbeatTick.ts heartbeat tick",
+          "lines": "L32-L40",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "心跳定时到点直接调用 runner.runTask({trigger:'heartbeat'})，不经主代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/verify/agentVerifier.ts",
+          "locator": "apps/server/src/services/verify/agentVerifier.ts agent verifier",
+          "lines": "L26-L45",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "验收项为代理型时，框架在隔离线程里以 headless 方式起验收代理，经 submitVerifyResult 写回结论。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskRunner/index.ts",
+          "locator": "apps/server/src/services/taskRunner/index.ts cascadeOnCompletion",
+          "lines": "L655-L665",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "任务完成后按依赖自动运行下游任务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "任务依赖完成后 cascadeOnCompletion 自动运行下游任务，由代码按依赖图派生代理运行，疑似 workflow，但任务图由用户或模型逐个建立，未确认，放 unresolved。验收代理只在任务配了代理型验收项时出现。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "unresolved": [
+          "workflow"
+        ]
+      }
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "子代理在同一话题下新开 Isolation 线程，提示只有 instruction（task_brief）；subAgentId 续派保留该子代理历史（messages）；同一话题的沙箱会话和按 agentId 的代理文档父子共用（shared_files）。inheritMessages 参数在服务端路径不生效。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/subAgentRuns.ts",
+          "locator": "apps/server/src/services/aiAgent/subAgentRuns.ts execAgentThreadRun",
+          "lines": "L185-L400",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "子代理在同一话题下新建 Isolation 线程运行，提示为 instruction，审批配置默认 headless，完成后恢复父代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/aiAgent/subAgentRuns.ts",
+          "locator": "apps/server/src/services/aiAgent/subAgentRuns.ts claimSubAgentThread",
+          "lines": "L116-L170",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "按 subAgentId 续派同一隔离线程并保留其历史，线程仍在运行时拒绝续派。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/modules/AgentRuntime/executorHelpers.ts",
+          "locator": "apps/server/src/modules/AgentRuntime/executorHelpers.ts buildServerVirtualSubAgentRunner",
+          "lines": "L231-L425",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "服务端子代理执行器只传 instruction、模型和父操作编号，不传 inheritMessages。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/skills.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/skills.ts topicId option",
+          "lines": "L150-L235",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "沙箱执行运行时按 topicId 建会话，同一话题下父子代理共用同一沙箱。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "子代理默认 headless 审批，不经人工审批，但全局安全黑名单仍生效；权限不继承父会话的人工审批。记忆按用户共享，不算运行状态，不记 shared_state。inheritMessages 只在客户端执行路径（桌面端 runInClient）可能复制父对话，默认服务端路径按 task_brief 记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认前台：callSubAgent 返回 deferred，父操作挂起等待（waiting_for_async_tool），子代理完成后回填结果再恢复父代理（synchronous_return）；runInBackground=true 时先返回回执，完成后结果作为新消息唤醒父代理（async_wait，模型可自选，R3 第一档）。默认超时 30 分钟。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts",
+          "locator": "apps/server/src/services/toolExecution/serverRuntimes/lobeAgent.ts callSubAgent",
+          "lines": "L290-L385",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "服务端执行 callSubAgent：拒绝嵌套，前台返回 deferred 让父操作挂起，后台走 startBackgroundSubAgent 返回回执。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts callSubAgent",
+          "lines": "L234-L281",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "默认加载的 lobe-agent 工具声明 callSubAgent：隔离上下文、subAgentId 续派、runInBackground、默认 30 分钟超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/agentRuntime/AgentRuntimeService/operationControl.ts",
+          "locator": "apps/server/src/services/agentRuntime/AgentRuntimeService/operationControl.ts interruptOperation",
+          "lines": "L110-L190",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "中断只把指定操作标为 interrupted，没有向子操作级联。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/slices/operation/actions.ts",
+          "locator": "src/store/chat/slices/operation/actions.ts cancelOperation",
+          "lines": "L460-L555",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "客户端取消只级联客户端登记的子操作；网关模式下服务端子代理操作不在其中。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "取消三种方式都查过：用户中断当前回合走 interruptOperation，只标记父操作；等待中的调用没有单独取消入口；中断父任务走 interruptTask，同样不级联；客户端 cancelOperation 只级联客户端子操作，网关模式下服务端子代理不在其中；listOperationTree 只用于评测和工作登记。故不记 cancel_propagation，两个取消子维度写 null。验收代理把结论写到检查项、框架汇总 rollup，疑似 shared_board，但那是验收汇总而不是代理间协作看板，放 unresolved。快照里没找到关于子代理取消的发布说明条目。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null,
+        "unresolved": [
+          "shared_board"
+        ]
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：内置工具写在核心代码里默认在用；external_protocol_service：自定义 MCP、MCP 市场、清单式 HTTP 插件和第三方连接器；embedder_declared：/api/v1/responses 调用方声明函数工具，模型调用后经 function_call_output 续跑。可选：Responses API 要 API key（api_key_manage 默认关）或 OIDC 令牌。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts callSubAgent",
+          "lines": "L234-L281",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "默认加载的 lobe-agent 工具声明 callSubAgent：隔离上下文、subAgentId 续派、runInBackground、默认 30 分钟超时。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/usage/agent/connectors.mdx",
+          "locator": "docs/usage/agent/connectors.mdx 小节：Connectors / store",
+          "lines": "L30-L45",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "技能与连接器商店有 LobeHub、Skills、MCP 三栏，可从 GitHub、URL、ZIP 导入技能或添加自定义 MCP。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/openapi/src/services/responses.service.ts",
+          "locator": "packages/openapi/src/services/responses.service.ts client function tools",
+          "lines": "L230-L250",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "POST /api/v1/responses（OpenResponses 协议）运行 execAgent，接受调用方声明的函数工具并经 function_call_output 续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/app-config/src/featureFlags/schema.ts",
+          "locator": "packages/app-config/src/featureFlags/schema.ts api_key_manage",
+          "lines": "L195-L205",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "API key 管理功能开关默认 false，网页端不显示创建 API key 的入口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "plugin_api 查过插件文档和代码：插件是清单加 HTTP 服务，不是进程内插件代码，按外部服务记；user_script 未见把用户脚本注册成具名工具的机制，技能附带脚本不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：代理档案的核心指令存在数据库里，每个会话自动装载；skill_directory：内置技能和导入的 SKILL.md 技能包，模型按需激活，用户也可在斜杠菜单按名调用；role_template：用户建的代理可 @ 选用、分派给任务或群组，由 callAgent 调用。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/usage/agent/agent-profile.mdx",
+          "locator": "docs/usage/agent/agent-profile.mdx 小节：Core Instructions",
+          "lines": "L70-L85",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "代理档案的核心指令保存后在该代理的每个会话自动装载。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/usage/agent/connectors.mdx",
+          "locator": "docs/usage/agent/connectors.mdx 小节：Import SKILL.md",
+          "lines": "L263-L295",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "用户可导入 SKILL.md 技能包，按需装载。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/slices/agentRun/actions/dispatch/directMentionExecutor.ts",
+          "locator": "src/store/chat/slices/agentRun/actions/dispatch/directMentionExecutor.ts direct mention",
+          "lines": "L53-L61",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "用户单个 @代理 提及时，框架直接把目标代理作为隔离任务运行，答复投回父会话。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "workflow_definition、prompt_template 查过斜杠菜单（useSlashActionItems 只列技能）、代理设置和文档，未见按名展开的提示模板或由框架推进的流程文件。executable_items 判空：技能附带脚本由模型经沙箱运行，不是框架装载执行的代码；三项都是给模型读的指导。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end"
+      ],
+      "unknown_reason": null,
+      "value_note": "官方 CLI `lh agent run --json` 输出完整事件流：agent_runtime_init（每次运行开始，归 input）、stream_start/stream_end（model_call）、tool_start/tool_end（tool_before_after）、agent_runtime_end（end），都只能观察。核心内部的 beforeStep、beforeToolCall、beforeCompact 等钩子类型未经公开接口开放，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/cli/src/commands/agent/run.ts",
+          "locator": "apps/cli/src/commands/agent/run.ts lh agent run",
+          "lines": "L45-L74",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "官方 CLI 的 agent run 支持 --json 输出完整事件流、--detach 后台运行，连到服务端执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-gateway-client/src/types.ts",
+          "locator": "packages/agent-gateway-client/src/types.ts AgentEventType",
+          "lines": "L11-L40",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "网关事件类型含 agent_runtime_init/end、stream_start/end、tool_start/end 等运行事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/types/hooks.ts",
+          "locator": "packages/agent-runtime/src/types/hooks.ts AgentHook types",
+          "lines": "L18-L36",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "核心内部",
+          "note": "beforeStep、beforeToolCall、afterCompact、onComplete 等钩子类型只在核心内部使用，未经公开接口开放。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "把只读事件流算作仅观察的干预点有疑问：若码本要求有处理器注册接口，本字段应改记 known_absent。Responses API 的 SSE 也有 response.created/completed 事件，同样只观察。选定的网页入口不开放这些事件给用户处理器，via_default_entry 和 in_use_by_default 写空。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [],
+        "observe_only": [
+          "input",
+          "model_call",
+          "tool_before_after",
+          "end"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：/api/v1/responses 按 OpenResponses 协议驱动 execAgent；service_api：/api/v1 REST 接口，发布 /openapi.json 与 /docs。两者都要 API key（api_key_manage 功能开关默认关）或 OIDC 登录令牌，所选入口不直接开放。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/openapi/src/app.ts",
+          "locator": "packages/openapi/src/app.ts OpenAPI app",
+          "lines": "L20-L90",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "服务端在 /api/v1 提供 REST 接口，并发布 /openapi.json 与 /docs 文档。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/openapi/src/services/responses.service.ts",
+          "locator": "packages/openapi/src/services/responses.service.ts client function tools",
+          "lines": "L230-L250",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "POST /api/v1/responses（OpenResponses 协议）运行 execAgent，接受调用方声明的函数工具并经 function_call_output 续跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/app-config/src/featureFlags/schema.ts",
+          "locator": "packages/app-config/src/featureFlags/schema.ts api_key_manage",
+          "lines": "L195-L205",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "API key 管理功能开关默认 false，网页端不显示创建 API key 的入口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "官方 CLI lh 是连到服务端的客户端，核心不在子进程里运行，不记 cli_subprocess；packages/sdk 标为 private 未发布，不记 library。OpenResponses 算跨产品公共协议有一定把握，但它是厂商主导的响应接口格式，可议。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：网页聊天；api：/api/v1/responses 与 REST；schedule：任务的 Fixed interval 心跳由本地定时器触发（Scheduled 的 Cron 要 QStash）；external_event：GitHub 集成在 CI 失败或评审意见时唤醒代理（Labs Alpha，要 GitHub App 环境变量），以及代理账户的入站网络回调。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/usage/agent/scheduled-task.mdx",
+          "locator": "docs/usage/agent/scheduled-task.mdx 小节：Tasks / Automation",
+          "lines": "L14-L75",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "任务可设 Scheduled 或 Fixed interval 自动运行，结果按 Pending review 等状态分组待人查看。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskScheduler/impls/local.ts",
+          "locator": "apps/server/src/services/taskScheduler/impls/local.ts LocalTaskScheduler",
+          "lines": "L17-L55",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "未设 AGENT_RUNTIME_MODE=queue 时用进程内 setTimeout 定时器，计时器只在内存里。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/usage/integrations/github.mdx",
+          "locator": "docs/usage/integrations/github.mdx 小节：GitHub integration",
+          "lines": "L16-L60",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "CI 失败和评审意见可唤醒代理；Alpha 功能，需在 Labs 打开并配置 GitHub App 环境变量。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/router-hono/agent/handlers/agentAccountWebhook.ts",
+          "locator": "apps/server/src/router-hono/agent/handlers/agentAccountWebhook.ts agent account webhook",
+          "lines": "L28-L31",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "代理账户的入站网络回调可触发运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/openapi/src/app.ts",
+          "locator": "packages/openapi/src/app.ts OpenAPI app",
+          "lines": "L20-L90",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "同一发行版全部官方入口",
+          "note": "服务端在 /api/v1 提供 REST 接口，并发布 /openapi.json 与 /docs 文档。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "机器人平台上人发来的消息按 user_interaction 记，channel 功能开关默认关。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "local_service",
+      "unknown_reason": null,
+      "value_note": "核心在 lobe 容器里，由容器运行时按 restart: always 负责重启；Gateway Mode 让代理运行在服务端，关掉浏览器后运行继续。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docker-compose/deploy/docker-compose.yml",
+          "locator": "docker-compose/deploy/docker-compose.yml services.lobe.restart",
+          "lines": "L40-L70",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "lobe 容器 restart: always，网关容器状态在内存，重启时进行中的运行丢失。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/docs/self-hosting/platform/docker-compose.mdx",
+          "locator": "docs/self-hosting/platform/docker-compose.mdx 小节：Gateway Mode",
+          "lines": "L342-L360",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方文档",
+          "note": "Gateway Mode 让代理运行在 LobeHub 服务端而不是浏览器里执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "网关容器状态在内存，它重启时进行中的运行会中断，这不影响生命周期归属。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "value_note": "运行中提交的后续消息存进 Redis（AOF 持久化），但崩溃后没有内置流程自动续跑：StaleOperationReaper 只经外部调用的 reapOperations 路由触发；重连时队列还原到输入托盘，要等下一次运行才送达。心跳定时器只在进程内存里，重启后不重新布置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/redis/steerQueue.ts",
+          "locator": "apps/server/src/services/redis/steerQueue.ts steer queue",
+          "lines": "L9-L23",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "运行中提交的后续消息存进 Redis，TTL 24 小时，上限 20 条，处理租约过期时整批放回队列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/slices/agentRun/actions/transports/gateway/serverSteerQueue.ts",
+          "locator": "src/store/chat/slices/agentRun/actions/transports/gateway/serverSteerQueue.ts restoreServerQueuedMessages / reclaim",
+          "lines": "L424-L515",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "重连时把服务端队列还原到输入托盘；没有运行时把后续消息收回客户端，要等下一次运行才送达。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskScheduler/impls/local.ts",
+          "locator": "apps/server/src/services/taskScheduler/impls/local.ts LocalTaskScheduler",
+          "lines": "L17-L55",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "未设 AGENT_RUNTIME_MODE=queue 时用进程内 setTimeout 定时器，计时器只在内存里。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "interactive_queue 有疑问：消息写进持久化的 Redis、租约过期整批放回，按“存放在哪里”可判 persistent；但送达要用户发起下一次运行，按 persistent 判定“要再发消息才继续的不算”记 in_memory。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：默认审批模式 manual，需审批的工具停下等批准；askUserQuestion 总是停下等人回答。resumable_todo：根级任务运行结束后转为 paused 等用户审阅（任务列表 Pending review），decision 类简报带确认、请求修改按钮，持久存库；任务由用户在任务界面创建或模型自行启用 lobe-task 后建立。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/builtin-tool-lobe-agent/src/manifest.ts",
+          "locator": "packages/builtin-tool-lobe-agent/src/manifest.ts askUserQuestion",
+          "lines": "L195-L197",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "默认加载的 askUserQuestion 设为 humanIntervention: 'always'，提问时必须等人回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/core/runtime.ts",
+          "locator": "packages/agent-runtime/src/core/runtime.ts request_human_approve / request_human_prompt",
+          "lines": "L797-L827",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "运行时遇到审批或提问请求时把状态设为 waiting_for_human 并停下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/agent-runtime/src/agents/GeneralChatAgent.ts",
+          "locator": "packages/agent-runtime/src/agents/GeneralChatAgent.ts user intervention config",
+          "lines": "L189-L193",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "没有用户设置时审批模式默认 manual。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/apps/server/src/services/taskLifecycle/index.ts",
+          "locator": "apps/server/src/services/taskLifecycle/index.ts post-tick transition",
+          "lines": "L276-L345",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "根级非自动化任务运行结束后转为 paused，等用户审阅；自动化任务出错时也 paused 等人处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/packages/types/src/brief/index.ts",
+          "locator": "packages/types/src/brief/index.ts DEFAULT_BRIEF_ACTIONS / BriefType",
+          "lines": "L24-L52",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "简报分 decision、error、insight、result 四类，decision 带确认、请求修改按钮，未解决的出现在主页待处理区。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/lobehub/lobehub/blob/69f8dcdfae1c59a5ffb703b3a0187223987bcd56/src/store/chat/utils/desktopNotification.ts",
+          "locator": "src/store/chat/utils/desktopNotification.ts notifyDesktopHumanApprovalRequired",
+          "lines": "L139-L200",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Docker Compose 部署、网页端 inbox 代理、Gateway Mode",
+          "note": "审批等待和完成的系统通知只在桌面端（isDesktop）发出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "message_notification 不计：系统通知只在桌面端发出，开源版服务端干预通知 notifyAgentInterventionRequired 为空实现，机器人通道 channel 开关默认关。任务运行后生成 handoff（summary、keyFindings、nextAction）和结果简报，但 keyFindings、nextAction 不在界面显示，简报字段是否算固定交接对象未确认，structured_handoff 放 unresolved。未逐个回查步数上限是否停下问人。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ],
+        "unresolved": [
+          "structured_handoff"
+        ]
+      }
+    }
+  }
+}

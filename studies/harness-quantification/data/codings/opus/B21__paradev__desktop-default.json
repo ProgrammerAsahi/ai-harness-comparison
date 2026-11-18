@@ -1,0 +1,1800 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.8",
+  "synthetic": false,
+  "round": "batch-4",
+  "config_id": "B21__paradev__desktop-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v9",
+    "coded_at": "2026-11-18"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-18",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "推断：所选入口是新安装引导默认的 Chat，Paradev 经 ACP 把提示交给本机 Claude Code（session/prompt），等代理回合结束；任务内的下一步由 Claude Code 的模型循环决定：模型发 tool_use，CLI 执行后把 tool_result 交回模型，直到 end_turn。依据快照里录制的 Claude Code 2.1.201 流和 Paradev 的 ACP 客户端代码；钉住配置没有钉 CLI 版本（Chat 最低 2.1.226），Claude Code 本身不在快照里。secondary_modes：快照录制的默认工具清单含 Workflow，模型现写多代理脚本（agent()/parallel()/pipeline()），工具调用后由运行时异步推进（async_launched，带 runId），嵌在模型循环里，记 explicit_workflow（模型现写）。默认置备的 orchestrate 技能让协调模型经 superset CLI 派 worker，仍是模型循环。可选：Automations（Pro、默认不启用）按计划或事件起代理运行，属任务发起（F33）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/routes/_authenticated/onboarding/mode/page.tsx",
+          "locator": "apps/desktop/src/renderer/routes/_authenticated/onboarding/mode/page.tsx：DEFAULT_MODE 与 save",
+          "lines": "L16-L50",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "新安装引导的默认入口",
+          "note": "引导页默认模式为 chat，并以 experimentalChat=true 保存，新建 workspace 的代理会话以 Chat 打开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：发送提示并按 stopReason 结束回合",
+          "lines": "L1140-L1161",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的回合推进",
+          "note": "Paradev 只发一次 session/prompt，等代理返回 stopReason 才结束回合，回合内的多步由代理自己推进。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl：录制的 Claude Code 2.1.201 流",
+          "lines": "L1-L125",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 主循环（录制版本 2.1.201）",
+          "note": "模型连续发 Read、Read、Edit 的 tool_use，每次拿到 tool_result 后再决定下一步，最后 result 为 end_turn、num_turns=5。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/mobile/plans/acp-vs-claude-sdk.html",
+          "locator": "apps/mobile/plans/acp-vs-claude-sdk.html：⑭ Workflows",
+          "lines": "L2005-L2060",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 默认工具 Workflow（SDK 0.3.201 类型、适配器 0.56.0 复原）",
+          "note": "Workflow 工具接收模型写的脚本，用 agent()/parallel()/pipeline()/phase() 跑多代理程序，异步启动、带 runId 可续跑；经 ACP 只显示为一次不透明工具调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/abort-mid-tool.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/abort-mid-tool.jsonl：system init 的 tools",
+          "lines": "L1",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 2.1.201 订阅登录、permissionMode=default 下的工具清单",
+          "note": "工具清单含 Task、Workflow、TaskCreate/TaskUpdate、EnterPlanMode/ExitPlanMode、CronCreate、ScheduleWakeup、Monitor 等。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "Paradev 自己没有模型循环，执行核心是嵌入的 Claude Code，代码和官方文档都不在快照里，按 R6 末段处理；可用材料只有快照内的录制流（fixtures，2.1.201）和 Paradev 工程笔记 apps/mobile/plans/acp-vs-claude-sdk.html（不是官方文档），所以 confidence 写 low。secondary_modes 逐个入口判：快速开始 ⌘N 建 workspace＋提示词→Chat（主取值）；CLI/Chat 切换→同一 CLI 的模型循环，不变；Tasks 的 Run in workspace→以任务内容为提示起代理，模型循环；superset agents create→起代理，模型循环；捆绑技能 orchestrate→协调者派 worker，仍是模型循环；automate→建 Automations（Pro），属任务发起；其余技能（browser、panes、page、setup、doctor 等）是工具用法，不改推进方式；项目生命周期脚本不含模型调用，不算。Claude Code 自带斜杠命令（录制清单里有 goal、loop、batch、schedule 等）和 CronCreate/ScheduleWakeup/Monitor 工具，快照没有说明它们的语义（工程笔记 ⑮ 只说 goal 不跨 ACP），没有据此加取值。疑问：嵌入另一款闭源产品、快照只有第三方录制流和工程笔记时，能否当 source_path 证据，码本没写明。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "推断：快照录制的 Claude Code 2.1.201 默认工具含 TaskCreate/TaskUpdate/TaskList/TaskGet（条目带 subject、status、依赖），模型自己决定何时调用；经 ACP 适配器每次变更折成一份 plan 更新（只留内容和状态），Paradev Chat 把它渲染成带状态的计划项。框架不按表推进，也不拦偏离表的动作。另有 EnterPlanMode/ExitPlanMode：模型能自行进入计划模式，退出时计划以权限请求呈现（工程笔记 ⑫），按判定顺序不取。范围：主会话；子代理是否带同样工具未核实。版本：录制 2.1.201、适配器 0.56.0／SDK 0.3.201 复原，钉住配置的 CLI 版本未定。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/abort-mid-tool.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/abort-mid-tool.jsonl：system init 的 tools",
+          "lines": "L1",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 2.1.201 默认工具清单",
+          "note": "默认工具含 TaskCreate、TaskGet、TaskList、TaskUpdate、EnterPlanMode、ExitPlanMode。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/mobile/plans/acp-vs-claude-sdk.html",
+          "locator": "apps/mobile/plans/acp-vs-claude-sdk.html：⑪ Native tasks",
+          "lines": "L1755-L1830",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 任务表经 ACP 的呈现",
+          "note": "TaskCreate/TaskUpdate 建带状态和依赖的任务表；适配器把每次变更重发为一份 plan（content＋status），TodoWrite 走同一条路。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/sessionStream.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/sessionStream.ts：handlePlan／handlePlanUpdate",
+          "lines": "L435-L470",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口",
+          "note": "Paradev 把代理的 plan / plan_update 条目转成 kind=plan 的时间线项显示，只展示不推进。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "查过：快照录制的默认工具清单（计划／任务工具）、工程笔记里的计划模式与任务表两节、Paradev Chat 对 plan 更新的处理。Claude Code 的默认系统提示不在快照里，未核对提示是否另外要求先写计划；有结构化任务表时按判定顺序不影响取值。orchestrate 技能要求协调者维护一张任务表，是技能提示里的约定，也是 Bash 调 CLI，不是框架保存的表。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "model_end_signal：代理回合以停止原因（end_turn 等）返回 session/prompt 后，Paradev 把回合记为完成、交还用户（finishTurn）；录制流里 Claude Code 在模型不再请求工具时以 end_turn 结束。user_interrupt：Chat 的停止操作发 session/cancel，回合记为 interrupted，挂起的审批一并取消。文档未涉及：Claude Code 自己的回合数、Token 或时长上限（budget）快照里查不到；Paradev 不另设上限，max_tokens 等停止原因只当普通结束。Paradev 置备的 notify 钩子只上报状态（exit 0），不拦结束；orchestrate 技能的 SUPERSET_WORKER_DONE 只是提示约定，不算 verification_condition。可选：Claude Code 的 /goal 等用户命令。订阅额度拒绝属失败处理，记 F04。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：finishTurn",
+          "lines": "L1216-L1234",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的回合结束",
+          "note": "按代理给的 stopReason 结束回合：cancelled 记 interrupted，其余记 completed，refusal 另发提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：cancelTurn",
+          "lines": "L589-L605",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的用户中断",
+          "note": "用户停止时向代理发 session/cancel 并取消挂起的审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl：result 行",
+          "lines": "L125",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 2.1.201 录制流",
+          "note": "最后一条 result 为 success、stop_reason=end_turn。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "查过 Paradev 的 ACP 回合结束、取消代码和置备的 Claude 钩子（notify-hook 模板只 POST 状态后 exit 0；artifact-guard 是 PreToolUse，不管结束）。Claude Code 主循环的默认上限在快照外，按 R6 写进 value_note，没有能指向默认路径的具体迹象，所以不写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "value_note": "escalate_to_human：Claude 订阅额度拒绝请求时，Chat 运行时把这一回合标成用量上限、暂停排队的提示，并给出继续、到重置时继续、关闭三个选择；用户选继续（或到点自动继续）后，同一会话发“Continue where you left off.”或下一条排队提示，带原有历史接着做（需用户点选）。model_self_repair（推断）：Claude Code 把工具报错作为 is_error 的 tool_result 交回模型，模型据此改正再试（录制 2.1.201 流里 Read 报文件不存在后模型改读别处）。认证失效只显示登录命令、提示重开对话，原请求不会自动接着走，不记；Paradev 对失败回合只分类显示（认证、上下文过长、网络等），不自动重发。文档未涉及：Claude Code 内部对接口出错的重试（call_retry）和参数修正。其他：更新重启后 30 分钟内的未完成 Chat 自动续发、普通退出时中断的 Chat 列出待用户选择继续，属中断恢复，不是调用失败。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/sessions/liveSession/liveSession.ts",
+          "locator": "packages/chat-runtime/src/sessions/liveSession/liveSession.ts：respondToUsageLimit／resumeAfterLimit",
+          "lines": "L504-L545",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口，订阅额度拒绝",
+          "note": "用户在 resume、resume_at_reset、dismiss 里选；继续时发 Continue 提示或下一条排队提示，原会话接着做。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/sessions/liveSession/liveSession.ts",
+          "locator": "packages/chat-runtime/src/sessions/liveSession/liveSession.ts：limitReached 与触发处",
+          "lines": "L582-L593",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口，订阅额度拒绝",
+          "note": "回合因用量上限失败时暂停队列并记下 usageLimit，等用户决定（触发处见 L749-L753、L788-L791）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl：Read 报错后的下一步",
+          "lines": "L25-L48",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 2.1.201 录制流",
+          "note": "Read 的 tool_result 为 is_error（文件不存在），模型随后发出新的 Read 调用继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：authAwareMessage",
+          "lines": "L2573-L2577",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口，认证失效",
+          "note": "认证错误只提示在终端登录后重开对话，不自动重发原请求。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "按错误类型过了 Paradev 一侧：认证失效（只提示登录命令）、用量上限（暂停并等用户选，记 escalate_to_human）、代理崩溃（回合记 crashed、会话 dead，未见自动重启接着走）、请求过大（turnFailure 只分类显示）、会话丢失（resume 失败时换新会话并提示）。权限被拒：Chat 默认 bypassPermissions，没有被拒的触发来源。Claude Code 内部的重试与修正在快照外，按 R6 写“文档未涉及”。疑问：用量上限是服务方拒绝，F12 不计它，但 F04 把它当失败处理计入，口径似乎一致，记下供核对。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "value_note": "所选入口是新安装引导默认的 Chat。Electron 主进程拉起 host-service（Node 子进程，attached，before-quit 时 SIGTERM）；host-service 为每个会话经 stdio 起 ACP 适配器（@agentclientprotocol/claude-agent-acp，JSON-RPC，自成进程组、传输关闭时整组杀掉），适配器再驱动本机 claude CLI 运行模型循环；退出应用即结束。界面到 host-service 走本机端口上的 tRPC，host-service 到代理走 stdio。其他入口：终端模式下 claude 跑在常驻 pty-daemon 的 PTY 里，退出应用仍存活，那条路径应记 local_service_api。已有另一实例的健康 host-service 时会接管（adopt），按全新安装首启不取。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/main/lib/host-service-coordinator.ts",
+          "locator": "apps/desktop/src/main/lib/host-service-coordinator.ts：HostServiceCoordinator 说明与 spawn",
+          "lines": "L308-L313",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "桌面应用的 host-service 生灭",
+          "note": "host-service 子进程随 Electron 拉起、before-quit 时 SIGTERM；只有 PTY 经 pty-daemon 跨重启存活（spawn 见 L985-L990，detached:false）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/rpcClient/rpcClient.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/rpcClient/rpcClient.ts：spawnAcpTransport",
+          "lines": "L22-L56",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的代理进程",
+          "note": "ACP 代理以 stdio 管道子进程启动，自成进程组，退出时整组 SIGKILL。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/acpCatalogue.ts",
+          "locator": "packages/host-service/src/chat-v3/acpCatalogue.ts：claude-acp",
+          "lines": "L20-L32",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的 Claude 代理",
+          "note": "Claude Chat 用 @agentclientprotocol/claude-agent-acp 适配器驱动 claude 可执行文件，最低 2.1.226，默认 bypassPermissions。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/keep-agents-running",
+          "locator": "Keep Agents Running：Keep a Machine Reachable While You're Away",
+          "lines": "L1815",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "桌面应用退出时",
+          "note": "桌面应用自己启动 host service，退出时停止它。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "执行核心以运行模型循环的进程为准：claude-agent-acp 适配器和 claude CLI 谁跑循环在快照外，但两者都由 host-service 拉起、随应用退出结束，结论不受影响。入口按配置记录取 Chat（引导页默认 chat 有代码证据）；若取终端，结论会变成 local_service_api，两位编码者选的入口不同会在这里分歧。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Paradev 在 ACP initialize 里不声明 fs/terminal 客户端能力，代理退回用自己的 Read/Edit/Bash 在 workspace 里无头执行；参照点是运行模型循环的 claude 进程：文件读写在它自己的进程里（main_process），Bash 命令另起 shell 子进程（subprocess）。session/new 传空 mcpServers，默认不另接外部工具服务；用户在 CLI 里自加的 MCP 服务属可选。默认技能（orchestrate、browser、panes 等）经 Bash 调 superset CLI，CLI 再请求 Paradev host-service 建 workspace、开代理、操作应用内浏览器面板，这一跳的位置写在这里，不另记 local_service。无容器，worktree 不是沙箱。可选：Cloud Workspaces（Team/Ultra）在云端执行，不混入本地基线。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：initialize 的 clientCapabilities",
+          "lines": "L964-L984",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口",
+          "note": "不声明 fs/terminal，注释写明代理退回自己的 Read/Edit/Bash，在 workspace 里无头运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：session/new 与 session/load 参数",
+          "lines": "L1017-L1062",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口",
+          "note": "新建或恢复会话时 mcpServers 都传空数组，Paradev 不注入工具服务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/faq",
+          "locator": "FAQ：Is each worktree a sandbox?",
+          "lines": "L1475-L1477",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "本地 workspace",
+          "note": "worktree 不是沙箱，代理在同一台机器上运行，共享进程、网络和 worktree 之外的文件。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "Claude Code 内部怎样执行 Read/Edit/Bash 在快照外，按 F06 的闭源规则推断（文档说由代理自己执行、没提另起服务 → main_process；Bash 跑 shell 命令必然另起子进程）。疑问：模型经 Bash 调产品自带 CLI，CLI 再让本机常驻的 host-service 去做事（开面板、操作浏览器），这算 local_service 还是只算 subprocess，码本没说；我没计 local_service。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "Paradev 每回合只把新输入经 session/prompt 交给代理；恢复会话时用代理自己的 harnessSessionId 调 session/load（v2 为 session/resume），由 Claude Code 从自己的会话记录读回并重放历史。Paradev 的本地 chat 数据库（chat_journal、chat_sessions_local 等表）存显示用的事件流和选择，不用来构造请求。代理找不到会话时 Paradev 只换新会话并提示，不补交历史。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：恢复会话",
+          "lines": "L1009-L1066",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的会话恢复",
+          "note": "以 harnessSessionId 调 session/load 或 session/resume，代理经 session/update 重放历史；找不到时新建会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：session/prompt",
+          "lines": "L1145-L1148",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的请求构造",
+          "note": "每回合只发本次提示内容，历史由代理持有。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/db/schema/schema.ts",
+          "locator": "packages/chat-runtime/src/db/schema/schema.ts：chatJournal、chatSessionsLocal",
+          "lines": "L12-L48",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Paradev 本地 chat 存储",
+          "note": "Paradev 另存一份事件日志供界面显示和重连。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "代理内部会话文件的位置和格式在快照外；判定只依据 Paradev 构造请求和恢复会话的协议调用。chat_sync_state 表的云端同步未细查，按 scope_rule 不影响取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id",
+        "process",
+        "working_directory"
+      ],
+      "unknown_reason": null,
+      "value_note": "logical_id：每个 Chat 会话有 Paradev 会话编号和代理的 harnessSessionId。process：会话注册表为每个会话新建一个适配器，各自起一个 ACP 子进程（进程组），新会话一定换进程。working_directory：快速开始和 Claude Code 页写明每个会话在自己的 workspace 里，有独立 git worktree 与分支（⌘N 每次新建）。同一 workspace 里另开标签起第二个会话时共用该 worktree。worktree 不是沙箱，没有独立文件系统视图或容器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/sessions/registry/registry.ts",
+          "locator": "packages/chat-runtime/src/sessions/registry/registry.ts：create",
+          "lines": "L138-L175",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 会话创建",
+          "note": "按 sessionId 建 LiveSession，每个会话调用工厂新建一个适配器（adapter: factory(options)）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/acpHarnesses.ts",
+          "locator": "packages/host-service/src/chat-v3/acpHarnesses.ts：工厂与 onSpawn",
+          "lines": "L39-L60",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 会话创建",
+          "note": "工厂为每个会话以该会话的 cwd 新建 ACP 适配器并记录它拉起的 pid。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agents/claude-code",
+          "locator": "Claude Code in Paradev：Overview / Run Several Sessions",
+          "lines": "L4740-L4765",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 会话",
+          "note": "每个会话在自己的 workspace 里运行，有自己的 git worktree 与终端；⌘N 为每个任务新建。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "working_directory 拿不准：默认路径（⌘N 新建 workspace）每个会话一个 worktree，官方文档也这样写；但在已有 workspace 里另开 Chat 标签会共用目录，按“几个会话可以共用同一目录的不算”也能判成不计。我按文档描述的默认新建路径计入。container、filesystem：查过 FAQ（worktree 不是沙箱）和配置的本机进程结构，默认没有。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "value_note": "推断：执行核心是 Claude Code（闭源、不在快照里）。Paradev 官方文档给出的全部提供方接法都只改 Claude Code 的地址、认证或云封装：ANTHROPIC_BASE_URL 指向 Anthropic 兼容端点（Vercel AI Gateway、OpenRouter、LiteLLM 等），Bedrock、Vertex、Foundry 用开关切换承载 Claude 模型；没有别种消息格式。Paradev 自己不代理模型调用。依据 Paradev 文档 2026-11-15 导出，Claude Code 版本未钉住。辅助命名调用也经 claude -p 走同一 CLI。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/providers",
+          "locator": "Use with OpenRouter, Bedrock, Vertex, or Vercel：各提供方小节与 Other Anthropic-Compatible Providers",
+          "lines": "L3130-L3289",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 的模型接入",
+          "note": "Claude Code 只经 Anthropic 兼容端点或 Bedrock/Vertex/Foundry 的 Claude 接入换提供方。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/faq",
+          "locator": "FAQ：Accounts and Billing",
+          "lines": "L1459",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Paradev 与模型调用",
+          "note": "Paradev 从不代理模型调用，代理用用户自己的订阅或 API key。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "Claude Code 的接口实现在快照外，按 R6 末段只用 Paradev 文档里关于 Claude Code 的说明推断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "value_note": "推断：Claude Code 用接口原生的 tool_use 块发调用（录制 2.1.201 流），经 ACP 适配器转成 tool_call 更新给 Paradev 显示，工具由代理自己执行。protocol_translation：Chat 与终端共用 CLI 的 MCP 配置，用户加一条服务（如 claude mcp add，见 Paradev MCP Server 文档）就能把 MCP 工具交给模型，按 R2 算添加内容；Paradev 在 session/new 不另注入 MCP。script_dispatch：默认工具 Workflow 让模型写脚本，脚本里 agent()/parallel()/pipeline() 派子代理，由运行时推进（工程笔记 ⑭，SDK 0.3.201 类型、适配器 0.56.0 复原）；F01 另记 explicit_workflow（R8）。工具报错作为 is_error 结果交回模型。可选：Paradev 的 integrations 技能经 Bash 调 superset mcp 调用已连接集成的工具，要先连集成。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl",
+          "locator": "packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl：tool_use 内容块",
+          "lines": "L21-L29",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 2.1.201 录制流",
+          "note": "模型以 content_block tool_use（name、input JSON）发调用，结果以 tool_result 回传。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/chat",
+          "locator": "Chat interface：开头",
+          "lines": "L751",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口",
+          "note": "Chat 跑的是用户已装的 CLI，与终端共用登录、设置和 MCP 服务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/mcp-server",
+          "locator": "Paradev MCP Server：Setup",
+          "lines": "L1936-L1960",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "向 Claude Code 添加 MCP 服务",
+          "note": "用户用 claude mcp add 等命令把一条 MCP 服务加进代理配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/mobile/plans/acp-vs-claude-sdk.html",
+          "locator": "apps/mobile/plans/acp-vs-claude-sdk.html：⑭ Workflows",
+          "lines": "L2005-L2060",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 默认工具 Workflow",
+          "note": "Workflow 的脚本里用 agent()/parallel() 起子运行，子运行按子代理的规则产出活动。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "text_parsing：快照里没有 Claude Code 从文本解析调用的迹象，Paradev 只收结构化 ACP 更新，未计。script_dispatch 依据的是工程笔记对 SDK 类型的复原，脚本内 agent() 与 Agent 工具是否同一执行器只能从“子运行按 ⑩ 子代理规则产出”推断。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "per_role"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环用 Claude Code 在账户下的默认型号（Paradev 型号选择默认 Default，不传 --model）。model_selected_delegation：默认置备的 orchestrate 技能让协调模型经 superset agents create 派 worker，可带 --agent、--model、--effort，Paradev 只照传；Claude Code 自己的 Agent/Task 派生工具输入也带 model 参数（工程笔记 ⑩，SDK 0.3.201 类型）。技能说明写“用户要求委派时用”，按 R3 第一档仍算默认。文档未涉及：Claude Code 内置子代理（Explore、Plan、general-purpose）的默认型号、失败换型号。auxiliary：用提示词建 workspace 时，Paradev 借 claude -p 指定 haiku 生成标题与分支名（per_role；主型号未钉住，按账户默认）。子维度未确认：Claude Code 内部的会话标题、上下文压缩、WebFetch/WebSearch 所用型号（Paradev 文档只提到 Claude Code 有一个 small/fast 型号 Haiku）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：frontmatter 与 Dispatch workers",
+          "lines": "L1-L93",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认置备的 orchestrate 技能",
+          "note": "协调模型用 Bash 调 superset agents create 派 worker，可选 --agent 与 --effort。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/cli/cli-reference",
+          "locator": "Paradev CLI Reference：superset agents create",
+          "lines": "L6204-L6240",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "superset agents create 参数",
+          "note": "--model 指定这次启动的型号，--effort 指定推理强度，省略则用代理默认。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/mobile/plans/acp-vs-claude-sdk.html",
+          "locator": "apps/mobile/plans/acp-vs-claude-sdk.html：⑩ Subagents",
+          "lines": "L1622-L1700",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 派生工具（SDK 0.3.201 类型）",
+          "note": "Agent/Task 工具输入含 subagent_type、model（如 haiku）、isolation。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/trpc/router/workspace-creation/utils/ai-workspace-names.ts",
+          "locator": "packages/host-service/src/trpc/router/workspace-creation/utils/ai-workspace-names.ts：NAMING_SMALL_MODELS",
+          "lines": "L196-L225",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "workspace 标题与分支命名的辅助调用",
+          "note": "命名调用对 claude 固定用 haiku。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "auxiliary_models 逐项：标题生成——Paradev 的 workspace/分支命名用 haiku（per_role）；Chat 会话标题由代理经 session_info_update 下发，所用型号在快照外。上下文压缩——在 Claude Code 内部，型号未知。动作审核分类——Paradev 没有；Chat 默认 bypassPermissions，Claude Code 内部是否有分类器未知。联网搜索与网页抓取——Claude Code 有 WebFetch/WebSearch，内部型号未知。媒体理解——Paradev 只把图片转交代理，无另外的型号。生成类工具——无。语音转写在云端/移动路径，不属桌面默认。worker 用另一个代理（如 Codex）时型号随之变化，也由模型经 --agent 选择，归在 model_selected_delegation。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "hard_stop": null,
+        "soft_notice": null,
+        "mode_unknown": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "Paradev 自身不给 Chat 或终端代理设 Token、回合、时长或金额上限：ACP 回合按代理返回的 stopReason 结束，max_tokens 等停止原因只当普通结束。主循环的上限在 Claude Code 内部，快照里没有它的代码或设置参考，Paradev 文档也没涉及。订阅额度拒绝属服务方限额，不计入（处理见 F04）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：finishTurn",
+          "lines": "L1216-L1234",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 入口的回合结束",
+          "note": "除 cancelled 与 refusal 外，所有停止原因都按完成处理，Paradev 不另设用量上限。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "想查而查不到的是 Claude Code 的默认输出上限、回合数上限和截断续写处理；快照里只有 Paradev 侧代码、录制流和工程笔记，都没涉及。Paradev 侧查过 chat-runtime、host-service、shared 里的 maxTurns/max_tokens/budget 一类关键词和文档全文，没有默认上限。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "unknown",
+      "value": null,
+      "facets": {
+        "layers": null
+      },
+      "unknown_reason": "closed_source",
+      "value_note": "所选入口是 Paradev Chat 经 claude-agent-acp 驱动本机 Claude Code，主模型请求由 Claude Code 构造。快照里 Paradev 每轮只经 session/prompt 把本轮新输入（文字、图片、资源链接）交给代理，不维护、不重放发往模型的消息列表；Claude Code 怎样从自己的会话数据拼出请求，代码和官方文档都不在快照内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：AcpAdapter 发送回合（session/prompt）",
+          "lines": "L1145-L1149",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat（claude-acp）每轮请求",
+          "note": "Paradev 每轮只发 sessionId 和本轮 prompt，上下文由代理自己维护。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/chat",
+          "locator": "Chat interface：开头（导出 L748-L750）",
+          "lines": "L748-L750",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 入口",
+          "note": "聊天跑的是用户已装的 CLI，经 ACP 驱动，Paradev 自己没有模型循环。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "执行核心是嵌进来的 Claude Code（闭源），按总则 R6 末段可用 Claude Code 对应版本的官方文档推断，但 <sources> 只有 Paradev 文档导出，没有 Claude Code 文档；配置记录也没钉 Claude Code 版本（只给最低 2.1.226）。想查的是 Claude Code 每轮从消息数组还是从带压缩边界的记录重建请求，快照里查不到，故 unknown（closed_source）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "value_note": "快照只证明主循环里会发生上下文压缩：claude-agent-acp 在回合中发出合成的“Compact conversation”工具调用（_meta.claudeCode.toolName=compact），Paradev 让插话等压缩结束再发。压缩用的是摘要还是截断、何时触发、工具输出是否截短或另存，都在 Claude Code 内部，快照里没有。Paradev 自己不构造请求，不做任何缩减。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/air/air.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/air/air.ts：isCompactionCall",
+          "lines": "L79-L88",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat（claude-acp）",
+          "note": "识别 claude-agent-acp 的合成“Compact conversation”工具调用，说明代理会压缩，但看不出手段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：compactions 字段与 trackCompaction",
+          "lines": "L484-L486",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat（claude-acp）",
+          "note": "注释：Claude 收到插话会中止正在进行的压缩，说明压缩发生在回合进行中。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "按 unknown_rule“只知道会自动管理上下文、不知道用哪种手段时写 unknown”。Claude Code 的压缩一般理解为模型摘要，但快照和 Paradev 文档都没写，按卡不凭记忆补。若主控认可用 Claude Code 官方文档，可补 summarization 等。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：聊天输入可附文件和图片，框架发送时把图片读成 base64 图像块直接放进请求，其他附件以 file:// 资源链接交给代理；@文件提及只作为文本元素发出。keyword：执行代理 Claude Code 自带 Grep/Glob 搜索工具（快照里旧 claude-code 聊天适配器的工具映射表把这两个 Claude Code 工具名归为 search），ACP 聊天驱动的是同一个 CLI。子维度未确认：Claude Code 有无语义检索或结构索引工具，快照里查不到。网页抓取、网页搜索与 browser 技能不计；superset 技能（15 个）属“说明常驻、正文按需读取”的技能目录。Paradev MCP 服务器默认不注册（可选：用户安装插件）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：toAcpPrompt",
+          "lines": "L2375-L2412",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat（claude-acp）用户输入",
+          "note": "用户附件经 resolveAttachment 读出，图片作为图像块、其他作为资源链接进入本轮请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat/src/protocol/items.ts",
+          "locator": "packages/chat/src/protocol/items.ts：userContentSchema（text 带 file_mention 元素、attachment）",
+          "lines": "L10-L43",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "聊天输入格式",
+          "note": "用户消息可带文件提及元素和附件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/mapToolUse/mapToolUse.ts",
+          "locator": "packages/chat-runtime/src/harness/claude/mapToolUse/mapToolUse.ts：Claude Code 工具名到 toolKind 的映射",
+          "lines": "L18-L32",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 工具清单（旧 harness 的映射，同一 CLI）",
+          "note": "Glob、Grep 是 Claude Code 自带的搜索工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/chat",
+          "locator": "Chat interface：开头（导出 L748-L750）",
+          "lines": "L748-L750",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 入口",
+          "note": "聊天与终端共用同一 CLI 的登录、设置与 MCP。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "keyword 的证据来自保留的旧 claude-code harness 的工具名映射，不是 ACP 路径的代码；两条路径驱动同一个 Claude Code CLI，所以计入，confidence 写 medium。Claude Code 工具全集在快照外。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "value_note": "Paradev 自己没有跨会话记忆：新聊天只把用户输入（外加可选的 MCP 提及、会话提及隐藏上下文行）发给代理，没有记忆工具、记忆文件或开场注入；置备的 superset 技能是操作说明，不是记忆。执行代理 Claude Code 是否每次新会话读入说明文件、有没有自动记忆，代码和文档都不在快照内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/ChatSession/components/Composer/Composer.tsx",
+          "locator": "Composer.tsx：发送时组装的内容",
+          "lines": "L545-L575",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 发送内容",
+          "note": "Paradev 只附加提及引出的隐藏上下文行，没有注入任何跨会话内容。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/chat",
+          "locator": "Chat interface：开头（导出 L748-L750）",
+          "lines": "L748-L750",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 入口",
+          "note": "聊天沿用 CLI 自己的设置，记忆行为由 Claude Code 决定。"
+        }
+      ],
+      "confidence": null,
+      "coder_note": "想查 Claude Code 新会话读入 CLAUDE.md 一类说明文件和自动记忆的行为，快照与 Paradev 文档里都没有（grep 文档 CLAUDE.md、AGENTS.md、memory 无相关条目），故 unknown（closed_source），不凭记忆补 user_maintained_files。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "event_log：Paradev 把每个聊天写进 host 的 chat.db（chat_journal 表，按会话、epoch、seq 追加），条目分 item（用户消息、代理消息、推理、工具调用、计划、审批请求、提示）、turn 和 session 三类；审批请求条目带决定，session 条目在切换模式或型号时写入新的 modeId/modelId，属控制条目。external_reference：用户附件另存在 host 附件库（跨进程保留、按使用情况清扫），记录里只留 attachmentId；代理生成的图片存进工作区附件目录，条目只带路径。Claude Code 自己另存的会话记录（文档提到在 ~/.claude 下，session/load 靠它回放）格式不在快照内。可选：工作树逐回合快照默认关，不计 state_snapshot。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/db/schema/schema.ts",
+          "locator": "packages/chat-runtime/src/db/schema/schema.ts：chat_journal、chat_sessions_local",
+          "lines": "L10-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 持久化",
+          "note": "聊天事件以 JSON 按序写入 chat.db 的 chat_journal。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat/src/protocol/envelope.ts",
+          "locator": "packages/chat/src/protocol/envelope.ts：durableEventSchema、sessionStateSchema",
+          "lines": "L81-L106",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "持久事件格式",
+          "note": "持久事件分 item、turn、session；session 状态含 modeId、modelId 等配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat/src/protocol/items.ts",
+          "locator": "packages/chat/src/protocol/items.ts：approvalRequestSchema、noticeSchema",
+          "lines": "L244-L275",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "持久事件格式",
+          "note": "审批请求是独立条目类型，带 status 与 decision。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/sessions/liveSession/liveSession.ts",
+          "locator": "packages/chat-runtime/src/sessions/liveSession/liveSession.ts：emitSession、appendDurable",
+          "lines": "L1203-L1224",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 持久化",
+          "note": "会话状态每次变化（含模式切换）都作为 session 事件写入日志。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/trpc/router/attachments/storage.ts",
+          "locator": "packages/host-service/src/trpc/router/attachments/storage.ts：getAttachmentsRoot、handOutAttachment",
+          "lines": "L28-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "用户附件存储",
+          "note": "附件存在 host 目录下的附件库，按编号取用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "session 条目在任何状态变化时都写（不只配置切换），按“只在型号或配置变化时才写的条目才算”看有疑问；event_log 主要靠审批请求条目成立，但默认 Full access 下实际很少产生审批请求（AskUserQuestion 表单也走这类条目）。“有这类条目类型”还是“默认运行里会出现”，F17 没像 F13 那样写明按代码判，建议补一句。Claude Code 自己的会话文件是另一份记录，按“分开存放的各自判”本应单判，但格式查不到。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "重开聊天（会话列表或面板）时，Paradev 按记下的 harnessSessionId 调 session/resume（ACP v2）或 session/load，由 Claude Code 读回自己的会话并经 session/update 回放，然后等下一条输入；中断时没做完的工作不接续。更新重启后的未完成聊天（恢复标记不超过 30 分钟）自动发“Paradev restarted…Continue where you left off.”并重放排队提示，由模型重新决定；普通关闭时中途停下的聊天列为待选，需用户点选继续。其他：终端形态下代理异常退出时自动用 claude --resume 重开一次。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：bootstrap（resume 分支）",
+          "lines": "L999-L1062",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 恢复入口",
+          "note": "恢复时请求代理按原会话编号载入并回放历史，失败才新开会话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/resumeAfterUpdate.ts",
+          "locator": "packages/host-service/src/chat-v3/resumeAfterUpdate.ts：RESUME_MARKER_MAX_AGE_MS、CONTINUE_AFTER_UPDATE_PROMPT、sessionSchema",
+          "lines": "L13-L28",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "更新重启后的恢复",
+          "note": "被打断的回合靠一句继续提示交回模型，不从检查点接着执行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-sessions",
+          "locator": "Agent Sessions & Forking：Resume Interrupted Sessions（导出 L188-L192）",
+          "lines": "L188-L192",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "终端形态恢复（其他环境）",
+          "note": "终端异常退出时用代理自己的 resume 命令重开会话。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation：session/load 或 session/resume 让 Claude Code 读回原会话，模型能接着看到之前的对话。tool_results：回放里的工具调用带输入和输出，说明代理读回的记录含工具结果；是否全部留在模型上下文里由 Claude Code 决定（快照外）。不计：模式、型号、effort 由更新恢复标记带回（会话设置）；排队提示随标记重放（用户输入）；计划条目在 Paradev 日志里重放显示，但 Claude Code 的待办是否回到可更新状态查不到；子代理关联查不到；工作区文件本来就在 worktree 里，恢复不还原。外部副作用不在恢复范围。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：bootstrap（resume 分支）与 handleNotification 回放注释",
+          "lines": "L999-L1062",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 恢复",
+          "note": "代理按原会话编号载入并经 session/update 回放历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/sessionStream.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/sessionStream.ts：工具调用更新（rawInput、rawOutput）",
+          "lines": "L345-L384",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "回放的工具调用",
+          "note": "回放与实时都带工具调用的输入和输出。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "tool_results 依据是代理回放的记录含工具输出，模型上下文里实际保留什么在 Claude Code 内部，故 medium。task_plan 没写进 unresolved：快照里只有 Paradev 界面重放计划条目，找不到 Claude Code 待办在恢复后能继续更新的具体迹象。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：聊天里的分叉按钮让 Claude Code 经 session/fork 复制整个会话，新聊天在新面板打开，原会话不受影响、仍可继续；分叉只复制对话、不复制文件。编辑旧消息会在新会话里从该消息前接着（Claude 可按消息分叉），原聊天随即被关闭，能否再从列表打开未核实，不作依据。可选：工作树逐回合快照和回合 Undo 是默认关的实验开关，不计 workspace_snapshot。Paradev 按 commandId 去重只覆盖用户命令，不计 idempotency_key。Claude Code 自身的文件检查点能否经 ACP 使用，快照里查不到。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/commands/commands/commands.ts",
+          "locator": "packages/chat-runtime/src/commands/commands/commands.ts：forkSession",
+          "lines": "L932-L957",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 分叉命令",
+          "note": "代理复制自己的会话，再在副本上开新聊天。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/ChatPane/components/AcpChatPane/AcpChatPane.tsx",
+          "locator": "AcpChatPane.tsx：forkHere",
+          "lines": "L308-L340",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 界面",
+          "note": "分叉结果在新面板打开，原聊天保留。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-sessions",
+          "locator": "Agent Sessions & Forking：Fork and Hand Off Sessions / Fork（导出 L200-L226）",
+          "lines": "L200-L226",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "分叉",
+          "note": "分叉后原会话照常运行；复制对话，不复制文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/stores/chat-turn-snapshots.ts",
+          "locator": "apps/desktop/src/renderer/stores/chat-turn-snapshots.ts：useChatTurnSnapshotsStore",
+          "lines": "L1-L33",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工作树逐回合快照",
+          "note": "逐回合快照与 Undo 是实验功能，enabled 默认 false。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Claude Code 自带的检查点与回退是否在 ACP 聊天里可用，快照里查不到；没有具体迹象，未写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "聊天里可切换代理提供的权限模式（Ask for approval、Approve edits、Plan、Full access 等，由 claude-agent-acp 的 session/new 返回），按动作类别放行或询问，记 tool_category；Settings → Agents 删去 --dangerously-skip-permissions 只改终端启动命令。Artifact 前置钩子是写死的单工具名单。新聊天以 bypassPermissions（Full access）起步：改文件、跑命令、写工作区外、命令联网都直接放行。文档称需要工作区外文件时会在聊天里请求许可，和默认全权限的实现相反，按实现记（R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/acpCatalogue.ts",
+          "locator": "packages/host-service/src/chat-v3/acpCatalogue.ts：fullAccessModeId、claude-acp 条目",
+          "lines": "L11-L44",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认权限模式",
+          "note": "聊天以代理自己的无限制模式起步，claude-acp 为 bypassPermissions。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：startModeId",
+          "lines": "L1994-L2001",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认权限模式",
+          "note": "新会话没有指定模式时用 defaultModeId。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/claude/claudeAdapter/claudeAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/claude/claudeAdapter/claudeAdapter.ts：CLAUDE_MODES、DEFAULT_CLAUDE_MODE",
+          "lines": "L60-L68",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Claude Code 可选权限模式",
+          "note": "Claude Code 的模式按动作类别区分询问与放行，默认 Full access。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agents/claude-code",
+          "locator": "Claude Code in Paradev：Launch（导出 L4742-L4750）",
+          "lines": "L4742-L4750",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认启动方式",
+          "note": "默认关掉 Claude Code 的审批提示，改文件、跑命令不再询问；worktree 不隔离进程。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-integration",
+          "locator": "AI Agents：Sandbox Access（导出 L153-L155）",
+          "lines": "L153-L155",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "文档对工作区外文件的说法",
+          "note": "文档称工作区外文件要在聊天里请求许可，与默认全权限实现相反。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "聊天沿用 Claude Code 自己的设置（文档 L750），其 allow/deny 规则（命令、路径、域名）应同样生效，但规则格式不在快照内，没计 command_rule、file_path、network_target，也找不到能写进 unresolved 的具体一处；bypass 下 Claude Code 是否仍对少数路径询问也查不到，所以四个默认效果按文档“不再询问”记 allow、confidence medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认 Full access（bypassPermissions），Claude Code 不发权限请求，动作不会停下等批准。可选：切到 Ask for approval 或 Approve edits 后，Claude Code 经 session/request_permission 发请求，Paradev 渲染成审批条目由用户逐次批准，一次只放行这次调用（选项含 allow_always）。AskUserQuestion 表单属模型提问；Artifact 钩子是拒绝后重试放行，不是审批。文档说工作区外文件会请求许可，与实现相反（R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/acpCatalogue.ts",
+          "locator": "packages/host-service/src/chat-v3/acpCatalogue.ts：fullAccessModeId、claude-acp 条目",
+          "lines": "L11-L44",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认权限模式",
+          "note": "聊天默认在全权限模式。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：handleServerRequest",
+          "lines": "L2130-L2241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "审批通道（非默认模式才触发）",
+          "note": "只有代理发来权限请求时才生成审批条目交用户决定。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agents/claude-code",
+          "locator": "Claude Code in Paradev：Launch（导出 L4742-L4750）",
+          "lines": "L4742-L4750",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认启动方式",
+          "note": "默认关掉 Claude Code 的审批提示。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "bypassPermissions 下 Claude Code 是否仍对个别动作发权限请求，快照里查不到（Paradev 文档只说关掉审批提示），所以 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": null
+      },
+      "unknown_reason": null,
+      "value_note": "只计默认装好的 Artifact 前置钩子：写进 ~/.claude/settings.json 的 PreToolUse（matcher=Artifact），在 Paradev 启动的环境里（聊天启动环境带 SUPERSET_TERMINAL_ID）对同一会话首次不带 URL 的 Artifact 发布返回 deny，重试放行；仅限该工具。默认 bypassPermissions 下 Claude Code 的权限引擎不拦别的动作；worktree 不是沙箱；默认无容器（可选：cloud workspace，Team/Ultra）。可选：Claude Code 自己的命令沙箱（快照外，未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/agent-setup/templates/artifact-guard.template.sh",
+          "locator": "packages/agent-setup/templates/artifact-guard.template.sh",
+          "lines": "L6-L38",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认置备的 Claude 钩子",
+          "note": "在 Paradev 环境里拒绝首次无 URL 的 Artifact 发布。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/agent-setup/src/agent-wrappers-claude-codex-opencode.ts",
+          "locator": "packages/agent-setup/src/agent-wrappers-claude-codex-opencode.ts：CLAUDE_ARTIFACT_GUARD_EVENT/MATCHER 与写入 settings.json",
+          "lines": "L75-L120",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认置备的 Claude 钩子",
+          "note": "钩子以 PreToolUse、matcher=Artifact 写进 Claude 全局设置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/terminal/env.ts",
+          "locator": "packages/host-service/src/terminal/env.ts：buildHostLaunchEnv（SUPERSET_TERMINAL_ID）",
+          "lines": "L286-L287",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "聊天代理启动环境",
+          "note": "聊天代理的启动环境同样带 SUPERSET_TERMINAL_ID，满足钩子的生效条件。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/faq",
+          "locator": "FAQ：Is each worktree a sandbox?（导出 L1475-L1477）",
+          "lines": "L1475-L1477",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认运行时",
+          "note": "worktree 不是沙箱，代理与本机共享进程、网络和外部文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 写 null：核对清单里默认模式（Full access，没交代限制）已判；可切换的 Plan 模式和 Claude Code 默认会调用的内置只读子代理是否有代码检查，实现在 Claude Code 内、快照里没有，这两项没法判。application_check 依赖 claude-agent-acp 下的 Claude Code 也读全局 settings.json 钩子，快照只有文档“聊天共用 CLI 设置”一句支持，故 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "没有专门的审计日志，记录是 chat.db 的 chat_journal。intent：同一回合的用户消息、代理消息和推理按 seq 顺序存，并与工具调用条目共享 turnId。actual_operation：工具调用条目带 toolName、title、rawInput、locations，按条目编号对上。result：同一条目更新带 status、content（终端输出含 exitCode）和 rawOutput。不计 approval：审批条目带 targetItemId 和 decision，但默认 Full access 下没有逐次批准决定（可选：切到询问模式后才有）。不计 identity：会话的代理账户只在内存绑定表里，日志里不记人或账户。Claude Code 自己的会话文件不在快照内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat/src/protocol/envelope.ts",
+          "locator": "packages/chat/src/protocol/envelope.ts：durableEventSchema",
+          "lines": "L169-L177",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "持久事件格式",
+          "note": "每个 item 事件带 turnId，同一回合的条目能对上。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat/src/protocol/items.ts",
+          "locator": "packages/chat/src/protocol/items.ts：toolCallSchema",
+          "lines": "L182-L212",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工具调用条目",
+          "note": "工具调用条目存工具名、输入、状态、内容与输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/sessionStream.ts",
+          "locator": "packages/chat-runtime/src/harness/acp/sessionStream.ts：工具调用更新（rawInput、rawOutput）",
+          "lines": "L345-L384",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat（claude-acp）",
+          "note": "ACP 工具调用的输入和输出写进同一条目。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/db/schema/schema.ts",
+          "locator": "packages/chat-runtime/src/db/schema/schema.ts：chat_journal",
+          "lines": "L12-L24",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat 持久化",
+          "note": "事件按会话与 seq 落盘。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/terminal-agents/store.ts",
+          "locator": "packages/host-service/src/terminal-agents/store.ts：recordChatEvent",
+          "lines": "L252-L287",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "会话账户绑定",
+          "note": "会话的代理账户只存在内存 Map 里，不落盘。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "intent 靠同一 turnId 把用户请求和工具调用对上；一个回合可能有多次调用，“能唯一对上”是按回合而不是按调用，若码本要求逐调用对上，intent 可能不成立。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认路径上两条：①默认置备的 superset:orchestrate 技能让主代理（Claude Code）用 Bash 运行随应用捆绑的 superset CLI，由 host-service 建 workspace 并起 worker 代理，框架能查询其运行状态（agents wait、snapshot、侧栏活动条）；②核心（Claude Code）自己派出的原生子代理，Chat 适配器与终端钩子把它们按父会话登记并显示。用户手动 Fork session、Continue with another agent 是另开独立会话、结果不回原处，不计。可选：Automations（Pro）定时或事件直接起代理运行，本配置免费档不开放。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L1-L6",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：frontmatter（description、allowed-tools）",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认置备的技能",
+          "note": "orchestrate 技能随捆绑插件默认置备，模型在用户要求分派、并行时自行选用；allowed-tools 为 Bash(superset:*)。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L78-L95",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Dispatch workers：superset agents create",
+          "lines": "L78-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "协调者经 superset agents create --prompt 派出 worker，返回 sessionId，所有就绪任务先派完再监视。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/orchestration",
+          "locator": "Agent Orchestration：Install / How It Works（llms-full 导出 L2767-L2808）",
+          "lines": "L2767-L2808",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理",
+          "note": "桌面应用自带该技能；协调者经 CLI 建 workspace、agents create 派 worker、terminals read/send 监视与续派。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/supported-agents",
+          "locator": "Supported Agents：Subagents and Handoff（llms-full 导出 L3859-L3863）",
+          "lines": "L3859-L3863",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "原生子代理",
+          "note": "Claude、Codex 自己启动的子代理显示在父会话终端头的 Subagents 菜单下。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts#L1589-L1600",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：handleSubagentUpdate（父会话派出的子会话）",
+          "lines": "L1589-L1600",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 原生子代理",
+          "note": "Chat 适配器接收代理上报的子会话，按父会话编号挂在父项下并跟踪其状态。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "路径①框架不记录 worker 由哪个会话派出（技能说协调关系由协调者自己维护），只记 agents create 调用返回的 sessionId 并能查询运行状态；按“由哪次调用开出”算跟踪。路径②的原生子代理工具在 Claude Code 内部、不在快照里，默认是否开启只靠 Paradev 文档与适配器代码间接支持；配置记录称未核实。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "主代理经默认技能调用 superset agents create（Bash，默认全权限模式下不需批准）派出 worker；核心原生子代理也由主代理模型调用委派工具派出。其他环境：Automations（Pro）由定时器或外部事件直接起代理运行，属 event_scheduling，免费档不开放。用户 Fork、Continue with another agent 不按 F25 计，不记 user。命名用的无头 CLI 调用提示要求不用工具，属辅助调用，不记 framework_internal。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L1-L6",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：frontmatter（description、allowed-tools）",
+          "lines": "L1-L6",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认置备的技能",
+          "note": "orchestrate 技能随捆绑插件默认置备，模型在用户要求分派、并行时自行选用；allowed-tools 为 Bash(superset:*)。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L78-L95",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Dispatch workers：superset agents create",
+          "lines": "L78-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "协调者经 superset agents create --prompt 派出 worker，返回 sessionId，所有就绪任务先派完再监视。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/supported-agents",
+          "locator": "Supported Agents：Subagents and Handoff（llms-full 导出 L3859-L3863）",
+          "lines": "L3859-L3863",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "原生子代理",
+          "note": "Claude、Codex 自己启动的子代理显示在父会话终端头的 Subagents 菜单下。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-sessions",
+          "locator": "Agent Sessions & Forking：Fork and Hand Off Sessions（llms-full 导出 L200-L252）",
+          "lines": "L200-L252",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "用户另开会话",
+          "note": "Fork session 复制会话另开；Continue with another agent 带最近 36000 字符上下文开新会话；两者都在新窗格开出、原会话照常运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/automations",
+          "locator": "Automations：Requirements / Triggers（llms-full 导出 L311-L420）",
+          "lines": "L311-L420",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "触发",
+          "note": "Automations 按定时或集成事件起代理运行，创建、运行需 Pro 或 Enterprise 订阅。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "worker 是另一个终端里的独立代理会话，各有自己的对话上下文；协调者可用 superset terminals send 给已派出的 worker 追加消息让它接着做（messages）；agents create 的 --workspace 由模型选，技能说明只读分析或文件不重叠时可共用一个 workspace，此时与协调者在同一工作目录读写（shared_files）；分开 workspace 时是各自的 git worktree，事后由人合并。权限不从父代理继承：worker 按各代理预设命令启动（Claude 默认 --dangerously-skip-permissions）。Chat 原生子代理执行中的共享方式在 Claude Code 内部，快照看不到；界面的 steer 是用户补发，不计。没有框架维护、供多代理共读写的结构化状态；技能明说 Paradev 任务是议题记录，不作编排状态。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L78-L95",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Dispatch workers：superset agents create",
+          "lines": "L78-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "协调者经 superset agents create --prompt 派出 worker，返回 sessionId，所有就绪任务先派完再监视。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L97-L152",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Monitor and communicate：terminals read/send、agents wait",
+          "lines": "L97-L152",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理等待与续派",
+          "note": "terminals send 给已派出的 worker 追加消息；agents wait --until settled 另行等待 worker 回合结束或需要输入，可设超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L45",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Plan the work：共享 workspace 的条件",
+          "lines": "L45",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理工作目录",
+          "note": "并行改动给 worker 各自的 workspace/分支；只读分析或文件互不重叠时可共用一个 workspace。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/cli/src/commands/agents/create/command.ts#L73-L123",
+          "locator": "packages/cli/src/commands/agents/create/command.ts：agents create 选项与提示构造",
+          "lines": "L73-L123",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "agents create 要求 --prompt、--resume-session、--fork-session 或 --from-terminal 之一；--from-terminal 用来源终端近期上下文构造提示。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "start_context 取 orchestrate 默认委派（--prompt 带任务说明）；--from-terminal 会带来源终端最近 36000 字符上下文，--fork-session 复制会话，均为模型可选参数，写在这里不进取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "value_note": "orchestrate 路径：agents create 立即返回 sessionId，协调者可继续派别的 worker，之后另用 superset agents wait --until settled（可设超时）等待，再用 terminals read 读完成信封；结果不自动交回。没有共享看板：完成信封只是提示约定，技能写明不是持久事件。取消：中断或关闭协调者不会连带停止 worker（各在自己的终端会话里），停止 worker 要显式 terminals close；Chat 中断只向父会话发 session/cancel，原生子代理是否随之取消由 Claude Code 决定，快照看不到。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L78-L95",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Dispatch workers：superset agents create",
+          "lines": "L78-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "协调者经 superset agents create --prompt 派出 worker，返回 sessionId，所有就绪任务先派完再监视。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/plugins/superset/skills/orchestrate/SKILL.md#L97-L152",
+          "locator": "plugins/superset/skills/orchestrate/SKILL.md：Monitor and communicate：terminals read/send、agents wait",
+          "lines": "L97-L152",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理等待与续派",
+          "note": "terminals send 给已派出的 worker 追加消息；agents wait --until settled 另行等待 worker 回合结束或需要输入，可设超时。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts#L750-L826",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：stopBackgroundTask / steerSubagent / backgroundSubagent",
+          "lines": "L750-L826",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Chat 原生子代理",
+          "note": "界面可单独停止、给子代理补发提示、把前台子代理转到后台；这些是用户控件，转后台的存在说明原生子代理默认在前台运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts#L590-L605",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：interrupt：向父会话发 session/cancel",
+          "lines": "L590-L605",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "取消",
+          "note": "Chat 中断当前回合时只通知父会话取消并清理其待批准项，没有逐个取消子代理的代码。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "synchronous_return 写进 unresolved：Chat 适配器有把前台原生子代理转后台的方法，说明父代理在前台阶段等待，但返回方式在 Claude Code 内部，快照无法确认。cancel_coverage 逐项：用户打断当前回合——orchestrate 路径不连带，原生路径未知；取消等待中的调用——agents wait 超时或中断只结束等待，不停 worker；取消父运行——关闭协调者终端不连带。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null,
+        "unresolved": [
+          "synchronous_return"
+        ]
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "核心是第三方代理 CLI（本配置为 Claude Code），读写、执行等内置工具在 CLI 内部；Paradev 经 ACP 驱动时不声明文件或终端客户端能力，session/new 传空 mcpServers，不给模型另加工具，因此没有 embedder_declared。外部协议服务：Paradev 插件把 MCP 服务器条目写进 ~/.claude.json 等配置，文档也给出 claude mcp add 接入 Paradev MCP 的方式；用户加一条服务配置即可，默认安装没有已装插件，不在用。Paradev 插件只是 MCP＋技能的打包，不能自己注册工具，不记 plugin_api。子维度未确认：Claude Code 自身插件目录（plugins/）能否经进程内接口注册工具，快照里只有目录名。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts#L965-L1062",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：initialize 能力声明与 session/new",
+          "lines": "L965-L1062",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "所选入口（Chat）",
+          "note": "ACP 初始化只声明表单 elicitation，新会话传 mcpServers: []，Paradev 不为会话声明工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/plugins/overview",
+          "locator": "Plugins：MCP Tools（llms-full 导出 L8811-L8870）",
+          "lines": "L8811-L8870",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "安装插件时 Paradev 把它的 MCP 服务器加进各代理自己的配置（Claude Code 为 ~/.claude.json），工具来自 MCP。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/plugins/build-a-plugin",
+          "locator": "Build a Plugin：开头与 Write the Manifest（llms-full 导出 L8499-L8560）",
+          "lines": "L8499-L8560",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "插件是 plugin.json＋可选 skills/，工具来自已有的 MCP 服务器，由 Paradev 代理调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/mcp-server",
+          "locator": "Paradev MCP Server：Setup（llms-full 导出 L1938-L1965）",
+          "lines": "L1938-L1965",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "用户可用 claude mcp add 等命令把 MCP 服务器加给代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "internal_code 的证据是间接的：快照里只有 Paradev 驱动 CLI 的代码，Claude Code 内置工具实现不在快照里。配置记录写明无已有配置时不新增 MCP，in_use_by_default 照它不写 external_protocol_service。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "skill_directory",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "技能目录：桌面应用启动时把技能写进 ~/.claude/skills/superset/（Claude Code 按插件加载，superset: 命名空间）等标准发现位置，代理按上下文自行选用，也能按名 /superset:xxx 调用；用户自写的技能放同类目录（项目或用户 .claude/skills）。提示模板：项目 .claude/commands、用户 commands、插件 commands 的命令文件按 / 调用；另有 ~/.agents/commands/superset/ 这条独立命令文件路径，供 in-app chat 用 /superset/feedback 等调用（4 个，内容指向同名技能），按 R8 另记 prompt_template。子维度未确认：命令文件或技能里是否有由框架执行的嵌入命令，在 Claude Code 内部。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/skills",
+          "locator": "Skills：Using Skills / How They're Delivered（llms-full 导出 L3749-L3767）",
+          "lines": "L3749-L3767",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "代理按上下文选用技能，也可显式 /superset:feedback 或 in-app chat 的 /superset/feedback；技能写进 ~/.claude/skills/superset/、~/.agents/skills/、~/.agents/commands/。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/trpc/router/agent-tooling/scan-claude/scan-claude.ts#L71-L120",
+          "locator": "packages/host-service/src/trpc/router/agent-tooling/scan-claude/scan-claude.ts：scanClaudeSlashCommands",
+          "lines": "L71-L120",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "所选核心（Claude Code）",
+          "note": "列出 Claude Code 在 / 后提供的项目与用户命令目录、项目与用户技能目录、插件命令与技能。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/agent-setup/src/managed-skills.ts#L17-L35",
+          "locator": "packages/agent-setup/src/managed-skills.ts：MANAGED_COMMAND_NAMESPACE 与 COMMAND_SKILLS",
+          "lines": "L17-L35",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "托管命令写到 ~/.agents/commands/superset/，其中 4 个技能作为 in-app chat 的斜杠命令暴露。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "project_rules 与 role_template 写进 unresolved：provider-profiles.ts L94-L107 说 Claude Code 作为用户级能力加载的内容在 skills、plugins、agents、commands、output-styles 目录与 CLAUDE.md，builtins.ts L28/L43 有 /agents“Manage agent configurations”、/init“Initialize a CLAUDE.md”，但快照没有说明 CLAUDE.md 每个会话自动装载、agents 定义能按名选用或派给子代理，Claude Code 文档不在快照里。executable_items 整层写 null：命令文件嵌入执行、技能自带钩子都在 Claude Code 内部，无从判。Paradev 的项目生命周期脚本、终端脚本不是给模型的指导，不记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": null,
+        "unresolved": [
+          "project_rules",
+          "role_template"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "value_note": "事件点来自核心 Claude Code 的钩子配置（~/.claude/settings.json），快照里 Paradev 按这些事件名注册处理器：UserPromptSubmit→input；PreToolUse、PostToolUse、PostToolUseFailure、PermissionRequest、SubagentStart→tool_before_after；Stop、StopFailure、SessionEnd、SubagentStop→end；SessionStart→session_start。PreToolUse 的 artifact-guard 返回 permissionDecision=deny，可阻断。默认在用：Paradev 出厂写好的 notify 与 artifact-guard 处理器（可在 Settings → Agents 按代理关闭），只在 Paradev 终端或标签环境变量存在时生效，Chat 路径是否带这些变量未逐项核实。Paradev 自身没有供用户挂处理器的生命周期接口；项目 setup/teardown 脚本在建、删 workspace 时运行，不接收代理事件，不记。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/agent-setup/src/agent-wrappers-claude-codex-opencode.ts#L75-L100",
+          "locator": "packages/agent-setup/src/agent-wrappers-claude-codex-opencode.ts：CLAUDE_ARTIFACT_GUARD_EVENT 与 CLAUDE_MANAGED_EVENTS",
+          "lines": "L75-L100",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安装的钩子",
+          "note": "Paradev 往 ~/.claude/settings.json 写入 SessionStart、SessionEnd、UserPromptSubmit、Stop、StopFailure、SubagentStart/Stop、PostToolUse(Failure)、PermissionRequest 的通知处理器，另在 PreToolUse（matcher=Artifact）挂 artifact-guard。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/agent-setup/templates/artifact-guard.template.sh#L37",
+          "locator": "packages/agent-setup/templates/artifact-guard.template.sh：deny 输出",
+          "lines": "L37",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安装的钩子",
+          "note": "PreToolUse 处理器输出 hookSpecificOutput.permissionDecision=deny，拦下 Artifact 工具调用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/add-agent-support",
+          "locator": "Add Agent Support：First-Class Support（llms-full 导出 L39-L51）",
+          "lines": "L39-L51",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "Paradev 依赖代理的生命周期钩子：会话开始、提交提示、工具使用、权限请求、停止、会话结束，以 Claude Code 的钩子形态为准。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-status",
+          "locator": "Agent Status：How Status Is Detected（llms-full 导出 L286-L296）",
+          "lines": "L286-L296",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "Paradev 把生命周期钩子装进各代理配置，在 Paradev 终端外不做事，可按代理关闭。"
+        }
+      ],
+      "confidence": "low",
+      "coder_note": "context_compaction 未记：快照只有 /compact 内置命令名，没有压缩前后钩子的事件名。observe_only 整层写 null：只有 PreToolUse 在快照里有能干预的证据；UserPromptSubmit、SessionStart、Stop 等能否阻断或注入，要看 Claude Code 文档，不在快照里。证据都是 Paradev 代码间接反映核心钩子，confidence 取 low。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "input",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "via_default_entry": [
+          "input",
+          "tool_before_after",
+          "end",
+          "session_start"
+        ],
+        "observe_only": null
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "随桌面应用捆绑的 superset CLI（同一提交）有文档的非交互命令：agents create --prompt … --json 让本机 host-service 在 workspace 里起代理并返回 sessionId，配合 agents wait、terminals read/send 驱动与取回结果。CLI 连桌面自动拉起的 host-service，用 manifest 文件里写好的令牌，凭令牌，不另配凭据，计入 via_default_entry。不计：TypeScript SDK（@superset_sh/sdk）与 Paradev MCP 服务器背后都是厂商托管的 api.superset.sh，按 R5 不属同一发行版；Chat 用 ACP 时 Paradev 是客户端，不是服务端。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/cli/cli-reference",
+          "locator": "CLI Reference：Global options（--json）与 agents（llms-full 导出 L4808-L4840）",
+          "lines": "L4808-L4840",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "CLI 全局 --json 输出结构化结果，agents create 可带 --prompt。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/cli/host-server",
+          "locator": "Host Server：开头与 Start the host server（llms-full 导出 L8250-L8310）",
+          "lines": "L8250-L8310",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "桌面应用自动启动 host server，CLI 与之通信；daemon 写 manifest 让其他客户端找到它，只绑定 127.0.0.1。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/cli/src/commands/agents/create/command.ts#L73-L123",
+          "locator": "packages/cli/src/commands/agents/create/command.ts：agents create 选项与提示构造",
+          "lines": "L73-L123",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "子代理创建",
+          "note": "agents create 要求 --prompt、--resume-session、--fork-session 或 --from-terminal 之一；--from-terminal 用来源终端近期上下文构造提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/cli/src/lib/host-api-token.ts#L29",
+          "locator": "packages/cli/src/lib/host-api-token.ts：manifest.authToken",
+          "lines": "L29",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "CLI 以 manifest 里的 authToken 作 Bearer 访问本机 host。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/sdk/getting-started",
+          "locator": "SDK：开头与 Get an API key（llms-full 导出 L9696-L9760）",
+          "lines": "L9696-L9760",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "SDK 早期 alpha，用 Settings → API Keys 生成的 sk_live 密钥调用 api.superset.sh。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "SDK 与托管 MCP 都能远程起本机代理（agents.create、agents_create），但服务端是厂商云；若主控认为这类“经厂商云转到用户本机”的接口应算同一发行版，SDK 应记 service_api（needs_official_package），MCP 应记 public_protocol。CLI 是否属于“所选入口直接开放”也有口径余地：它是同一安装里另一个可执行文件，桌面启动时写 shim 并加进 Paradev 终端 PATH。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "cli_subprocess"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在桌面应用里建 workspace、在 Chat 或终端输入提示；api 照 F32 的 superset CLI（agents create --prompt）；schedule 与 external_event 来自 Automations：RRULE 定时，GitHub、Slack、Linear、Sentry、Notion、Teams 事件或 webhook 触发，直接在目标设备上开 workspace 跑代理。Automations 需 Pro/Enterprise、事件触发需连接集成，定时与事件接收都在厂商云端，不进 via_default_entry。Slack 里 @superset 派代理记 user_interaction（走云 workspace）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/automations",
+          "locator": "Automations：Requirements / Event triggers / Webhook triggers / Schedules（llms-full 导出 L311-L420）",
+          "lines": "L311-L420",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "触发",
+          "note": "Automations 按 RRULE 定时或集成事件、webhook 触发代理运行，需 Pro 或 Enterprise。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/cli/cli-reference",
+          "locator": "CLI Reference：Global options（--json）与 agents（llms-full 导出 L4808-L4840）",
+          "lines": "L4808-L4840",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "触发",
+          "note": "CLI 非交互命令带 --json。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/first-workspace",
+          "locator": "Your First Parallel Session：Create a Workspace with a Prompt（llms-full 导出 L1570-L1590）",
+          "lines": "L1570-L1590",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "触发",
+          "note": "用户在桌面应用里建 workspace、选代理、输入提示开工。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/use-with-slack",
+          "locator": "Use with Slack（llms-full 导出 L4473-L4520）",
+          "lines": "L4473-L4520",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "触发",
+          "note": "在 Slack 里 @superset 可开云 workspace 并起编码代理。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "schedule、external_event 的定时器与事件接收端在厂商云（apps/api），与 F32 把云接口排除在发行版之外的口径有张力；这里按“发行版里原生可创建、运行落到本机”记入，请主控统一。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "所选入口默认 Chat：ACP 代理进程由 host-service 起（标准输入输出管道），host-service 是 Electron 主进程以 detached:false 拉起的子进程，任何退出（⌘Q 或 Quit Completely）都会先 stopHostServices；聊天回合因此中断，下次启动提示是否恢复。关最后一个窗口应用仍在运行，不算退出界面。其他：终端里跑的代理（含 orchestrate 派出的 worker）在 detached 的 pty-daemon 里，⌘Q 后继续，只有 Quit Completely 才结束。可选：用独立 CLI 运行 superset start --daemon 或注册 systemd 常驻 host。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/main/lib/quit-sequence.ts#L32-L60",
+          "locator": "apps/desktop/src/main/lib/quit-sequence.ts：runQuitCleanup",
+          "lines": "L32-L60",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "退出",
+          "note": "退出清理先停止 host-service，只有 Quit Completely 才另停 pty-daemon。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/main/lib/host-service-coordinator.ts#L984-L990",
+          "locator": "apps/desktop/src/main/lib/host-service-coordinator.ts：host-service spawn",
+          "lines": "L984-L990",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "进程",
+          "note": "host-service 以 detached:false 作为 Electron 子进程启动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/main/lib/terminal-host/client.ts#L1295-L1301",
+          "locator": "apps/desktop/src/main/lib/terminal-host/client.ts：终端守护进程 spawn",
+          "lines": "L1295-L1301",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "进程",
+          "note": "生产构建里终端守护进程 detached，终端会话可跨 Electron 重启存活。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/mount.ts#L166-L190",
+          "locator": "packages/host-service/src/chat-v3/mount.ts：recordClosed 与 recordUnfinished",
+          "lines": "L166-L190",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "退出",
+          "note": "关闭时把未完成的聊天记为下次启动要询问恢复的对象。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/keep-agents-running",
+          "locator": "Keep Agents Running：What Happens When You…（llms-full 导出 L1801-L1813）",
+          "lines": "L1801-L1813",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "退出",
+          "note": "文档称终端里的代理在 ⌘Q 后继续运行，Quit Completely 才结束全部终端会话。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按配置记录，新安装默认 Chat，所以主循环看 Chat 路径；若主控认为默认是终端代理，应改记 background_daemon、continues_after_ui_exit=yes。文档“关掉应用代理继续”只说终端，没提 Chat。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "Chat 运行中提交的消息进入 LiveSession 队列；框架在回合开始、结束及用户消息入队后约 300ms 把在途提示、待发队列、暂停队列写进 chat-closed-mid-turn.json（注释写明崩溃或重启也会留下）。下次启动弹出“Resume # chats?”，用户点 Resume 后框架恢复会话、在被中断时注入继续提示并重放队列，不需再发消息；Keep paused 则放弃。安装更新导致的重启在 30 分钟内且条件满足时不询问、自动恢复。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/sessions/liveSession/liveSession.ts#L236-L266",
+          "locator": "packages/chat-runtime/src/sessions/liveSession/liveSession.ts：unfinished() 与提交入队",
+          "lines": "L236-L266",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "交互输入队列",
+          "note": "未完成会话包含在途提示、待发队列与暂停队列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/mount.ts#L166-L282",
+          "locator": "packages/host-service/src/chat-v3/mount.ts：recordClosed / recordSoon / resumeAfterUpdate",
+          "lines": "L166-L282",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "持久化",
+          "note": "未完成聊天随回合与用户消息变化写盘，下次启动读回并等待启动提示，更新重启时自动恢复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/routes/_authenticated/components/InterruptedChatsDialog/components/InterruptedChatsPrompt/InterruptedChatsPrompt.tsx#L50-L81",
+          "locator": "apps/desktop/src/renderer/routes/_authenticated/components/InterruptedChatsDialog/components/InterruptedChatsPrompt/InterruptedChatsPrompt.tsx：Resume / Keep paused 对话框",
+          "lines": "L50-L81",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "恢复",
+          "note": "启动时询问是否恢复 Paradev 关闭时没完成的聊天。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/resumeAfterUpdate.ts#L13-L16",
+          "locator": "packages/host-service/src/chat-v3/resumeAfterUpdate.ts：RESUME_MARKER_MAX_AGE_MS 与 CONTINUE_AFTER_UPDATE_PROMPT",
+          "lines": "L13-L16",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "恢复",
+          "note": "更新重启的恢复标记 30 分钟内有效，并注入继续提示。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "崩溃后的恢复要用户在启动对话框点 Resume，我按“用恢复命令打开、不用再发消息”算持久；若主控认为点选恢复算“指令”，value 应改 in_memory，interactive_queue 同理。终端代理的输入排队在代理 CLI 内部，不在本层。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "persistent"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：Chat 的 ACP 初始化声明表单 elicitation，Claude 的 AskUserQuestion 提问在聊天面板里等用户回答（question）；默认全权限模式下没有权限审批，可选：切到 Ask for approval 等模式后才有 permission。message_notification：默认钩子与 Chat 事件触发系统通知并播放提示音（完成、等待回复），dock 图标显示需要注意的角标；当前可见窗格的通知会被抑制。resumable_todo：Paradev 关闭时未完成的聊天写盘，下次启动列出、等用户决定恢复或保持暂停。structured_handoff 不记：worker 完成信封只是提示约定、给协调者读；Automations 运行记录只记工作区是否建成。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/chat-runtime/src/harness/acp/acpAdapter.ts#L973-L980",
+          "locator": "packages/chat-runtime/src/harness/acp/acpAdapter.ts：initialize capabilities：form elicitation",
+          "lines": "L973-L980",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "提问",
+          "note": "不声明表单 elicitation 时 claude-agent-acp 会丢掉 AskUserQuestion；Paradev 声明了它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/main/lib/notifications/notification-manager.ts#L59-L121",
+          "locator": "apps/desktop/src/main/lib/notifications/notification-manager.ts：handleAgentLifecycle",
+          "lines": "L59-L121",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "通知",
+          "note": "对完成、PermissionRequest、PendingQuestion 事件发系统通知并播放声音。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.paradev.com/agent-status",
+          "locator": "Agent Status：Notifications / Dock Badge（llms-full 导出 L292-L302）",
+          "lines": "L292-L302",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "通知",
+          "note": "代理完成或暂停等输入时通知，dock 角标显示需要注意的 workspace。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/apps/desktop/src/renderer/routes/_authenticated/components/InterruptedChatsDialog/components/InterruptedChatsPrompt/InterruptedChatsPrompt.tsx#L50-L81",
+          "locator": "apps/desktop/src/renderer/routes/_authenticated/components/InterruptedChatsDialog/components/InterruptedChatsPrompt/InterruptedChatsPrompt.tsx：Resume / Keep paused 对话框",
+          "lines": "L50-L81",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "待办",
+          "note": "启动时列出未完成聊天，等用户选择恢复或保持暂停。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/ParadevAI/Paradev/blob/1282cb770925461f0d1b9ae86dc2a50690f6a6f8/packages/host-service/src/chat-v3/acpCatalogue.ts#L22-L30",
+          "locator": "packages/host-service/src/chat-v3/acpCatalogue.ts：claude-acp 条目 fullAccessModeId",
+          "lines": "L22-L30",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "权限",
+          "note": "Claude 的 ACP 条目把全权限模式定为 bypassPermissions；本配置默认用此模式，因而没有权限审批弹窗。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "resumable_todo 与 F35 的 persistent 是同一份写盘记录，分属两个字段各记一次。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "question"
+        ]
+      }
+    }
+  }
+}

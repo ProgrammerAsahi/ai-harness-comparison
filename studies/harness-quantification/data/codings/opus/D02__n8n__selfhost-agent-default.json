@@ -1,0 +1,1880 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.8",
+  "synthetic": false,
+  "round": "batch-4",
+  "config_id": "D02__n8n__selfhost-agent-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v9",
+    "coded_at": "2026-11-18"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-18",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": [
+          "explicit_workflow"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "在空画布上添加 AI Agent 时编辑器自动前置 Chat Trigger（shouldPrependChatTrigger），用户在聊天里发一条消息就触发工作流、进入 AI Agent v3.1。模型回复里有工具调用时，节点返回 EngineRequest，工作流引擎执行所请求的工具节点，再带着结果重入代理，直到模型不再请求工具。下一步由模型输出决定，记 model_loop。secondary_modes 的 explicit_workflow：代理节点外面那层工作流图按连线依次执行节点；模型也可以经 Call n8n Workflow 工具调起一个按节点图推进的子工作流，嵌在模型循环里。两者都靠在画布上添加节点、连线启用。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts",
+          "locator": "packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts：shouldPrependChatTrigger",
+          "lines": "L268-L284",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "编辑器新建 AI Agent",
+          "note": "画布上只有手动触发器或为空时，添加 AI Agent 节点会自动前置 Chat Trigger，任务从一条聊天消息开始。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts：toolsAgentExecute",
+          "lines": "L126-L152",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 主循环",
+          "note": "有工具调用时把请求交给引擎，引擎调度工具节点后带 EngineResponse 重入；没有工具调用时输出结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/requests-response.ts",
+          "locator": "packages/core/src/execution-engine/requests-response.ts：handleRequest",
+          "lines": "L233-L238",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工作流引擎",
+          "note": "引擎调度代理请求的工具节点，并让代理节点暂停，等工具完成后带结果重新执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "口径疑问：n8n 本身是工作流平台，代理节点总是嵌在工作流图里。依据 scope_rule 里“常驻服务按事件发起任务、任务内部是模型循环的填模型循环”，加上配置记录以 AI Agent 节点为入口，判 model_loop。如果按“嵌套取最外层”把工作流图当作持有下一步决定权的外层，会判 explicit_workflow；但在最小工作流 Chat Trigger→AI Agent 里，图层不做实质的下一步决定，所以没有取。核对清单：n8n 没有斜杠命令或启动参数式的命令列表，用产品功能（节点）列表代替，官方文档导出也没有 AI Agent 的快速开始页。逐项判断如下。Chat Trigger + AI Agent：模型循环，取为主取值。工作流图的节点顺序、Call n8n Workflow 工具调子工作流：explicit_workflow，记入。AI Agent Tool 子代理：仍是模型循环，不另记。HITL 审批节点：属于审批停顿，记 F22，不改变类别。Schedule、Webhook 等触发器：属于任务发起（F33），不记 event_scheduling。队列模式：整次执行入队、由 worker 跑完，任务内部的下一步不由调度器决定，而且要改设置，不记。Basic LLM Chain：添加语言模型时会自动前置，每条消息只回一次、不调工具，但它是另一个节点、不是 AI Agent 入口，没有记 user_stepwise，这一点可以商榷。n8n Assistant 和 Agents 模块按配置记录不在范围内。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known_absent",
+      "value": "none",
+      "unknown_reason": null,
+      "value_note": "AI Agent v3.1 的 Options 默认为空：systemMessage 没设置时不生成系统消息，所以没有要求先写计划的提示。工具只来自 ai_tool 连接，加上模型的 metadata.tools，默认都是空的；没有计划或待办工具，节点参数里也没有计划模式。可选：Think 工具节点（ToolThink）可以手动接上，但它只是自由记录思考，不是带条目的计划表。Agents 模块的 planToolsEnabled 默认 false，且不在本配置范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：prepareMessages",
+          "lines": "L565-L583",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认系统提示",
+          "note": "useSystemMessage = options.systemMessage ?? typeVersion < 1.9；v3.1 不设选项时不发送系统消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：getTools",
+          "lines": "L535-L557",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认工具清单",
+          "note": "工具只取 ai_tool 连接的节点，只有接了输出解析器时才追加格式校验工具，没有内置计划工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts：createAgentSequence / getAllTools",
+          "lines": "L25-L77",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "执行器是单一的工具调用代理，最终工具表 = 连接工具 + 模型 metadata.tools，没有计划步骤队列。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过三样：默认系统提示（Options 为空，prepareMessages 不插入系统消息）、默认工具清单（getTools 和 getAllTools 都为空；OpenAI Built-in Tools 默认空，不写 metadata.tools）、内置模式（AgentV3 的参数里没有计划模式）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "model_end_signal：模型回复里没有工具调用（returnValues）时，节点输出最终结果，本次执行结束。budget：每次重入前检查 iterationCount 是否已达 maxIterations（默认 10；Options 为空时代码回退取 10），达到就抛 NodeOperationError，执行以错误结束。范围是 AI Agent 节点的一次运行，AI Agent Tool 子代理走同一套代码。user_interrupt：用户可以在编辑器里停止执行（POST /executions/:id/stop），代理发出的模型调用带着执行的取消信号。可选：连接输出解析器（Require Specific Output Format 默认关）后会追加 format_final_json_response 工具，用它校验最终 JSON；EXECUTIONS_TIMEOUT 默认 -1，不限时。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts：runAgent",
+          "lines": "L95-L196",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认路径（非流式与流式）",
+          "note": "调用带执行取消信号；有 returnValues 时返回最终结果，有工具调用时才生成引擎请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/checkMaxIterations.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/checkMaxIterations.ts：checkMaxIterations",
+          "lines": "L27-L42",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认选项",
+          "note": "迭代数达到上限就抛错，结束这次运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/executeBatch.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/executeBatch.ts：executeBatch",
+          "lines": "L74-L81",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认选项",
+          "note": "maxIterations 取 getNodeParameter('options.maxIterations', 0, 10)，未设时为 10，每个条目执行前检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/executions.controller.ts",
+          "locator": "packages/cli/src/executions/executions.controller.ts：stop",
+          "lines": "L86-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "编辑器停止执行",
+          "note": "有执行权限的用户可以停止正在进行的执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "verification_condition 只在打开 hasOutputParser 并接上解析器后才有，默认不计。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "value_note": "call_retry：OpenAI Chat Model 子节点构造 ChatOpenAI 时 maxRetries 默认 2，并挂上 n8n 的 onFailedAttempt 处理器。不该重试的状态码和配额耗尽直接抛错，其余交给 LangChain AsyncCaller 按退避间隔重发。model_self_repair：引擎执行代理请求的工具节点出错时，只要节点的 onError 不是 stopWorkflow，AI 工具默认继续，把 {error: message} 作为工具结果交回代理；buildObservation 把错误序列化给模型，由模型决定怎样改。可选：节点 Retry On Fail（retryOnFail 默认不开）；Enable Fallback Model（needsFallback 默认 false，见 F11）；节点 On Error 的错误输出分支和工作流的 Error Workflow 设置（workflow_branch，要改节点或工作流设置）；HITL 节点（需要作者接线）。代理节点本身出错时默认终止执行（continueOnFail 关）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts：supplyData 中的 ChatOpenAIFields",
+          "lines": "L822-L836",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钉住的 OpenAI 提供方",
+          "note": "maxRetries 取 options.maxRetries ?? 2，onFailedAttempt 用 makeN8nLlmFailedAttemptHandler。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/ai-utilities/src/utils/failed-attempt-handler/n8nDefaultFailedAttemptHandler.ts",
+          "locator": "packages/@n8n/ai-utilities/src/utils/failed-attempt-handler/n8nDefaultFailedAttemptHandler.ts",
+          "lines": "L41-L51",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "模型调用重试",
+          "note": "STATUS_NO_RETRY 里的状态和限流 stop 时抛错，其余返回，由 AsyncCaller 退避重试。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/workflow-execute.ts",
+          "locator": "packages/core/src/execution-engine/workflow-execute.ts：节点出错处理（aiToolDefaultsToContinue）",
+          "lines": "L2142-L2160",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "代理请求的工具节点",
+          "note": "AI 工具出错默认继续，错误信息放在 ai_tool 通道上交回代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/buildSteps.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/buildSteps.ts：buildObservation",
+          "lines": "L373-L388",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 重入",
+          "note": "工具结果带 error 时，把 {error, errorType} 作为观察结果交给模型。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "framework_input_repair 判为没有：查了 createEngineRequests（按名字查找工具，查不到就丢弃这次调用，不修正名字）和 fixEmptyContentMessage（把无参调用在 messageLog 里的 input '' 换成 {}，只为了后续请求不被提供方拒绝，不改变工具的执行），没有看到参数类型修正。fixEmptyContentMessage 算不算修正输入，口径上可以商榷。escalate_to_human 默认没有：出错处理里没有暂停等人的分支，HITL 要作者接线。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "一行脚本用 docker compose up -d 在后台起 n8n 容器；容器里的 n8n 主进程就是执行核心，运行工作流引擎和 AI Agent 节点。界面是浏览器打开的 http://localhost:5678 编辑器，经同一端口的 REST 和推送连接接入。关掉浏览器，容器照常运行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n.sh",
+          "locator": "docker/get-n8n.sh：启动 compose",
+          "lines": "L468",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本安装",
+          "note": "安装后以 up -d 后台启动整组服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n-compose.yml",
+          "locator": "docker/get-n8n-compose.yml：n8n 服务",
+          "lines": "L80-L89",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本安装",
+          "note": "n8n 容器只对外发布 5678 端口，作为常驻服务运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/README.md",
+          "locator": "README.md：Quick Start",
+          "lines": "L30-L33",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "官方快速开始",
+          "note": "编辑器在 http://localhost:5678 访问。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "local_service",
+        "container"
+      ],
+      "unknown_reason": null,
+      "value_note": "默认的 AI Agent 不接任何工具，这里按默认安装附带的内置工具节点接线后的位置记。HTTP Request、Calculator、Wikipedia、SearXNG 等工具节点，由工作流引擎在 n8n 主进程（也就是运行模型循环的进程）里执行，记 main_process；regular 模式下执行都在主进程里。Code 工具经任务运行器沙箱执行，一行脚本设了 N8N_RUNNERS_MODE=external，代码在 compose 起的独立 runners 容器里跑；这个容器常驻，经 5679 端口连 n8n 的任务代理，记 local_service。n8n 主进程本身也在 Docker 容器里，所以各类工具代码都在容器里运行，加记 container；核心和 Code 工具不在同一个容器里。可选：MCP Client Tool 连接外部 MCP 服务，位置取决于用户添加的服务。其他环境：手动 Docker 安装时运行器默认 internal，由 n8n 起子进程执行代码（subprocess）。云端执行：模型推理在外部 API；OpenAI Built-in Tools（默认空）在 OpenAI 那边执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/requests-response.ts",
+          "locator": "packages/core/src/execution-engine/requests-response.ts：handleRequest",
+          "lines": "L233-L238",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "代理请求的工具节点",
+          "note": "工具节点由工作流引擎调度执行，和代理同在执行这次工作流的进程里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/workflow-runner.ts",
+          "locator": "packages/cli/src/workflow-runner.ts：run（shouldEnqueue / runMainProcess）",
+          "lines": "L488-L512",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 regular 执行模式",
+          "note": "非队列模式下执行在 n8n 主进程里进行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/tools/ToolCode/ToolCode.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/tools/ToolCode/ToolCode.node.ts",
+          "lines": "L72-L77",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "Code 工具",
+          "note": "Code 工具按语言交给 JS 或 Python 的任务运行器沙箱执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n-compose.yml",
+          "locator": "docker/get-n8n-compose.yml：n8n 与 runners 服务",
+          "lines": "L80-L100",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本安装",
+          "note": "n8n 和 runners 是两个容器；runners 连 http://n8n:5679，跑 Code 节点的用户代码。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n.sh",
+          "locator": "docker/get-n8n.sh：write_env",
+          "lines": "L280",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本安装",
+          "note": ".env 写入 N8N_RUNNERS_MODE=external。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "口径疑问：本字段只记“默认安装后已经有工具在其中执行的位置”，而默认 AI Agent 没有接任何工具。我把随默认安装附带的内置工具节点算作已有工具，把接线当作添加内容。如果按严格口径（默认没有工具）读，本字段也许应另判，但 absent_rule 只列了“工具全在云端”这一种情形。runners 容器算 local_service 还是只算 container，也有疑问：它由 compose 拉起、不由核心拉起，闲置 15 秒后退出，再由 launcher 按需重启；我判为本机常驻服务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "一次任务里的工具调用历史不在前端：代理返回 EngineRequest 后，引擎把工具节点的结果写进这次执行的 runData；重入时由 collectSubNodeResults 组成 EngineResponse，代理再用 buildSteps 从中重建步骤。执行记录由 n8n 服务端创建，存进 SQLite（executionPersistence.create）。编辑器的聊天面板只发 chatInput 和 sessionId；messageHistory 只用来显示，不把历史交给核心。默认不接记忆，跨轮的消息不保留。可选：Simple Memory 存在 n8n 进程内、按 sessionId 分开的缓冲里，仍归执行核心；Postgres、Redis 一类记忆节点会把历史放到外部数据库（state_service）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/workflow-execute.ts",
+          "locator": "packages/core/src/execution-engine/workflow-execute.ts：collectSubNodeResults",
+          "lines": "L1896-L1917",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent 重入",
+          "note": "引擎从执行的 runData 里取出工具结果，组成代理重入用的响应。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/execution/logs/composables/useChatState.ts",
+          "locator": "packages/frontend/editor-ui/src/features/execution/logs/composables/useChatState.ts：chatOptionsComputed",
+          "lines": "L231-L253",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "编辑器聊天面板",
+          "note": "前端只按 chatInput 和 sessionId 发消息，历史只用来显示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/active-executions.ts",
+          "locator": "packages/cli/src/active-executions.ts：add",
+          "lines": "L105-L117",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行持久化",
+          "note": "新执行由服务端组成执行记录并写进数据库，取得执行编号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "默认不接记忆时，跨轮对话根本没有历史。按 absent_rule“完全不保留会话的，按每次请求由谁交出历史来判，通常记 client”，也可以读成 client；但聊天前端并不交出历史，任务内的状态归服务端引擎，所以判 execution_core。SQLite 是嵌在核心进程里的库，不算独立状态服务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每次执行由服务端分配执行编号，存成一条执行记录。编辑器聊天面板为每段对话带一个 sessionId，记忆节点（可选）按 sessionId 分开存放。regular 执行模式下所有执行都在同一个 n8n 主进程里跑，不按会话换进程；也没有按会话分配的工作目录、文件系统视图或容器，Code 工具共用同一个 runners 容器。可选：queue 模式把执行交给 worker 进程，但也不是一会话一进程。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/active-executions.ts",
+          "locator": "packages/cli/src/active-executions.ts：add",
+          "lines": "L105-L117",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行记录",
+          "note": "每次执行在数据库里建一条记录，取得执行编号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/execution/logs/composables/useChatState.ts",
+          "locator": "packages/frontend/editor-ui/src/features/execution/logs/composables/useChatState.ts：runWorkflowOptions",
+          "lines": "L202-L206",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "编辑器聊天面板",
+          "note": "聊天触发的执行带着这段对话的 sessionId。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/workflow-runner.ts",
+          "locator": "packages/cli/src/workflow-runner.ts：run（shouldEnqueue / runMainProcess）",
+          "lines": "L488-L512",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 regular 执行模式",
+          "note": "非队列模式下执行都在主进程里，不另起进程。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "逐项查了：process（workflow-runner 在 regular 模式走 runMainProcess）；working_directory（产品没有工作目录的概念）；filesystem（没有按会话的视图，内置文件节点共用同一个允许目录）；container（runners 容器和沙箱容器都是共享的）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "默认安装附带的 @n8n/n8n-nodes-langchain 包，把各家聊天模型子节点编在同一个进程里，分别用 LangChain 的 ChatOpenAI（Chat Completions 或 Responses）、ChatAnthropic（Messages）、ChatGoogleGenerativeAI（Gemini）、ChatOllama 等适配类。代理用统一的 LangChain 消息和工具结构，经所接的子节点转成对应的接口格式；用户只要添加一个子节点、配上凭据。钉住环境用 OpenAI Chat Model，Use Responses API 默认开（v1.3），走 OpenAI Responses 接口。另有 Vercel AI Gateway、OpenRouter 等节点指向远程网关服务，不改变类别。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/llms/LMChatAnthropic/LmChatAnthropic.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/llms/LMChatAnthropic/LmChatAnthropic.node.ts：import",
+          "lines": "L1",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安装的模型子节点",
+          "note": "Anthropic 子节点用 @langchain/anthropic 的 ChatAnthropic。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/llms/LmChatGoogleGemini/LmChatGoogleGemini.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/llms/LmChatGoogleGemini/LmChatGoogleGemini.node.ts：import",
+          "lines": "L2",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安装的模型子节点",
+          "note": "Gemini 子节点用 @langchain/google-genai 的 ChatGoogleGenerativeAI。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts：supplyData",
+          "lines": "L839-L844",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钉住的 OpenAI 提供方",
+          "note": "开启 Responses API 时强制 useResponsesApi，再构造 ChatOpenAI。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/package.json",
+          "locator": "packages/@n8n/nodes-langchain/package.json：n8n.nodes",
+          "lines": "L127-L133",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安装",
+          "note": "Anthropic、Gemini 等模型节点随包注册。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "native_structured：代理用 LangChain createToolCallingAgent，把工具（含模型 metadata.tools）绑定成接口原生的工具定义。模型回复里的结构化工具调用经 createEngineRequests 按工具名找到来源节点，转成引擎动作执行。模型不支持原生工具调用时，getChatModel 直接报错「Tools Agent requires Chat Model which supports Tools calling」，没有文本解析回退。protocol_translation：MCP Client Tool 节点随默认安装附带，作者添加一个节点、填上服务地址就能用；它把 MCP 服务的工具包装成 DynamicStructuredTool，调用时转成 MCP callTool 请求。出错路径：工具出错作为 {error} 结果交回模型（见 F04）；模型调了未注册的工具名，这次调用被丢弃。没有脚本分派：Code 工具只执行一段代码、返回结果，没有看到代码里调用其他工具的接口。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts：createAgentSequence",
+          "lines": "L35-L42",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "用 createToolCallingAgent 和原生工具绑定构造代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：getChatModel",
+          "lines": "L504-L509",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "模型没有 bindTools 就报错，不回退到文本解析。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/createEngineRequests.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/createEngineRequests.ts：createEngineRequests",
+          "lines": "L257-L327",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "结构化调用按工具名映射到来源节点，生成引擎动作；找不到的工具被过滤掉。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/mcp/McpClientTool/utils.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/mcp/McpClientTool/utils.ts：createCallTool / mcpToolToDynamicTool",
+          "lines": "L58-L150",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "MCP Client Tool 节点（添加内容）",
+          "note": "把 MCP 工具转成 LangChain 结构化工具，调用时发 MCP callTool。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": []
+      },
+      "unknown_reason": null,
+      "value_note": "主执行链只用 ai_languageModel 连接的那一个聊天模型（buildExecutionContext 取索引 0 的模型）。needsFallback 默认 false，不取备用模型。模型不能自己选型号。可选：打开 Enable Fallback Model 后接第二个模型，主模型调用失败时经 LangChain withFallbacks 改用它（failover）；子代理（AI Agent Tool）要作者接线，而且接自己的模型。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/buildExecutionContext.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/buildExecutionContext.ts：buildToolsAgentExecutionContext",
+          "lines": "L39-L55",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 默认参数",
+          "note": "取一个主模型；只有 needsFallback 为真时才取备用模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentV3.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentV3.node.ts：needsFallback",
+          "lines": "L110-L115",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 默认参数",
+          "note": "Enable Fallback Model 默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/createAgentSequence.ts：createAgentSequence",
+          "lines": "L44-L58",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "只有给了备用模型才加 withFallbacks。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "auxiliary_models 核对清单逐项判过。标题生成：无，AI Agent 节点不生成标题。上下文压缩或摘要：无，默认不接记忆，代理没有压缩调用。动作审核分类：无。联网搜索与网页抓取：默认没有工具；OpenAI Built-in Web Search 默认关，而且是 OpenAI 托管的服务。媒体理解：passthroughBinaryImages 把图片直接交给同一个主模型，不另调模型。生成类工具：无。所以写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "call_count：AI Agent 每次带工具结果重入时检查 iterationCount（每发出一次工具请求加 1），达到 maxIterations（默认 10）就抛错，结束执行。范围是 AI Agent 节点的一次运行，AI Agent Tool 子代理走同一套代码。不计入的几项：OpenAI Chat Model 的 Maximum Number of Tokens 默认 -1，Options 默认空时不发送，截断后也没有续写处理，所以 output_limit 不计；EXECUTIONS_TIMEOUT 默认 -1，不限时（可选：设成秒数后强制停止）；Options 里的 timeout 是单次请求超时；maxTokensFromMemory 只在接了记忆时裁剪历史。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/checkMaxIterations.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/checkMaxIterations.ts：checkMaxIterations",
+          "lines": "L27-L42",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 默认选项",
+          "note": "迭代数达到上限就抛 NodeOperationError。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/buildResponseMetadata.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/buildResponseMetadata.ts",
+          "lines": "L21-L26",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1",
+          "note": "每次生成工具请求时 iterationCount 加 1。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/options.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/options.ts：maxIterations",
+          "lines": "L21-L26",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "AI Agent v3.1 默认选项",
+          "note": "maxIterations 默认 10。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts：options.maxTokens",
+          "lines": "L398-L403",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钉住的 OpenAI 提供方",
+          "note": "输出上限默认 -1，只有加了这个选项才会发送。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/executions.config.ts",
+          "locator": "packages/@n8n/config/src/configs/executions.config.ts：timeout",
+          "lines": "L101-L108",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认执行设置",
+          "note": "执行超时默认 -1，不限时。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每次向模型发请求时，代码按提示模板拼出消息：（可选的系统消息）＋接上的记忆历史＋本次输入＋二进制附件＋agent_scratchpad（本次运行的工具步骤）。默认未接记忆和工具，所以一次执行只有一个请求、内容就是聊天输入；Options 为空时不加系统消息。接了工具时（可选）每轮由引擎重新调起代理节点，代码从回复元数据里的 previousRequests 取已有步骤、只把新增的工具结果按调用编号转换后追加，HITL 拒绝和出错只是步骤上的标志，没有控制条目。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：prepareMessages",
+          "lines": "L565-L614",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 AI Agent v3.1、Options 为空",
+          "note": "每次请求的提示模板：未设 systemMessage 时不加系统消息，依次放 chat_history 占位、human 输入、可选的二进制消息和 agent_scratchpad。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts：runAgent",
+          "lines": "L72-L197",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认路径主循环",
+          "note": "每次调用前 loadMemory 取接上的记忆（未接时为 undefined），带上 steps 调模型；有工具调用就返回 EngineRequest 交引擎执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/buildSteps.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/buildSteps.ts：buildSteps",
+          "lines": "L406-L503",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了工具时的后续轮次",
+          "note": "每轮从引擎回复的 metadata.previousRequests 取已有步骤，再把新的 actionResponses 按调用编号转换后追加；拒绝/出错只作步骤上的标志。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "每轮步骤列表经引擎的执行栈元数据跨轮传递、只追加新部分，按 scope_rule 记 sequential_messages；它不是从存储重读，转换层也不读任何控制条目，所以 layers 只写一项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "默认 AI Agent 不接记忆、不接工具，一次执行只发聊天输入这一条请求，代码里没有截短、摘要或替换；二进制附件超过上限（N8N_AI_AGENT_MAX_PASSTHROUGH_BINARY_SIZE_BYTES）直接报错。可选：接 Simple Memory（窗口记忆，contextWindowLength 默认 5 轮）按轮数丢掉较早历史；接记忆后在 Options 添加 maxTokensFromMemory 会按 token 从尾部截取历史（trimMessages）——两者都是 truncation，要作者在画布上接节点或加选项。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：prepareMessages",
+          "lines": "L565-L614",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 AI Agent v3.1、Options 为空",
+          "note": "每次请求的提示模板：未设 systemMessage 时不加系统消息，依次放 chat_history 占位、human 输入、可选的二进制消息和 agent_scratchpad。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/memoryManagement.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/memoryManagement.ts：loadMemory",
+          "lines": "L242-L288",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了记忆时",
+          "note": "没有记忆返回 undefined；只有接了记忆且设了 maxTokensFromMemory 才按 token 从尾部截取历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：processBinaryForAgentPassthrough 大小检查",
+          "lines": "L150-L172",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "二进制直通",
+          "note": "附件超过上限时直接抛错，不截短。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "把“在画布上给代理接记忆或工具子节点”按改设置处理（R3 第三档“可选：”），理由是配置记录钉住的对象是只接聊天模型的默认节点；若认为接带定义的子节点属于 R2 的添加内容，本字段会变成 known [truncation]。这个口径同样影响 F15、F16、F21—F23，请码本明确画布接线算哪一类。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "默认节点没有任何工具（getTools 只读 ai_tool 连接），也没有在输入里引用文件的语法；新建时自动加的 Chat Trigger 默认不允许上传文件，所以聊天里只能发文字。passthroughBinaryImages 默认开，只在输入项带二进制时才附进请求。可选：打开 Chat Trigger 的 Allow File Uploads 后用户附件会附进请求（user_specified）；接 Vector Store 工具（retrieve-as-tool）可做语义检索；SearXNG、Wikipedia 等网页搜索工具不计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/helpers.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/helpers.ts：getConnectedTools",
+          "lines": "L240-L241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认工具表",
+          "note": "工具只从 ai_tool 连接取，默认 AI Agent 没有连接工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：prepareMessages",
+          "lines": "L565-L614",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 AI Agent v3.1、Options 为空",
+          "note": "每次请求的提示模板：未设 systemMessage 时不加系统消息，依次放 chat_history 占位、human 输入、可选的二进制消息和 agent_scratchpad。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/ChatTrigger.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/ChatTrigger.node.ts：allowFileUploadsOption",
+          "lines": "L95-L101",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 Chat Trigger",
+          "note": "聊天文件上传选项默认 false。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts",
+          "locator": "packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts：shouldPrependChatTrigger",
+          "lines": "L268-L284",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "新建工作流放入 AI Agent",
+          "note": "空画布放入 AI Agent 时自动在前面加 Chat Trigger，代理输入来自聊天消息。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "absent_rule 要查的三项：默认工具清单（空，见 getConnectedTools）、输入引用语法（聊天输入是纯文本，提示表达式只能由工作流作者写）、官方文档的检索说明（导出不含 Build 章节，查不到）。二进制直通机制默认开但缺触发来源，按 R2 写“可选：”。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "默认不接记忆子节点，提示模板里的 chat_history 为空，也不读取任何说明文件，新会话只带本次聊天输入。可选：接 Postgres/Redis 等持久聊天记忆并按同一 session key 读写，可让后续执行读回历史；Simple Memory 只存在进程内存里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：getOptionalMemory",
+          "lines": "L519-L525",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认路径记忆来源",
+          "note": "记忆只从画布上 ai_memory 连接取，默认未接即没有历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts：prepareMessages",
+          "lines": "L565-L614",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认 AI Agent v3.1、Options 为空",
+          "note": "每次请求的提示模板：未设 systemMessage 时不加系统消息，依次放 chat_history 占位、human 输入、可选的二进制消息和 agent_scratchpad。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/agent-execution/memoryManagement.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/agent-execution/memoryManagement.ts：loadMemory",
+          "lines": "L242-L288",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了记忆时",
+          "note": "没有记忆返回 undefined；只有接了记忆且设了 maxTokensFromMemory 才按 token 从尾部截取历史。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过：新会话注入内容（prepareMessages 只有可选系统消息、记忆历史和输入）、记忆来源（只从 ai_memory 连接取）、记忆相关设置（无全局记忆开关）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "执行记录：每次执行默认存进 SQLite（成功、失败和手动执行都保存），里面有按节点逐次的运行数据（触发器输出、代理节点、模型子节点每次调用的输入输出与用量），以及执行栈（nodeExecutionStack、waitingExecution 等）和工作流定义副本；它是覆盖整个运行的运行轨迹，记 event_log。执行栈和 runData 是执行状态的持久副本，重试时会读回，记 state_snapshot。另有本地事件日志文件 n8nEventLog（工作流/节点开始结束、n8n.ai.* 事件），崩溃恢复会读它，同样归 event_log。执行历史默认在 336 小时或 10000 条后清理。二进制数据默认存文件系统、记录里只留编号，但默认聊天不允许上传，没有触发来源，不计 external_reference。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/executions.config.ts",
+          "locator": "packages/@n8n/config/src/configs/executions.config.ts：ExecutionsConfig saveDataOnError/OnSuccess/ManualExecutions",
+          "lines": "L154-L171",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认执行保存设置",
+          "note": "失败、成功和手动执行的执行数据默认都保存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution.service.ts",
+          "locator": "packages/cli/src/executions/execution.service.ts：ExecutionService.retry",
+          "lines": "L260-L352",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行列表的 Retry",
+          "note": "读回存储里的执行数据（executionData 栈与 runData），只删掉最后出错那次节点运行，交给 workflowRunner 按栈从出错节点接着跑；已完成节点不重跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/eventbus/message-event-bus/message-event-bus.ts",
+          "locator": "packages/cli/src/eventbus/message-event-bus/message-event-bus.ts：MessageEventBus.initialize / send",
+          "lines": "L103-L166",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认事件总线",
+          "note": "启动即建日志写入器，每条事件消息（工作流/节点开始结束、n8n.ai.* 事件）先写进本地事件日志文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/event-bus.config.ts",
+          "locator": "packages/@n8n/config/src/configs/event-bus.config.ts：LogWriterConfig",
+          "lines": "L8-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认事件日志",
+          "note": "事件日志 n8nEventLog 默认保留 3 个文件、每个上限 10 MB，写在 n8n 数据目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution-recovery.service.ts",
+          "locator": "packages/cli/src/executions/execution-recovery.service.ts：recoverFromLogs / amend",
+          "lines": "L118-L160",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "进程崩溃后",
+          "note": "按事件日志补全崩溃执行的状态与数据并标为 crashed。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "执行记录是按节点组织的运行数据，不是消息列表；按 event_log 的“覆盖整个运行的运行轨迹”记。逐节点进度保存默认关（SAVE_ON_PROGRESS=false），所以 state_snapshot 是在执行结束或出错时写的那一份。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "workflow_replay",
+      "unknown_reason": null,
+      "value_note": "执行失败或进程崩溃后（崩溃的执行按事件日志补全并标为 crashed），用户在编辑器的执行列表点 Retry（可选“用原工作流”或“用当前保存的工作流”）：框架读回存储的执行数据，保留已完成节点的结果、不重跑，从出错节点接着执行。默认路径上出错的往往就是代理节点本身，它会重新发起模型调用。其他：Wait/HITL 一类等待中的执行重启后自动续跑，只在接了这类节点时才有（可选）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution.service.ts",
+          "locator": "packages/cli/src/executions/execution.service.ts：ExecutionService.retry",
+          "lines": "L260-L352",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行列表的 Retry",
+          "note": "读回存储里的执行数据（executionData 栈与 runData），只删掉最后出错那次节点运行，交给 workflowRunner 按栈从出错节点接着跑；已完成节点不重跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/workflow-execute.ts",
+          "locator": "packages/core/src/execution-engine/workflow-execute.ts：节点出错时 pushExecutionStack",
+          "lines": "L2170-L2180",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "节点出错",
+          "note": "出错节点的执行数据重新压回栈，供重试从这里重新开始。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/executions.controller.ts",
+          "locator": "packages/cli/src/executions/executions.controller.ts：POST /:id/retry",
+          "lines": "L115-L123",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "编辑器执行列表",
+          "note": "重试是官方 REST 入口，编辑器执行列表调用它。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution-recovery.service.ts",
+          "locator": "packages/cli/src/executions/execution-recovery.service.ts：recoverFromLogs / amend",
+          "lines": "L118-L160",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "进程崩溃后",
+          "note": "按事件日志补全崩溃执行的状态与数据并标为 crashed。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "n8n 的重试由显式工作流定义驱动，按存储的执行栈和逐节点结果跳过已完成节点，比 rebuild_and_rerun（读回对话）和 checkpoint_resume（运行中按步骤存档，此处逐节点进度保存默认关）更贴切；但对代理节点本身而言，重试等于重新发起模型调用，和 rebuild_and_rerun 的描述也有重叠。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation"
+      ],
+      "unknown_reason": null,
+      "value_note": "Retry 读回已完成节点的输出：Chat Trigger 的输出（用户这次的聊天消息）照原样交给代理节点，模型重新看到这条请求；代理节点出错的那次运行被删掉，它自己的中间结果不带回。默认不接记忆，没有更早的历史。可选：接了工具时，出错前已执行的工具节点结果按 subNodeExecutionData 从 runData 取回、不重新执行（tool_results）。外部副作用（已发出的请求）不回滚。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution.service.ts",
+          "locator": "packages/cli/src/executions/execution.service.ts：ExecutionService.retry",
+          "lines": "L260-L352",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行列表的 Retry",
+          "note": "读回存储里的执行数据（executionData 栈与 runData），只删掉最后出错那次节点运行，交给 workflowRunner 按栈从出错节点接着跑；已完成节点不重跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/workflow-execute.ts",
+          "locator": "packages/core/src/execution-engine/workflow-execute.ts：collectSubNodeResults",
+          "lines": "L1897-L1915",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了工具时",
+          "note": "代理恢复运行时按 subNodeExecutionData 从 runData 取回已执行工具的结果，不重新执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "重试真正带回的是“已完成工作流节点的结果”，其中对代理有意义的是触发器传来的用户消息，按 conversation 记；词表里没有“已完成步骤结果”这一项，见 vocabulary_proposals。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [
+        {
+          "value": "workflow_step_results",
+          "definition": "恢复时，显式工作流里已完成步骤（节点）的输出从存储读回，原样交给后续步骤，不重新执行。"
+        }
+      ]
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "value_note": "执行列表的 Retry 在重入时按存储的执行栈和逐节点 runData 跳过已完成节点，只从出错节点接着跑；范围是整个工作流的节点，出错的那个节点（默认路径上通常是代理节点，含它这一步里已发出的模型调用）会整步重做。没有会话分支（Debug in editor 是许可功能，不在 Community 前提里）、没有工作区快照（n8n 没有工作目录，工作流版本历史只回退工作流定义，不回退代理动作）、没有内置补偿步骤（错误工作流要另设）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/execution.service.ts",
+          "locator": "packages/cli/src/executions/execution.service.ts：ExecutionService.retry",
+          "lines": "L260-L352",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "执行列表的 Retry",
+          "note": "读回存储里的执行数据（executionData 栈与 runData），只删掉最后出错那次节点运行，交给 workflowRunner 按栈从出错节点接着跑；已完成节点不重跑。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/workflow-execute.ts",
+          "locator": "packages/core/src/execution-engine/workflow-execute.ts：节点出错时 pushExecutionStack",
+          "lines": "L2170-L2180",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "节点出错",
+          "note": "出错节点的执行数据重新压回栈，供重试从这里重新开始。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 idempotency_key 判定里“由运行时推进的工作流在重入时按持久日志跳过已经完成的步骤……只按步骤跳过、被打断的那一步里已经发出的调用会重做的，照计”记入。代理接了工具时，工具步骤在同一次执行里也按调用编号从 runData 取回（requests-response / collectSubNodeResults），属可选路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "file_path",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "deny",
+        "default_command": "deny",
+        "default_outside_write": "deny",
+        "default_network": "deny"
+      },
+      "unknown_reason": null,
+      "value_note": "管理员能写的规则：NODES_INCLUDE/NODES_EXCLUDE 按节点类型放行或排除（排除后该工具无法接给代理，记 tool_category；在代理与某个工具之间插 HITL 节点改为“先过批准”，也按工具决定）；N8N_RESTRICT_FILE_ACCESS_TO、N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES、N8N_BLOCK_FILE_PATTERNS 按目录和路径模式限制文件节点（仅限文件类节点，记 file_path）；N8N_SSRF_* 按 IP 段和主机名允许或阻断出站请求（防护默认关，记 network_target）。Code 节点的模块导入白名单（NODE_FUNCTION_ALLOW_*）不属于这四个维度。四个默认效果：默认节点没有任何工具，改文件、运行命令、写工作区外、命令联网都做不到，也没有审批通道，按“工具不在清单里算按类别拒绝”记 deny；运行命令另有 NODES_EXCLUDE 默认排除 Execute Command 节点。其他环境：作者接上 HTTP Request 工具时出站请求直接放行（SSRF 默认关）；接文件节点时只能读写 ~/.n8n-files。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/nodes.config.ts",
+          "locator": "packages/@n8n/config/src/configs/nodes.config.ts：NodesConfig include/exclude",
+          "lines": "L29-L39",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认节点加载",
+          "note": "NODES_INCLUDE/NODES_EXCLUDE 按节点类型放行或排除，默认排除 executeCommand 与 localFileTrigger。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/security.config.ts",
+          "locator": "packages/@n8n/config/src/configs/security.config.ts：SecurityConfig restrictFileAccessTo / blockFileAccessToN8nFiles / blockFilePatterns",
+          "lines": "L48-L64",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认安全设置",
+          "note": "文件节点可访问目录默认 ~/.n8n-files，默认阻断 .n8n 内部目录和 .git 路径，均可由管理员改。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/ssrf-protection.config.ts",
+          "locator": "packages/@n8n/config/src/configs/ssrf-protection.config.ts：SsrfProtectionConfig",
+          "lines": "L91-L155",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认出站请求",
+          "note": "SSRF 防护默认关；开后按 IP 段与主机名的允许/阻断名单判出站请求。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts",
+          "locator": "packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts：createHitlToolkit / createHitlToolSupplyData（另见 L450-L451 的 HitlTool 分支）",
+          "lines": "L63-L154",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了 HITL 节点时",
+          "note": "只有连接的节点是 *HitlTool 类型时才把工具包成门控工具，等人批准或拒绝后执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/helpers.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/helpers.ts：getConnectedTools",
+          "lines": "L240-L241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认工具表",
+          "note": "工具只从 ai_tool 连接取，默认 AI Agent 没有连接工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/",
+          "locator": "Environment variables > Nodes and community node settings：NODES_EXCLUDE（llms-full.txt 导出 L7480-L7495）",
+          "lines": "L7480-L7495",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "节点排除设置",
+          "note": "文档列出 NODES_EXCLUDE，默认排除 executeCommand 与 localFileTrigger，用于封掉有风险的节点类型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/",
+          "locator": "Environment variables > Security：N8N_RESTRICT_FILE_ACCESS_TO / N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES（llms-full.txt 导出 L7745-L7760）",
+          "lines": "L7745-L7760",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "文件访问设置",
+          "note": "文档写明按目录限制文件访问、默认阻断 .n8n 目录。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/",
+          "locator": "SSRF protection > What protection covers（llms-full.txt 导出 L7860-L7945）",
+          "lines": "L7860-L7945",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "出站请求设置",
+          "note": "文档写明 SSRF 防护默认关，可按 IP 段与主机名设允许/阻断名单。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "四个默认效果是在“默认节点没有工具”的前提下判的 deny；如果码本希望按“作者接上一个工具之后”来判，edit/outside_write 会落到文件节点的 ~/.n8n-files 限制，network 会因没有 shell 而仍难对应。n8n 没有工作区概念，“工作区内文件”无法直接对应。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认节点没有工具，也没有任何 HITL 门控，代理的动作不会停下等批准。可选：在代理与工具之间插入 *HitlTool 节点（send-and-wait），模型调用该工具时先暂停等人在聊天或消息渠道里批准或拒绝，一次批准只放行这一次调用（tool_call 层，批准者 user）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts",
+          "locator": "packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts：createHitlToolkit / createHitlToolSupplyData（另见 L450-L451 的 HitlTool 分支）",
+          "lines": "L63-L154",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了 HITL 节点时",
+          "note": "只有连接的节点是 *HitlTool 类型时才把工具包成门控工具，等人批准或拒绝后执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/helpers.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/helpers.ts：getConnectedTools",
+          "lines": "L240-L241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认工具表",
+          "note": "工具只从 ai_tool 连接取，默认 AI Agent 没有连接工具。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "HITL 要作者在画布上插节点，按改设置处理（同 F14 的口径疑问）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "container_policy"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "一行脚本安装下，n8n 主进程（代理节点逻辑和所有工具调用都在这里执行）在 Docker 容器里以非 root 的 node 用户运行，只挂 n8n-data 卷，靠挂载和用户设置限制能接触的文件；容器网络不限出站。可选：Code 工具在独立 runners 容器执行（禁 eval、模块导入白名单）；文件节点的路径限制（应用检查，默认开，但默认没有文件工具）；SSRF 防护（默认关）；HITL 门控（要接节点）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/images/n8n/Dockerfile",
+          "locator": "docker/images/n8n/Dockerfile：USER node",
+          "lines": "L93-L97",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本的 Docker 安装",
+          "note": "官方镜像以非 root 的 node 用户运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n-compose.yml",
+          "locator": "docker/get-n8n-compose.yml：n8n 服务",
+          "lines": "L80-L89",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "一行脚本的 compose",
+          "note": "n8n 容器只把 n8n-data 卷挂到容器内 node 用户的 ~/.n8n 数据目录，只发布 5678 端口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 核对清单：默认模式——AI Agent 没有权限模式，系统消息默认为空，没有只靠提示的限制；可切换的内置模式——没有；默认调用的内置子代理或角色——没有；文档列出的限制设置——NODES_EXCLUDE、文件访问限制、SSRF、模块白名单都有代码检查。故记 absent。container_policy 是否算“默认生效”取决于是否把容器视为约束代理动作的机制：默认代理只发模型请求，容器真正约束的是作者接上的工具。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "没有专门的审计日志；执行记录默认持久化。默认路径上代理唯一的动作是模型调用：模型子节点每次运行的输入（完整提示与选项）和输出（回复、用量）按运行序号存进 runData，并通过 source 关联到代理节点和触发它的聊天消息（Chat Trigger 输出）。可选：接工具后，工具节点每次运行的参数（inputOverride）和输出也写进 runData，动作编号与运行序号记在代理的 subNodeExecutionData 里。默认没有任何审批，不计 approval。身份：手动执行的 runtimeData 带执行者用户编号，但默认只有一个 owner 账户，不计 identity。另有本地事件日志 n8nEventLog 记录节点和 n8n.ai.* 事件。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/ai-utilities/src/utils/n8n-llm-tracing.ts",
+          "locator": "packages/@n8n/ai-utilities/src/utils/n8n-llm-tracing.ts：N8nLlmTracing.handleLLMStart / handleLLMEnd",
+          "lines": "L227-L280",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认模型子节点",
+          "note": "每次模型调用把完整提示、选项写成模型子节点一次运行的输入，回复与用量写成同一运行的输出，并发 ai-llm-generated-output 事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/executions.config.ts",
+          "locator": "packages/@n8n/config/src/configs/executions.config.ts：ExecutionsConfig saveDataOnError/OnSuccess/ManualExecutions",
+          "lines": "L154-L171",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认执行保存设置",
+          "note": "失败、成功和手动执行的执行数据默认都保存。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/requests-response.ts",
+          "locator": "packages/core/src/execution-engine/requests-response.ts：prepareRequestedNodesForExecution",
+          "lines": "L86-L190",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "接了工具时",
+          "note": "工具调用作为节点运行写进 runData（inputOverride 存模型给的参数），动作编号与运行序号记进代理的 subNodeExecutionData。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/eventbus/message-event-bus/message-event-bus.ts",
+          "locator": "packages/cli/src/eventbus/message-event-bus/message-event-bus.ts：MessageEventBus.initialize / send",
+          "lines": "L103-L166",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认事件总线",
+          "note": "启动即建日志写入器，每条事件消息（工作流/节点开始结束、n8n.ai.* 事件）先写进本地事件日志文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "把模型调用当作默认路径上的“动作”来判 actual_operation；如果码本只把工具调用算动作，默认节点没有工具，本字段在默认路径上就没有可对上的动作。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "默认画布只有 Chat Trigger＋AI Agent＋模型，模型没有工具；但 ai_tool 连接是默认开放的扩展点，作者把 AI Agent Tool 节点（自带提示、模型、工具的代理定义）接到主代理上，主代理调用它就在同一次执行内起一个有独立上下文、能多步调工具的子代理，框架在执行记录里逐节点记下它的运行。另有：Call n8n Workflow 工具调含代理的子工作流（以 parentExecution 记下父执行）；工作流定义里放多个 AI Agent 节点或多个输入项时由工作流运行时逐个起代理；Schedule／Webhook 等触发节点到点或收到事件直接起一次代理运行。以上都要作者在画布加节点（按总则 R2 算添加内容，不算改设置）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts：AgentToolV3（AI Agent Tool）",
+          "lines": "L24-L53",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "AI Agent Tool 节点输出 ai_tool，自带工具名与描述、提示（textInput）、模型子节点与工具输入：把一个完整代理接成主代理的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts：toolsAgentExecute：子代理分支",
+          "lines": "L127-L141",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "作为工具运行时（SupplyData 上下文）不把工具请求交回引擎，而是调用 resolveSubAgentRequest 在工具回调内循环，直到产出最终输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts：resolveSubAgentRequest",
+          "lines": "L24-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "子代理在工具调用内多步执行自己的工具（Promise.all），每轮前检查执行级取消信号 throwIfAborted；子代理内禁止 HITL 节点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/helpers.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/helpers.ts：getConnectedTools",
+          "lines": "L230-L241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工具来源",
+          "note": "模型的工具只从画布上 ai_tool 输入连接取得；默认未连接任何工具时工具表为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/workflow-execute-additional-data.ts",
+          "locator": "packages/cli/src/workflow-execute-additional-data.ts：executeWorkflow：parentExecution",
+          "lines": "L94-L122",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "跟踪",
+          "note": "子工作流执行以 metadata.parentExecution 记下由哪次执行开出，作为独立执行记录保存与查询。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts",
+          "locator": "packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts：shouldPrependChatTrigger",
+          "lines": "L268-L349",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认入口",
+          "note": "在空画布加入 AI Agent 节点时自动在前面加 Chat Trigger（When chat message received）：默认触发器是聊天。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "关键口径疑问：n8n 里一切都靠在画布加节点，配置记录 subagents_enabled=false 的理由是“委派须由工作流作者显式接线，模型不改设置派不了子代理”。我按总则 R2（加一条自带定义的内容到默认开放的扩展点算添加内容）和 F26 对“代理定义文件属于用户添加的内容”的说法，把接 AI Agent Tool 节点算默认开放，记 present；若主控认为在画布加节点应当算可选路径，本字段应改 absent，F26—F28 改 not_applicable。代码与记录在“默认工具为空”这一点一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "main_agent：主代理模型调用作者接上的 AI Agent Tool 或 Call n8n Workflow 工具时创建子代理（工具名与描述由作者定义）。workflow：工作流运行时按流程定义执行多个 AI Agent 节点，或对多个输入项按批逐项起代理（executeBatch），时机和数量由引擎决定。event_scheduling：Schedule Trigger、Webhook 及各应用触发节点在工作流发布后直接起一次含代理的执行，不经主代理。默认画布的 Chat Trigger 是用户消息起主代理，不是子代理，不记 user。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts：AgentToolV3（AI Agent Tool）",
+          "lines": "L24-L53",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "AI Agent Tool 节点输出 ai_tool，自带工具名与描述、提示（textInput）、模型子节点与工具输入：把一个完整代理接成主代理的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts：toolsAgentExecute：子代理分支",
+          "lines": "L127-L141",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "作为工具运行时（SupplyData 上下文）不把工具请求交回引擎，而是调用 resolveSubAgentRequest 在工具回调内循环，直到产出最终输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/executeBatch.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/executeBatch.ts：executeBatch：逐项运行代理",
+          "lines": "L78-L103",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工作流路径",
+          "note": "同一 AI Agent 节点对每个输入项各起一次代理运行（各自的上下文），按批 Promise.allSettled 并行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/nodes-base/nodes/Schedule/ScheduleTrigger.node.ts",
+          "locator": "packages/nodes-base/nodes/Schedule/ScheduleTrigger.node.ts：ScheduleTrigger 节点描述",
+          "lines": "L1-L26",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "定时",
+          "note": "内置 Schedule Trigger 节点（cron），工作流发布后按计划直接起一次新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/nodes-base/nodes/Webhook/Webhook.node.ts",
+          "locator": "packages/nodes-base/nodes/Webhook/Webhook.node.ts：Webhook 节点描述",
+          "lines": "L56-L59",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "外部事件／接口",
+          "note": "内置 Webhook 触发节点：外部 HTTP 请求直接起一次新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/active-workflow-manager.ts",
+          "locator": "packages/cli/src/active-workflow-manager.ts：init → addActiveWorkflows('init')",
+          "lines": "L121-L130",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "重启后",
+          "note": "进程启动时从数据库取全部已发布工作流重新激活其触发器（含定时触发；addActiveWorkflows 在 L413-L433），重启后按计划继续触发。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "三条路径都依赖 F25 的同一口径（画布加节点算添加内容）。workflow 一项里“同一节点对多个输入项各起一次代理”是否算框架派生多个代理，码本没有直接说，我按“运行时按流程定义派生”记入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context"
+      ],
+      "unknown_reason": null,
+      "value_note": "AI Agent Tool 子代理在工具回调内用自己的执行器和（可选的）自己的记忆运行，看不到主代理对话，只把最终输出作为工具结果交回；每次调用重新起一次，不能按编号续派，不记 messages。没有共享工作目录或框架维护的任务表。工作流路径上各代理节点之间只经节点输出项传递结果；定时／事件路径各次执行彼此独立。权限：没有统一权限模型，子代理只能用接到它自己 ai_tool 输入上的工具，不继承主代理的工具。可选：作者给两个代理接同一记忆节点、同一会话键时可共享聊天历史；给子代理接带固定会话键的记忆可让多次调用延续上下文——都要另加记忆节点，未计入。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts：toolsAgentExecute：子代理分支",
+          "lines": "L127-L141",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "作为工具运行时（SupplyData 上下文）不把工具请求交回引擎，而是调用 resolveSubAgentRequest 在工具回调内循环，直到产出最终输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts：resolveSubAgentRequest",
+          "lines": "L24-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "子代理在工具调用内多步执行自己的工具（Promise.all），每轮前检查执行级取消信号 throwIfAborted；子代理内禁止 HITL 节点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts：AgentToolV3（AI Agent Tool）",
+          "lines": "L24-L53",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "AI Agent Tool 节点输出 ai_tool，自带工具名与描述、提示（textInput）、模型子节点与工具输入：把一个完整代理接成主代理的工具。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "start_context 记 task_brief：子代理的输入是 Prompt (User Message) 参数（默认空、必填），由作者填写或用 $fromAI 让主代理在调用时填任务说明；没有复制父对话。共享记忆一条我没有逐项核对记忆节点的会话键默认值，只写进 value_note。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "synchronous_return：AI Agent Tool 子代理在主代理的工具调用里跑完（resolveSubAgentRequest 循环），结果作为工具结果返回，主代理在此期间不推理；Call n8n Workflow 工具同样 await 子工作流结果。没有模型可选的后台参数。cancel_propagation：主代理与子代理共用执行级 abortSignal，停止执行时子代理的模型调用中止、下一轮工具前 throwIfAborted；嵌套的 AI Agent Tool 也拿同一信号，故整棵树。Call n8n Workflow 工具只在调用前和重试间隔检查父执行的取消信号，已启动的子工作流执行是否随之停止未核实（写此不计入 coverage 判断）。可选：Execute Workflow 节点关掉“等待子工作流完成”时派出后不等结果（不是模型可选参数）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/execute.ts：toolsAgentExecute：子代理分支",
+          "lines": "L127-L141",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "作为工具运行时（SupplyData 上下文）不把工具请求交回引擎，而是调用 resolveSubAgentRequest 在工具回调内循环，直到产出最终输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/resolveSubAgentRequest.ts：resolveSubAgentRequest",
+          "lines": "L24-L46",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "子代理在工具调用内多步执行自己的工具（Promise.all），每轮前检查执行级取消信号 throwIfAborted；子代理内禁止 HITL 节点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/V3/helpers/runAgent.ts：runAgent：executeOptions",
+          "lines": "L95-L95",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "取消",
+          "note": "代理执行器调用带 signal: ctx.getExecutionCancelSignal()，执行被停止时模型调用随之中止。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/node-execution-context/base-execute-context.ts",
+          "locator": "packages/core/src/execution-engine/node-execution-context/base-execute-context.ts：getExecutionCancelSignal",
+          "lines": "L77-L79",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "取消",
+          "note": "节点上下文返回整次执行共用的 abortSignal；主代理与经 ai_tool 接入的子代理拿到的是同一个执行级信号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/tools/ToolWorkflow/v2/utils/WorkflowToolService.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/tools/ToolWorkflow/v2/utils/WorkflowToolService.ts：WorkflowToolService：调用子工作流",
+          "lines": "L130-L290",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "Call n8n Workflow 工具 await context.executeWorkflow 等子工作流结果；调用前与重试间隔检查执行取消信号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式逐项：用户打断当前回合——聊天里的一轮就是一次执行，停止执行即连带；取消等待中的调用——界面没有单独取消某个工具调用的入口，默认路径上没有；取消父运行——在编辑器或执行列表停止执行（public API stopExecution 同），连带。有的两种都连带，记 all_ways。cancel_depth 记 whole_tree 依据是嵌套子代理共用同一 ExecutionCancelSignal。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "whole_tree",
+        "cancel_coverage": "all_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "user_script"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：Calculator、HTTP Request、Code、Wikipedia 等工具节点和带 usableAsTool 的普通节点在核心包里实现，经 ai_tool 连接注册给模型。plugin_api：~/.n8n/custom 自定义扩展目录默认扫描，社区节点包默认可从界面安装（N8N_COMMUNITY_PACKAGES_ENABLED 默认 true），包里输出 ai_tool 或声明 usableAsTool 的节点能成为模型工具。external_protocol_service：MCP Client Tool／MCP Registry Client Tool 节点填一个服务地址即可把 MCP 服务器的工具交给模型。user_script：Code Tool 节点让用户写 JS／Python 代码并给出名字和描述，注册成同名工具。另：Call n8n Workflow 工具把一个已保存工作流注册成具名工具（核心实现的工具节点，归 internal_code）。in_use_by_default 为空：默认画布没有任何 ai_tool 连接，模型没有工具。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/utils/helpers.ts",
+          "locator": "packages/@n8n/nodes-langchain/utils/helpers.ts：getConnectedTools",
+          "lines": "L230-L241",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "工具来源",
+          "note": "模型的工具只从画布上 ai_tool 输入连接取得；默认未连接任何工具时工具表为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/load-nodes-and-credentials.ts",
+          "locator": "packages/cli/src/load-nodes-and-credentials.ts：loadNodesFromCustomDirectories / getCustomDirectories",
+          "lines": "L346-L361",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "启动时总扫描 instanceSettings.customExtensionDir（~/.n8n/custom），另可用 N8N_CUSTOM_EXTENSIONS 追加目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/node-types.ts",
+          "locator": "packages/cli/src/node-types.ts：buildSyntheticToolDescription",
+          "lines": "L271-L289",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "声明 usableAsTool 的节点（含扩展节点）被转换成工具节点（convertNodeToAiTool）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io",
+          "locator": "docs.n8n.io：Environment variables：Nodes（N8N_COMMUNITY_PACKAGES_ENABLED 等）",
+          "lines": "L7485-L7491",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "社区包安装与加载默认开启，未验证包默认允许。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/mcp/McpClientTool/McpClientTool.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/mcp/McpClientTool/McpClientTool.node.ts：MCP Client Tool：endpointUrl",
+          "lines": "L30-L54",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "MCP 客户端工具节点按配置的服务地址连接 MCP 服务器并取其工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/tools/ToolCode/ToolCode.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/tools/ToolCode/ToolCode.node.ts：ToolCode：name / jsCode / pythonCode",
+          "lines": "L50-L181",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "扩展",
+          "note": "Code Tool 用用户填的名字、描述和代码构造 DynamicTool／DynamicStructuredTool。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "embedder_declared：查了 public API 路径清单、MCP 服务端（实例级与 MCP Server Trigger）与 @n8n/chat，没有找到嵌入方为会话声明工具的接口，未记。plugin_api 的 via_default_entry 依据是自定义目录默认扫描、社区包默认可装（按总则 R2 扩展包算添加内容）。in_use_by_default 写 []，与配置记录“默认注册给模型的工具：没有”一致。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service",
+          "user_script"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "role_template",
+        "workflow_definition"
+      ],
+      "unknown_reason": null,
+      "value_note": "project_rules：AI Agent 节点的 System Message 选项（存在工作流记录里，每次执行都装进系统提示），用户写入正文即生效。role_template：AI Agent Tool 节点是可新增、可修改的角色定义（工具名与描述、系统提示、自带模型和工具），主代理按工具名把任务派给它。workflow_definition：已保存工作流（存数据库）可由 Execute Workflow 节点或 Call n8n Workflow 工具按名／ID 调用，由引擎按节点逐步推进，可内含代码节点。没有技能目录或提示模板文件的装载机制（AI Agent 节点代码无技能概念；独立 Agents 模块的技能不在本配置范围）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/options.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/options.ts：commonOptions：systemMessage",
+          "lines": "L5-L35",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "指导装载",
+          "note": "AI Agent 的 System Message 选项，添加后作为每次运行的系统提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/agents/Agent/V3/AgentToolV3.node.ts：AgentToolV3（AI Agent Tool）",
+          "lines": "L24-L53",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "AI Agent Tool 节点输出 ai_tool，自带工具名与描述、提示（textInput）、模型子节点与工具输入：把一个完整代理接成主代理的工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/tools/ToolWorkflow/v2/utils/WorkflowToolService.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/tools/ToolWorkflow/v2/utils/WorkflowToolService.ts：WorkflowToolService：调用子工作流",
+          "lines": "L130-L290",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "委派路径",
+          "note": "Call n8n Workflow 工具 await context.executeWorkflow 等子工作流结果；调用前与重试间隔检查执行取消信号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/workflow-execute-additional-data.ts",
+          "locator": "packages/cli/src/workflow-execute-additional-data.ts：executeWorkflow：parentExecution",
+          "lines": "L94-L122",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "跟踪",
+          "note": "子工作流执行以 metadata.parentExecution 记下由哪次执行开出，作为独立执行记录保存与查询。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "project_rules 只因“写在设置项或产品库里、每次自动装载的常驻说明”一句记入，但它同时是这个代理的角色定义，和 role_template 的界线不清：我把主代理自己的系统提示记 project_rules，把能被派给子代理的 AI Agent Tool 记 role_template。role_template 的“可复用”在 n8n 里只限于工作流内或经子工作流复用，拿不准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": [
+          "workflow_definition"
+        ]
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "end"
+      ],
+      "unknown_reason": null,
+      "value_note": "后端外部钩子（EXTERNAL_HOOK_FILES 指向的 JS 文件）：workflow.preExecute 在每次执行开始前触发，抛错即阻断（PreExecuteBlockedError），并可改写工作流——每条聊天消息都是一次执行，按“每轮运行开始”归 input。workflow.postExecute 在执行结束后收到完整运行数据，归 end，按文档只是事后调用，记仅观察。其余钩子（credentials.*、workflow.create／update／activate 等、n8n.ready／n8n.stop、oauth）作用于配置或进程，不是任务阶段。前端钩子在浏览器里加载、作用于界面。另：Error Trigger 工作流在被设为某工作流的错误工作流后于失败结束时触发（也归 end，要改工作流设置）。HITL 门控节点是内置审批节点，不算用户处理器。in_use_by_default 为空：一行脚本写的 .env 不设 EXTERNAL_HOOK_FILES。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/deploy/host-n8n/configure-n8n/external-hooks",
+          "locator": "External hooks：Backend hooks／Available hooks",
+          "lines": "L9746-L9800",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "列出全部后端钩子与参数；preExecute 可用来中止执行；用 EXTERNAL_HOOK_FILES 环境变量注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/executions/pre-execution-checks/workflow-pre-execute.ts",
+          "locator": "packages/cli/src/executions/pre-execution-checks/workflow-pre-execute.ts：run('workflow.preExecute')",
+          "lines": "L47-L72",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "执行前调用 preExecute，钩子抛错转成 PreExecuteBlockedError 阻断，钩子对 workflow 的改写会写回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/execution-lifecycle/execution-lifecycle-hooks.ts",
+          "locator": "packages/cli/src/execution-lifecycle/execution-lifecycle-hooks.ts：hookFunctionsPostExecute",
+          "lines": "L536-L548",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "workflowExecuteAfter 时调用 workflow.postExecute，传入 fullRunData。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/external-hooks.ts",
+          "locator": "packages/cli/src/external-hooks.ts：ExternalHooks 事件表",
+          "lines": "L73-L170",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "钩子",
+          "note": "外部钩子事件名与参数类型定义。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 写 []：注册钩子要设环境变量 EXTERNAL_HOOK_FILES（总则 R3 第三档），不算直接开放。postExecute 是否能改写随后保存的执行数据，我没核对它与保存钩子的先后，按文档“after a workflow gets executed”记仅观察。model_call、tool_before_after、save、context_compaction、session_start：钩子表与节点代码里没有对应事件，未记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [],
+        "observe_only": [
+          "end"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "public_protocol：MCP Server Trigger 节点把一个工作流的工具发布成 MCP 服务器（工具可以是调用含 AI Agent 子工作流的 Call n8n Workflow 工具，从而跑完整代理循环），认证默认 none；实例级 MCP 服务器可让客户端运行工作流，但默认关（N8N_MCP_ACCESS_ENABLED=false）。cli_subprocess：`n8n execute --id <ID>` 执行已保存工作流（Docker 下经 docker exec），文档“Start a workflow”。service_api：Webhook 节点与 Chat Trigger 的生产 URL 是有文档的 HTTP 接口，任意程序可按 URL 发请求起一次执行；@n8n/chat 只是包装这层 HTTP 的前端组件，按 service_api 记。public REST API 只有工作流管理、执行查询／重试／停止与评测运行，没有直接下任务的端点。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/key-concept-glossary",
+          "locator": "Key concept glossary：Model Context Protocol (MCP)",
+          "lines": "L511-L516",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "n8n 作为 MCP 服务端：实例级 MCP 服务器可运行工作流；MCP Server Trigger 节点把单个工作流的工具发布成 MCP 服务器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/mcp/McpTrigger/McpTrigger.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/mcp/McpTrigger/McpTrigger.node.ts：authentication 参数",
+          "lines": "L142-L161",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "MCP Server Trigger 认证默认 none。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io",
+          "locator": "docs.n8n.io：Environment variables：MCP 环境变量：N8N_MCP_ACCESS_ENABLED",
+          "lines": "L10855-L10866",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "实例级 MCP 访问默认 false。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io",
+          "locator": "docs.n8n.io：Use the command line：Start a workflow",
+          "lines": "L10024-L10067",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "n8n execute --id <ID> 执行已保存工作流；Docker 安装要经 docker exec 运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/commands/execute.ts",
+          "locator": "packages/cli/src/commands/execute.ts：Execute 命令",
+          "lines": "L18-L31",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "嵌入",
+          "note": "execute 子命令按 --id 执行工作流。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/nodes-base/nodes/Webhook/Webhook.node.ts",
+          "locator": "packages/nodes-base/nodes/Webhook/Webhook.node.ts：Webhook 节点描述",
+          "lines": "L56-L59",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "外部事件／接口",
+          "note": "内置 Webhook 触发节点：外部 HTTP 请求直接起一次新执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "via_default_entry 记 public_protocol 与 service_api：两者都靠在工作流里加触发节点（自带路径定义，按总则 R2 算添加内容）并发布，由 5678 端口上的同一服务接收，默认不要凭据；若主控认为发布工作流算改设置，这两项应移出。cli_subprocess 要换子命令，不进。文档导出不含 Webhook／MCP Server Trigger 节点页，service_api 的“有对外文档”依据只有源码与术语表，略弱。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "public_protocol",
+          "service_api"
+        ],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：编辑器里的聊天面板（默认自动加的 Chat Trigger）或手动执行。api：照 F32（Webhook／Chat Trigger 的 HTTP、MCP 服务端、n8n execute）。schedule：Schedule Trigger 节点，工作流发布后按 cron 起新执行，重启后重新激活。external_event：Webhook 及各应用触发节点（外部服务回调或轮询）收到事件就起新执行。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts",
+          "locator": "packages/frontend/editor-ui/src/features/shared/nodeCreator/composables/useActions.ts：shouldPrependChatTrigger",
+          "lines": "L268-L349",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "默认入口",
+          "note": "在空画布加入 AI Agent 节点时自动在前面加 Chat Trigger（When chat message received）：默认触发器是聊天。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/nodes-base/nodes/Schedule/ScheduleTrigger.node.ts",
+          "locator": "packages/nodes-base/nodes/Schedule/ScheduleTrigger.node.ts：ScheduleTrigger 节点描述",
+          "lines": "L1-L26",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "定时",
+          "note": "内置 Schedule Trigger 节点（cron），工作流发布后按计划直接起一次新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/nodes-base/nodes/Webhook/Webhook.node.ts",
+          "locator": "packages/nodes-base/nodes/Webhook/Webhook.node.ts：Webhook 节点描述",
+          "lines": "L56-L59",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "外部事件／接口",
+          "note": "内置 Webhook 触发节点：外部 HTTP 请求直接起一次新执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/active-workflow-manager.ts",
+          "locator": "packages/cli/src/active-workflow-manager.ts：init → addActiveWorkflows('init')",
+          "lines": "L121-L130",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "重启后",
+          "note": "进程启动时从数据库取全部已发布工作流重新激活其触发器（含定时触发；addActiveWorkflows 在 L413-L433），重启后按计划继续触发。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "api 进 via_default_entry 是照 F32 的 via_default_entry 非空。schedule、external_event 进 via_default_entry 的前提是加触发节点算添加内容、发布工作流不算改设置（同 F32 的疑问）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "api",
+          "schedule",
+          "external_event"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "value_note": "一行脚本用 docker compose up -d 以分离方式启动 n8n 等容器，compose 模板里没有任何 restart 策略，故由 Docker 让容器脱离终端常驻，但崩溃或主机重启后不会自动拉起。关掉浏览器页面，服务和正在跑的执行都在容器里继续：推送连接断开只从连接表移除，不停止执行。可选：自己在 compose 里加 restart 策略即变成容器运行时托管。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n.sh",
+          "locator": "docker/get-n8n.sh：main：container-start",
+          "lines": "L564-L570",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "启动方式",
+          "note": "安装脚本以 compose up -d 分离启动全部服务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/docker/get-n8n-compose.yml",
+          "locator": "docker/get-n8n-compose.yml：n8n 服务",
+          "lines": "L80-L89",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "启动方式",
+          "note": "n8n 服务定义没有 restart 键（全文件 108 行均无 restart）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/push/abstract.push.ts",
+          "locator": "packages/cli/src/push/abstract.push.ts：remove",
+          "lines": "L71-L75",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "退出界面",
+          "note": "编辑器推送连接断开时只删除连接记录，不触发停止执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "continues_after_ui_exit 记 yes：执行在服务端进程里，没找到断开连接即取消执行的代码；这是按代码推断，未运行验证。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层：等待中的执行（Wait、HITL 审批、send-and-wait 提问）以 waiting 状态写进数据库，主实例启动时 WaitTracker 重新查出并按时恢复；已发布工作流的定时触发在启动时由 ActiveWorkflowManager 重新激活、按计划继续触发。两者都要作者加相应节点（添加内容）。默认 Chat Trigger＋AI Agent 路径本身没有队列：生产并发上限默认 -1 不排队；聊天面板在等回复时禁止提交（interactive_queue 记 none）。进程崩溃时正在运行的执行不会自动续跑。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/wait-tracker.ts",
+          "locator": "packages/cli/src/wait-tracker.ts：init / getWaitingExecutions",
+          "lines": "L79-L110",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "重启后",
+          "note": "主实例启动即从数据库查等待中的执行并设定恢复定时器；等待状态（Wait／HITL／send-and-wait）落盘，重启后继续。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/active-workflow-manager.ts",
+          "locator": "packages/cli/src/active-workflow-manager.ts：init → addActiveWorkflows('init')",
+          "lines": "L121-L130",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "重启后",
+          "note": "进程启动时从数据库取全部已发布工作流重新激活其触发器（含定时触发；addActiveWorkflows 在 L413-L433），重启后按计划继续触发。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/frontend/@n8n/chat/src/components/Input.vue",
+          "locator": "packages/frontend/@n8n/chat/src/components/Input.vue：isSubmitDisabled",
+          "lines": "L53-L58",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "交互输入",
+          "note": "等待回复（waitingForResponse）期间发送按钮禁用，只有工作流在等聊天回复时才允许提交；运行中不能排队新消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/config/src/configs/executions.config.ts",
+          "locator": "packages/@n8n/config/src/configs/executions.config.ts：concurrency.productionLimit",
+          "lines": "L26-L26",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "并发队列",
+          "note": "生产执行并发上限默认 -1（不限），自托管默认不启用并发排队。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "persistent 依赖“加 Wait／触发节点算添加内容”这一口径；若只看默认 Chat Trigger＋AI Agent，取值应是 none（运行中不接受新消息、无排队），interactive_queue 无论哪种口径都是 none。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "none"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：作者在代理与工具之间接 HITL 节点后，模型调用被门控的工具时执行暂停，等人在 Slack／邮件／聊天等渠道批准或拒绝（permission）；Chat 节点作为工具、开“等用户回复”时代理停下等用户在聊天里回答（question）。等待状态持久化，重启后仍等（只记本项，总则 R8）。默认画布没有任何门控；maxIterations（默认 10）到顶直接结束，不问人。message_notification：HITL 请求本身经外部渠道推送，属同一审批机制，不另记；错误工作流通知要改工作流设置，可选。没有等人处理的持久待办和框架校验的交接对象。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts",
+          "locator": "packages/core/src/execution-engine/node-execution-context/utils/get-input-connection-data.ts：createHitlToolkit",
+          "lines": "L63-L105",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "审批",
+          "note": "接了 HITL 节点时把工具包成门控工具：模型调用先路由到 HITL 节点，批准后才执行被门控的工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.n8n.io/key-concept-glossary",
+          "locator": "Key concept glossary：tool approval (n8n)",
+          "lines": "L539-L541",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "审批",
+          "note": "工具审批是对 AI 工具调用的 human-in-the-loop 检查：敏感工具让代理暂停，等人批准或拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/Chat.node.ts",
+          "locator": "packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/Chat.node.ts：Chat 节点：usableAsTool、Wait for User Reply",
+          "lines": "L59-L141",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "提问",
+          "note": "Chat 节点可作工具（usableAsTool: true），带“等用户回复”选项，经 send-and-wait webhook 暂停执行等人回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/n8n-io/n8n/blob/d4dcb1b152a98fc31ea7c4ee6aecdc45c5c88063/packages/cli/src/wait-tracker.ts",
+          "locator": "packages/cli/src/wait-tracker.ts：init / getWaitingExecutions",
+          "lines": "L79-L110",
+          "retrieved_at": "2026-11-18",
+          "configuration_scope": "重启后",
+          "note": "主实例启动即从数据库查等待中的执行并设定恢复定时器；等待状态（Wait／HITL／send-and-wait）落盘，重启后继续。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "按 F25 同一口径，把加 HITL 节点算添加内容而记入；配置记录把它叫“可选接线”，若主控按可选处理，本字段应为 known_absent []。HITL 请求经 Slack 等外部渠道送达，算不算 message_notification 的独立机制，码本 R8 下我判为同一机制。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}
