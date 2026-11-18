@@ -85,6 +85,10 @@ def check_part(path, ctx=None, quiet=False):
     for key in ("config_id", "coder", "groups", "fields"):
         if key not in part:
             return [f"{path}: missing key {key!r}"], part
+    if not isinstance(part["groups"], str) or part["groups"] not in SPLIT:
+        return [f"{path}: groups must be one of {SPLIT}"], part
+    if not isinstance(part["fields"], dict):
+        return [f"{path}: fields must be an object"], part
     want = [f["id"] for f in group_fields(ctx, part["groups"])]
     got = part["fields"]
     if sorted(got) != sorted(want):
@@ -109,6 +113,7 @@ def merge(coder, config_id, model, prompt_version, dry=None):
     rec.update(round=config["round"], config_id=config_id, evidence_cutoff=today,
                coder={"id": coder, "model": model, "prompt_version": prompt_version, "coded_at": today})
     errors = []
+    written_fields = set()
     for groups in SPLIT:
         path = PARTS / coder / config_id / f"{groups}.json"
         if not path.exists():
@@ -118,7 +123,17 @@ def merge(coder, config_id, model, prompt_version, dry=None):
         errors += errs
         if part.get("config_id") != config_id or part.get("coder") != coder:
             errors.append(f"{path}: config_id or coder does not match")
-        rec["fields"].update(part.get("fields", {}))
+        if part.get("groups") != groups:
+            errors.append(f"{path}: groups must match filename {groups!r}")
+        fields = part.get("fields", {})
+        if not isinstance(fields, dict):
+            continue
+        overlap = written_fields & fields.keys()
+        if overlap:
+            errors.append(f"{path}: repeated fields {sorted(overlap)}")
+        written_fields.update(fields)
+        if not errs and part.get("groups") == groups and not overlap:
+            rec["fields"].update(fields)
     if not errors:
         errors = vd.validate_coding(rec, f"{coder}/{config_id}", ctx)
     if errors:

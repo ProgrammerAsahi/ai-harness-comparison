@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from fractions import Fraction
 from pathlib import Path
 
 
@@ -30,28 +31,38 @@ def compare(left, right, schema):
 
     Normalization uses fixed total weight. Missing weight remains unknown and
     contributes to logical bounds, not to an estimated confidence interval.
+
+    Accumulate the supplied numbers exactly before converting ratios to float.
+    Output coverage (and field weights) may round to zero for positive mass;
+    point existence depends on raw known mass, never on rounded coverage.
+    Float outputs and sums of rounded field details need not be exact identities.
     """
     if not schema:
         raise ValueError("At least one field is required")
     identifiers = [field["id"] for field in schema]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("Duplicate field ids")
-    if any(not math.isfinite(f["weight"]) or f["weight"] <= 0 for f in schema):
+    if any(isinstance(f["weight"], bool) or not math.isfinite(f["weight"])
+           or f["weight"] <= 0 for f in schema):
         raise ValueError("Weights must be finite and positive")
-    total = sum(f["weight"] for f in schema)
-    known, contribution, details = 0.0, 0.0, []
-    for field in schema:
-        key, weight = field["id"], field["weight"] / total
+    # Binary float inputs are preserved, not reinterpreted as decimal strings.
+    # Exact raw masses avoid both overflow and loss of tiny common evidence.
+    weights = [Fraction(f["weight"]) for f in schema]
+    total = sum(weights, Fraction())
+    known, contribution, details = Fraction(), Fraction(), []
+    for field, raw_weight in zip(schema, weights):
+        key, weight = field["id"], raw_weight / total
         delta = field_difference(left.get(key), right.get(key), field["kind"], field.get("span"))
+        cost = None if delta is None else raw_weight * Fraction(delta)
         if delta is not None:
-            known += weight
-            contribution += weight * delta
-        details.append({"id": key, "weight": weight, "difference": delta,
-                        "contribution": None if delta is None else weight * delta})
-    known = min(1.0, known)
-    lower, upper = contribution, min(1.0, contribution + 1 - known)
-    distance = contribution / known if known else None
-    return {"observed_distance": distance, "coverage": known,
+            known += raw_weight
+            contribution += cost
+        details.append({"id": key, "weight": float(weight), "difference": delta,
+                        "contribution": None if cost is None else float(cost / total)})
+    unknown = total - known
+    lower, upper = float(contribution / total), float((contribution + unknown) / total)
+    distance = float(contribution / known) if known else None
+    return {"observed_distance": distance, "coverage": float(known / total),
             "distance_bounds": [lower, upper],
             "observed_similarity": None if distance is None else 1 - distance,
             "similarity_bounds": [1 - upper, 1 - lower], "fields": details}
