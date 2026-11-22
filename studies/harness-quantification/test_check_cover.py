@@ -219,6 +219,24 @@ class CheckCover(unittest.TestCase):
         self.assertIn("past end of page", bad[0])
         self.assertEqual(code, 1)
 
+    def test_doc_page_exported_twice(self):
+        # The export carries "beta" twice; lines inside the first appearance are covered even
+        # though the second one comes later and is shorter.
+        pages = [("alpha", 30), ("beta", 40), ("gamma", 10), ("beta", 5)]
+        lines = docs_export(pages)
+        start = lines.index(f"Source: {DOCS}/beta") + 2
+        first, last = start, start + 39
+        gamma_first, gamma_last = body_range(lines, "gamma")
+        code, output, _ = self.check([
+            {"evidence_kind": "official_doc", "source_url": f"{DOCS}/beta", "lines": f"L{first}-L{last}"},
+            {"evidence_kind": "official_doc", "source_url": f"{DOCS}/beta",
+             "lines": f"L{gamma_first}-L{gamma_last}"},
+        ], pages=pages)
+        (total, ok, wrong, outside), bad, _ = parse(output)
+        self.assertEqual((total, ok, wrong, outside), (2, 1, 1, 0), output)
+        self.assertIn("past end of page", bad[1])
+        self.assertEqual(code, 1)
+
     def test_url_not_in_snapshot(self):
         code, output, _ = self.check([
             {"evidence_kind": "official_doc", "source_url": f"{DOCS}/not-exported", "lines": "L1-L3"},

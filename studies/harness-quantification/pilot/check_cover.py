@@ -38,10 +38,11 @@ def span(lines):
 
 
 def load_pages(folder):
-    """{normalised page url: (line count of the page, first export line, last export line)}.
+    """{normalised page url: [(line count of the page, first export line, last export line), ...]}.
 
     The line numbers are 1-based positions in the export file itself (docs-pages.txt or
     docs-llms-full.txt); the page runs from its "Source:" line to the line before the next one.
+    A page that appears more than once in an export keeps one span per appearance.
     """
     pages = {}
     for name in ("docs-pages.txt", "docs-llms-full.txt"):
@@ -53,13 +54,13 @@ def load_pages(folder):
             m = re.match(r"Source: (\S+)\s*$", line)
             if m:
                 if current:
-                    pages[current] = (count, start, last)
+                    pages.setdefault(current, []).append((count, start, last))
                 current, count, start, last = norm(m.group(1)), 0, n, n
             else:
                 count += 1
                 last = n
         if current:
-            pages[current] = (count, start, last)
+            pages.setdefault(current, []).append((count, start, last))
     return pages
 
 
@@ -118,11 +119,13 @@ def check_record(records, sources, cid):
                     continue
             ok += 1
         elif norm(url) in pages:
-            count, start, end = pages[norm(url)]
+            spans = pages[norm(url)]
             s = span(lines)
             # Relative to the page (a little slack) or absolute to the export file: both are covered.
-            if s and s[1] > count + 2 and not (start <= s[0] and s[1] <= end):
-                bad.append(f"[{n}] {kind}: lines {lines} past end of page {url} ({count} lines)")
+            # A page exported more than once is covered when any of its appearances covers the lines.
+            if s and not any(s[1] <= count + 2 or (start <= s[0] and s[1] <= end) for count, start, end in spans):
+                longest = max(count for count, _, _ in spans)
+                bad.append(f"[{n}] {kind}: lines {lines} past end of page {url} ({longest} lines)")
             else:
                 ok += 1
         else:
