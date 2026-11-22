@@ -74,7 +74,7 @@ FACETED_FIELDS = ["F01", "F11", "F12", "F13", "F21", "F22", "F23", "F27", "F28",
 
 
 class DefinitionsAndFacets(Base):
-    """fields-0.8: every field carries an adopted definition; general rules and facets are shape-checked."""
+    """fields-0.9: every field carries an adopted definition; general rules and facets are shape-checked."""
 
     def schema_with(self, mutate):
         schema = copy.deepcopy(self.real.schema)
@@ -90,7 +90,7 @@ class DefinitionsAndFacets(Base):
         return {**self.coding()["fields"][fid]["facets"], **changes}
 
     def test_real_definitions_are_well_formed(self):
-        self.assertEqual(self.real.schema["schema_version"], "fields-0.8")
+        self.assertEqual(self.real.schema["schema_version"], "fields-0.9")
         self.assertEqual(vd.check_definitions(self.real.schema), [])
 
     def test_every_field_is_defined_and_no_draft_remains(self):
@@ -177,6 +177,20 @@ class DefinitionsAndFacets(Base):
         self.assertError(self.errors("F22", facets=self.facets("F22", approver=["model"])), r"not in the facet vocabulary")
         # the approval UI may sit on a layer the gate does not: ui_layers is not a subset of value
         self.assertEqual(self.errors("F22", value=["tool_call"], facets={"ui_layers": ["whole_task"], "approver": ["user"]}), [])
+
+    def test_vocabulary_added_in_fields_09(self):
+        # fields-0.9 appends "unavailable" to the four F21 default-effect facets and "frontend_host" to F06
+        effects = ("default_edit", "default_command", "default_outside_write", "default_network")
+        for cid in effects:
+            facet = next(fc for fc in self.real.fields["F21"]["facets"] if fc["id"] == cid)
+            self.assertEqual([v["id"] for v in facet["vocabulary"]], ["allow", "review", "deny", "unavailable"])
+        self.assertEqual([v["id"] for v in self.real.fields["F06"]["vocabulary"]][-1], "frontend_host")
+        none_there = dict.fromkeys(effects, "unavailable")
+        self.assertEqual(self.errors("F21", facets=self.facets("F21", **none_there)), [])
+        self.assertEqual(self.errors("F21", status="known_absent", value=[], facets=none_there), [])
+        self.assertEqual(self.errors("F21", facets=self.facets("F21", default_edit="unavailable", default_command="deny")), [])
+        self.assertEqual(self.errors("F06", value=["main_process", "frontend_host"]), [])
+        self.assertError(self.errors("F06", value=["frontend_process"]), r"not in the vocabulary")
 
     def test_facets_by_status(self):
         # tied to value (subsets, exclusions): only when the value is known and non-empty

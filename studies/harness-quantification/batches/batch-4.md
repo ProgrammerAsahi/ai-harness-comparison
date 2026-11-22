@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-编码文件在 [`../data/codings/`](../data/codings/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前三批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)、[`batch-3.md`](batch-3.md)。
+编码文件在 [`batch-4/`](batch-4/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前三批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)、[`batch-3.md`](batch-3.md)。
 
 ## 怎样做的
 
@@ -153,7 +153,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码者和读者提出的口径疑问
 
-下面的问题来自两位编码者交回时的说明和写在字段里的备注，另有几处来自交叉核对读者的条目。编码者部分的初稿由 Qwen4-Max-Preview 摘出（经作者的编排器派发，不联网），它和起草配置记录的是同一个型号：交回说明是通读的，两人约 720 条字段备注通读了 `coder_note` 和词表建议，`value_note` 按关键词摘读，可能有漏。初稿逐条注了出处；整理时（Claude Opus 5.5）对照原文抽查过其中十几处，删去了只供核对的出处编号，合并了措辞。这里不作裁决；编码期间提出的问题一律没有答复。
+下面的问题来自两位编码者交回时的说明和写在字段里的备注，另有几处来自交叉核对读者的条目。编码者部分的初稿由 Qwen4-Max-Preview 摘出（经作者的编排器派发，不联网），它和起草配置记录的是同一个型号：交回说明是通读的，两人约 720 条字段备注通读了 `coder_note` 和词表建议，`value_note` 按关键词摘读，可能有漏。初稿逐条注了出处；整理时（Claude Opus 5.5）对照原文抽查过其中十几处，删去了只供核对的出处编号，合并了措辞。这里不作裁决；编码期间提出的问题一律没有答复。表里有些问题后来在 `fields-0.9` 里定了口径（总则 R2、R5、R6、R7 和 F01、F05、F06、F12、F13、F19、F21、F22、F23、F24、F26、F29、F30、F31、F33、F36，其中 F06、F21 各加了一个取值），见 `data/schema/definition-decisions-0.9.md`；这张表保持编码结束时的样子。
 
 行内标记：没有标记的，是编码者在交回说明或字段备注里明写拿不准、码本没说的；“（归纳）”是编码者没写成疑问、但同一种情形在不同配置或不同字段上做法不一致，由摘录者对照两边原文归纳的；“（读者）”是交叉核对读者指出、编码者没写成疑问的；“（语气不确定）”是备注里像是疑问、又没明说的。
 
@@ -251,7 +251,7 @@ Kiro 的两条、n8n 的两条，各说的是同一处情形，名字不同。�
 
 ## 编码文件在哪里
 
-- 这一批：[`../data/codings/`](../data/codings/) 下的 `opus/`、`gpt/` 各 10 份，按现行码本 `fields-0.8` 填写，通过了 `validate_data.py`。码本下次修订时它们会和前几批一样移到 `batch-4/` 下。
+- 这一批：[`batch-4/`](batch-4/) 下的 `opus/`、`gpt/` 各 10 份，连同当时的码本 `batch-4/fields-0.8.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.8` 填写并通过了 `validate_data.py`；码本小修订为 `fields-0.9` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.9.md`。
 - 交叉核对：[`batch-4/crosscheck-card.md`](batch-4/crosscheck-card.md) 是读者拿到的任务卡，[`batch-4/crosscheck.json`](batch-4/crosscheck.json) 是 152 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者；[`batch-4/spotcheck.json`](batch-4/spotcheck.json) 是对其中 27 条“一方没提”的抽查结果。
 - 前三批：[`batch-1/`](batch-1/)、[`batch-2/`](batch-2/)、[`batch-3/`](batch-3/)，各连同当时的码本。
 - 三轮试编码：[`../pilot/`](../pilot/) 下各轮连同当时的码本，只作历史记录，不参加现在的校验和对比。
