@@ -4,6 +4,8 @@
 For every configuration coded by two or more coders, each coder pair is compared on all
 codebook fields. Output: per-pair agreement rates and a per-field disagreement summary,
 ordered by field so the codebook can be revised where coders part ways (report §14.1).
+When a set field differs, each row and each pair counts the relation: a_subset / b_subset
+(one side lists only a subset of the other's members), overlap, or disjoint.
 Codings are validated first; invalid data stops the comparison.
 
   python3 studies/harness-quantification/compare_codings.py [--config ID ...] [--coders a,b] [--json]
@@ -37,6 +39,12 @@ def compare_entry(field, a, b):
             if isinstance(va, list):
                 union = set(va) | set(vb)
                 out["jaccard_distance"] = round(1 - len(set(va) & set(vb)) / len(union), 4) if union else 0.0
+                if isinstance(vb, list):
+                    sa, sb = set(va), set(vb)
+                    # an empty side is a proper subset of the non-empty one
+                    out["set_relation"] = ("a_subset" if sa < sb else
+                                           "b_subset" if sb < sa else
+                                           "overlap" if sa & sb else "disjoint")
         facets = {}
         for fc in field.get("facets", []):
             fa, fb = (a.get("facets") or {}).get(fc["id"]), (b.get("facets") or {}).get(fc["id"])
@@ -67,8 +75,11 @@ def compare_pair(schema, rec_a, rec_b):
     rows = [compare_entry(fields[fid], rec_a["fields"][fid], rec_b["fields"][fid]) for fid in fields]
     n = len(rows)
     count = defaultdict(int)
+    relations = {name: 0 for name in ("a_subset", "b_subset", "overlap", "disjoint")}
     for r in rows:
         count[r["outcome"]] += 1
+        if "set_relation" in r:
+            relations[r["set_relation"]] += 1
     agree = count["agree_value"] + count["agree_unknown"] + count["agree_not_applicable"]
     both_known = count["agree_value"] + count["value_differs"]
     return {
@@ -77,6 +88,7 @@ def compare_pair(schema, rec_a, rec_b):
         "agreement_rate": round(agree / n, 4),
         "known_agreement_rate": round(count["agree_value"] / both_known, 4) if both_known else None,
         "both_known": both_known,
+        "set_relations": relations,
         "rows": rows,
     }
 
@@ -120,6 +132,8 @@ def compare_tree(root, ctx, configs=None, coders=None):
                             "outcome": row["outcome"]}
                     if "jaccard_distance" in row:
                         case["jaccard_distance"] = row["jaccard_distance"]
+                    if "set_relation" in row:
+                        case["set_relation"] = row["set_relation"]
                     s["cases"].append(case)
                 for facet_id, outcome in row.get("facets", {}).items():
                     s["facet_compared"] += 1
@@ -159,6 +173,9 @@ def render_text(result):
                    f"({p['fields']} fields); both known {p['both_known']}, agreeing {known}; "
                    f"both unknown {o.get('agree_unknown', 0)}; status differs {o.get('status_differs', 0)}; "
                    f"value differs {o.get('value_differs', 0)}")
+        sr = p["set_relations"]
+        out.append(f"  set relations: a_subset {sr['a_subset']}, b_subset {sr['b_subset']}, "
+                   f"overlap {sr['overlap']}, disjoint {sr['disjoint']}")
     out += ["", "# Fields with disagreements or proposals (codebook revision list)"]
     shown = 0
     for f in result["fields"]:
