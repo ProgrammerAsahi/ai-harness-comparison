@@ -39,9 +39,23 @@ def diagram(key, name, p):
     for d in ['M295 118 H344','M612 118 H661','M796 161 V302','M664 348 H615','M347 348 H298','M162 305 V238 H479 V164']:
         body.append(f'<path d="{d}" fill="none" stroke="#508984" stroke-width="1.7" marker-end="url(#arrow)"/>')
     body.append('<text x="255" y="225" font-size="13" fill="#58756b">结果回到当前任务</text>')
-    kind='公开接口与文档中的责任分工' if p['kind'] in ('public','docs') else '公开源码与文档中的关键责任分工'
+    kind='公开接口与文档中的责任分工' if p['kind'] in ('public','docs','open-client') else '公开源码与文档中的关键责任分工'
     svg=f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 472" role="img" aria-label="{esc(key+' '+name+' 架构示意')}"><title>{esc(key+' '+name+' 架构示意')}</title><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#508984" stroke-width="1.3"/></marker></defs><style>text{{font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}}</style><rect width="960" height="472" rx="16" fill="#f3f7f6"/><text x="30" y="35" font-size="19" font-weight="600" fill="#163d34">{esc(key+' · '+name)}</text>{''.join(body)}<text x="30" y="437" font-size="13" fill="#60796f">{kind}；图中能力不表示每种入口与安装方式都默认开放。</text></svg>'''
     (FIG/(key+'.svg')).write_text(svg)
+
+# Evidence wording by profile kind. 'public': closed commercial runtime; 'docs': described from
+# public documents only; 'open-client': the client is open source but the server side (and the
+# built-in agent loop) is not, and the report pins no client snapshot. Other kinds cite pinned source.
+BOUNDARY={
+    'public':'下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。',
+    'docs':'下图依据所引公开文档概括职责，不代表完整源码审计或对现有服务可用性的确认。',
+    'open-client':'下图依据官方公开接口和客户端仓库的说明整理，表示责任分工。它的客户端已开源，服务端仍未公开；图中服务端一侧只按公开行为推断，不代表已审计服务端实现。',
+}
+SCOPE={
+    'public':'完整商业运行时未公开，结构判断以官方可见行为和接口为限。',
+    'docs':'此处主要依据公开说明与维护声明，未重新安装验证旧版本的全部功能。',
+    'open-client':'客户端开源、服务端未公开：本报告没有固定客户端源码快照，也没有审计服务端实现，结构判断以官方可见行为、接口和仓库说明为限。',
+}
 
 def clean(s):
     s=re.sub(r'^\*\*[^*]+[。．]\*\*\s*','',s)
@@ -76,7 +90,7 @@ def assemble(key,title,body):
     intro,arch,caps,how,model=split_baseline(key,body)
     sections=[]
     sections.append(intro+'\n\n'+p['principle'])
-    boundary='下图依据官方公开接口整理，表示责任分工，不代表已审计闭源内部实现。' if p['kind']=='public' else ('下图依据所引公开文档概括职责，不代表完整源码审计或对现有服务可用性的确认。' if p['kind']=='docs' else '下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。')
+    boundary=BOUNDARY.get(p['kind'],'下图结合所引源码与文档，画出本工具的主要责任分工；为便于理解，省略次要模块与错误分支。')
     sections.append(boundary+f'\n\n![{key} {name}：工作原理与责任分工](figures/profiles/{key}.svg)\n\n'+(arch.strip()+'\n\n' if arch.strip() else '')+p['mechanism']+('\n\n'+detail_markdown(key) if focus else ''))
     if p['rows']:
         table='| 观察项 | 实际机制／公开能力 | 对使用者意味着什么 |\n|---|---|---|\n'+'\n'.join('| '+' | '.join(r)+' |' for r in p['rows'])
@@ -106,7 +120,7 @@ def references(key,p,body,focus):
         if url not in [u for _,u in urls]:urls.append((label,url))
     selected=urls[:1]+urls[1:3]+urls[-1:] if len(urls)>3 else urls
     refs='、'.join(f'[{a}]({b})' for a,b in selected)
-    scope='完整商业运行时未公开，结构判断以官方可见行为和接口为限。' if p['kind']=='public' else ('此处主要依据公开说明与维护声明，未重新安装验证旧版本的全部功能。' if p['kind']=='docs' else '源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。')
+    scope=SCOPE.get(p['kind'],'源码链接指向固定提交；关键实现分析不等于对整个项目和依赖逐行审计。')
     tail='上面的流程建议与取舍是依据这些材料给出的选型判断；具体型号、权限和菜单以实际安装与账户为准。' if focus else '上面的结构与边界依据这些材料整理；当前安装方式、型号和菜单以官方最新文档为准。'
     return refs+'。\n\n'+scope+p.get('source_note','')+tail
 
