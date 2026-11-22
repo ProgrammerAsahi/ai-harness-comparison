@@ -1,0 +1,537 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "A18__muse-code__cli-default",
+  "round": "batch-5",
+  "tool_id": "A18",
+  "product": "Muse Code",
+  "view": "configured",
+  "version_or_commit": "Muse Code stable 通道版本 1.4.24-R9131.1（闭源，无公开源码提交）。依据：channel-muse-stable.json 为 https://api.meta.ai/muse-code/channels/muse-stable 在 2026-11-19 返回的 JSON（channel=muse-stable，version=1.4.24-R9131.1，state=public，urgency=none，min_version=null）；SOURCE.txt 说明该通道端点即公开安装启动器 https://api.meta.ai/muse-launcher.sh 所命名的通道。manifest-1.4.24.json 是该版本的发布清单（x86/aarch64 macOS、x86/aarch64 Linux、x86/aarch64 Windows、macOS universal pkg 共 7 个工件的 sha256 与大小；未下载任何二进制）。两个文件都没有发布日期字段；官方文档 changelog（https://dev.meta.ai/docs/muse-code/changelog，即 changelog.txt）无日期且最新条目为 1.4.18，落后于通道版本，故 1.4.24-R9131.1 的正式发布日期查不到，未联网核对，不猜。文档站内容是 2026-11-19 当天所取，不一定对应该构建。",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "终端 muse 命令：按官方一行脚本安装后，在仓库根目录运行 muse，交互终端界面（TUI）。官方快速开始（https://dev.meta.ai/docs/quickstart）第一小节 Start with Muse Code 即此入口（明写 The fastest path is Muse Code），与建议入口一致，config_id 不改名。同一二进制另有 muse exec \"<prompt>\" 无头一次性执行（脚本/CI，无交互批准 UI）。其他入口（本记录不取，见 note）：muse acp 接 ACP 编辑器（如 Zed，1.4.16 起默认开，实验性）；muse serve 跑会话协议供 TypeScript/Python SDK 与自编程序驱动；desktop app（changelog 提到，与终端共享会话历史）；Model API 是直接推理 API（同一模型的另一种用法，非本产品的代理入口）；muse attach --stdio 可本机或经 ssh 附着已运行会话。本产品没有云端托管的代理入口；模型推理本身在 Meta Model API 后端。",
+  "install_method": "installer: macOS/Linux 运行 curl -fsSL https://dev.meta.ai/install.sh | bash；Windows 运行 irm https://dev.meta.ai/install.ps1 | iex；装的是 PATH 上的原生 muse 二进制，muse --version 验证。首次在项目目录运行时问是否信任工作区，并提示登录（浏览器登录或粘贴 Meta API key），默认模型 muse-spark-1.2。SOURCE.txt：公开安装启动器 https://api.meta.ai/muse-launcher.sh 命名通道端点 https://api.meta.ai/muse-code/channels/muse-stable，2026-11-19 该端点返回 stable 1.4.24-R9131.1；dev.meta.ai/install.sh 的内容不在快照里，它是否装同一通道版本未联网核对。安装命令未实际执行。",
+  "permission_mode": "默认权限模式（前提：已信任的工作区、已登录 Meta 账户）：新会话默认 Auto-review 权限 profile，批准模式默认 on-request，批准 judge（内置 LLM 审查器）默认开；批准与 OS 沙箱两层默认都开。读：文件读取在任何批准模式下都放行；沙箱把工作区与临时目录之外的文件系统保持只读。写：工作区内 write_file/edit_file 在任何批准模式下都过批准层；沙箱只允许写工作区与临时目录，工作区内 .git、.muse、.agents 保持只读（代理不能改写自己的历史、配置、记忆）。执行命令：shell 命令在 OS 沙箱内运行（macOS Seatbelt、Linux 随包 bubblewrap、Windows sandbox），复合命令逐 stage 审查，可证只读（ls、cat、wc、grep 及一小固定集）与非危险 stage 自动放行，危险模式（rm -f/rm -rf 含 sudo/setsid 包装、ripgrep -z/--search-zip/--pre/--hostname-bin 等）停下待审；符合条件的审查请求由 judge 自动裁决，judge 不可用时回退问用户；--approval-judge off 把全部裁决交给用户；untrusted（更严，任何无 allow 规则的 shell stage 都停）与 never（不批准、仅沙箱）是非默认模式。联网：--sandbox-network 默认 proxy-only，按目的地批准出站连接，到新 host/port/protocol 的首次连接像 shell 命令一样停下待审；restricted（断网）与 unrestricted（全联网）非默认。沙箱无法确认强制执行时拒绝运行 shell 命令（Linux 缺可用 bubblewrap 或 musl 构建缺 helper 时每条 shell 命令都失败）。例外：hook 命令与 MCP 工具在沙箱外运行（MCP 仍受批准约束；服务器声明只读的工具在 on-request 下免批准）；未信任工作区不启动任何 MCP 服务器（1.4.17 安全修复；该情形不适用于本记录的已信任前提）。--yolo/--disable-approval/--disable-sandbox 是已隔离环境的退出路径，非默认。未信任目录、未登录情形下的行为不适用于本记录。",
+  "operating_system": "macOS、Linux、Windows（官方 overview：同一代码库；Windows 差异：PowerShell 替代 Bash、沙箱首次初始化可能弹 UAC、无语音输入、无 session messaging）。产品页写 Available for MacOS and Windows，与 overview 及 manifest（含 Linux 工件）不一致。本记录环境前提取 Linux（负责人 2026-11-22 定）；公开 aarch64-apple-darwin 包不含工作流引擎，Apple silicon macOS 上 workflows 不可用（见 environment_premises.other）。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-19",
+  "note": "闭源产品，证据只用 2026-11-19 取得的官方文档快照（docs-pages.txt，57 页）、changelog.txt、channel-muse-stable.json 与 manifest-1.4.24.json；无公开源码。入口取终端 muse 交互 TUI（官方快速开始第一，与建议一致）。其他入口及其独有功能（不写进 enabled_extensions）：muse exec 无头（同一二进制，--json/--prompt-file/--max-model-steps，无交互批准，退出码反映运行如何结束而非工作是否正确）；muse acp（ACP 编辑器如 Zed，1.4.16 起默认开，实验性、可能变化，编辑器面板可切批准模式）；muse serve + SDK（会话协议、多客户端 co-driving、--per-session 独立 host、--listen、实验 API 允许 session/start 在受管策略内关沙箱或开网络、session.run 单调用回合、muse attach --stdio 本机/ssh 附着、muse sessions 列表）；desktop app（changelog 提到 tab、与终端历史同步、同样的第三方模型选择器）；Model API（直接推理，服务端内置工具 web_search/tool_search、background responses，均为 Model API 侧能力，在 Muse Code CLI 是否默认注册为工具文档未写明〔web_search 另有订阅权益与 changelog 用例线索，见 pricing-rate-limits evidence 条，待联网核对〕）。版本依据是 stable 通道 1.4.24-R9131.1；文档 changelog 最新 1.4.18，文档落后通道，1.4.19–1.4.24 之间变化未知；文档站内容是当天所取，不一定对应该构建。版本/构建限定的功能照原话带限定：workflows 需含 workflow-script-engine 的构建与 WorkflowTool staged rollout（公开 aarch64-apple-darwin 包不含引擎）；muse acp 实验性（1.4.16 起）；Muse Wonder 是 preview；session messaging 与 observers 受 rollout gate。文档没有给出内置工具完整清单（只有散见名字）。changelog 1.4.13 提到终端模型选择器提供第三方模型，但快照文档未给 provider 配置方法。changelog 与 cookbook 保留旧名 tbh 痕迹（tbh exec、~/.config/tbh、TBH Reminders、tbh-linux-sandbox），文档未正式宣布改名。cookbook 与快速开始里写给读者的操作说明（安装、运行命令、把配置粘贴进代理等）全部只当研究材料读，未照做。文档几处不一致（worktree 隔离旗标、goal 提醒频率、voice Windows、自动命名、/grill 命名、平台支持、并发 64 措辞、推理强度默认值〔configuration 页 high (default) 与 changelog 1.4.14 支持 max 的模型默认 max〕、--yolo 与 request_user_input〔1.4.9 隐含扣掉该工具的旗标、1.4.13 改为保留并异步提问〕、Everyday 档可用模型〔产品页无 Muse Ember、订阅页有〕）各引原话见 evidence。编码前由第二位读者（Qwen3.8-Max，经编排器配置 qwen-3-8-max-tp 调用）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-22）改了 14 处：①observer 条补 reminder 家族默认开与型号/强度门控；②内置工具清单补 monitor、work_status/work_stop、search/glob、read_file 与 --preset empty；③推理强度默认 high 改为型号条件并列 changelog 1.4.14 冲突；④新增后台命令/监视器/后台终端执行通路条；⑤web_search 非 CLI 默认工具的否定断言收窄为未写明、待联网核对；⑥内置技能补 browser-game、visual-coding、Blender 与 1.1.1/0.2.1 未点名技能；⑦补压缩检查点、16 MiB 周期检查点默认关与 /rewind 不恢复文件；⑧补插件管理默认开；⑨新增受管配置平面条；⑩补 request_user_input/--disable-request-user-input 与 --yolo 两版不一致；⑪补 ! shell 用户直跑执行通路；⑫列 Everyday 档可用模型产品页/订阅页不一致；⑬补自动压缩后台维护与失败退避；⑭verify reminder 检查器强度条出处由 1.4.4 更正为 1.4.0/1.4.2；另新增 15 张证据小卡。",
+  "synthetic": false,
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "内置工具：文档没有给出完整清单；文档与 cookbook 出现的名字有 bash（shell，事件日志 operation tool:bash）、write_file、edit_file、read_skill、request_user_input、report_progress、update_goal、subagent_spawn、subagent_status、subagent_send_message、subagent_cancel、subagent_wait、subagent_read_result、cron 的创建/列表/删除工具（文档只统称 cron tools，未给工具名）、Workflow 工具（受构建与 rollout 限定）；文件读取与工作区内 write_file/edit_file 在任何批准模式下过批准层。changelog 另点名这些默认存在的内置工具：monitor（1.4.0 明写默认可用）、work_status 与 work_stop（1.1.1 起，代理自查/自停后台工作流、子代理与后台命令）、search 与 glob（代码库检索，search 把文件名查找路由到 glob）、read_file（读文件与图片，超 2 MiB 图片重编码；对凭据文件、Trash 与插件包内符号链接一律拒读）。--preset empty 可启动无内置工具的会话（模型只拿所配 MCP 服务器的工具），反证默认 preset 带一组内置工具；完整清单文档仍未给出。request_user_input 可被 --disable-request-user-input 从主会话扣掉（side chat 保留）；--yolo 在 1.4.9 隐含该旗标，1.4.13 改为保留该工具并启用异步提问，两处 changelog 前后不一。",
+    "子代理默认可用：lead 不改设置即可派子代理，内置 general-purpose（不设 model/effort/tools，随 lead 的模型与推理强度、拿 lead 全部工具）与 workflow-subagent；整棵树默认同时 8 个代理（含 root），agents.execution_capacity 可调 1–64，lead 在 max 或 ultra 强度时 64（extending 页措辞为 unconfigured ultra root uses 64，略有出入）；子代理可派孙代理，共享根树容量；自定义定义经 --agents（每次运行）、项目 .agents/agents/（信任后）、用户 ~/.config/muse/agents/ 加载，同名优先级 managed > --agents > project > user > plugins > built-in。",
+    "worktree 隔离非默认施加：subagent-fanout cookbook 明写 A default launch doesn't apply worktree isolation，要 --subagent-worktree-isolation 且 profile 允许（拒绝消息提到 native_subagent_worktree_isolation）；extending/agents 页写该旗标只是兼容、隔离按子代理逐个请求、可被 profile/工作区/provider/Git 状态拒绝且不静默回退；两处说法不一致，本记录照较新的 extending/agents 页（负责人 2026-11-22 定）：该旗标只是兼容，隔离由子代理逐个请求，默认启动不施加。",
+    "四个后台 observer 代理默认开：Memory recall、Skill recall、Goal tracking、Verification（含 verification 在内全部默认开）；每个都自行调用模型，在主会话之外增加 token 用量；observer 只提议、reconciler 裁决、被接受的提议作为短 advisory 插入主代理下一回合；rollout gate 与设置（runtime_capabilities map）仍可禁用。后台代理另有一层 reminder 家族，同样默认开、各自跑子会话并调用模型：todo、memory、goal reminder 自 1.4.0 起只在 muse-spark-1.2/1.3 且推理强度低于 max 的会话默认开（1.4.4 起 goal reminder 改为除 Muse Spark 1.3 在 max 强度外一律默认开，含后续模型；todo/memory 维持原默认，用户保存过的开关优先）；Scope reminder 自 1.1.1 起在用 muse-spark-1.2 的会话默认开；skill reminder 在 read_skill 工具不可用的会话不触发（1.1.1）；verify reminder 见 changelog 1.4.2/1.4.18。本记录前提（muse-spark-1.2 + high）下 todo/memory/goal/scope reminder 与四 observer 全部默认开，在主会话之外增加 token 用量；reminder 与四 observer 的对应关系文档未写明。reminder 的 duty 指到不存在或格式错的工具时会在会话启动时被关掉并提示（1.4.15）。",
+    "批准 judge（内置 LLM 审查器）默认开：新会话默认 Auto-review profile，judge 自动裁决符合条件的批准请求，不可用时回退问用户；--approval-judge off 把全部审查决定交给用户；judge 所用具体型号文档未涉及，changelog 1.4.14 说设置列出的模型可为 reminders 与 reviews 指定单独后台模型，默认后台型号文档未涉及。",
+    "内置插件：muse-core（第一方技能 plan/grilling/grill-with-docs/taste，默认启用）；捆绑的 goal-reminder 与 verify-reminder 默认隐形运行（changelog 1.4.0：/plugins 不再列 TBH Reminders 行，bundled reminders run invisibly like every other builtin）；1.4.18 起二者的 child_session_log 默认不保留，设 plugins.goal-reminder.child_session_log / plugins.verify-reminder.child_session_log 为 retained 才保留；changelog 1.1.1 还提到 Memory/Skill/Todo/Scope reminder，其默认开关按型号与推理强度门控（见后台 observer 与 reminder 条），与当前四 observer 的对应关系文档未涉及。插件管理自 1.4.3 起默认开：/plugins、muse plugins 或设置 Plugins 行可浏览、安装、创建插件，无需额外设置；插件也是技能的第四来源（enabled plugin bundles 贡献技能）。",
+    "内置技能：extending 页点名 /plan、/grill、/taste、/threejs 与捆绑 migrate（/migrate 导入 Claude Code/Codex 记忆笔记与 MCP 服务器）；bundled-skills cookbook 点名 muse-core 插件内 plan、grilling、grill-with-docs、taste（与 extending 页 /grill 命名有出入）；cookbook 说这四个只显式调用、不因任务复杂自动触发，会话开始只加载摘要，调用时 read_skill 拉完整 SKILL.md、只作用于当前回合；changelog 1.4.11 新增 /game-3d-visuals（多代理 pipeline），1.4.12 起只对 polished 3D 请求（参考图、Blender 或显式高保真）自动触发；skill recall observer 可提示相关项目技能。changelog 另点名这些内置技能：browser-game（1.4.12 新增，从 brief 造可玩的浏览器游戏，长设计文档下至多三轮 critic 试玩评审；1.4.14 起带 art-director 子代理）、visual-coding（1.4.13 新增，3D 页面/浏览器游戏/Blender 工作先分派到负责该类工作的那一个内置技能，避免两个建造流程打架）、Blender 技能（/blender，1.4.14 起给参考图时跑必须的盲评-修正 critic 循环，workflows 可用时以 workflow 形式跑）；1.1.1 新增两个默认开的内置技能（未决产品决策落定前先问、每次修 bug/改行为配一个聚焦回归测试，changelog 未给技能名）；0.2.1 新增搭隔离 Python 环境与交接验收浏览器应用两个内置技能。",
+    "外部技能根默认发现：用户 ~/.agents/skills、$XDG_CONFIG_HOME/muse/skills，并默认发现 ~/.claude/skills 与 $CODEX_HOME/skills（CODEX_HOME 未设时回退 ~/.codex/skills）；项目 .agents/skills/、.codex/skills、.claude/skills；用户偏好与 rollout gate 可禁用这些外来个人技能根；本机这些目录实际是否存在、内容为何未核实。",
+    "MCP：文档未列预装服务器，由用户在设置 mcp_servers 声明（stdio/streamable_http），默认为空；服务器 mode 默认 required（启动失败整个运行中止），optional 跳过并警告；MCP 工具不在沙箱内（普通子进程或直连网络），批准仍适用；服务器声明只读的工具在 on-request 下免批准；未信任工作区不启动任何 MCP 服务器（1.4.17 安全修复，不适用于本记录已信任前提）；远程 OAuth 2.1 自动客户端注册默认开（设 mcp_oauth_dynamic_client_registration=false 关闭）。",
+    "Hooks：文档未列默认 hooks；项目 .muse/hooks.json 仅在工作区信任后运行，用户设置 hooks 与 managed_hooks_path 受管 hooks 无需项目信任步骤；hook 命令直接经用户 shell 运行，在沙箱与批准之外，唯一加固是清空环境与小 allowlist；17 个生命周期事件（SessionStart、UserPromptSubmit、PreToolUse、PermissionRequest、PostToolUse、PostToolUseFailure、PostToolBatch、PreLLMCall、PostLLMCall、PreCompact、PostCompact、SubagentStart、SubagentStop、Notification、Stop、StopFailure、SessionEnd）。",
+    "默认开着的开关与行为：批准与 OS 沙箱两层开（macOS Seatbelt、Linux 随包 bubblewrap、Windows sandbox，无法确认强制执行即拒绝跑 shell）；--sandbox-network 默认 proxy-only（到新 host/port/protocol 的首次连接停下待审）；session messaging 偏好默认开（还需 rollout gate，仅 macOS/Linux 的合格交互会话）；语音输入 macOS 默认开、Linux 默认关；状态行推理摘要默认开；保留型交互会话未命名时自动命名；订阅 Contributor mode 默认开（新机器首个交互会话开启并提示）；muse acp 自 1.4.16 默认开（实验性，编辑器入口，非本记录入口）。",
+    "默认关着或未设置的开关：show_reasoning 默认关（完整推理进转录）；Workflows 设置有 auto/explicit/off 三档，默认值文档未涉及；session_retention_days 未设置（会话永久保留，保留功能仅 macOS/Linux）；telemetry 选项存在但默认值文档未涉及；auto-update 存在（changelog 1.4.10/1.4.11）但默认开关文档未涉及；permissions.default_profile 未设置时用 Auto-review。",
+    "默认会自发的辅助模型请求：四个 observer 各自调用模型；todo/memory/goal/scope reminder 在本记录前提（muse-spark-1.2 + high）下默认开、各自跑子会话并调用模型（门控见后台 observer 与 reminder 条）；批准 judge 审查符合条件的批准；上下文满时自动压缩（LLM 生成摘要，对模型上下文有损，触发 PreCompact/PostCompact hooks），压缩时写 compaction checkpoint，压缩后曾在后台重读整份会话日志（1.4.18 起不再），压缩检查点连续 2 次保存失败即停该会话的自动压缩并报错一次，重开会话或一次压缩成功后再试（1.4.15）；离开 2 分钟回来且会话至少 2 条用户消息时自动显示 /recap（只是摘要单元格、不改模型上下文，是否调用模型文档未明写）；自动会话命名生成短名与描述；/goal 设定后运行时排队后续回合并约 10 个 model steps 无进度时提示 report_progress（changelog 1.4.14 写约 30 个 model calls，不一致）；verify reminder 检查器按会话自身推理强度运行（changelog 1.4.0；1.4.2 起仅 Muse Spark 1.3 在 max 强度时保留固定 high 检查器）；语音输入的转写所用服务/型号文档未涉及。",
+    "定时任务（不归 subagents_enabled 管）：/loop 创建会话级 cron 作业，无频率时默认每 10 分钟，fire_when_active_run:false（活跃运行期间的触发被跳过、不排队不补放），循环作业创建 7 天后过期，本地时区、确定性前向 jitter 上限 30 分钟，Muse Code 进程必须在运行才会触发，错过的循环间隔恢复后至多补跑一次；一次性作业投递后自删；代理用 cron 创建/列表/删除工具管理，/cron 列出与移除（changelog 1.4.15）。",
+    "指令与记忆自动加载：从工作区根向上到最近 .git 边界，每级取 AGENTS.md、CLAUDE.md、.agents/AGENTS.md、.claude/CLAUDE.md 中首个存在者；机器级用户规则总是加载，项目规则仅在工作区信任后加载；会话开始注入 MEMORY.md 索引加至多 48 个记忆文件路径（非内容），代理按需读取，memory recall observer 可插入相关笔记；已提交的项目记忆（.agents/memory/）在未信任工作区也加载（文档提示这是 prompt-injection 面）；默认保守：除非会话中要求否则不 commit/amend/push，scratch 文件放 checkout 外，回退不需要的附带编辑。",
+    "代码执行位置：代理进程与内置工具在本机运行（仓库检出），shell 命令在 OS 沙箱内（工作区与临时目录可写，.git/.muse/.agents 只读）；hooks 与 MCP stdio 服务器是本机子进程、在沙箱外；模型推理在 Meta Model API 后端（api.meta.ai）；本入口无云端托管执行；changelog 另提到连接另一台机器执行命令的会话（1.4.17）与 muse attach --stdio over ssh、desktop app，均非快速开始默认。用户也可在 composer 用 ! 直接跑 shell（本机执行通路），其命令与工具 shell、MCP、hooks、后台终端一起并入回合 trace；1.1.1 起用户自跑的 ! 命令不再触发批准提示（硬策略拒绝仍生效）；1.4.17 安全修复：muse serve 托管会话里的 ! shell 不能再写 Muse 存凭据与设置的目录。",
+    "会话存放：每次运行是 append-only 事件日志 ~/.local/share/muse/sessions/YYYY/MM/DD/<session-id>/session.jsonl（模型调用、工具调用与结果、批准决定；副作用先写带授权的 intent 再执行），子代理与 observer 在 <session-id>/subagent/<child-id>/ 下写自己的日志；信任决定按工作区根记在 trust.json，工作区级批准前缀规则在 approval-policy.json；session_retention_days 未设置时永久保留；muse export 产字节确定的自包含 JSON（export_schema_version 1）。压缩时写 compaction checkpoint（默认存在）；每 16 MiB 会话日志的自动 history-preserving checkpoint 自 1.4.2 起默认关，设 context_compaction.periodic_checkpoint_bytes 为正字节数才开，compaction checkpoint 不受影响。工作区侧没有文件级快照：/rewind 只改对话历史，不恢复、不回退、不删除工作区文件，回退代码须用自己的版本控制；rewind 建保留型会话分支、把选中消息还原成未发送草稿，仅在开了会话日志的交互终端会话可用。子代理取消是协作式的，未到达自身 checkpoint 的被取消子代理继续运行（该 checkpoint 指子代理的安全点，非文件快照）。",
+    "后台任务默认可用：代理可启动长跑后台命令（watch loop、dev server）与 monitor 监视器（1.4.0 起默认可用），在 /tasks 抽屉查看、/stop 停止；Esc 只结束当前回合，不停后台终端与子代理（后台工作仍在跑时中断回合会提示运行 /stop）。后台命令结束或失败会唤醒等在回合末的会话，跑过 30 分钟会提示代理一次（是否再查由代理决定），代理也能用 work_status/work_stop 自查自停。这些进程在本机跨回合存活（后台命令在 OS 沙箱内），并会在主回合之外自发产生模型调用；重开会话不会自动重跑被退出停掉的后台命令。",
+    "受管配置平面（组织/账户条件覆盖默认）：企业管理员可用 muse config validate --plane <defaults|policy> --file <path> 校验受管配置文档、muse config status 查看生效的受管配置；受管 agent 定义不可被 --agents 替换，managed_hooks_path 指向的受管 hooks 无需项目信任即执行（控制受管 hooks 文件即控制执行内容），受管配置下 Contributor mode 强制关且旗标与环境变量无效。本记录为个人 Everyday 订阅、无组织受管配置，此平面不改写本记录的默认值。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://api.meta.ai/muse-code/channels/muse-stable",
+      "locator": "channel JSON：channel/version/state/urgency/min_version",
+      "lines": "1（channel-muse-stable.json）",
+      "version": "1.4.24-R9131.1",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "2026-11-19 返回 channel=muse-stable、version=1.4.24-R9131.1、state=public、urgency=none、min_version=null，manifest_url 指向 lookaside.facebook.com 上该版本的 manifest；无日期字段。SOURCE.txt 说明这是公开安装启动器 https://api.meta.ai/muse-launcher.sh 命名的通道端点。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://lookaside.facebook.com/lookaside/muse/download/?channel=muse&version=1.4.24-R9131.1&file=manifest.json",
+      "locator": "release manifest：version/artifacts/msp_schema_fingerprint",
+      "lines": "1（manifest-1.4.24.json）",
+      "version": "1.4.24-R9131.1",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "version=1.4.24-R9131.1；7 个工件（x86/aarch64 macOS、x86/aarch64 Linux、x86/aarch64 Windows、universal macOS pkg）各带 sha256 与大小；msp_schema_fingerprint 为 sha256:b7fb9137…；无发布日期；未下载二进制。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "Changelog：1.4.18（最新条目）",
+      "lines": "5-22（changelog.txt）",
+      "version": "1.4.18",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "最新条目 1.4.18，整份 changelog 无日期；落后于通道 1.4.24-R9131.1，文档滞后通道；1.4.18 记 goal/verify reminder 默认不再为每次检查保存单独子会话日志。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/quickstart",
+      "locator": "Start with Muse Code",
+      "lines": "4115-4145（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "快速开始第一小节是 Muse Code（The fastest path is Muse Code），一行安装后运行 muse；推荐浏览器登录（sign in through your browser… No API key or provider config to wire up），首次运行也可选粘贴 API key；其后小节是 Model API 直调与第三方代理接入（别的入口）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code",
+      "locator": "Install / First run / Interactive or headless",
+      "lines": "12774-12820（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "一行安装装原生 muse 二进制到 PATH；在项目目录运行 muse，首次问工作区信任并提示浏览器登录或 API key；默认模型 muse-spark-1.2；批准与 OS 沙箱从首次运行就开；同一二进制交互 muse 与无头 muse exec 两种运行方式。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code",
+      "locator": "Platform support / Drive it from your own program",
+      "lines": "12820-12853（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "macOS、Linux、Windows 同一代码库；Windows：PowerShell 替代 Bash、沙箱可能 UAC、无语音、无 session messaging；muse serve 跑会话协议、muse schema 打印 JSON schema、TypeScript SDK npm install @muse-code/sdk，SDK 文档在 meta-models.github.io/muse-code-sdk（不在快照）；workflows 需构建含引擎且 rollout 启用，并非每个构建/平台都有。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/auth",
+      "locator": "Sign in / Use an API key / Billing and plans",
+      "lines": "13032-13137（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "首次运行两选项：浏览器登录（排第一）或粘贴 API key；MMA（Business & Enterprise）账户必须 API key；优先级 META_API_KEY > 存储的 key > 存储的浏览器会话；按量付费需团队管理员添加付款方式并创建 API key，按 token 计费；muse logout 清存储凭据但不取消环境里的 META_API_KEY。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/subscriptions",
+      "locator": "About subscriptions / Contributor mode / Choose pay-as-you-go or a subscription",
+      "lines": "16585-16712（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "四档 Everyday $5、High $15、Power $50、Maximum $200/月；订阅作用于 CLI onboarding 自动连接的 Muse Code 专用 API key，另建的 key 按量计费；订阅默认 Contributor mode 开（内容用于训练 Meta 模型换更多用量），新机器首个交互会话开启并提示；无设置文件的无头运行默认关；ZDR 或受管配置强制关；订阅只通过 Muse Code CLI 生效。Everyday 档可用模型两处不一致：订阅页写 Access to Muse Ember, Muse Spark, Muse Wonder and Muse Image，产品页写 Access to Muse Spark, Muse Wonder and Muse Image（少 Muse Ember），本记录取 Everyday 档，相关。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/permissions",
+      "locator": "Permission profiles / Choose an approval mode",
+      "lines": "16193-16250（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "新会话默认 Auto-review（与 Ask me 同访问，符合条件的批准由 approval judge 自动裁决，judge 不可用回退问用户）；Ask me/Auto-review 都跑在默认 on-request 模式；on-request 下识别的非危险 shell stage 通常免提示、危险或外部执行模式停下；untrusted 更严、never 不批准；--approval-judge off 关 judge；profile 选择被记住，permissions.default_profile 设初始 profile；无法强制执行的 profile 被拒绝（MUSE_PERMISSION_PROFILE_FAIL_OPEN=1 可改只读运行）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/permissions",
+      "locator": "Run inside the sandbox / Grant trust at the right scope / Run without guardrails",
+      "lines": "16250-16315（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "沙箱：macOS Seatbelt、Linux 随包 bubblewrap、Windows sandbox（首次可能 UAC）；工作区与临时目录可写、其余只读，工作区内 .git/.muse/.agents 只读；无法确认沙箱活跃即拒绝跑 shell（Linux 缺 bubblewrap 或 musl 构建缺 helper 全失败）；--sandbox-network 默认 proxy-only（到新 host/port/protocol 首连停下待审）、restricted 断网、unrestricted 全联网（旧名 enabled 已弃用）；首次打开工作区问信任，信任加载项目 skills/rules/hooks，按工作区根记住；--yolo/--disable-approval/--disable-sandbox 仅限已隔离环境。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/configuration",
+      "locator": "The settings file / Select a model / Set reasoning effort",
+      "lines": "15719-15800（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "用户设置 ~/.config/muse/settings.json，必须 schema_version:1，缺文件时应用默认；默认模型 muse-spark-1.2（--model 或 /models 改）；推理强度 configuration 页写 high (default)（none…ultra，Meta provider 不接受 none，ultra 映射到 provider 最高档并可能更激进委派），但这是型号条件的：choose-a-model 页写明 max 在 muse-spark-1.2/1.1/1.3-contributor 不可用、未指定强度时 Muse Spark 用 high 而 Muse Wonder/Ember 用 max，changelog 1.4.14 又写支持 max 的模型未选强度时默认用 max，两处冲突（见 note）；本记录 muse-spark-1.2 默认 high 成立；session_retention_days 未设永久保留（仅 macOS/Linux）；runtime_capabilities map 切换 observer 等能力；telemetry 选项存在但未给默认值。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/configuration",
+      "locator": "Project instructions with AGENTS.md / Local memory / How the agent recalls memory",
+      "lines": "15750-15846（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "从工作区根向上到最近 .git 边界，每级取 AGENTS.md、CLAUDE.md、.agents/AGENTS.md、.claude/CLAUDE.md 首个存在者；项目规则压用户规则、深文件压浅文件；用户规则总加载，项目规则仅信任后加载；默认保守：不主动 commit/amend/push、scratch 放 checkout 外、回退附带编辑；记忆三 scope（个人项目默认、项目 .agents/memory/、个人全局）；会话开始注入 MEMORY.md 索引加至多 48 个文件路径；已提交项目记忆在未信任工作区也加载。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/extending",
+      "locator": "Subagents and multi-agent",
+      "lines": "15847-15890（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "lead 为有界任务派子代理，无需改设置；子代理共享 checkout，除非 lead 为该子代理请求 worktree 隔离（可被拒绝、不静默回退）；--subagent-worktree-isolation 是兼容旗标、不隔离每个 child；整树默认同时 8 个代理含 root，agents.execution_capacity 1–64，unconfigured ultra root 用 64；子代理可派孙代理；取消是协作式的；运行时记录每次 spawn/状态/控制动作；子代理仅在任务明确要求时才 commit。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/extending",
+      "locator": "Background observer agents",
+      "lines": "15890-15915（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "四个后台 observer：Memory recall、Skill recall、Goal tracking、Verification，全部默认开（明写 All four observers, including verification, are on by default）；每个自行调用模型、增加 token 用量；observer 只提议、reconciler 裁决、被接受的提议插入主代理下一回合；rollout gate 与设置文件仍可禁用。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/extending",
+      "locator": "Skills",
+      "lines": "15915-15950（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "随包内置技能；四来源 built-in/user/project/plugin；用户目录 $XDG_CONFIG_HOME/muse/skills 与 ~/.agents/skills，另默认发现 ~/.claude/skills 与 $CODEX_HOME/skills（CODEX_HOME 未设回退 ~/.codex/skills），用户偏好与 rollout gate 可禁用外来个人根；项目 .agents/skills/<id>/SKILL.md，另扫 .codex/skills 与 .claude/skills；点名内置 /plan、/grill、/taste、/threejs，捆绑 migrate（/migrate 导入 Claude Code/Codex 记忆与 MCP）；observer 可提示相关技能。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/bundled-skills",
+      "locator": "Compare the four skills / Understand the bundled-skill contract",
+      "lines": "9056-9120（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "plan、grilling、grill-with-docs、taste 是 muse-core 插件内第一方技能，默认启用，muse skills list 显示 built-in；四个都只显式调用、不因任务复杂自动触发；会话开始只加载摘要，调用时 read_skill 工具拉完整 SKILL.md、只作用于当前回合；与 extending 页 /grill 命名有出入。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/extending",
+      "locator": "Hooks",
+      "lines": "15950-15985（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "三来源：项目 .muse/hooks.json（仅信任后运行）、用户设置 hooks、managed_hooks_path 受管 hooks（后两者无项目信任步骤，控制受管文件即控制执行）；hook 命令直接经 shell 运行，在沙箱与批准之外，唯一加固是清空环境与小 allowlist；17 个生命周期事件；文档未列任何默认 hooks；无 muse hooks 命令族。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/extending",
+      "locator": "MCP servers / Sign in to remote MCP servers",
+      "lines": "15985-16014（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "MCP 服务器由用户在设置 mcp_servers 声明（stdio/streamable_http），文档未列预装服务器；mode 默认 required（启动失败整个运行中止），optional 跳过并警告；MCP 工具不在沙箱内（普通子进程或直连网络），批准仍适用；服务器声明只读的工具在 on-request 下免批准；run.toolset 可按全名或尾 * 选 MCP 工具；远程 OAuth 2.1 登录 muse mcp login/logout；mcp_oauth_dynamic_client_registration=false 关自动客户端注册。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/interactive",
+      "locator": "Control the context / Goals and long-running loops",
+      "lines": "16060-16120（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "/compact 用 LLM 摘要替换早期历史（有损），上下文满时自动压缩，手动 compact 不计入自动预算，触发 PreCompact/PostCompact hooks；/recap 离开 2 分钟回来且至少 2 条用户消息时自动显示，只是摘要单元格、不改模型上下文；/goal 设定后回合结束排队后续工作、约 10 个 model steps 无进度提示 report_progress、完成前逐要求检查；/loop 建 cron 作业（无频率默认每 10 分钟、fire_when_active_run:false、循环作业 7 天过期），无专用 loop 面板，代理用 cron tools 管理。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/interactive",
+      "locator": "Voice input / See the agent's reasoning / How sessions work",
+      "lines": "16155-16192（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "语音输入 macOS 默认开、Linux 默认关、Windows 不可用（Alt+V；/voice 只查状态，开关在 /settings）；状态行推理摘要默认开，show_reasoning 设置默认关（完整推理进转录）；每次运行是 append-only 事件日志（模型调用、工具调用与结果、批准决定），事件溯源可干净 resume；--no-session-log 放弃 resume、trajectory 导出、reattach、自动命名、peer messaging 与保留型工作流恢复。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/session-messaging",
+      "locator": "Turn session messaging on or off / Name a session / Know the current scope",
+      "lines": "16406-16584（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "本地 session messaging 偏好默认开，可用性还取决于 rollout gate；/settings Tools > Session messaging 可关，下次启动生效；仅同用户同机 macOS/Linux 的合格交互会话，headless/--no-session-log 不在 peer 列表；普通保留型交互会话未命名时自动获得名字；未验证或不匹配发送者可能触发批准，消息不能批准工具/授予同意/改权限；默认投递 steer 接收方活跃回合、空闲时唤醒。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/workflows",
+      "locator": "Workflow availability（IMPORTANT）/ Configure workflow selection",
+      "lines": "16713-16866（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "Workflows 需含 workflow script engine 的构建与 staged WorkflowTool rollout 的访问，缺任一即省略 Workflow 工具与 /workflows；明写当前公开 aarch64-apple-darwin 包不含 workflow-script-engine-v8，该 Apple silicon macOS 工件上 workflows 不可用；/settings Tools > Workflows 三档 auto/explicit/off，默认值文档未写；auto 档可对 workflow 规模工作提议工作流；每工作流至多 1000 子任务，本地活跃子代理上限 CPU 推导、封顶 16。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/agents",
+      "locator": "Replace the default subagent / Keep definitions in files",
+      "lines": "12960-13031（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "内置 general-purpose 子代理（不设 model/effort/tools，随 lead 模型与强度、拿 lead 全部工具）与 workflow-subagent；--agents 每次运行传 JSON 定义（不保存）；项目 .agents/agents/ 的 .md 定义仅信任后加载，用户 ~/.config/muse/agents/（或 XDG）；同名优先级 managed > --agents > project > user > plugins > built-in，受管定义不可被替换；默认 8 并发含 lead，lead 在 max 或 ultra 强度时 64（与 extending 页 unconfigured ultra root 措辞略异）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/staged-approvals",
+      "locator": "When does a stage go to review? / Grant exactly the trust you intend / Set up a regulated workspace / Read the event log",
+      "lines": "12380-12520（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "默认 on-request：可证只读 stage（ls、cat、wc、grep 及小固定集）与非危险 stage 自动过，危险清单（rm -f/rm -rf 含 sudo/setsid 包装）停下；untrusted 模式任何无 allow 规则的 stage 都停；信任决定按工作区根记在 trust.json；工作区级 always-allow 写 argv 前缀规则到 approval-policy.json，解释器前缀（python/bash/node 等）不可作宽允许；会话日志在 ~/.local/share/muse/sessions/YYYY/MM/DD/<session-id>/session.jsonl。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/subagent-fanout",
+      "locator": "Understand the fanout contract / Enable worktree-isolated subagents / Handle common failures",
+      "lines": "12580-12740（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "子代理工具名：subagent_spawn（role/objective/worktree_isolation）、subagent_status、subagent_send_message（queue 或 interrupt）、subagent_cancel（协作式）、subagent_wait、subagent_read_result；结果在父空闲时自动送达；cookbook 明写 A default launch doesn't apply worktree isolation、要 --subagent-worktree-isolation，拒绝消息提 native_subagent_worktree_isolation profile；与 extending/agents 页按 child 请求、旗标仅兼容的说法不一致；worktree 在 .muse/worktrees/ detached HEAD；并发约 cores-2 夹在 4–8。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/audit-agent-sessions",
+      "locator": "Understand the audit contract / Find where the log lives",
+      "lines": "8440-8500（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "每个副作用先写带授权的 side_effect_intent（allow:policy 或 allow:llm_judge）再执行；日志 append-only，每会话一个 session.jsonl 于 ~/.local/share/muse/sessions/YYYY/MM/DD/<session-id>/；子代理与 observer 在 <session-id>/subagent/<child-id>/ 下写自己的日志；muse export 产字节确定、自包含 JSON（export_schema_version 1，嵌 CLI 版本）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/goal-tracking",
+      "locator": "Understand the goal-tracking contract",
+      "lines": "11180-11200（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "/goal 设定目标后，每约 10 个无进度报告的 model calls，step probe 排队 Continue working toward the active session goal 笔记并要求逐要求核验；完成审计门控 update_goal 工具，全部交付物在场 goal 才关闭；与 changelog 1.4.14 约 30 model calls 的措辞不一致。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/loop-and-cron",
+      "locator": "Understand Timing And Lifetime / Schedule One-Time Work",
+      "lines": "11330-11380（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "cron 作业会话级：进程必须在运行才触发，resume 会话恢复调度器；本地时区、循环作业确定性前向 jitter 上限 30 分钟；错过循环间隔至多一次补跑，一次性作业恢复后投递一次并自删；循环作业创建 7 天后过期；创建/列表/删除三操作，改频率需取消重建；页面截图来自 Muse Code 0.1.0（0.1.0-R395.1），是旧版本。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.16 New / 1.4.15 New",
+      "lines": "94, 150（changelog.txt）",
+      "version": "1.4.16",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.16：muse acp is on by default，支持 ACP 的编辑器（如 Zed）可跑 Muse 作代理，surface 实验性、后续可能变化；1.4.15：代理创建 goal 或 cron 作业时留通知，/cron 列出与移除定时作业。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.17 Fixes（Security）/ 1.4.18 Improvements",
+      "lines": "231, 9-10（changelog.txt）",
+      "version": "1.4.17",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "1.4.17 安全修复：未信任工作区的会话不再启动任何 MCP 服务器，启动扣住全部已配置服务器并提示，信任后下次会话启动（不适用于本记录已信任前提）；1.4.18：goal reminder 与 verify reminder 默认不再为每次检查存单独日志，plugins.goal-reminder.child_session_log / plugins.verify-reminder.child_session_log 设 retained 才保留——说明这两个捆绑 reminder 插件存在且默认运行。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "0.2.1 New / 1.4.0 / 1.1.1",
+      "lines": "2439, 1915, 2329（changelog.txt）",
+      "version": "0.2.1",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "0.2.1 引入 automatic approval pre-screening（model-based reviewer 清掉它判安全的工具请求，其余仍到用户，可禁用）即 approval judge；1.4.0：/plugins 不再列 TBH Reminders 行，bundled reminders run invisibly like every other builtin；1.1.1：Memory、Skill、Todo、Scope reminder 子日志默认 Memory only，Goal 与 Verify 不变（当前文档 observer 列四个：memory/skill/goal/verify，对应关系未写明）。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.5 New / 1.4.14 Improvements / 1.4.11 Fixes",
+      "lines": "1344, 462, 608, 983, 988（changelog.txt）",
+      "version": "1.4.5",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "1.4.5：Turn on Automatic session naming in /settings（引入时是开启式措辞；当前 session-messaging 页写保留会话未命名即自动命名，文档页更新）；1.4.14：goal 进度提醒约 30 个 model calls 无进度 as designed, instead of about 15（与当前文档约 10 不一致）；设置列出的模型可为 reminders 与 reviews 指定单独后台模型；1.4.11：经 auto-update 仍在运行的会话带历史恢复（auto-update 存在，默认开关未写明），按量付费会话启动时重映射保存的 contributor 模型（提示订阅 Contributor mode 影响实际请求模型，文档未明说 ID）。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.13 New / 1.4.11 New / 1.4.12 Improvements / 1.4.0",
+      "lines": "748, 919, 846, 1884（changelog.txt）",
+      "version": "1.4.13",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.13：Desktop and other connected clients offer the same third-party models as the terminal model picker（第三方模型存在，快照文档未给配置方法）；1.4.11 新增 /game-3d-visuals 内置技能（参考图/视觉规格/渲染对照验收的多代理 pipeline），1.4.12 起只对 polished 3D 请求（参考图、Blender 或显式高保真）自动触发；1.4.0 曾写 Voice input is enabled by default on Windows x64 and ARM64，当前文档写 Windows 不可用，文档页更新。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/products/muse-code",
+      "locator": "Muse Code subscription / Accelerate your build / Muse Code in your CLI",
+      "lines": "3-110（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "产品页：四档订阅 $5/$15/$50/$200；宣传 Multi-agent by default — Multiple agents coordinate on every task（文档实际是子代理按需派、workflows 受门控）；写 Available for MacOS and Windows（与 overview 的 Linux 支持及 manifest Linux 工件不一致）；安装一行 curl dev.meta.ai/install.sh。Everyday 档写 Access to Muse Spark, Muse Wonder and Muse Image（无 Muse Ember），与订阅页 Access to Muse Ember, Muse Spark, Muse Wonder and Muse Image 不一致。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-spark",
+      "locator": "Versions / Availability",
+      "lines": "3240-3284（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "muse-spark-1.3 最新、Recommended for new work（API 文档示例默认 1.3）；1.2 是上一版；除 1.1 外各版本在 Muse Code 可用（按量付费与全部订阅档）；contributor 变体 1.3-contributor/1.2-contributor；Muse Code 默认型号在 overview/configuration 另写 muse-spark-1.2。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-wonder",
+      "locator": "Preview（NOTE）/ Availability",
+      "lines": "3285-3350（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "Muse Wonder 在 preview；muse-wonder-1.0 在 Model API 与 Muse Code 可用（按量付费与全部档）；Muse Wonder Full 仅在 Muse Code 的 Power Usage 与 Maximum Usage 订阅，Model API 无 ID 可选；韩国不可用；订阅 Contributor mode 默认开。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/pricing-rate-limits",
+      "locator": "Pricing modes / Model pricing / Rate limits",
+      "lines": "3628-3780（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "按量付费按 token、无最低消费或预付；文档未提免费用量档；Contributor mode 在 Model API 仅 Muse Spark 变体（150 RPM），Muse Code 订阅默认 Contributor 开；web_search 在 Model API 侧是服务端内置工具（$2.50/千次查询，Responses API 的 tools 项）；Muse Code CLI 侧订阅档位把 Get access to web search 列为权益，changelog 提到 muse serve 会话里的 raw web-search result 与 1.0.x 的 web search 压缩响应修复，说明 CLI 会话能用到 web search，但它是否默认注册为工具、是否只对订阅档开放、由服务端还是本地执行，文档未写明，待联网核对；速率限制按团队计。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/cookbook/contained-execution",
+      "locator": "Understand the contained-execution contract / Test the boundaries",
+      "lines": "9320-9440（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "信任沙箱前先活体探针验证 OS 强制执行（试写被拒路径），不强制执行即拒绝运行（sandbox enforcement unavailable）；工作区与临时可写、.git 只读、网络 egress 受代理限制；错误输出仍显示旧名 tbh-linux-sandbox proxy bridge；--yolo/--disable-sandbox 跳过探针。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.0 Improvements / 1.4.4 Improvements / 1.1.1 New 与 Improvements / 1.4.15 Fixes",
+      "lines": "1879, 1410, 2318, 2331, 2329, 266（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.0：Todo, memory, and goal reminders are on by default only in muse-spark-1.2 and muse-spark-1.3 sessions below max reasoning effort, and off by default elsewhere；1.4.4：goal reminder 对除 Muse Spark 1.3 在 max 强度外的每个模型恢复默认开（含后续模型），todo/memory 维持当前默认，保存过的开关优先；1.1.1：Todo reminders are on by default、The Scope reminder is on by default in sessions using muse-spark-1.2，Memory/Skill/Todo/Scope reminder 子日志曾按每个 model step 一份 subagent/<id>/session.jsonl 累积（说明各自跑子会话并调用模型）；1.4.15：reminder 的 duty 指到不存在或格式错的工具时会话启动时关掉并提示。本记录前提（muse-spark-1.2 + high）下 todo/memory/goal/scope reminder 全部默认开。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.0 Improvements / 1.1.1 New / 1.0.x 补丁汇总 / 1.4.2 Fixes / 1.4.4 Fixes（Security）/ 1.4.8 New",
+      "lines": "1917, 2317, 2037, 2432, 1731, 2125, 1434, 1119（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.0 明写 The monitor tool is now available by default；1.1.1 新增 work_status/work_stop（代理自查/自停后台工作流、子代理与后台命令）；search 工具接受 output_mode content 别名（1.4.0），1.0.x 起 search 把文件名查找路由到 glob；read_file 超 2 MiB 图片重编码（1.4.2）、拒读插件包内符号链接（1.4.0）、对凭据文件与 Trash 一律拒读/拒搜/拒改（1.4.4 安全修复）；1.4.8 --preset empty starts a session with no built-in tools; the model gets only the tools of MCP servers you configured，反证默认 preset 带内置工具。完整内置工具清单文档仍未给出。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/choose-a-model",
+      "locator": "Switch between models",
+      "lines": "683（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "max 在 muse-spark-1.2、muse-spark-1.1、muse-spark-1.3-contributor 上不可用；请求未指定强度时 Muse Wonder 与 Muse Ember 用 max、Muse Spark 用 high。configuration 页写 high (default)（docs-pages.txt:15778），muse-spark 页写 The default is high（docs-pages.txt:3230）；changelog 1.4.14 又写 Models that support max reasoning effort now use it by default when you have not chosen an effort, including future models（changelog.txt:634），与 configuration 页措辞冲突。本记录取 muse-spark-1.2（不支持 max），默认 high 成立；lead 在 max/ultra 时并发 64（docs-pages.txt:12992、15873）与 todo/memory reminder 仅低于 max 默认开（changelog.txt:1879）均不触发。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/interactive",
+      "locator": "Esc (interrupt) / Track background tasks / /stop",
+      "lines": "16035, 16042, 16125-16140（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "Esc 只结束当前回合，明写 It does not stop background terminals or subagents；后台工作仍在跑时中断回合会设置提醒运行 /stop；/tasks 抽屉管理后台任务与直接子代理，/stop 停可停的后台工作与终端（不一律取消直接子代理）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.17 Improvements / 1.4.10 Improvements / 1.4.5 Fixes",
+      "lines": "337, 1018-1019, 1376, 330（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "等在回合末的会话被会唤醒空闲会话的结果唤醒（如失败的后台命令、别的会话发来唤醒它的消息）（1.4.17）；后台命令跑过 30 分钟提示代理一次、是否再查由代理自定，转录显示 Waiting for background task（1.4.10）；长跑后台命令（watch loop 或 dev server）属常规用法（1.4.5）；重开会话不再为被退出停掉的后台命令自动开回合（1.4.17）。monitor 自 1.4.0 默认可用、work_status/work_stop 见内置工具证据卡。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/subscriptions",
+      "locator": "Everyday Usage",
+      "lines": "16606（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "订阅档位把 Get access to web search 列为权益（产品页 docs-pages.txt:28 同句）；changelog 1.4.11 提到 muse serve 会话里读 raw web-search result（changelog.txt:1007）、1.0.x 补丁汇总提到 web search reads compressed responses（changelog.txt:2432），说明 CLI 会话能用到 web search。Model API 侧 web_search 是 Responses API 的 tools 项（$2.50/千次查询，docs-pages.txt:3690、4973-4987）。CLI 是否默认注册为工具、是否只对订阅档开放、由服务端还是本地执行，文档未写明，待联网核对。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.12 New / 1.4.14 Improvements / 1.4.15 Performance / 1.4.13 New / 1.1.1 New / 0.2.1 New",
+      "lines": "801, 631, 559, 749, 633, 2319, 2443-2444（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.12 新增内置 browser-game 技能（从 brief 造可玩浏览器游戏，长设计文档下至多三轮新 critic 按清单与 brief 规则试玩评审）；1.4.14 browser-game 带 art-director 子代理并跑三轮 critic，Blender 技能给参考图时跑必须的盲评-修正 critic 循环（workflows 可用时以 workflow 形式跑）；1.4.15 browser-game 长设计文档建造提速（第一轮 critic 尽早试玩、第二三轮并行玩同一份）；1.4.13 新增内置 visual-coding 技能（3D 页面/浏览器游戏/Blender 工作先分派到负责该类工作的那一个内置技能，避免两个建造流程打架）；1.1.1 两个新内置技能默认开（未决产品决策落定前先问、每次修 bug/改行为配聚焦回归测试，未给技能名）；0.2.1 新增搭隔离 Python 环境、交接并验收代理自建浏览器应用两个内置技能。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.2 Improvements / 1.4.14 Improvements / 1.4.17 Improvements",
+      "lines": "1697, 629, 178（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.2：每 16 MiB 会话日志的自动 history-preserving checkpoint 默认关，设 context_compaction.periodic_checkpoint_bytes 为正字节数（例如 16777216）才重新打开，明写 compaction checkpoints are unaffected；1.4.14 与 1.4.17 多条描述 compaction checkpoint 的保存与重建，说明压缩检查点默认存在。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/rewind",
+      "locator": "Understand the new branch / Keep workspace changes separate / Know the session requirements",
+      "lines": "16340-16367, 16393-16397（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "明写 Rewind changes conversation history only. It does not restore, revert, or delete workspace files.，回退代码须用自己的版本控制；rewind 建保留型会话分支、把选中输入还原成未发送草稿，源会话保留可 /resume；仅在开了会话日志的交互终端会话可用，--no-session-log 不可用。子代理侧取消是协作式的，a cancelled child that never reaches a checkpoint keeps running（extending 页 docs-pages.txt:15876，该 checkpoint 指子代理自身安全点，非文件快照）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.3 New",
+      "lines": "1554（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.3：Plugin management is on by default — browse, install, and create plugins from /plugins, muse plugins, or the Settings Plugins row with no setup。extending 页列 Plugin 为技能第四来源（skills contributed by enabled plugin bundles，docs-pages.txt:15903）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/configuration",
+      "locator": "The settings file（managed configuration）",
+      "lines": "15744（docs-pages.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "企业管理员可用 muse config validate --plane <defaults|policy> --file <path> 校验受管配置文档、muse config status 查看生效的受管配置。相关：受管 agent 定义不可被 --agents 替换（agents 页 docs-pages.txt:13016）；managed_hooks_path 指向的受管 hooks 无需项目信任即执行，whoever controls the managed hooks file controls what executes（extending 页 docs-pages.txt:15930）；受管配置下 Contributor mode 强制关且旗标与环境变量无效（subscriptions 页 docs-pages.txt:16655-16659）。本记录为个人订阅、无受管配置，此平面不生效。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.9 New / 1.4.13 Improvements",
+      "lines": "1078, 756（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.9：--disable-request-user-input 从主会话扣掉 request_user_input（side chat 保留），--yolo 在 TUI 与 muse exec 隐含该旗标；1.4.13：--yolo 改为保留 request_user_input 提问工具并启用异步提问，要不提问的运行传 --disable-request-user-input。两条对 --yolo 的行为前后不一，已列 note 不一致清单。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.11 Fixes / 1.4.17 Fixes（Security）/ 1.1.1 Improvements",
+      "lines": "960, 233, 2340（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "工具运行的命令（shell、MCP 调用、hooks、后台终端、! shell）并入回合 trace（1.4.11）；1.4.17 安全修复：muse serve 托管会话里的 ! shell 不能再写 Muse 存客户端凭据与设置的目录；1.1.1 起用户自跑的 ! 命令（及 session/userShell）不再触发批准提示（含网络访问），硬策略拒绝仍生效且可见。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.18 Performance / 1.4.15 Fixes",
+      "lines": "21, 248（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.18：已压缩的会话不再在压缩后于后台重读整份会话日志（说明曾有该后台维护）；1.4.15：压缩检查点连续保存失败不再每次请求都付新摘要，连续 2 次失败即停该会话的自动压缩、报错一次点名原因，重开会话或一次压缩成功后再试。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://dev.meta.ai/docs/muse-code/changelog",
+      "locator": "1.4.0 Improvements / 1.4.2 Improvements",
+      "lines": "2198, 1721（changelog.txt）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "1.4.0：verify reminder 检查器改按会话自身推理强度运行（此前一律 high；max 保留 high 检查器，xhigh/ultra/medium/low 用自身档位）——原记录引 1.4.4，出处更正为 1.4.0；1.4.2 细化：仅 Muse Spark 1.3 模型在 max 强度保留固定 high 检查器，其他模型的 max 会话改按自身档位。本记录前提（muse-spark-1.2 + high）下检查器按 high 运行。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "Meta 账户（注册免费）；快速开始推荐浏览器登录，首次运行二选一：浏览器登录或粘贴 Meta API key（MMA 企业账户只能 API key）。用量必须计费：按量付费需团队管理员在 Billing 添加付款方式并创建 API key；或订阅（最低 Everyday Usage $5/月，10–50 prompts/5 小时）。文档未提供免费用量档；未订阅且未配付款时能否调用文档未明说。本记录取最低档 Everyday 订阅（$5/月；负责人 2026-11-22 定，文档没写免费档），不取按量付费（需团队管理员加付款方式）；默认型号 muse-spark-1.2，订阅默认开 Contributor mode（内容用于训练换更多用量），照默认开；Power/Maximum 才解锁 Muse Wonder Full。",
+    "default_model": "muse-spark-1.2（overview First run 与 configuration Select a model 两处明写 The default model is muse-spark-1.2），不是自动选择；推理强度默认 high，但这是型号条件的：configuration 页写 high (default)，choose-a-model 与 muse-spark 页写明 max 在 muse-spark-1.2/1.1/1.3-contributor 上不可用、未指定强度时 Muse Wonder 与 Muse Ember 用 max 而 Muse Spark 用 high；changelog 1.4.14 又写支持 max 强度的模型在未选强度时默认用 max（含后续模型），与 configuration 页措辞冲突（见 note 不一致清单）。本记录取 muse-spark-1.2（不支持 max），故默认 high 成立；lead 在 max/ultra 时整树并发 64、todo/memory reminder 仅在低于 max 时默认开这两条门控在本配置下均不触发。注意：muse-spark 页推荐新工作用 muse-spark-1.3（API 示例默认 1.3），但 Muse Code 默认仍写 1.2；订阅默认 Contributor mode 开，changelog 1.4.11 提到 contributor 模型与标准价基底的启动重映射，文档未明说 Contributor mode 下请求的模型 ID 是否变为 muse-spark-1.2-contributor，未核实。Muse Wonder 为 preview；Muse Wonder Full 仅 Power/Maximum 订阅；子代理默认随 lead 模型。",
+    "host_os": "Linux（负责人 2026-11-22 定：苹果芯片 Mac 的公开安装包没带 workflows 这层委派，取 Linux 才不丢它；官方 overview：macOS、Linux、Windows 同一代码库，本记录不取 macOS 和 Windows）。注意：公开 aarch64-apple-darwin 包不含 workflow-script-engine-v8，Apple silicon macOS 上 workflows 不可用（本记录不取该平台）；文档只写了这个包不含引擎，没写 Linux 包是否含引擎、是否在 staged rollout 内，未核实；Linux 沙箱需可用的 bubblewrap（随包附带，musl 构建缺 helper 时所有 shell 命令失败）；macOS 用 Seatbelt（本记录不取）。",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动（muse 可在任意项目目录启动；worktree 隔离、muse -w 与子代理隔离 worktree 需要 Git 仓库）。",
+    "trust": "首次打开工作区会问是否信任（文档未给默认选项，须用户作答；cookbook 示例选 Trust and continue），决定按工作区根记在 trust.json，每项目答一次。本记录前提：已回答信任。信任后加载项目 skills/rules/hooks、项目 AGENTS.md/CLAUDE.md、项目 MCP 服务器、项目 agent 定义与项目 workflows。未信任情形（项目指令忽略、MCP 全部扣住、已提交项目记忆仍加载）不适用于本记录。",
+    "credentials": "只配 Meta 一家：浏览器登录 Meta 账户（快速开始第一选项，CLI onboarding 自动关联 Meta Model API 账户；订阅时自动连接 Muse Code 专用 API key）。默认型号 muse-spark-1.2 属 Meta 自家，无需第二家密钥或登录。API key 路径（META_API_KEY 或 muse auth set）优先于浏览器会话，本记录不取；MMA 账户只能 API key。",
+    "other": "执行位置：快速开始默认本机（代理与工具在本机进程、shell 在 OS 沙箱；模型推理在 Meta Model API 后端 api.meta.ai）。可选组件与前提：Linux bubblewrap 随包附带（缺则 shell 全失败，musl 构建有风险，本记录取 Linux 构建，bubblewrap 随包附带，不另装）；workflow 引擎随构建附带（公开 aarch64-apple-darwin 包不含；本记录取 Linux，该构建含不含引擎文档未写，未核实）；浏览器登录需本机浏览器；worktree 隔离需 Git；语音转写所用服务/型号文档未写明。changelog 另提到连接另一台机器执行命令的会话（1.4.17）、muse attach --stdio over ssh、desktop app，均非快速开始默认。第三方模型：changelog 1.4.13 说终端模型选择器提供第三方模型，快照文档未给配置方法，本记录不纳入，模型取产品默认 muse-spark-1.2（负责人 2026-11-22 定）。"
+  }
+}

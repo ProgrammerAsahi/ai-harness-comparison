@@ -1,0 +1,615 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "B11__warp__terminal-agent-default",
+  "round": "batch-5",
+  "tool_id": "B11",
+  "product": "Warp／Automation Platform",
+  "view": "configured",
+  "version_or_commit": "无发布标签（仓库最后一个 release tag 为 v0.2026.06.03.09.49.stable_00，2026-06-03）；对应稳定版 v0.2026.11.11.08.17（docs changelog 2026.11.12 条目；Homebrew cask warp 与 warp-agent-cli 均为 0.2026.11.11.08.17.stable_01）；提交 2b2ed236f087b47b463f1cd55598485dd7965338。该提交是 2026-11-11T08:17Z 之前最后一个 master 提交（2026-11-11T05:46:58Z，'Support Scale shared monthly usage in Warp (#16758)'），由研究负责人 2026-11-19 选定为最接近的公开源码；提交与该稳定构建的对应关系未核实（SOURCE.txt）。",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "Warp 桌面终端应用内置的 Warp Agent（Agent Mode 会话）：官方快速开始（docs /quickstart/）的主路径是安装应用 → 终端模式跑命令 → 按 ⌘↩（macOS）/ Ctrl+Shift+Enter（Windows/Linux）在同一应用内开始代理会话；新会话默认模式为 Terminal（DefaultSessionMode::Terminal），代理会话由用户按键或自然语言输入发起。与建议入口一致。Warp Agent CLI（warp 命令，Homebrew cask warp-agent-cli，二进制 oz）是另一个本机入口，跑同一 Warp Agent harness 但默认权限 profile 不同（TUI 默认 execute_commands=AgentDecides；非交互 oz CLI profile 全 AlwaysAllow）；自动化平台／云端代理（Automation Platform / cloud agents / Factories）在 Warp 托管或自托管的远端计算上运行，不是本记录的入口。",
+  "install_method": "download：官方下载页 https://www.warp.dev/download 按平台取安装包（macOS dmg 拖入 Applications，或 brew install --cask warp；Windows 安装器或 winget install Warp.Warp；Linux deb/rpm/pacman/AppImage，deb/rpm 自动配置 releases.warp.dev 的 apt/yum 仓库）；platform: macOS / Linux / Windows；source: docs /getting-started/quickstart/installation-and-setup/ 与 /quickstart/（只作记录，未执行）。所有安装方式含自动更新（docs；源码 RELEASE_FLAGS 含 Autoupdate）。更新版本信息先经 Warp 服务器 https://app.warp.dev/client_version（每日首次请求走 /client_version/daily）获取，失败时回退渠道配置 releases_base_url 下的 channel_versions.json；releases_base_url 由渠道配置生成器（另一仓库 warpdotdev/warp-channel-config，不公开）嵌入，公开源码未含默认 feed 地址（https://releases.warp.dev 仅见于 Linux pacman 仓库配置与下载元数据），实际默认地址未核实；FetchChannelVersionsFromWarpServer 标志在该提交有定义、无调用点。安装命令实际装到的版本：输入的 homebrew-casks.json（2026-11-19 抓取）显示 cask warp 指向 0.2026.11.11.08.17.stable_01（下载 URL https://app.warp.dev/download/brew?version=v0.2026.11.11.08.17.stable_01&package=dmg）；下载页与更新 feed 当天实际指向未核实（未联网核对）。从源码构建（./script/bootstrap && cargo run）产出 warp-oss 二进制，用独立配置目录、不自动更新、无生产签名，官方文档明确日常使用应用官方构建，不是本记录的安装方式。",
+  "permission_mode": "钉住情形：已登录 Warp 账户、默认 profile『Default』（AIExecutionProfile::default）、auto-approve（Run until completion）关、本机非沙箱会话。读文件：read_files=AgentDecides，客户端实现为总是自动读、不询问（permissions.rs can_read_files 注释『For now, we always read files』）。写文件／应用代码 diff：apply_code_diffs=AgentDecides，客户端实现为总是拒绝自动写、逐次让用户审 diff（determine_write_permissions_from_active_profile 的 AgentDecides 分支返回 Denied；docs 亦注明 Apply code diffs 的 Agent decides 等同 Always ask）；MCP 配置文件路径是受保护写路径，任何情况下都要审批（check_protected_write_paths）。执行命令：execute_commands=AlwaysAsk，逐条审批，仅命中 command_allowlist（默认空）的命令自动执行；command_denylist 默认 18 条锚定正则（bash/fish/pwsh/sh/zsh/curl/eval/exec/source/wget/dig/nslookup/host/ssh/scp/rsync/telnet/rm 各带可选参数），优先于 allowlist 与任何权限级别，命中即必须审批；AgentDecidesCommandExecution 标志（默认构建开）只影响 AgentDecides 分支，不改变本默认。向运行中命令写入（Full Terminal Use）：write_to_pty=AlwaysAsk，逐次审批。MCP 调用：mcp_permissions=AgentDecides，实现为仅 mcp_allowlist（默认空）内且不在 denylist 的服务器可自动调用，其余逐次审批；默认没有用户自装的 MCP 服务器，但默认构建会在已登录的桌面应用里自动挂上 Warp 托管的内置 Factory MCP 服务器 warp-factory（streamable HTTP，https://app.warp.dev/api/v1/mcp/factory，用登录 token 认证、无需配置），故 CallMcpTool 默认有工具可调，每次调用仍需审批；该服务器的工具集与账户是否有访问权由服务端决定，未核实。子代理：run_agents=AlwaysAsk，run_agents 工具默认可用、每次派发需审批。澄清提问：ask_user_question=AlwaysAsk。Computer Use：computer_use=Never，本地不注册 UseComputer/RequestComputerUse 等工具（docs：Computer Use 只在云端沙箱环境提供，不用于本地交互会话）。联网：代理请求经 Warp 服务器 https://app.warp.dev/ai/multi-agent（SSE/protobuf）转发到模型提供方；web_search_enabled=true，但仅对支持原生搜索的模型生效、走提供方第一方搜索工具；命令自身的联网（curl/wget/ssh 等）受 denylist 审批约束；应用默认发遥测、崩溃报告并把会话存云端（均可关）。auto-approve 打开时所有动作立即执行且默认绕过用户 denylist（auto_approve_bypasses_command_denylist=true），组织级 denylist 不可绕过——这是用户显式开启后的情形，不是本记录的默认。未登录／匿名情形：AI 功能整体禁用（is_any_ai_enabled 对 anonymous/logged-out 返回 false），不适用于本记录。",
+  "operating_system": "macOS（Intel/Apple silicon，10.14+，需 Metal）、Windows（10 1903+/Server 2022+，ConPTY）、Linux（glibc≥2.31，OpenGL ES 3.0+ 或 Vulkan；x86_64/ARM64）。本研究环境前提统一取 macOS 或 Linux。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-19",
+  "note": "代表配置取默认安装、默认权限 profile、官方快速开始的桌面应用内置代理入口（与建议入口一致）。版本：仓库无对应发布标签，version_or_commit 照 SOURCE.txt 写提交 SHA 与对应稳定版号，两者对应未核实；changelog.txt 最新条目 2026.11.12（v0.2026.11.11.08.17）与 homebrew-casks.json（0.2026.11.11.08.17.stable_01）是稳定版号的两个输入来源。要联网核对：(1) 下载页 / brew cask / winget / apt 仓库当天实际提供的安装包版本（输入快照里 brew 为 0.2026.11.11.08.17.stable_01）；(2) 自动更新 feed（releases.warp.dev/channel_versions.json 或 Warp 服务器）当天指向；(3) 服务端下发的 agent_mode 默认模型 default_id 与模型列表——客户端 profile base_model=None，实际默认由服务端列表决定，客户端内置兜底为 id='auto'（display_name 'auto (cost-efficient)'）；docs 模型表里 id='auto' 是 Auto (Responsive)、'auto-efficient' 是 Auto (Cost-efficient)，与客户端兜底显示名不一致，新登录用户实际拿到的默认型号未核实；(4) 最终注册给模型的工具名与 schema 在服务端——客户端只经 get_supported_tools 声明支持的 ToolType，warp_multi_agent_api 来自另一仓库 warpdotdev/warp-proto-apis（rev 7d7b57774fe349e51734fd9537457eaeb1082f2c，Cargo.toml L351），不在本快照内，服务端工具注册表未核实；(5) 代码索引的嵌入计算位置与远端嵌入存储实际存的内容（docs 称代码不存 Warp 服务器，源码 StoreClient 注释为 remote full source code embedding store）。子代理：subagents_enabled=true 属『默认开放、逐次审批』——run_agents 默认 AlwaysAsk（功能可用、不改设置即可派子代理，每次需用户批准），orchestration_enabled=is_any_ai_enabled 默认 true，RunAgents/SendMessageToAgent/WaitForEvents 默认声明；定时／事件触发的运行属自动化平台（云端），不在本入口；本地→云端 handoff 默认开（& 前缀可用），交接时上传工作区快照、云端 run 期间每 5 分钟拍检查点并上传，纯本地会话不触发；默认构建还编入 ambient agents（后台代理）与 scheduled_ambient_agents 等 cargo feature，其中 ScheduledAgentManager 默认在启动时注册，只管理云端 schedule 对象与执行历史、不在本机触发运行（新账户无云端 schedule 即无自发运行），其余 ambient 功能的触发条件未核实。文档与源码不一致处：quickstart 称终端模式会自动检测自然语言并提议发给代理，但源码 ai_autodetection_enabled 与 nld_in_terminal_enabled 默认均为 false；docs Profiles 页 denylist 只举 4 例（源码 18 条）、权限表列 Never 级（源码 ActionPermission 无 Never 变体，仅 ComputerUse/RunAgents/AskUserQuestion 有）；docs CLI 页默认 shell=agent_decides 与源码 default_profile_for_tui 一致。许可：客户端开源 AGPL v3（warpui_core/warpui 两 crate 为 MIT），README 称 OpenAI 是开源仓库的创始赞助——与早期闭源 Warp 的公开印象可能不同。规则文件：项目 AGENTS.md 为默认（WARP.md 向后兼容、同目录时 WARP.md 优先），全局 ~/.agents/AGENTS.md；首次进入 Git 仓库会进入索引＋生成 AGENTS.md 的初始化流程（docs Coding in Warp）。语音输入 voice_input_enabled 默认 true（桌面平台；官方桌面应用构建经 gui feature 编入 voice_input，getter 还要求 AI 开；用户按键触发、不是自发模型请求，转录走哪一端未核实）。终端输入命令纠错 command_corrections 默认 true，纠错数据来自另一仓库 warpdotdev/command-corrections（rev eae08c8c51d9bc9741fcb17eef2c21f696aebbeb，Cargo.toml L137）编入二进制，内容不在 warpdotdev/warp 源码内、是否触发模型请求未核实。编码前由第二位读者（Qwen3.8-Max，经编排器配置 qwen-3-8-max-tp 调用）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-22）改了 11 处：①permission_mode、enabled_extensions[3]、environment_premises.other 的 MCP 句改为默认自动挂载 Warp 托管内置 Factory MCP 服务器 warp-factory（登录 token 认证、无需配置），CallMcpTool 默认有工具可调、每次调用仍需审批，账户可用性与工具集未核实；②enabled_extensions[3] 写明仓库根 .mcp.json 属 Claude 配置，第三方 file-based 配置需 agents.mcp_servers.file_based_mcp_enabled（默认 false）才自动检测，Warp 原生 .warp/.mcp.json 总是检测启动，并补 WellKnownMcpIds 托管 id；③enabled_extensions[4] 改为 factory-mcp 随包技能默认可用（FactoryMcp 默认构建开）、warpctrl 仅 dogfood 构建；④enabled_extensions[10]、note、environment_premises.other 补本地→云端 handoff 默认开（& 前缀）、交接上传工作区快照、云端 run 每 5 分钟（+≤30s 抖动、安全边界最长等 10 分钟）拍检查点，纯本地会话不触发、睡眠自动交接默认关；⑤enabled_extensions[8] 补代理 commit/PR 共同作者归属行（agent_attribution_enabled）与计划文档自动同步 Warp Drive（autosync_plans_to_warp_drive）默认开；⑥enabled_extensions[11] 与 note 收窄为 ScheduledAgentManager 默认注册、只管理云端 schedule 对象与历史、不在本机自发运行；⑦note 补语音输入默认开（桌面构建经 gui 编入 voice_input，按键触发，转录端点未核实）；⑧enabled_extensions[12] 补第三方 CLI 代理的 footer 显示与富输入自动开合默认开；⑨note 补命令纠错 command_corrections 默认开（数据来自 warpdotdev/command-corrections 另一仓库）；⑩enabled_extensions[5] 补随包全局 Workflows 来自 warpdotdev/workflows 另一仓库、启动即编入；⑪install_method、enabled_extensions[9]、environment_premises.other 的更新 feed 句收窄为先经 Warp 服务器 /client_version、失败回退渠道配置 releases_base_url 下的 channel_versions.json，默认地址出自私有渠道配置仓库、未核实，FetchChannelVersionsFromWarpServer 标志在该提交无调用点。另为上述改动新增 14 张证据小卡，并收窄两张已有小卡 note 的措辞（MCP 文档页“无预装服务器”、随包技能标志默认状态）。",
+  "synthetic": false,
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "客户端声明的工具注册表（get_supported_tools，本机 Local 会话、AI 开、orchestration 开的默认情形）：Grep、FileGlob、FileGlobV2、ReadMcpResource、CallMcpTool、InitProject、OpenCodeReview、RunShellCommand、SuggestNewConversation、Subagent、WriteToLongRunningShellCommand、ReadShellCommandOutput、ReadDocuments、CreateDocuments、EditDocuments、SuggestPrompt、FetchConversation（ConversationsAsContext 标志，默认构建开）、ReadFiles、ApplyFileDiffs、SearchCodebase（Local 会话）、UploadFileArtifact（ArtifactCommand 标志，默认构建开）、InsertReviewComments、ReadSkill（ListSkills 标志，默认构建开）、RunAgents、SendMessageToAgent、WaitForEvents（orchestration_enabled=is_any_ai_enabled 默认 true）、AskUserQuestion（标志开且 profile 非 Never）；UseComputer/RequestComputerUse/StartRecording/StopRecording 因 computer_use=Never 不注册。这是客户端向服务端声明的支持列表，最终注册给模型的工具名与 schema 由服务端决定（warp-proto-apis 不在快照内），未核实。",
+    "命令执行审批：execute_commands 默认 AlwaysAsk、command_allowlist 默认空、command_denylist 默认 18 条正则（bash/fish/pwsh/sh/zsh/curl/eval/exec/source/wget/dig/nslookup/host/ssh/scp/rsync/telnet/rm），denylist 优先于一切权限级别；AgentDecidesCommandExecution 标志默认构建开，但只作用于 AgentDecides 分支（is_risky=false 或只读命令自动执行），不改变 AlwaysAsk 默认。",
+    "文件读写：read_files=AgentDecides 实现为总是自动读不询问；apply_code_diffs=AgentDecides 实现为总是先让用户审 diff；MCP 配置文件（.mcp.json 等）为受保护写路径、总是审批；会话内已批准读过的目录有临时读权限。",
+    "MCP：默认没有用户自装的 MCP 服务器，但默认构建（factory_mcp 在 app default features）会在已登录的桌面应用里自动挂上 Warp 托管的内置 Factory MCP 服务器 warp-factory（streamable HTTP，https://app.warp.dev/api/v1/mcp/factory，用登录 token 认证、无需配置，登录完成/token 刷新/管理器初始化时重挂；账户是否有访问权与其工具集由服务端决定，未核实）；用户经 Settings > Agents > MCP servers 添加 CLI/Streamable HTTP/SSE 服务器；仓库里的 MCP 配置分两类：Warp 原生 .warp/.mcp.json 总是被检测并启动，第三方 file-based 配置（仓库根 .mcp.json=Claude、.codex/config.toml、.agents/.mcp.json 及对应 home 级文件）要用户设置 agents.mcp_servers.file_based_mcp_enabled 打开才自动检测，该设置默认 false（file_based_mcp 编译 feature 默认开只是前提之一）；这些配置文件都是受保护写路径，代理改它们一律要审批；MCP 配置还可用 linear 等非 UUID 的托管 id（WellKnownMcpIds 默认开，由服务端解析）；mcp_permissions=AgentDecides 且 mcp_allowlist/denylist 默认空 → 任何 MCP 调用都需审批；CLI 型 MCP 服务器是 Warp 启动的本机子进程，HTTP/SSE 型是远端服务；关闭 Warp 时运行中的 MCP 服务器下次启动会再拉起（docs）。",
+    "技能（Skills）：用户／项目技能目录默认无内容——按 11 个 provider 目录发现（.agents/skills、.warp/skills、.claude/skills、.codex/skills、.cursor/skills、.gemini/skills、.copilot/skills、.factory/skills、.github/skills、.opencode/skills、.kiro/skills，home 与项目两级）；随包技能在 resources/bundled/skills（add-mcp-server、change-keybinding、claude-api、create-skill、create-tab-config、factory-deferred-repositories、factory-files、factory-mcp、modify-settings、oz-platform、pr-comments、tab-configs、tui-migrate-setup、update-tab-config、warpctrl），BundledSkills 标志默认构建开，多数 Always 激活，例外：modify-settings 需 settings_schema.json 存在、tui-migrate-setup 仅 TUI、warpctrl 需 WarpControlCli 标志（在 DOGFOOD_FLAGS，仅 local/dev 构建，稳定构建不开）；factory-mcp 所需的 FactoryMcp 标志在默认构建是开的（factory_mcp 在 app default features），该随包技能默认可用，与内置 Factory MCP 服务器配套；技能经 ReadSkill 工具按需加载指令，不是独立工具；实际注入哪些技能由服务端决定，未核实。",
+    "规则与知识上下文：memory_enabled（toml: agents.knowledge.rules_enabled）默认 true，项目规则 AGENTS.md（WARP.md 向后兼容、同目录优先）沿目录树向上发现，全局规则 ~/.agents/AGENTS.md 总是叠加；warp_drive_context_enabled 默认 true（Warp Drive 的 Workflows/Notebooks/Prompts/环境变量作上下文，docs 称默认开）；首次进入 Git 仓库触发 InitProject 初始化流程（索引＋生成 AGENTS.md，docs）。随包全局 Workflows 启动即从另一仓库 warpdotdev/workflows（rev 793a98ddda6ef19682aed66364faebd2829f0e01，Cargo.toml L350）编入（LocalWorkflows::new 加载 global_workflows），默认可用并可经 warp_drive_context_enabled 进上下文；该仓库内容不在 warpdotdev/warp 源码内，未核实。",
+    "Codebase Context（代码索引）：codebase_context_enabled 默认 true、auto_indexing_enabled（随导航自动索引新目录）默认 false；打开 Git 仓库即开始索引，索引在本地客户端构建（chunker/Merkle 树，crates/ai/src/index），嵌入存储是远端服务（StoreClient 注释 remote full source code embedding store），docs 称代码不存 Warp 服务器；Free 计划每仓库最多 5000 文件；索引未完成时代理仍可用终端命令导航代码；SearchCodebase 工具默认声明（Local 会话）。",
+    "Web 搜索：profile web_search_enabled 默认 true；仅对提供原生搜索集成的模型生效（docs 列 Claude Opus 5.5/4.6/4.5/4 系与 GPT-6 Astra/6.1 Sol/6 Sol/6 Luna/5.4 等），走提供方第一方搜索工具，按搜索次数＋检索内容计费；不支持的模型无此能力。",
+    "默认会自发的模型请求（Active AI，is_active_ai_enabled 默认 true）：Prompt Suggestions（prompt_suggestions_enabled 默认 true，经 https://app.warp.dev/ai/passive-suggestions 端点，不计 AI 额度）、智能自动建议/Next Command（intelligent_autosuggestions 默认 true）、Suggested Code Diffs（code_suggestions_enabled 默认 true，命令出错时自动生成修复 diff，不计请求额度但有月度上限）、共享 block 标题生成（shared_block_title_generation 默认 true）、code review 对话框的 commit message/PR 标题正文自动生成（git_operations_autogen 默认 true）、规则建议（rule_suggestions_enabled 默认 true，SuggestedRules 标志默认构建开）。会话列表标题本地取 task description > 首条查询 > 兜底标题，不发模型请求。上下文压缩：客户端有 /compact、/compact-and、/fork-and-compact 手动斜杠命令；SummarizationViaMessageReplacement 标志仅 dogfood 构建开，稳定版默认是否有服务端自动压缩未核实。另有两个默认开的代理副作用：agent_attribution_enabled 默认 true，代理创建的 commit message/PR 带 Warp 共同作者归属行（团队设置 enable_warp_attribution 可覆盖）；autosync_plans_to_warp_drive 默认 true，代理经 CreateDocuments 生成的计划文档随即自动同步到 Warp Drive（云端）。",
+    "遥测、云存储与更新：is_telemetry_enabled 默认 true（匿名用量遥测）、is_crash_reporting_enabled 默认 true（崩溃报告）、is_cloud_conversation_storage_enabled 默认 true（会话存云端，个人终端会话）；自动更新 Autoupdate 在 RELEASE_FLAGS（所有发布构建），版本信息先经 Warp 服务器 https://app.warp.dev/client_version（每日首次请求走 /client_version/daily）获取，失败时回退渠道配置 releases_base_url 下的 channel_versions.json；releases_base_url 由渠道配置生成器（另一仓库 warpdotdev/warp-channel-config，不公开）嵌入，默认 feed 地址不在公开源码内，未核实；secret redaction 默认正则列表在首次初始化时写入（发送内容按正则脱敏）。",
+    "入口代码的执行位置：代理编排循环在 Warp 服务端（客户端经 SSE 收 tool call，https://app.warp.dev/ai/multi-agent），工具执行在本机 Warp 应用进程——shell 命令在本机 PTY（用户登录 shell，默认 bash/fish/zsh/pwsh，其他 shell 回退 zsh）、文件读写在本机文件系统、CLI 型 MCP 为本机子进程；模型推理经 Warp 服务器转发到提供方云端，不在本机；本入口不用容器或远端沙箱（Computer Use 与云端代理才用沙箱，LocalDockerSandbox 标志仅 dogfood）。默认构建还开着本地→云端 handoff（oz_handoff、handoff_local_cloud 在 default features，should_force_disable_cloud_handoff 与 should_force_disable_ampersand_handoff 默认 false，云会话存储默认 true）：用户可用 & 前缀把当前会话交给 Warp 云端计算继续跑，交接时客户端打包上传工作区快照；云端 run 期间默认每 5 分钟（另加最多 30s 抖动）在安全边界收集并上传一次工作区检查点，最长等 10 分钟即强行拍，end-of-run 再拍一次（PeriodicHandoffCheckpoints 在 RELEASE_FLAGS）；纯本地会话的快照/检查点管线是 no-op，睡眠自动交接默认关（仅 macOS 的设置）。终端输入的自然语言分类用随包本地 ONNX 小模型（crates/input_classifier/models/onnx/bert_tiny_v*.onnx），但 ai_autodetection_enabled 默认 false。",
+    "后台／定时代理（ambient agents）：默认构建编入 ambient_agents_command_line、ambient_agents_image_upload、scheduled_ambient_agents、ambient_agents_rtc 等 cargo feature，DefaultSessionMode 亦有 CloudAgent 选项（新会话默认仍是 Terminal）；其中 ScheduledAgentManager 默认在启动时注册（ScheduledAmbientAgents 标志默认开），只管理云端 schedule 对象与执行历史、不在本机触发运行，新账户没有云端 schedule 即无自发运行；其余 ambient agents 功能的触发条件未核实。定时任务、外部事件触发的云端运行属自动化平台入口，不在本记录。",
+    "第三方 CLI 代理（Claude Code、Codex、OpenCode、Gemini CLI 等）：应用默认构建编入 hoa_*（harness onboarding/notifications/remote control）、acp_harness、codex_plugin 等 feature，可在 Warp 内运行用户另装的第三方 CLI 代理并给富输入/通知/代码评审；本记录入口是内置 Warp Agent，默认不启动第三方代理；但检测/接管式 UI 默认开：should_render_use_agent_footer_for_user_commands、should_render_cli_agent_footer、auto_toggle_rich_input 均默认 true，用户在 Warp 里自己跑第三方 CLI 代理时会自动识别会话、显示 footer 并按代理 Blocked 状态自动开/关富输入；第三方 CLI 的版本由用户本机安装决定（不随 Warp 附带），快照里没有它们的代码与文档。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/README.md#L26-L36",
+      "locator": "README.md：开源声明、产品定位与安装",
+      "lines": "L26-L36",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "OpenAI 是开源 Warp 仓库的创始赞助（L26）；Warp 是 agentic development environment，内置 coding agent 或自带 CLI agent（L32）；安装指向 https://www.warp.dev/download 与 docs（L36）。仓库无对应发布标签，提交 SHA 照 SOURCE.txt。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/README.md#L54-L56",
+      "locator": "README.md：Licensing",
+      "lines": "L54-L56",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "warpui_core/warpui 为 MIT，其余代码 AGPL v3。与早期闭源 Warp 的公开介绍可能不同。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://docs.warp.dev/changelog/2026/",
+      "locator": "changelog.txt（https://docs.warp.dev/_llms-txt/changelog.txt 2026-11-19 导出）：### 2026.11.12 (v0.2026.11.11.08.17) 条目",
+      "version": "v0.2026.11.11.08.17",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "最新稳定版条目 2026.11.12（v0.2026.11.11.08.17）：计费标签区分个人/团队额度、修复 Codex/Claude 认证命令被误判为活跃代理会话、Oz（云端）若干更新。SOURCE.txt：该稳定构建无 release tag；钉住提交 2b2ed236 是 2026-11-11T08:17Z 前最后一个 master 提交，与稳定构建的对应未核实。第二来源 homebrew-casks.json（formulae.brew.sh 2026-11-19）：warp 与 warp-agent-cli 均 0.2026.11.11.08.17.stable_01。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/quickstart/",
+      "locator": "docs-llms-full.txt L55514-L55660：Warp quickstart（§1 Install Warp、§5 Ask your first agent question）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "官方快速开始主路径：下载页安装（macOS 可 brew install --cask warp，Windows winget install Warp.Warp，Linux apt install ./warp-terminal.deb）→ 启动后可选注册账户或跳过直接用终端 → 终端模式跑命令 → ⌘↩/Ctrl+Shift+Enter 开始内置代理会话。与建议入口（应用内置代理）一致。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/getting-started/quickstart/installation-and-setup/",
+      "locator": "docs-llms-full.txt L39580-L39809：Installation and setup（平台要求、各包管理器、Build from source、Initial setup）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "所有安装方式含自动更新；macOS 10.14+/Metal、Windows 10 1903+、Linux glibc≥2.31+OpenGL ES 3.0/Vulkan；Linux deb/rpm 自动配置 releases.warp.dev 仓库；登录可选（Sign up 可跳过）；首次打开需联网，之后可离线（AI 等需联网功能不可用）；默认 shell 取用户登录 shell（bash/fish/zsh/pwsh，其他回退 zsh）；源码构建产出 warp-oss，独立配置目录、不自动更新、无生产签名，官方建议日常用官方构建。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_features/src/lib.rs#L1104-L1117",
+      "locator": "crates/warp_features/src/lib.rs：RELEASE_FLAGS",
+      "lines": "L1104-L1117",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "所有发布构建启用 Autoupdate、Changelog、CrashReporting 等；feature flag 编译期默认全 false（L1015-L1016），运行时按渠道/cargo feature/服务端实验初始化。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L394-L421",
+      "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：impl Default for AIExecutionProfile",
+      "lines": "L394-L421",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "默认 profile：apply_code_diffs=AgentDecides（L399）、read_files=AgentDecides（L400）、execute_commands=AlwaysAsk（L401）、write_to_pty=AlwaysAsk（L402）、mcp_permissions=AgentDecides（L403）、ask_user_question=AlwaysAsk（L404）、run_agents=AlwaysAsk（L405）、command_denylist=默认 18 条（L406 引用 L322-L341）、command_allowlist/directory_allowlist/mcp_allowlist/mcp_denylist 空、computer_use=Never（L411）、base_model=None（L412）、autosync_plans_to_warp_drive=true（L417）、web_search_enabled=true（L418）。应用默认 profile『Default』由此创建（execution_profiles/mod.rs L101-L141、profiles.rs L322/L1060）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L313-L341",
+      "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：DEFAULT_COMMAND_EXECUTION_ALLOWLIST / DENYLIST",
+      "lines": "L313-L341",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "预置 allowlist（cat/echo/find .*/grep/ls/which .*）只用于非交互 CLI profile；应用默认 profile 的 command_allowlist 为空。默认 denylist 18 条：bash、fish、pwsh、sh、zsh、curl、eval、exec、source、wget、dig、nslookup、host、ssh、scp、rsync、telnet、rm（各带 (\\s.*)? 可选参数，整串锚定）。docs Profiles 页只举 wget/curl/rm/eval 四例。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs#L747-L750",
+      "locator": "app/src/ai/blocklist/permissions.rs：can_read_files 的 AgentDecides 分支",
+      "lines": "L747-L750",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "read_files=AgentDecides（默认）时『For now, we always read files. We don't ask the user for permission.』——默认自动读文件不询问；会话内已批准目录有临时读权限（L732-L745）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs#L891-L908",
+      "locator": "app/src/ai/blocklist/permissions.rs：determine_write_permissions_from_active_profile",
+      "lines": "L891-L908",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "apply_code_diffs=AgentDecides（默认）→ Denied(AgentDecided)，即总是先让用户审 diff；AlwaysAllow 才自动写。与 docs『Apply code diffs 的 Agent decides 等同 Always ask』一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs#L912-L1030",
+      "locator": "app/src/ai/blocklist/permissions.rs：can_autoexecute_command",
+      "lines": "L912-L1030",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "denylist 优先（组织+用户，L949-L965）；auto-approve 开时全部放行且默认绕过用户 denylist（组织 denylist 仍强制，L941-L971）；AlwaysAsk（默认）仅 allowlist 命中自动执行（L1013-L1029）；AgentDecides 分支才用 AgentDecidesCommandExecution 标志（is_risky=false 放行）、重定向拒绝、只读启发式（L973-L1009）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs#L862-L889",
+      "locator": "app/src/ai/blocklist/permissions.rs：can_use_mcp_server",
+      "lines": "L862-L889",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "mcp_permissions=AgentDecides（默认）→ 仅 allowlist 内且非 denylist 的服务器自动调用；默认两列表皆空 → 所有 MCP 调用需审批。auto-approve 开时全放行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs#L1245-L1256",
+      "locator": "app/src/ai/blocklist/permissions.rs：check_protected_write_paths",
+      "lines": "L1245-L1256",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "MCP 配置文件路径是受保护写路径（可注入任意上下文），本地编辑总是需要审批，与 profile 权限级别无关（非沙箱时检查）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L2104-L2113",
+      "locator": "app/src/settings/ai.rs：auto_approve_bypasses_command_denylist",
+      "lines": "L2104-L2113",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "默认 true：auto-approve（Run until completion）可绕过用户 command denylist；与 docs Profiles 页 Caution 一致。auto-approve 本身默认关、按会话开启。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/agent-profiles-permissions/",
+      "locator": "docs-llms-full.txt L454-L625：Profiles & Permissions（权限类型与级别、allowlist/denylist、MCP 权限、Run until completion）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "每用户有默认 profile；权限类型：Apply code diffs/Read files/Create plans/Execute commands/Interact with running commands/Ask clarifying questions；级别 Agent Decides/Always ask/Always allow/Never（源码 ActionPermission 无 Never 变体）；Apply code diffs 的 Agent decides 等同 Always ask；allowlist 默认空；denylist 举 wget/curl/rm/eval 四例且优先于一切；全 Always allow 即 YOLO 但 denylist 仍生效；Run until completion 默认绕过 denylist（可关）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs#L225-L303",
+      "locator": "app/src/ai/agent/api/impl.rs：get_supported_tools",
+      "lines": "L225-L303",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "客户端向服务端声明的工具支持列表（默认 Local 会话）：Grep/FileGlob/FileGlobV2/ReadMcpResource/CallMcpTool/InitProject/OpenCodeReview/RunShellCommand/SuggestNewConversation/Subagent/WriteToLongRunningShellCommand/ReadShellCommandOutput/ReadDocuments/CreateDocuments/EditDocuments/SuggestPrompt + FetchConversation（ConversationsAsContext）+ ReadFiles/ApplyFileDiffs/SearchCodebase（Local）+ UploadFileArtifact（ArtifactCommand）+ InsertReviewComments + ReadSkill（ListSkills）+ RunAgents/SendMessageToAgent/WaitForEvents（orchestration_enabled）+ AskUserQuestion（标志且 profile 非 Never）；UseComputer/RequestComputerUse/StartRecording/StopRecording 需 AgentModeComputerUse 标志且 computer_use_enabled（默认 Never → 不注册）。最终工具 schema 在服务端。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api.rs#L408-L408",
+      "locator": "app/src/ai/agent/api.rs：orchestration_enabled 取值",
+      "lines": "L408",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "orchestration_enabled = ai_settings.is_orchestration_enabled(app)，后者即 is_any_ai_enabled（settings/ai.rs L2439-L2441）→ 登录且 AI 开时默认 true，RunAgents/SendMessageToAgent/WaitForEvents 默认声明。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L123-L161",
+      "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：RunAgentsPermission",
+      "lines": "L123-L161",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "RunAgentsPermission 默认 AlwaysAsk：run_agents 工具可用、每次派子代理需审批；NeverAllow 才移除工具。默认 profile run_agents=AlwaysAsk（L405）→ subagents_enabled=true（默认开放、逐次审批，不需改设置）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action/mod.rs#L38-L217",
+      "locator": "crates/ai/src/agent/action/mod.rs：AIAgentActionType 与 RunAgentsRequest",
+      "lines": "L38-L217",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "客户端执行的代理动作枚举（RequestCommandOutput/ReadFiles/RequestFileEdits/Grep/FileGlob(V2)/SearchCodebase/CallMCPTool/ReadMCPResource/ReadSkill/RunAgents/SendMessageToAgent/WaitForEvents/AskUserQuestion/UseComputer/StartRecording 等）；RunAgents 支持批量子代理、Local 或 Remote 执行模式、按子代理覆盖 model；服务端折叠解析后重发 tool call。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L426-L431",
+      "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：default_profile_for_tui",
+      "lines": "L426-L431",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "TUI（Warp Agent CLI 交互入口）默认仅把 execute_commands 改为 AgentDecides，其余沿用应用默认；非交互 create_default_cli_profile（L463-L527）则全 AlwaysAllow、allowlist 用预置 6 条、沙箱时清空 denylist。此证据说明另一入口的差别，非本配置默认。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/cli/permissions-and-profiles/",
+      "locator": "docs-llms-full.txt L6470-L6530：Permissions and profiles in the Warp Agent CLI",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "CLI 默认：shell 命令/文件编辑/文件读/MCP 调用 agent_decides（文件编辑仍逐次审 diff）；向运行中命令写入、派子代理 always ask；denylist 置顶。与源码 default_profile_for_tui 一致。此页描述另一入口，非本配置默认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L2277-L2286",
+      "locator": "app/src/settings/ai.rs：is_any_ai_enabled",
+      "lines": "L2277-L2286",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "『Disable AI for anonymous and logged-out users』：AI 总开关默认 true（L1224-L1234），但匿名/未登录时整体禁用 → 本记录必须已登录 Warp 账户；未登录情形不适用于本记录。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/getting-started/faqs/",
+      "locator": "docs-llms-full.txt L7094-L7212：Frequently asked questions about agents（Billing、BYOK、订阅）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "Free 计划可购买用量或自带推理（BYOK 对 Free 与 ≤10 人组织的合格付费计划开放）；Build/Max/Business 有每席额度；Warp 提供的推理按公开 API 价计费。最低够用档位为 Free：Free 档本身不含用量，要购买用量或自带密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/llms.rs#L732-L754",
+      "locator": "app/src/ai/llms.rs：impl Default for ModelsByFeature",
+      "lines": "L732-L754",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "客户端内置兜底：agent_mode default_id='auto'，display_name 'auto (cost-efficient)'。实际模型列表与 default_id 由服务端下发并缓存（ModelsByFeature 注释），线上实际默认未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/llms.rs#L976-L1006",
+      "locator": "app/src/ai/llms.rs：base_model 解析与 fallback_llm_info",
+      "lines": "L976-L1006",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "profile.base_model=None（默认）→ 取服务端 agent_mode 列表的可用 default；不可用时依次回退第一个可用服务端选项、用户自定义端点模型、（可能已禁用的）服务端默认。不改设置时不会报错或要求用户选模型，而是用服务端默认。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/inference/model-choice/",
+      "locator": "docs-llms-full.txt L7994-L8216：Agent model choice（Auto models 表、各家模型、fallback、ZDR）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "Auto (Responsive)=id 'auto'、Auto (Cost-efficient)='auto-efficient'、Auto (Genius)='auto-genius'、Auto (Open-weights)='auto-open'；与客户端兜底 id='auto' 却显示 'auto (cost-efficient)' 的写法不一致。docs 未写明新登录用户的默认型号；模型不可用时自动沿预定义链回退。Claude Fable 5/5.1/5.2 要求提供方数据保留。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/code.rs#L15-L36",
+      "locator": "app/src/settings/code.rs：codebase_context_enabled / auto_indexing_enabled",
+      "lines": "L15-L36",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "codebase_context_enabled 默认 true（向代理提供代码库上下文）；auto_indexing_enabled 默认 false（随导航自动索引新目录）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/codebase-context/",
+      "locator": "docs-llms-full.txt L626-L794：Codebase Context（自动索引、触发时机、限额、ignore 文件）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "打开 Git 仓库自动检测并开始索引；初次/周期/新会话/手动同步触发；代码不存 Warp 服务器；Free 计划每仓库 ≤5000 文件；索引未完成时代理仍可用 grep/sed 等终端命令；尊重 .gitignore/.warpindexingignore/.cursorignore 等。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/index/full_source_code_embedding/store_client.rs#L11-L13",
+      "locator": "crates/ai/src/index/full_source_code_embedding/store_client.rs：StoreClient trait 注释",
+      "lines": "L11-L13",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "『Client interface for a remote full source code embedding store』：嵌入存储为远端服务；索引结构（chunker/Merkle 树）在本地客户端构建。嵌入计算位置与远端实际存储内容未核实（docs 称代码不存服务器）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/skills/skill_provider.rs#L106-L152",
+      "locator": "crates/ai/src/skills/skill_provider.rs：SKILL_PROVIDER_DEFINITIONS",
+      "lines": "L106-L152",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "技能发现目录（优先级从高到低）：.agents/skills、.warp/skills、.claude/skills、.codex/skills、.cursor/skills、.gemini/skills、.copilot/skills、.factory/skills、.github/skills、.opencode/skills、.kiro/skills；home 与项目两级作用域。全新仓库/ home 默认无用户技能。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/skills/bundled.rs#L564-L580",
+      "locator": "app/src/ai/skills/bundled.rs：activation_for_bundled_skill",
+      "lines": "L564-L580",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "随包技能激活：modify-settings 需 settings_schema.json 存在；tui-migrate-setup 仅 TUI；warpctrl 需 WarpControlCli 标志（在 DOGFOOD_FLAGS，crates/warp_features/src/lib.rs L1078，仅 local/dev 构建，稳定构建不开）；factory-mcp 需 FactoryMcp 标志（factory_mcp 在 app default features，app/Cargo.toml L707，默认构建开、该技能默认可用）；其余 Always。随包技能目录 resources/bundled/skills 共 15 个（add-mcp-server、change-keybinding、claude-api、create-skill、create-tab-config、factory-deferred-repositories、factory-files、factory-mcp、modify-settings、oz-platform、pr-comments、tab-configs、tui-migrate-setup、update-tab-config、warpctrl）；BundledSkills 标志经 cargo feature bundled_skills（app/Cargo.toml L616，默认 features 内）启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L1694-L1714",
+      "locator": "app/src/settings/ai.rs：memory_enabled / warp_drive_context_enabled",
+      "lines": "L1694-L1714",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "rules_enabled（memory_enabled）默认 true：请求带上保存的规则；warp_drive_context_enabled 默认 true：Warp Drive 内容进 AI 请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/project_context/model.rs#L582-L585",
+      "locator": "crates/ai/src/project_context/model.rs：规则优先级注释",
+      "lines": "L582-L585",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "优先级 global > project WARP.md > project AGENTS.md；全局规则总是叠加；同目录 WARP.md 遮蔽 AGENTS.md。全局规则文件 ~/.agents/AGENTS.md（global_rules.rs L18-L45）。docs Rules 页称 AGENTS.md 为默认项目规则文件、WARP.md 向后兼容。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/getting-started/quickstart/coding-in-warp/",
+      "locator": "docs-llms-full.txt L39387-L39483：Coding in Warp（初始化流程、Warp Drive 上下文、Rules）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "首次进入 Git 仓库会进入初始化流程：索引代码库并生成 AGENTS.md；Warp Drive as Agent Mode Context 默认开；项目规则用全大写 AGENTS.md。未发现目录信任提示——索引初始化不要求先答信任问题（快照内未找到 trust 弹窗代码）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L498-L512",
+      "locator": "app/src/settings/ai.rs：DefaultSessionMode",
+      "lines": "L498-L512",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "新会话默认模式 Terminal（#[default]）；Agent/CloudAgent 需 AI 启用，DockerSandbox 需 LocalDockerSandbox 标志（dogfood）否则回退 Terminal。代理会话由用户在终端内发起，不是新标签默认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L1237-L1373",
+      "locator": "app/src/settings/ai.rs：Active AI 各开关默认值",
+      "lines": "L1237-L1373",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "is_active_ai_enabled 默认 true（L1239）；ai_autodetection_enabled 默认 false（L1251）；nld_in_terminal_enabled 默认 false（L1266）；intelligent_autosuggestions 默认 true（L1288）；prompt_suggestions 默认 true（L1303）；code_suggestions 默认 true（L1316）；natural_language_autosuggestions 默认 true（L1329，PredictAMQueries 标志）；shared_block_title_generation 默认 true（L1343）；git_operations_autogen 默认 true（L1355）；rule_suggestions 默认 true（L1367，SuggestedRules 标志）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/local-agents/active-ai/",
+      "locator": "docs-llms-full.txt L8217-L8310：Active AI Recommendations（Prompt Suggestions / Next Command / Suggested Code Diffs）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "三类主动 AI 建议都基于终端错误/输入/输出自发调 LLM；Prompt Suggestions 与 Suggested Code Diffs 不计 AI 请求额度（后者有按计划的月度上限）；Next Command 各计划不限量；发送内容按 Secret Redaction 正则脱敏；可在 Settings > Agents > Warp Agent > Active AI 关闭。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_multi_agent_client/src/lib.rs#L126-L150",
+      "locator": "crates/warp_multi_agent_client/src/lib.rs：is_passive_suggestion_request / endpoint_url",
+      "lines": "L126-L150",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "代理请求 POST {server_root_url}/ai/multi-agent（SSE/protobuf，bearer 认证）；GeneratePassiveSuggestions 类请求走 /ai/passive-suggestions。server_root_url 默认 https://app.warp.dev（crates/warp_core/src/channel/config.rs L62）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs#L1841-L1842",
+      "locator": "app/src/ai/agent/conversation.rs：会话标题优先级注释",
+      "lines": "L1841-L1842",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "会话标题本地取 task description > initial query > fallback_display_title，不发模型请求（区别于共享 block 标题生成）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/search/slash_command_menu/static_commands/commands.rs#L670-L725",
+      "locator": "app/src/search/slash_command_menu/static_commands/commands.rs：/compact 系列斜杠命令",
+      "lines": "L670-L725",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "/compact（L670）、/compact-and（L688）、/fork-and-compact（L721）为手动上下文压缩入口；SummarizationViaMessageReplacement 标志在 DOGFOOD_FLAGS（crates/warp_features/src/lib.rs L1057），稳定默认构建不开，服务端是否自动压缩未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/privacy.rs#L86-L121",
+      "locator": "app/src/settings/privacy.rs：WarpDrivePrivacySettings",
+      "lines": "L86-L121",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "is_telemetry_enabled 默认 true（匿名用量遥测）、is_crash_reporting_enabled 默认 true（崩溃报告）、is_cloud_conversation_storage_enabled 默认 true（会话存云端）；三者云同步到账户。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/Cargo.toml#L351-L351",
+      "locator": "Cargo.toml：warp_multi_agent_api 依赖",
+      "lines": "L351",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "warp_multi_agent_api = { git = \"https://github.com/warpdotdev/warp-proto-apis.git\", rev = \"7d7b57774fe349e51734fd9537457eaeb1082f2c\" }：工具/请求的 proto 定义在另一仓库，不在本快照内 → 服务端最终注册给模型的工具名与 schema 未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/Cargo.toml#L506-L715",
+      "locator": "app/Cargo.toml：default features",
+      "lines": "L506-L715",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认构建编入 agent_mode、grep_tool（L536）、file_retrieval_tools（L539）、mcp_server（L540）、artifact_command（L588）、bundled_skills（L616）、list_skills、ask_user_question、conversations_as_context、agent_mode_computer_use、file_based_mcp、web_fetch_ui、ambient_agents_command_line、scheduled_ambient_agents、cloud_mode、handoff_local_cloud、acp_harness、hoa_* 等；feature 到 FeatureFlag 的映射见 app/src/features.rs（如 L418-L419 BundledSkills、L208-L209 AgentDecidesCommandExecution）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/mcp/",
+      "locator": "docs-llms-full.txt L1528-L1600：Model Context Protocol (MCP)（设置入口、添加服务器、类型）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "MCP 服务器由用户在 Settings > Agents > MCP servers 添加（CLI Command/Streamable HTTP/SSE 等），此页未提默认自动挂载的内置 Factory MCP 服务器（见 /factories/factory-mcp/ 页与源码 sync_builtin_servers）；关闭 Warp 时运行中的服务器下次启动再拉起，停止的保持停止；配置经 Warp 账户跨机同步（环境变量不同步）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/web-search/",
+      "locator": "docs-llms-full.txt L2975-L3089：Agent web search（支持模型、开关、计费）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "原生 web 搜索仅对提供第一方搜索工具的模型生效（Claude Opus 5.5/4.6/4.5/4 系、GPT-6 Astra/6.1 Sol/6 Sol/6 Luna/5.4 等）；按 profile 的 Call web tools 开关控制（源码 web_search_enabled 默认 true）；搜索由模型自发触发，按次+检索内容计费。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L87-L121",
+      "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：ComputerUsePermission",
+      "lines": "L87-L121",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "ComputerUsePermission 默认 Never：computer use 工具禁用、不提供给代理；默认 profile computer_use=Never（L411）。LocalComputerUse 标志在 DOGFOOD_FLAGS，稳定默认不开。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/computer-use/",
+      "locator": "docs-llms-full.txt L795-L840：Computer Use for agents（云端沙箱限定、启用方式）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "Computer Use 只在 Warp 沙箱云端环境提供，不用于本地交互终端会话；云端 Warp harness 运行默认启用，但从 Warp 应用发起的云端运行遵循 cloud_agent_computer_use_enabled 设置（默认关）。本记录（本地入口）computer_use=Never。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/capabilities/full-terminal-use/",
+      "locator": "docs-llms-full.txt L1259-L1310：Full Terminal Use（交互程序内操作）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "代理可附着到运行中的交互程序（psql/vim/gdb/dev server 等），读实时终端缓冲、向 PTY 写入、随时交还控制；对应权限 write_to_pty 默认 AlwaysAsk（逐次审批）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/agents/cli/",
+      "locator": "docs-llms-full.txt L3090-L3156：Warp Agent CLI overview",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "Warp Agent CLI（warp 命令）是独立本机程序，跑同一 Warp Agent harness，自带 PTY/多路复用，可在任意终端/SSH 使用，不需装 Warp 应用；账户/计划/模型/规则/技能与应用一致。homebrew-casks.json：cask warp-agent-cli 0.2026.11.11.08.17.stable_01，二进制包 releases.warp.dev/stable/.../tui/...（SOURCE.txt 称二进制名 oz）。此入口非本记录默认。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/platform/",
+      "locator": "docs-llms-full.txt L49726-L49790：Cloud agents overview",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "云端代理在 Warp 托管计算或用户自托管基础设施上执行（触发器/日程/集成/API 发起），不在本机；本记录 mode=local，不取此入口。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/input_classifier/src/onnx/mod.rs#L1-L12",
+      "locator": "crates/input_classifier/src/onnx/mod.rs 与 crates/input_classifier/models/onnx/",
+      "lines": "L1-L12",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "终端输入自然语言分类用随包本地 ONNX 模型（bert_tiny_v1/v2/v3.onnx，rust_embed 嵌入二进制；onnx_candle/onnx_ort 后端），不发云端请求；但 ai_autodetection_enabled 默认 false（settings/ai.rs L1251），与 quickstart『自动检测自然语言并提议发给代理』的说法不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/mcp/templatable_manager/native.rs#L809-L868",
+      "locator": "app/src/ai/mcp/templatable_manager/native.rs：sync_builtin_servers",
+      "lines": "L809-L868",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "FactoryMcp 标志开＋交互客户端（can_autostart_mcp_servers=is_app，crates/warp_core/src/execution_mode.rs L104-L106）＋已登录 → 自动 spawn 内置 Factory MCP 服务器（资格判定 L814-L816，spawn L861-L867）；AuthComplete/SkippedLogin/AccessTokenRefreshed 与管理器初始化时重挂（L394-L409、L475），登出解挂（app/src/auth/mod.rs L293）。factory_mcp 在 app default features（app/Cargo.toml L504、L707；app/src/features.rs L318-L319）；服务器名 warp-factory、端点 /api/v1/mcp/factory（app/src/ai/mcp/builtin.rs L39、L58-L66），用登录 bearer token 认证。标志说明“Automatically attaches the Warp-hosted Factory MCP server…No manual MCP setup or API key required”（crates/warp_features/src/lib.rs L960-L964）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.warp.dev/factories/factory-mcp/",
+      "locator": "docs-llms-full.txt L27599-L27655：Factory MCP for coding agents（In Warp 自动连接、streamable HTTP URL）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "“There is nothing to configure. When your account has access, Warp connects agent sessions to Factory MCP and handles authentication for you.”（L27627）；streamable HTTP https://app.warp.dev/api/v1/mcp/factory（L27645）。changelog 2026.08.18：“Warp now includes a built-in Factory MCP server for logged-in users.”（changelog.txt L57；docs-llms-full.txt L14834）。/agents/capabilities/mcp/ 页（L1528-L1600）未提该内置服务器，文档页之间不一致。账户是否有访问权与工具集由服务端决定，未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/mcp/mod.rs#L546-L563",
+      "locator": "app/src/ai/mcp/mod.rs：MCPProvider 的 home/project 配置路径",
+      "lines": "L546-L563",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "Warp 原生 home/project 均为 .warp/.mcp.json；Claude 项目级为仓库根 .mcp.json（home 级 ~/.claude.json）；Codex 为 .codex/config.toml；Agents 为 .agents/.mcp.json。mcp_provider_from_file_path（L566-L590）按此判定路径归属，也是受保护写路径判定的依据（app/src/ai/blocklist/permissions.rs L1245-L1256）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L2059-L2071",
+      "locator": "app/src/settings/ai.rs：file_based_mcp_enabled",
+      "lines": "L2059-L2071",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认 false（toml: agents.mcp_servers.file_based_mcp_enabled，DESKTOP）；注释：第三方 file-based MCP 配置要该设置打开才自动检测并启动，Warp 原生 .warp/.mcp.json 总是被检测并启动、与该设置无关。is_file_based_mcp_enabled（L2424-L2437）还要求 FileBasedMcp 标志与 AI 开；注释说明此举为避免仓库里的 MCP 配置在自动执行中跑任意命令。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L2443-L2467",
+      "locator": "app/src/settings/ai.rs：is_cloud_handoff_enabled / is_ampersand_handoff_enabled",
+      "lines": "L2443-L2467",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "钉住情形（已登录桌面应用、默认设置）下默认 true：AI 开＋should_force_disable_cloud_handoff false＋OzHandoff/HandoffLocalCloud 标志开＋local_fs 编译 feature＋云会话存储开＋工作区策略非 Disable；& 前缀另要求 should_force_disable_ampersand_handoff false。两个 force_disable 默认 false（L2180-L2201）；云会话存储默认 true（app/src/settings/privacy.rs L109-L119）；oz_handoff/handoff_local_cloud 在 app default features（app/Cargo.toml L684-L685；app/src/features.rs L470-L475）；local_fs 由 build.rs 对非 wasm 目标启用（app/build.rs L231-L234）。auto_handoff_on_sleep_enabled 默认 false、仅 macOS（L2203-L2213）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent_sdk/driver/checkpoint_coordinator.rs#L67-L79",
+      "locator": "app/src/ai/agent_sdk/driver/checkpoint_coordinator.rs：检查点周期常量",
+      "lines": "L67-L79",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_CHECKPOINT_INTERVAL=5 分钟（L67）、CHECKPOINT_JITTER 最多 30 秒（L70）、MAX_BOUNDARY_DEFERRAL=10 分钟（L79，等不到安全边界即强行拍）；每次检查点收集并上传整个工作区（模块注释 L1-L17）。PeriodicHandoffCheckpoints 在 RELEASE_FLAGS（crates/warp_features/src/lib.rs L1108，说明 L970-L974“a no-op for local runs”）；writer/coordinator 只在有云端 task_id 时创建（app/src/ai/agent_sdk/driver.rs L1700-L1729、L1093-L1096“pure no-op for local and disabled runs”），end-of-run 上传同样只对云端 task 生效（L4943-L4972）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L2165-L2178",
+      "locator": "app/src/settings/ai.rs：agent_attribution_enabled",
+      "lines": "L2165-L2178",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认 true：“Whether the Warp Agent adds an attribution co-author line to commit messages and pull requests it creates”；可被团队级 enable_warp_attribution AdminEnablementSetting 覆盖（注释 L2166-L2168）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/create_documents.rs#L102-L110",
+      "locator": "app/src/ai/blocklist/action_model/execute/create_documents.rs：计划文档 autosync",
+      "lines": "L102-L110",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "代理经 CreateDocuments 生成计划文档后读 active profile 的 autosync_plans_to_warp_drive，为 true 即立刻 sync_to_warp_drive（计划默认上云）。该字段在 AIExecutionProfile::default 为 true（crates/cloud_object_models/src/ai_execution_profile.rs L417）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/lib.rs#L2548-L2550",
+      "locator": "app/src/lib.rs：ScheduledAgentManager 启动注册",
+      "lines": "L2548-L2550",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "ScheduledAmbientAgents 标志开时启动即注册 ScheduledAgentManager；scheduled_ambient_agents 在 app default features（app/Cargo.toml L601；app/src/features.rs L284-L285）。该管理器只列取/创建/暂停/更新/删除云端 schedule 对象并拉执行历史（app/src/ai/ambient_agents/scheduled.rs L115-L140、L197-L397），不在本机触发运行；新账户没有云端 schedule 即无自发运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L1376-L1387",
+      "locator": "app/src/settings/ai.rs：voice_input_enabled_internal",
+      "lines": "L1376-L1387",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认 true（DESKTOP，toml: agents.voice.voice_input_enabled）；getter is_voice_input_enabled（L2386-L2391）还要求 voice_input 编译 feature 与 AI 开。gui feature 含 voice_input（app/Cargo.toml L740），官方桌面应用构建经打包脚本加 gui（script/macos/bundle L520、script/linux/bundle L273）；Linux TUI portable 构建刻意省略 voice_input（script/linux/bundle L266-L267）。用户按键触发、不是自发模型请求；转录走哪一端未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs#L1907-L1943",
+      "locator": "app/src/settings/ai.rs：第三方 CLI 代理 footer/富输入开关",
+      "lines": "L1907-L1943",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "should_render_use_agent_footer_for_user_commands（L1907-L1916）、should_render_cli_agent_footer（L1918-L1929）、auto_toggle_rich_input（L1930-L1943）均默认 true：用户在 Warp 里自己跑第三方 CLI 代理（Claude/Codex/Gemini 等）时显示 Use Agent/CLI agent footer，并按会话 Blocked 状态自动开/关富输入（app/src/workspace/view.rs L23692；app/src/terminal/view/use_agent_footer/mod.rs L637）。不改变“本入口默认不启动第三方代理”。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/input.rs#L108-L117",
+      "locator": "app/src/settings/input.rs：command_corrections",
+      "lines": "L108-L117",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认 true（toml: terminal.input.command_corrections）：对输错的命令建议纠错。纠错数据来自另一仓库 warpdotdev/command-corrections（rev eae08c8c51d9bc9741fcb17eef2c21f696aebbeb，Cargo.toml L137；app/Cargo.toml L85）编入二进制，内容不在 warpdotdev/warp 源码内；是否触发模型请求未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/workflows/local_workflows.rs#L38-L44",
+      "locator": "app/src/workflows/local_workflows.rs：LocalWorkflows::new 加载全局 Workflows",
+      "lines": "L38-L44",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "启动即把 warp_workflows crate 的 global_workflows() 编入（应用启动注册 LocalWorkflows，app/src/lib.rs L2554）；warp-workflows 来自另一仓库 warpdotdev/workflows（rev 793a98ddda6ef19682aed66364faebd2829f0e01，Cargo.toml L350；app/Cargo.toml L230），内容不在 warpdotdev/warp 源码内。warp_drive_context_enabled 默认 true，Workflows 可进代理上下文；该默认全局 Workflows 的内容未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/autoupdate/channel_versions.rs#L14-L49",
+      "locator": "app/src/autoupdate/channel_versions.rs：fetch_channel_versions",
+      "lines": "L14-L49",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "先请求 Warp 服务器（server_api.fetch_channel_versions → {server_root_url}/client_version，每日首次 /client_version/daily，app/src/server/server_api.rs L1427-L1440；production server_root_url=https://app.warp.dev，crates/warp_core/src/channel/config.rs L62），失败才回退 {releases_base_url}/channel_versions.json（L55-L75）。releases_base_url 来自渠道配置 AutoupdateConfig（crates/warp_core/src/channel/config.rs L130-L135；state.rs L209-L217），release 构建由 warp-channel-config 生成器生成并嵌入（crates/warp_channel_config/src/lib.rs L39-L54；app/build.rs L152-L213），生成器在私有仓库 warpdotdev/warp-channel-config（script/install_channel_config L13-L14），公开源码未含默认地址。FetchChannelVersionsFromWarpServer 标志有定义（crates/warp_features/src/lib.rs L30）但在该提交无调用点。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "Warp 账户登录（email/Google/GitHub 注册，快速开始里 Sign up 对终端可选，但 AI/代理对匿名与未登录用户整体禁用，源码 settings/ai.rs is_any_ai_enabled）。最低够用档位：Free 计划——Free 档本身不含用量，要购买用量或自带密钥（文档：Free 档可不订阅直接购买用量，或自带推理）。本记录取 Free 档加购买用量，用 Warp 提供的推理，不另配提供方密钥。",
+    "default_model": "默认 profile base_model=None，不改设置时取服务端下发的 agent_mode 模型列表 default_id（可用时），不会报错或要求用户选；客户端内置兜底 id='auto'、display_name 'auto (cost-efficient)'（llms.rs ModelsByFeature::default）。docs 模型表把 id='auto' 列为 Auto (Responsive)、'auto-efficient' 列为 Auto (Cost-efficient)，与客户端兜底显示名不一致；docs 未写明新登录用户默认型号。线上服务端实际下发的 default_id 与 'auto' 路由到的具体型号未核实（要联网核对）。",
+    "host_os": "macOS 或 Linux（产品另支持 Windows；本研究统一取 macOS/Linux）。macOS 需 10.14+ 与 Metal；Linux 需 glibc≥2.31 与 OpenGL ES 3.0+ 或 Vulkan。",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动（在 Warp 终端会话里 cd 到仓库根，代理用该会话工作目录；首次进入 Git 仓库自动触发索引＋生成 AGENTS.md 的初始化流程）。",
+    "trust": "快照内未发现目录信任提示（无 trust 弹窗代码）；首次进入 Git 仓库直接进入索引初始化流程（docs Coding in Warp），codebase_context_enabled 默认 true、auto_indexing_enabled（随导航自动索引新目录）默认 false。索引与规则读取不以先答信任问题为前提。未登录／匿名情形 AI 整体禁用，不适用于本记录。",
+    "credentials": "只配 Warp 账户登录这一家（Warp 管理推理，经 app.warp.dev 转发到模型提供方）。BYOK（Anthropic/OpenAI/Google 密钥）、ChatGPT/SuperGrok 订阅、自定义推理端点均为可选，本记录不配；默认模型属 Warp 管理推理，与所配账户同一家，无错配。",
+    "other": "执行运行时：快速开始默认本机 Warp 应用进程＋本机 PTY（用户登录 shell），无容器/远端沙箱（Computer Use 仅云端沙箱；LocalDockerSandbox 标志 dogfood 限定）；本地→云端 handoff 默认开（& 前缀可用），交接时上传工作区快照、云端 run 期间周期性拍检查点，纯本地会话不触发。可选外部组件：默认没有用户自装的 MCP 服务器，本记录也不装（负责人 2026-11-22 定）；但默认构建会在已登录的桌面应用里自动挂上 Warp 托管的内置 Factory MCP 服务器 warp-factory（https://app.warp.dev/api/v1/mcp/factory，用登录 token 认证），CallMcpTool 默认有工具可调、每次调用需审批，账户可用性与工具集由服务端决定，未核实；第三方 CLI 代理（Claude Code/Codex 等）本入口不需要，若用需另装、版本由用户安装决定，快照无其代码。自动更新默认开，版本信息先经 Warp 服务器 /client_version、失败回退渠道配置的 channel_versions.json，实际更新到的版本未核实。"
+  }
+}

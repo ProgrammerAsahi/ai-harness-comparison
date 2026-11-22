@@ -1,0 +1,921 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "C04__chatbox__desktop-default",
+  "round": "batch-5",
+  "tool_id": "C04",
+  "product": "Chatbox AI",
+  "view": "configured",
+  "version_or_commit": "v1.24.4；提交 75bb9355f826f9070ff5c53527674aab93eb8b9f",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "桌面应用（Electron，社区版源码对应的发布版）默认对话：从 GitHub releases 页（README Quick Start 所指）或 chatboxai.app 下载链接取安装包安装启动；首次启动在未配置提供方时自动进入对话式引导页 /guide（可跳过），在设置里配置自己的模型提供方与 API 密钥后，回到首页新建对话、在模型选择器选模型并发送消息。这是 README『Quick Start / For End Users』带用户走的主路径，与建议入口一致。Agent／工作模式（Work Mode）在社区版代码里存在：新对话默认 agentMode='auto'（智能切换建议默认开），但 'auto' 仍属聊天模式，只在首条用户消息时跑一个模式建议分类器，命中后注入建议卡片并停止生成，须用户接受升级才进入工作模式；用户也可在模式面板手动选 'on'。工作模式是另一条入口（沙箱代码执行、宿主命令、文件读写、技能、MCP、内置浏览器），本记录不取。托管的 Chatbox AI 服务（许可证／订阅）是商业层，不作本记录的入口。",
+  "install_method": "download：README Quick Start 第 1 步指向 GitHub releases 页 https://github.com/chatboxai/chatbox/releases 按平台取安装包；README Download 一节另给 chatboxai.app 下载跳转（Windows Setup.exe、macOS Intel / Apple Silicon、Linux AppImage）；platform: macOS / Linux / Windows；source: README.md#L120-L126 与 README.md#L75-L99（只作记录，未执行）。源码里没有包管理器 latest 或滚动镜像标签的安装写法。自动更新 autoUpdate 默认 true，启动 5 秒后检查并每小时复查，feed 依次为 https://chatboxai.app/api/auto_upgrade 等 5 个域名，channel 默认 latest（betaUpdate 默认 false）；releases 页与 auto_upgrade feed 当天实际提供的安装包版本未核实（见 note）。根 package.json version 为占位 0.0.1，发布版本写在 release/app/package.json（1.24.4，与发布标签 v1.24.4 一致）。",
+  "permission_mode": "本记录钉的是『已按快速开始配好一家自有提供方 API 密钥、默认聊天模式』的情形。默认聊天入口不提供 shell、命令执行或任意本机文件读写工具：run_command / code_execution / create_download / user_exec / write_file / edit_file / list_files / search_files / load_skill / install_skill / MCP / 内置浏览器 / view_image 都只在 agentMode='on' 且模型声明 agent 工具能力时注册（tools-builder.ts#L344-L345）。聊天模式默认实际可加载的工具只有：save_memory / delete_memory（memoryEnabled 缺省即开，模型支持 agent 工具能力时注册，独立于工作模式）；用户附文件／链接时加 read_file / search_file_content（只读本次上传内容，不是任意本机文件）；大附件走会话检索时加 list_session_attachments / query_session_attachment / read_session_attachment_parents（大附件只有在用户配置了 defaultEmbeddingModel，或有可用 Chatbox AI 许可证且服务端 /api/session_rag/config 打开 session_attachment_embedding 时才以 session-retrieval 入库；本记录前提自有密钥＋无许可证＋未配嵌入模型下附件一律 inline，这三个工具都不注册）；链接知识库时加 knowledge_base（默认无知识库）；web_search / parse_link 仅在用户为该会话手动打开联网开关后加载（自有提供方默认关，resolveWebBrowsingMode 只对 ChatboxAI 提供方默认开）。没有命令执行，因此也没有逐命令审批；没有工作区信任提示。联网：模型请求发往用户配置的提供方（本记录前提为 OpenAI api.openai.com）；应用自身默认发起遥测（GA4 Measurement Protocol、Plausible、Sentry，allowReportingAndTracking 默认 true）、远程配置拉取与 API 源探测、自动更新检查，引导页自由提问发往 Chatbox 后端 /v1/guide/chat。工作模式（另一入口，非本记录默认情形）的命令审批默认 smart：只读白名单命令自动放行，其余命令经会话模型做解释与安全评估、仅对不在阻断名单且被判安全的命令自动放行，否则暂停等用户批准；full_access 与 always_ask 是可选值，默认不取。文档对未配置提供方／未登录情形的说法（如引导页、Chatbox AI 免费套餐领取）不适用于本记录。",
+  "operating_system": "macOS、Linux、Windows（Electron 桌面应用；README 系统要求 Windows 10+ x64、macOS 11 Big Sur+ Intel/Apple Silicon、Ubuntu 20.04+ / 支持 AppImage 的发行版 x64；本记录环境前提取 macOS）。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-19",
+  "note": "代表配置取默认安装、默认权限模式、官方快速开始（README Quick Start / For End Users）的桌面默认对话入口，与建议入口一致；提供方用自有 API 密钥，不用托管 Chatbox AI 服务（商业层）。快速开始让用户在多家提供方里自选（README 写 OpenAI, Claude, etc.），官方没有唯一默认；提供方注册表顺序 ChatboxAI 第一（商业层，排除）、OpenAI 是第一个第三方，本记录 credentials 先填 OpenAI。不改设置时没有内置默认模型：无 Chatbox AI 许可证时 resolveChatboxLicenseDefaultModel 返回 undefined，settings.defaultChatModel 与 lastUsedModel 均空，新会话不带 provider/model，用户必须自己在模型选择器选模型才能发送（OpenAI 提供方预置模型列表首项 gpt-5.6-sol 只是列表顺序，不是自动默认）。Agent／工作模式在社区版代码里存在（src/renderer/stores/session/agent-mode.ts、agent-harness.ts、docs/technical/chat-work-mode-split.md）：默认 agentMode='auto'（uiStore.agentModeSmartSwitchingDefault 默认 true），'auto' 仍属聊天模式，仅首轮跑模式建议分类器（辅助模型调用，用 threadNamingModel 或会话模型），命中注入建议卡片并停止生成，须用户接受才升级工作模式；agentModeLastSelected 默认 'off'。subagents_enabled=false 属『此入口没有该功能』：全源码未找到子代理／委派工具（grep subagent/delegate/dispatch 无产品功能命中；packages/chatbox-core/src/headless/terminal-agent.ts 是供宿主调用的 headless 终端代理库，命令执行委派给宿主环境、不在本机跑，桌面默认对话与工作模式都不注册它）。默认开启的扩展点逐项见 enabled_extensions。要联网核对：(1) GitHub releases 页与 chatboxai.app 下载跳转当天实际提供的安装包版本；(2) auto_upgrade feed（chatboxai.app/api/auto_upgrade 等 5 域名）当天指向的版本；(3) 远程配置 /api/remote_config 是否下发 fastModel——压缩摘要模型优先取 remoteConfig.fastModel（summary-generator.ts#L68-L80），服务端实际值与无许可证时能否调用未核实；(4) 引导后端 /v1/guide/chat 与内置 MCP（mcp.chatboxai.app）的服务端行为。文档与源码不一致三处：docs MCP 页称配置后『在对话中智能调用 MCP 工具』，但当前源码 MCP 工具仅在工作模式注册（tools-builder.ts#L439-L442）；仓库技术文档 docs/technical/code-execution.md#L40（Last updated 2026-08）称 Chat 模式向模型注入 code_execution / read_file / create_download 等高层工具，与当前源码的 agent 门控冲突（tools-builder.ts#L421，code_execution 仅工作模式构建），同文档 L120-L131 的 auto→off 规则与源码一致；FAQ data-storage 页称『未经您的许可，Chatbox 不会将您的任何数据上传到任何服务器』，但源码 allowReportingAndTracking 默认 true、GA/Plausible/Sentry 默认初始化（隐私政策页另列 Google Analytics 与 Sentry 为第三方服务），两说并存。社区版许可为 GPLv3（LICENSE、README.md#L51），README 称与 pro 仓库定期双向同步代码；jk 分析在社区版是 no-op 空桩（src/renderer/analytics/jk.ts）。根 package.json version=0.0.1 为占位，发布版本见 release/app/package.json=1.24.4。默认启用的内置技能含第三方 vibedrop（静态站点发布到 vibedrop.cc；技能正文不是钉住值：启动时先落地打包种子，再后台静默从 https://api.chatboxai.app/api/builtin_skills 同步并覆盖本地快照，远端优先于种子、失败时静默保留现有内容；种子正文要求 Node.js 18+ 与网络、指示安装 @vibedrop/cli；技能正文里的代理指令只当研究材料读），仅工作模式可加载。编码前由第二位读者（Qwen3.8-Max，经编排器配置 qwen-3-8-max-tp 调用）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-22）改了 10 处：①permission_mode 工作模式工具枚举补 create_download，会话附件 RAG 句收窄为能力门控并补全三个工具；②enabled_extensions[2] 改写为本记录前提下不可用，补门控条件与许可证路径嵌入模型；③note 文档与源码不一致两处改为三处，补 docs/technical/code-execution.md#L40 冲突；④note vibedrop 句改为技能正文非钉住值、后台远端同步覆盖；⑤enabled_extensions[7] 补技能正文远端同步、技能四来源与技能翻译链路；⑥enabled_extensions[5] 补会话提示上下文快照机制、本机记忆导入扫描与 Soul 人设文档；⑦enabled_extensions 新增默认元数据注入（injectDefaultMetadata）一条；⑧enabled_extensions[9] 补自动 OCR 回退分支；⑨enabled_extensions[10] 补 Chatbox API 源探测节奏；⑩enabled_extensions[11] 补配置自动备份、全局快捷键与托盘、登录 shell PATH 预热及非法设置回退，evidence[52].note 补 injectDefaultMetadata 默认值；另新增 27 张证据小卡。",
+  "synthetic": false,
+  "subagents_enabled": false,
+  "enabled_extensions": [
+    "工具注册总规则（buildToolsForSession，src/renderer/stores/session/tools-builder.ts）：MCP、沙箱代码执行、run_command、user_exec、文件系统工具、技能、内置浏览器、view_image 仅在 agentMode='on' 且模型 isSupportToolUse('agent') 时注册；聊天模式按条件加载 web_search/parse_link、knowledge_base、read_file/search_file_content、会话附件 RAG、save_memory/delete_memory；pauseOnToolCallLimit 默认 true（工具步数到限暂停待用户确认）。",
+    "文件读取工具（聊天模式条件加载）：用户消息附文件或链接且模型支持 read-file 时注册 read_file 与 search_file_content，只读本次上传的内容（虚拟路径），不能读任意本机文件；默认无附件时不加载。",
+    "会话附件 RAG（本记录前提下不可用）：大附件只有在用户配置了 defaultEmbeddingModel，或有可用 Chatbox AI 许可证且服务端 /api/session_rag/config 打开 session_attachment_embedding 时，才以 session-retrieval 模式入库并注册 list_session_attachments（列大附件与就绪状态）、query_session_attachment（语义检索）、read_session_attachment_parents（读检索命中的父块）三个工具（canUseSessionAttachmentRag，sessionHelpers.ts#L314-L351）；自有密钥＋无许可证＋未配嵌入模型（defaultEmbeddingModel 默认 undefined）时附件一律 inline，三个工具都不注册；许可证路径下的嵌入请求发往 Chatbox 后端（chatbox-ai:text-embedding-3-small），不发往用户提供方；桌面文档解析器默认 local（随包本地解析，getDefaultDocumentParser）。",
+    "知识库（聊天模式条件加载）：knowledge_base 单工具（search/read/list 命令），需用户创建并在会话链接知识库且模型支持 knowledge-base；默认无知识库、defaultEmbeddingModel/defaultRerankModel 均未配置，创建知识库须先配嵌入模型（官方文档同此说）。",
+    "联网搜索（默认关）：自有提供方会话 webBrowsing 默认 false（resolveWebBrowsingMode 仅对 ChatboxAI 提供方默认开）；打开后默认搜索提供方 extension.webSearch.provider='build-in'，该提供方执行时要求 Chatbox AI 许可证，无许可证抛 chatbox_search_license_key_required；可选 bing（免费）/tavily/bocha/querit（各需 API key）/searxng（需自建 URL）；parse_link 仅 build-in/tavily 提供方注入，build-in 的解析走 Pro 许可远程接口、无许可证回退免费解析。",
+    "持久记忆（默认开）：memoryEnabled 缺省（undefined→!==false 即开），模型支持 agent 工具能力时在聊天模式也注册 save_memory 与 delete_memory；记忆内容经会话提示上下文快照（SessionPromptContextSnapshot）注入系统提示：快照在每次生成前解析，聊天模式在对话开始（尚无助手消息且存在记忆或需记录记忆状态）时拍下，工作模式在授权目录变化时重拍、记忆开关变化只重载记忆切片；内容含 Soul 正文、记忆列表、工作区指令（授权目录根 AGENTS.md 等）、capturedAt 与 UTC 偏移、agentToolContractVersion，存放在该会话自己的 settings（sessionPromptContextSnapshot 字段）里，运行中的会话读到的是冻结值，记忆写入立即持久化但只影响后续会话。另有本机记忆导入扫描：默认读 ~/.codex/memories/memory_summary.md 与 ~/.claude/CLAUDE.md、~/.claude/rules/**/*.md 解析候选记忆，首次打开记忆设置页自动扫一次并预选全部候选弹复核框（跑前即置完成标记），之后需手点 Scan again；扫描纯本地、不调模型，导入的记忆进入后续会话的系统提示。Agent 人设文档 Soul（chatbox://SOUL.md）：全局人设文档，首次访问按当前 UI 语言生成种子模板（未编辑则回退默认人设），存本地存储键 agent-soul；工作模式把它拼进系统提示，并允许模型经文件工具按该虚拟路径读写（写立即持久化、本会话仍用冻结快照）；聊天模式系统提示只注入记忆、不注入 Soul。",
+    "MCP（默认无服务器）：settings.mcp.servers=[] 且 enabledBuiltinServers=[]，启动 bootstrap 两者合并为空→不启动任何 MCP 服务器；内置目录 fetch/arxiv/context7 全部托管在 https://mcp.chatboxai.app（商业层，启用时带 x-chatbox-license 头），是安装候选不是默认已装；MCP 工具仅工作模式注册给模型；stdio 服务器为本机子进程、http 为远端服务。",
+    "技能（默认启用两个，仅工作模式可加载）：skills.enabledSkillNames 默认 ['chatbox-product-info','vibedrop']（内置另有 data-analysis、frontend-design 默认不启用）；技能名字是固定默认值，但正文不是钉住值：启动时先把打包种子（src/main/skills/builtin/）落地到 <userData>/builtin-skills，再后台静默从 https://api.chatboxai.app/api/builtin_skills 拉清单与逐个技能正文，hash 不同即覆盖本地快照（远端优先于种子，失败静默保留现有快照），工作模式注入模型的正文以服务端当天内容为准；load_skill/install_skill 仅工作模式注册；chatbox-product-info 启用时工作模式另注册 chatbox_cli（应用内受控虚拟 CLI，非 shell、非外部产品，管账户/只读设置/历史/生图）；vibedrop 是第三方静态托管技能（MIT-0，种子正文要求 Node.js 18+ 与 api.vibedrop.cc 网络，指示 npm install -g @vibedrop/cli，匿名免费档 25MB/站、20 站、30 天 TTL）；技能来源默认还包含 <userData>/skills、~/.claude/skills 与 ~/.agents/skills（跟随符号链接、按 realpath 去重、名字规范化 kebab-case、名字冲突时先到的来源占名），外部技能默认只被枚举，名字出现在 enabledSkillNames 才注入模型；skills.translationEnabled 默认 true，UI 语言非 en 时打开技能设置面板会把技能名与描述批量发往 Microsoft Translator（失败回退 Google Translate），结果本地缓存 7 天，该链路不受 allowReportingAndTracking 门控，默认语言 en 不触发。",
+    "工作模式执行运行时（另一入口，非本记录默认）：桌面用本地沙箱——macOS/Linux 经 @anthropic-ai/sandbox-runtime（^0.0.54，随包 npm 依赖）做 OS 级隔离（macOS Seatbelt；Linux 需系统 bubblewrap(bwrap)+socat，checkDependencies 缺失则沙箱不可用），网络全放行（不设 allowedDomains）、禁读 ~/.ssh 等敏感路径、禁写 .env 与授权目录顶层 Git 元数据；Windows 原生无 OS 隔离；沙箱工作目录 os.tmpdir()/chatbox-sandbox/<sessionId>；node 语言用随包 Electron 二进制以 ELECTRON_RUN_AS_NODE 运行，bash/PowerShell 用系统 shell（Windows 的 bash 需 Git Bash 或 WSL）；user_exec 在宿主真实环境跑命令、默认从用户主目录起步；移动/Web 端用云沙箱（非本入口）。",
+    "默认会自发的模型请求：autoGenerateTitle 默认 true（会话自动命名，threadNamingModel 未配置→用会话模型）；autoCompaction 默认 true、compactionThreshold 0.75（压缩摘要模型优先级 remoteConfig.fastModel＞threadNamingModel＞会话模型，fastModel 服务端值未核实）；agentMode='auto' 的首条用户消息模式建议分类器（threadNamingModel 或会话模型，命中即停生成等用户接受）；工作模式 smart 审批的命令解释与安全评估调用（会话模型，另一入口）。引导页固定话术为本地脚本流式播放，自由提问发往 Chatbox 后端 /v1/guide/chat（托管服务，不用用户提供方）。另有自动 OCR 回退：会话模型不支持视觉且消息含未 OCR 图片时，优先用用户配置的 ocrModel，否则有许可证时回退 Chatbox AI 内置 chatbox-ocr-1，发起辅助 OCR 请求；两者皆无则直接抛 model_not_support_image_2（本记录前提无许可证且未配 ocrModel，不发请求、直接报错）。",
+    "默认遥测与外网调用：allowReportingAndTracking 默认 true→GA4 Measurement Protocol（G-B365F44W6E，主进程发送）、Plausible（自托管 plausible.midway.run 脚本）、Sentry（自托管 sentry.midway.run/697，sampleRate 1.0、traces 0.1、回放 0.05）均在启动初始化并受该开关门控；jk 分析在社区版为 no-op 空桩；启动拉取远程配置 /api/remote_config 并做 Chatbox API 源探测（主进程与渲染进程各起一份：内置 5 个源的固定优先级池，首个可达者接管全部流量；主源可达时每小时重探、走备源时每 5 分钟、网络错误后 60 秒重探，探测结果可被服务端广告的额外源改写）；autoUpdate 默认 true、每小时检查更新（feed 见 install_method）。关闭开关时不初始化上述遥测（docs/technical/analytics.md）。",
+    "入口代码的执行位置（本默认对话配置）：Electron 主进程（Node）负责本地沙箱、宿主命令、文件解析、MCP stdio、内置浏览器（WebContentsView+CDP，站点权限请求默认一律拒绝，仅工作模式）、GA 遥测与自动更新；渲染进程负责聊天编排、工具注册与模型请求组装；模型推理在用户配置的云端提供方（本记录前提 OpenAI api.openai.com），不在本机；内置浏览器是 Electron 内置组件，非外部 Chrome。主进程另有这些默认行为：启动即备份一次配置 JSON、之后每 10 分钟一次（写 config-backup-<ISO 时间>.json 并清理多余备份，内容是设置/配置、不含消息库与附件，无开关，系统挂起时暂停、恢复时重建定时器）；启动注册全局快捷键 Alt+`（显示/隐藏窗口）与系统托盘图标（受 MAIN_RUNTIME_POLICY 约束）；注册技能 handler 时预热登录 shell PATH 探测（fork 用户登录 shell 缓存 PATH，供 user_exec 非阻塞读取）。持久化 settings 非法（null/非对象/数组）时返回默认值并强制 allowReportingAndTracking=false。",
+    "默认元数据注入（默认开）：injectDefaultMetadata 默认 true，聊天模式在系统提示尾部追加当前模型名、会话开始时间（按对话开始冻结、含 UTC 偏移）与 <system-reminder> 约定，并对 ≥30 分钟静默间隔插入临时 time-gap <system-reminder>（不落库）；工作模式对应 ## Runtime 块（模型名＋快照捕获时间戳＋同一条 system-reminder 指令）；关闭后聊天模式仅保留 Additional info for this conversation: …。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/release/app/package.json#L2-L4",
+      "locator": "release/app/package.json：发布版本号",
+      "lines": "L2-L4",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "name=xyz.chatboxapp.ce，version=1.24.4，与 SOURCE.txt 的发布标签 v1.24.4 一致；提交 SHA 取钉住提交 75bb9355f826f9070ff5c53527674aab93eb8b9f。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/package.json#L2-L4",
+      "locator": "package.json：根包占位版本",
+      "lines": "L2-L4",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "根 package.json name=xyz.chatboxapp.ce、version=0.0.1 为占位；实际发布版本在 release/app/package.json。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/README.md#L120-L134",
+      "locator": "README.md：Quick Start / For End Users 与 System Requirements",
+      "lines": "L120-L134",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "官方快速开始：1 从 releases 页（https://github.com/chatboxai/chatbox/releases）下载安装包→2 安装启动→3 在设置配置 AI 提供方（OpenAI, Claude, etc.）→4 开始聊天。系统要求 Windows 10+ / macOS 11+ / Ubuntu 20.04+。主路径是桌面默认对话＋自有提供方密钥。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/README.md#L75-L99",
+      "locator": "README.md：Download / Desktop 下载链接",
+      "lines": "L75-L99",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "Windows Setup.exe、macOS Intel / Apple Silicon、Linux AppImage 均跳转 https://chatboxai.app/?c=download-*；下载页当天实际提供的版本未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/README.md#L51-L55",
+      "locator": "README.md：社区版定位与许可",
+      "lines": "L51-L55",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "本仓库是 Chatbox Community Edition，GPLv3 开源；与 pro 仓库定期双向同步代码；指向 issue #2266『Chatbox is going open-source Again!』。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/LICENSE#L1-L2",
+      "locator": "LICENSE：GNU GPL v3",
+      "lines": "L1-L2",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/app-updater.ts#L85-L112",
+      "locator": "src/main/app-updater.ts：自动更新开关与 feed",
+      "lines": "L85-L112",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "settings.autoUpdate（默认 true）时启动 5 秒后检查、每小时复查；feedUrls 依次 https://chatboxai.app/api/auto_upgrade、https://api.chatboxai.app/api/auto_upgrade、https://api.ai-chatbox.com/api/auto_upgrade、https://api.chatboxapp.xyz/api/auto_upgrade、https://api.chatboxai.com/api/auto_upgrade；channel=betaUpdate?'beta':'latest'（betaUpdate 默认 false）；allowDowngrade=false。feed 当天指向的版本未核实。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/guides/providers",
+      "locator": "模型配置（快速配置自定义 AI 提供方）步骤 1-8",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "设置→模型提供方→添加提供方→填 API 密钥与 API 主机→添加至少一个模型并勾选能力（不配置视为纯文本模型）→检查连接→回首页新建对话发起聊天。官方让用户自选提供方，无唯一默认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/providers/builtin-registration.ts#L8-L9",
+      "locator": "src/shared/providers/builtin-registration.ts：提供方注册顺序",
+      "lines": "L8-L9",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "注释明确『Keep ChatboxAI first…registry 的 Map 顺序也是默认提供方展示顺序』；import 顺序 chatboxai（商业层）第一、openai 第二（第一个第三方），其后 openai-responses、gemini、claude、deepseek 等。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/providers/definitions/openai.ts#L12-L35",
+      "locator": "src/shared/providers/definitions/openai.ts：OpenAI 预置模型与 apiHost",
+      "lines": "L12-L35",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "curatedModelIds 首项 gpt-5.6-sol；defaultSettings.apiHost=https://api.openai.com，预置模型列表首项 gpt-5.6-sol（capabilities vision/tool_use/reasoning）。列表顺序不等于自动默认选择。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/sessionHelpers.ts#L988-L996",
+      "locator": "src/renderer/stores/sessionHelpers.ts：initEmptyChatSession 默认模型解析",
+      "lines": "L988-L996",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "新会话模型=settings.defaultChatModel（默认未设）→lastUsedModelStore.chat（全新安装为空）→resolveChatboxLicenseDefaultModel(settings)；三者皆空时会话不带 provider/model。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/defaultChatModel.ts#L27-L31",
+      "locator": "src/renderer/stores/defaultChatModel.ts：resolveChatboxLicenseDefaultModel",
+      "lines": "L27-L31",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "无 licenseKey 或许可证过期时返回 undefined——自有密钥、无 Chatbox AI 许可证时没有内置默认模型，用户须自选。有许可证时默认 ChatboxAI 提供方 chatboxai-3.5/chatboxai-4（商业层，非本记录）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/routes/index.tsx#L58-L61",
+      "locator": "src/renderer/routes/index.tsx：firstChatScenarioDefaultModel（仅登录态）",
+      "lines": "L58-L61",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "ChatboxAI/chatboxai-3.5 的『首聊场景默认』只在 isLoggedIn 且未完成首次成功聊天时注入（L162-L176），属托管登录路径，不适用于本记录的自有密钥情形。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/defaults.ts#L21-L27",
+      "locator": "src/shared/defaults.ts：chatSessionSettings 历史默认",
+      "lines": "L21-L27",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "chatSessionSettings() 默认 provider=ChatboxAI、modelId='chatboxai-4'、maxContextMessageCount=MAX_SAFE_INTEGER；mergeSettings 只取其 maxContextMessageCount，provider/model 由会话默认模型解析链决定（见 sessionHelpers 卡）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/routes/__root.tsx#L234-L241",
+      "locator": "src/renderer/routes/__root.tsx：首启自动进入引导",
+      "lines": "L234-L241",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "未完成 onboarding 且 needEditSetting()（未配置提供方）时自动 navigate('/guide')；没有工作区信任提示。引导可跳过（专家路径直达设置、ClaimWaitingCard『Skip for now』；开发态另有 CHATBOX_SKIP_GUIDE）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/routes/guide/-utils/guideApi.ts#L9-L16",
+      "locator": "src/renderer/routes/guide/-utils/guideApi.ts：引导后端端点",
+      "lines": "L9-L16",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "GUIDE_API_PATH='/v1/guide/chat'，getGuideAPIURL()=Chatbox API 源＋该路径；引导页自由提问发往托管后端（useGuideSession.sendMessage），不用用户提供方；固定话术为本地脚本。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/uiStore.ts#L121-L124",
+      "locator": "src/renderer/stores/uiStore.ts：Agent 模式默认偏好",
+      "lines": "L121-L124",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "agentModeSmartSwitchingDefault=true（智能切换建议默认开）、agentModeLastSelected='off'（上次显式选择默认关）；两者为持久化 UI 偏好。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/agent-mode.ts#L13-L19",
+      "locator": "src/renderer/stores/session/agent-mode.ts：createDefaultAgentModeEntry",
+      "lines": "L13-L19",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "默认 entry value=smartSwitchingDefault?'auto':'off'→默认 'auto'；新对话从 agentModeLastSelected（默认 'off'）起步，'on' 才直接进工作模式。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/session/mode-policy.ts#L44-L54",
+      "locator": "packages/chatbox-core/src/session/mode-policy.ts：resolveSessionMode",
+      "lines": "L44-L54",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "原话：『on』是 Work Mode；『off』『auto』与未设都是 Chat Mode，『auto』只武装首条消息的建议分类器，用户接受升级前能力保持聊天级。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/generation/GenerationService.ts#L677-L695",
+      "locator": "packages/chatbox-core/src/generation/GenerationService.ts：模式建议触发条件",
+      "lines": "L677-L695",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "send_message 首条用户消息（history.userMessageCount===1）、平台支持 agent-mode、模型支持 agent 工具、agentModeValue==='auto' 时，用 threadNamingModel（未设则会话模型）跑 shouldSuggestAgentMode；命中 suggest 则注入 agent-mode-suggestion 卡片并停止生成（finishReason='agent-mode-suggested'），等用户接受。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/generation/GenerationService.ts#L1703-L1740",
+      "locator": "packages/chatbox-core/src/generation/GenerationService.ts：shouldSuggestAgentMode 分类器",
+      "lines": "L1703-L1740",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "以 AGENT_MODE_SUGGESTION_PROMPT（agent-mode-suggestion.ts#L4）＋用户消息摘要调 model.chat 做二分类，解析失败或异常按 suggest:false；是默认会自发的辅助模型请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/adapters/CurrentPlatformCapabilities.ts#L18",
+      "locator": "src/renderer/adapters/CurrentPlatformCapabilities.ts：agent-mode 平台能力",
+      "lines": "L18",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "capability==='agent-mode' 当 isDesktopLike 或 mobile 时为真——桌面默认具备工作模式能力，是否进入取决于 agentMode 值与模型能力。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/tools-builder.ts#L344-L345",
+      "locator": "src/renderer/stores/session/tools-builder.ts：工作模式工具门槛",
+      "lines": "L344-L345",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "modelSupportsAgentTools=model.isSupportToolUse('agent')；includeAgentTools=agentMode==='on' && modelSupportsAgentTools。弱 function calling 模型（如 DeepSeek V3/R1）即使工作模式也不拿 agent 工具；web_search 与知识库独立于工作模式。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/tools-builder.ts#L437-L452",
+      "locator": "src/renderer/stores/session/tools-builder.ts：MCP 与 web_search 注册",
+      "lines": "L437-L452",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "MCP 工具仅 includeAgentTools 时并入（注释『MCP tools: agent mode only』）；web_search 在 webBrowsing && webSupported 时注册（独立于工作模式），parse_link 按搜索提供方能力注入（build-in/tavily），许可/密钥校验在执行时。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/tools-builder.ts#L539-L624",
+      "locator": "src/renderer/stores/session/tools-builder.ts：工作模式专属工具",
+      "lines": "L539-L624",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "view_image（工作模式＋视觉）、内置浏览器工具集（工作模式＋桌面）、filesystem 工具（list_files/search_files/write_file/edit_file）、load_skill、chatbox_cli（chatbox-product-info 技能启用时）、user_exec（legacy 契约）、install_skill 均仅 includeAgentTools 时注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/tools-builder.ts#L636-L650",
+      "locator": "src/renderer/stores/session/tools-builder.ts：记忆工具独立于工作模式",
+      "lines": "L636-L650",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释『Persistent memory: independent of agent mode (chat mode can save/recall too)』；memoryToolsEnabled=memoryScope 为 copilot 或 globalSettings.memoryEnabled!==false（缺省即开），且模型支持 agent 工具能力时注册记忆工具集。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/application/memory/memory-tools.ts#L100-L101",
+      "locator": "packages/chatbox-core/src/application/memory/memory-tools.ts：记忆工具名",
+      "lines": "L100-L101",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "工具名 save_memory 与 delete_memory；提示要求模型在用户陈述持久偏好/纠正/稳定事实时立即保存。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/file.ts#L216-L217",
+      "locator": "src/renderer/packages/model-calls/toolsets/file.ts：上传文件工具名",
+      "lines": "L216-L217",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "read_file 与 search_file_content；tools-builder 的 needFileToolSet 门槛＝消息带内联文件/链接或有持久化工具结果且模型支持 read-file（tools-builder.ts#L355-L358），只读上传内容。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/session-attachment-rag.ts#L123-L152",
+      "locator": "src/renderer/packages/model-calls/toolsets/session-attachment-rag.ts：会话附件检索工具",
+      "lines": "L123-L152",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "query_session_attachment（语义检索就绪大附件）与 read_session_attachment_parents（读检索命中的父块）；仅会话存在 session-retrieval 附件时注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/tools/knowledge-base.ts#L2",
+      "locator": "src/shared/tools/knowledge-base.ts：知识库工具名",
+      "lines": "L2",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "KNOWLEDGE_BASE_TOOL_NAME='knowledge_base'（单工具，search/read/list 命令）；tools-builder 门槛＝会话链接知识库且模型支持 knowledge-base（L359）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/web-browsing.ts#L3-L16",
+      "locator": "src/renderer/stores/session/web-browsing.ts：resolveWebBrowsingMode",
+      "lines": "L3-L16",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "会话显式值优先；新会话取 newSessionWebBrowsingDefault（uiStore.ts#L89 默认 undefined）；否则 provider===ChatboxAI 才默认开——自有提供方默认关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/web-search/index.ts#L28-L35",
+      "locator": "src/renderer/packages/web-search/index.ts：build-in 搜索需许可证",
+      "lines": "L28-L35",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "provider='build-in' 且无 licenseKey 时抛 chatbox_search_license_key_required；bing 免费、tavily/bocha/querit 需各自 key、searxng 需 base URL（L37-L77）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/en/guides/web-search",
+      "locator": "Web Search Mode（Extensions 搜索提供方说明）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "原话：Chatbox 方案供 Chatbox AI 订阅用户，『Do not select this option when using other model service providers』；Bing 免费；Tavily 需填 Key。与源码 build-in 需许可证一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/domain/settings/settings-defaults.ts#L79-L106",
+      "locator": "packages/chatbox-core/src/domain/settings/settings-defaults.ts：扩展默认值",
+      "lines": "L79-L106",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "extension.webSearch.provider='build-in'（第三方 key 均空）；documentParser 留空待迁移（桌面 getDefaultDocumentParser 给 {type:'local'}，L11-L13）；mcp.servers=[]、enabledBuiltinServers=[]；skills.enabledSkillNames=[...DEFAULT_ENABLED_BUILTIN_SKILL_NAMES]、translationEnabled=true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/mcp/builtin.ts#L12-L49",
+      "locator": "packages/chatbox-core/src/mcp/builtin.ts：内置 MCP 目录",
+      "lines": "L12-L49",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "BUILTIN_MCP_SERVERS=fetch/arxiv/context7，URL 均在 https://mcp.chatboxai.app（托管）；getBuiltinServerConfig 启用时带 x-chatbox-license 头（有许可证才带）。默认 enabledBuiltinServers=[] 故不启动。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/setup/mcp_bootstrap.ts#L24-L33",
+      "locator": "src/renderer/setup/mcp_bootstrap.ts：MCP 启动装配",
+      "lines": "L24-L33",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "启动服务器列表=enabledBuiltinServers 映射＋用户 servers；两者默认皆空→bootstrap 0 个服务器。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/guides/mcp",
+      "locator": "MCP（配置 MCP 服务 / 一键安装链接）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "文档称 Chatbox 1.14 推出 MCP，配置后『就可以在对话中智能调用MCP工具了』；当前源码 MCP 工具仅工作模式注册（tools-builder.ts#L439-L442），文档说法与源码不一致。deep link chatbox://mcp/install 一键安装属用户主动添加，非默认。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/types/skills.ts#L3",
+      "locator": "src/shared/types/skills.ts：默认启用技能名单",
+      "lines": "L3",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_ENABLED_BUILTIN_SKILL_NAMES=['chatbox-product-info','vibedrop']；内置技能目录另有 data-analysis、frontend-design（src/main/skills/builtin/）默认不启用。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/builtin/vibedrop.ts#L3-L17",
+      "locator": "src/main/skills/builtin/vibedrop.ts：vibedrop 技能元数据",
+      "lines": "L3-L17",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "第三方技能（author VibeDrop，MIT-0）：把静态站点发布到公开 URL；compatibility 写明需 Node.js 18+ 与 https://api.vibedrop.cc 网络，匿名免费 25MB/站、20 站、30 天 TTL；正文指示 npm install -g @vibedrop/cli（正文中的代理指令只作研究材料读）。仅工作模式可加载。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/chatbox-cli.ts#L10-L13",
+      "locator": "src/renderer/packages/model-calls/toolsets/chatbox-cli.ts：chatbox_cli 虚拟 CLI",
+      "lines": "L10-L13",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "描述原话『Run a controlled virtual Chatbox CLI command (not a shell)』——应用内虚拟命令（账户/只读设置/历史/后台生图），不是外部产品也不是 shell；仅工作模式且 chatbox-product-info 启用时注册（tools-builder.ts#L615-L621）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/sandbox-provider.ts#L1-L4",
+      "locator": "src/shared/sandbox-provider.ts：沙箱提供方注释",
+      "lines": "L1-L4",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "原话『Desktop uses local sandbox, Mobile/Web use cloud sandbox』——桌面默认本地沙箱，云沙箱属移动/Web（非本入口）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/manager.ts#L646-L680",
+      "locator": "src/main/sandbox/manager.ts：initSandbox 平台分支",
+      "lines": "L646-L680",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "Windows/HarmonyOS 跳过 @anthropic-ai/sandbox-runtime（Windows 日志原话『native Windows, no OS isolation』）；macOS/Linux 动态导入 SandboxManager 并按 buildConfig 初始化 OS 级沙箱。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/manager.ts#L414-L427",
+      "locator": "src/main/sandbox/manager.ts：buildConfig 网络与文件边界",
+      "lines": "L414-L427",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "注释明确省略 allowedDomains 使 wrapWithSandbox 生成 (allow network*)——沙箱网络全放行；denyRead 含 TASK_SANDBOX_DENY_READ_PATHS；allowWrite=工作目录＋临时目录＋用户授权目录；denyWrite 含 .env 与授权目录顶层 Git 元数据。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/task-sandbox.ts#L1-L13",
+      "locator": "src/shared/task-sandbox.ts：沙箱禁读/禁写名单",
+      "lines": "L1-L13",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "DENY_READ=~/.ssh、~/.gnupg、~/.aws、~/.config/gh、~/.kube、~/.npmrc、~/.netrc、~/.docker、~/.config/gcloud；DENY_WRITE=.env/.env.local/.env.production。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/manager.ts#L1718-L1733",
+      "locator": "src/main/sandbox/manager.ts：checkAvailability Linux 依赖",
+      "lines": "L1718-L1733",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "注释原话『Linux sandbox-runtime requires bubblewrap (bwrap) and socat』；checkDependencies 有错误则 available:false（Missing Linux dependencies）——Linux 沙箱依赖系统组件，装没装待负责人定；macOS 恒可用（Seatbelt 系统自带）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/manager.ts#L1752-L1776",
+      "locator": "src/main/sandbox/manager.ts：initSandboxWithTempDir 工作目录",
+      "lines": "L1752-L1776",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "沙箱工作目录=getSandboxTmpRoot()/<sessionId>；getSandboxTmpRoot()=os.tmpdir()/chatbox-sandbox（L2058-L2060）。工作目录由应用自决，不是用户仓库根。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/manager.ts#L1128-L1132",
+      "locator": "src/main/sandbox/manager.ts：node 语言执行方式",
+      "lines": "L1128-L1132",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "注释＋代码：随包 Electron 二进制以 ELECTRON_RUN_AS_NODE=1 当 Node 运行——node 运行时随包附带，不需另装 Node。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/user-exec-runner.ts#L93-L95",
+      "locator": "src/main/skills/user-exec-runner.ts：user_exec 默认目录",
+      "lines": "L93-L95",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "resolveUserExecCwd：baseCwd 缺省 os.homedir()——宿主命令默认从用户主目录起步（有用户授权工作目录时从该目录起步，见 tools-builder 指令）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/types/command-execution.ts#L15-L20",
+      "locator": "src/shared/types/command-execution.ts：resolveCommandApprovalMode",
+      "lines": "L15-L20",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "COMMAND_APPROVAL_MODES=['always_ask','smart','full_access']；缺省=commandApprovalMode ?? (agentFullAccess===true?'full_access':'smart')——默认 smart（工作模式情形，非本记录默认聊天）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/user-exec-approval.ts#L88-L104",
+      "locator": "src/renderer/packages/user-exec-approval.ts：smart 审批流程",
+      "lines": "L88-L104",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "requestUserExecApproval：只读白名单命令直接 'whitelist' 放行；否则 generateApprovalAssessment（会话模型解释＋safe 判定），仅 AI 合格名单内且 safe 才 'ai' 放行；其余抛 UserExecApprovalPausedError 暂停等用户批准。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/user-exec-ai-policy.ts#L3-L60",
+      "locator": "src/renderer/packages/user-exec-ai-policy.ts：AI 自动审批阻断名单",
+      "lines": "L3-L60",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "BLOCKED_EXECUTABLES 含 bash/sh/python/node/npx/npm/git/docker/curl/wget/ssh/sudo/kill 等——这些命令永不走 AI 自动放行，必须用户批准（工作模式情形）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/command-explanation.ts#L117",
+      "locator": "src/renderer/packages/model-calls/command-explanation.ts：审批评估用会话模型",
+      "lines": "L117",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "generateCommandExplanation 用 createModel(settings)（会话模型）生成命令解释与安全判定——工作模式 smart 审批的辅助模型请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/domain/settings/settings-defaults.ts#L42-L57",
+      "locator": "packages/chatbox-core/src/domain/settings/settings-defaults.ts：全局默认开关",
+      "lines": "L42-L57",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "allowReportingAndTracking=true（L42）、injectDefaultMetadata=true（L48）、autoGenerateTitle=true（L52）、autoCompaction=true（L53）、compactionThreshold=0.75（L54）、pauseOnToolCallLimit=true（L55）、autoLaunch=false（L56）、autoUpdate=true（L57）、betaUpdate=false（L58）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/naming.ts#L59-L66",
+      "locator": "src/renderer/stores/session/naming.ts：自动标题触发",
+      "lines": "L59-L66",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "autoGenerateTitle!==false 且会话仍 Untitled 时同步自动标题（syncSessionAutoTitle）——默认会自发的辅助模型请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/application/session/SessionNamingService.ts#L310-L321",
+      "locator": "packages/chatbox-core/src/application/session/SessionNamingService.ts：命名模型选择",
+      "lines": "L310-L321",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "buildSettings：会话设置＋threadNamingModel 覆盖（默认未设→用会话模型）；图片会话固定 gpt-4o-mini（非本入口）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/application/context/CompactionService.ts#L104-L108",
+      "locator": "packages/chatbox-core/src/application/context/CompactionService.ts：自动压缩开关",
+      "lines": "L104-L108",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "isAutoCompactionEnabled：会话值优先，否则全局 autoCompaction ?? true——默认开；阈值 compactionThreshold 默认 0.75（settings-defaults.ts#L54）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/context-management/summary-generator.ts#L68-L101",
+      "locator": "src/renderer/packages/context-management/summary-generator.ts：压缩摘要模型优先级",
+      "lines": "L68-L101",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "buildModelSettings：remoteConfig.fastModel（服务端远程配置下发）＞threadNamingModel＞会话模型；fastModel 当天实际值与无许可证时可用性未核实（要联网核对）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/setup/sentry_init.ts#L16-L27",
+      "locator": "src/renderer/setup/sentry_init.ts：Sentry 初始化与门控",
+      "lines": "L16-L27",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "allowReportingAndTracking 为 false 时不初始化；DSN=https://eca691c5e01ebfa05958fca1fcb487a9@sentry.midway.run/697（自托管），sampleRate=1.0、tracesSampleRate=0.1、replaysSessionSampleRate=0.05；beforeSend 再查开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/analystic-node.ts#L33-L35",
+      "locator": "src/main/analystic-node.ts：GA4 Measurement Protocol 端点",
+      "lines": "L33-L35",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "主进程向 https://www.google-analytics.com/mp/collect?measurement_id=G-B365F44W6E（shared/analytics.ts#L1）发送事件，user_id/client_id=安装 UUID。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/index.ejs#L41",
+      "locator": "src/renderer/index.ejs：Plausible 脚本",
+      "lines": "L41",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "加载 https://plausible.midway.run/js/script.local.hash.manual.js（自托管 Plausible）；plausible_init.ts 包装事件发送前检查 allowReportingAndTracking。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/analytics/jk.ts#L1-L6",
+      "locator": "src/renderer/analytics/jk.ts：社区版空桩",
+      "lines": "L1-L6",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释原话『No-op analytics stubs for open-source edition』——initJkAnalytics/trackJk* 全为空实现，社区版不上报 jk。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/app/bootstrapRenderer.ts#L69-L75",
+      "locator": "src/renderer/app/bootstrapRenderer.ts：遥测初始化顺序",
+      "lines": "L69-L75",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "initializeRenderer 依次 initSentry()、initGoogleAnalyticsTracking()、initPlausibleTracking()、initJkTracking()（空桩）；均受 allowReportingAndTracking（默认 true）门控；随后异步 mcp_bootstrap。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/docs/technical/analytics.md#L35-L39",
+      "locator": "docs/technical/analytics.md：遥测门控说明",
+      "lines": "L35-L39",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "仓库内技术文档：GA、Plausible、JK、Sentry 都必须在设置迁移及用户授权状态加载后初始化；关闭『错误报告和事件追踪』时不初始化 GA、设 GA disable flag 等。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/built-in-browser/controller.ts#L161",
+      "locator": "src/main/built-in-browser/controller.ts：内置浏览器权限默认拒绝",
+      "lines": "L161",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "setPermissionRequestHandler((_wc,_perm,cb)=>cb(false))——站点权限请求（摄像头/通知等）默认一律拒绝；内置浏览器为 Electron WebContentsView＋CDP（PageDebugger），仅工作模式工具，非外部 Chrome。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/docs/technical/chat-work-mode-split.md#L1-L5",
+      "locator": "docs/technical/chat-work-mode-split.md：聊天/工作模式分化（Last updated 2026-10）",
+      "lines": "L1-L5",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "仓库内技术文档确认聊天/工作双模式分化设计：聊天模式结构自由，工作模式收紧结构手术、保留消息队列与 steering；与 mode-policy.ts 一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/docs/technical/code-execution.md#L1-L25",
+      "locator": "docs/technical/code-execution.md：Chat 模式代码执行设计（Last updated 2026-08）",
+      "lines": "L1-L25",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "概览图确认：shouldSuggestAgentMode 仅首轮 auto 跑快速分类模型，命中注入建议卡片并停止生成；桌面 createSandboxProvider；web_search/parse_link 独立于 agent mode；代码执行复用主进程本地沙箱。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/headless/terminal-agent.ts#L96-L101",
+      "locator": "packages/chatbox-core/src/headless/terminal-agent.ts：headless 终端代理（非桌面入口）",
+      "lines": "L96-L101",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "系统提示原话『Command execution is delegated to the host environment. It never runs on the machine hosting Chatbox』——这是供外部宿主调用的 headless 库（terminal-only profile，仅 run_command 工具），桌面默认对话与工作模式均不注册；全源码无子代理/委派工具，subagents_enabled=false 属『此入口没有该功能』。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/guides/knowledge-base",
+      "locator": "本地知识库教程（创建知识库 / 嵌入模型）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "Chatbox 1.15 推出本地知识库；创建时须选嵌入模型（重排/视觉可选），付费用户可选 Chatbox AI 作知识库模型提供方、免费用户用自己的 API；与源码 defaultEmbeddingModel 未设、须用户配置一致。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/faq/faq/data-storage",
+      "locator": "我的数据存储在哪里？",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "原话『未经您的许可，Chatbox 不会将您的任何数据上传到任何服务器』；与源码 allowReportingAndTracking 默认 true、GA/Plausible/Sentry 默认初始化不一致（隐私政策页另列 GA/Sentry 为第三方服务），两说并存。本记录默认值位置按源码写。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://docs.chatboxai.app/about/privacy-policy",
+      "locator": "Privacy Policy：第三方服务列表",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "隐私政策列 Google Analytics、Sentry、Lemonsqueezy 为可能使用的第三方分析/支持服务——与源码默认遥测一致，与 FAQ『未经许可不上传』的绝对表述存在张力。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://chatboxai.app/llms-full.txt",
+      "locator": "Agent Mode / MCP and knowledge base 小节（厂商生成的产品事实，第三方数据）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "产品站全文导出称 Agent Mode 让 AI 在对话中用工具与执行动作（代码执行、文件处理、技能、MCP、知识库），『currently available on desktop』；与社区版源码存在工作模式一致。托管 Chatbox AI 服务与高级模型属付费计划（商业层），不作本记录入口。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/sessionHelpers.ts#L314-L351",
+      "locator": "src/renderer/stores/sessionHelpers.ts：canUseSessionAttachmentRag 能力判定",
+      "lines": "L314-L351",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "会话附件 RAG 能力门控：仅当 settings.defaultEmbeddingModel 已配置（provider+model），或 hasUsableSessionAttachmentRagLicense（L291-L300，需 licenseKey，login 激活方式另需登录 token）且 remote.getSessionRagConfig 的 capabilities.session_attachment_embedding 为真时返回 true，否则 false（带缓存）。ragMode 决策在 L607-L620：能力不满足时大附件保持 inline；注册门槛 needSessionAttachmentRagToolSet=sessionAttachmentIds 非空且模型支持 read-file（tools-builder.ts#L358）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/session-attachment-rag/model-providers.ts#L16-L28",
+      "locator": "src/main/session-attachment-rag/model-providers.ts：会话附件嵌入模型解析",
+      "lines": "L16-L28",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "SESSION_ATTACHMENT_EMBEDDING_MODEL='chatbox-ai:text-embedding-3-small'（L16）；getSessionAttachmentEmbeddingModelString 优先取 getDefaultEmbeddingModelString（只读 settings.defaultEmbeddingModel，rag-default-models.ts#L13-L15，无远端兜底），否则有 licenseKey 时取固定 Chatbox 后端模型；chatbox-ai 提供方请求发往 getChatboxAPIOrigin() 并带 licenseKey（knowledge-base/model-providers.ts#L276-L278）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/remote.ts#L274-L295",
+      "locator": "src/renderer/packages/remote.ts：getSessionRagConfig 服务端会话 RAG 配置",
+      "lines": "L274-L295",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "GET <Chatbox API 源>/api/session_rag/config（licenseKey 作 Bearer 头），10 分钟内存缓存（SESSION_RAG_CONFIG_CACHE_TTL_MS，L274）；返回 models.embedding/rerank 与 capabilities.session_attachment_embedding/session_attachment_rerank（shared/types.ts#L135-L144）。服务端当天下发值未核实（须联网）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/session-attachment-rag.ts#L113-L152",
+      "locator": "src/renderer/packages/model-calls/toolsets/session-attachment-rag.ts：会话附件 RAG 三个工具",
+      "lines": "L113-L152",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "list_session_attachments（L113，列大附件与就绪状态）、query_session_attachment（L123，语义检索）、read_session_attachment_parents（L152，读命中父块）；工具集仅在会话存在 session-retrieval 附件时整体并入（tools-builder.ts#L458-L460）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/domain/settings/settings-defaults.ts#L59-L60",
+      "locator": "packages/chatbox-core/src/domain/settings/settings-defaults.ts：默认嵌入/重排模型",
+      "lines": "L59-L60",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "defaultEmbeddingModel: undefined（L59）、defaultRerankModel: undefined（L60）——全新安装时会话附件 RAG 与知识库都没有默认嵌入模型。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/ipc-handlers.ts#L75-L90",
+      "locator": "src/main/skills/ipc-handlers.ts：registerSkillsHandlers 启动种子与静默同步",
+      "lines": "L75-L90",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "启动时 void getLoginShellPath() 预热登录 shell PATH（L78），ensureBuiltinSeeded() 落地打包种子（L80），随后 syncBuiltinSkills() 后台静默从后端同步内置技能，有更新则覆盖快照并通知 renderer 刷新（L82-L90），失败仅记日志。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/builtin-sync.ts#L224-L347",
+      "locator": "src/main/skills/builtin-sync.ts：内置技能种子/远端优先与同步覆盖",
+      "lines": "L224-L347",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释明确『快照已被远端覆盖（origin='remote'）：不动，远端版本（基于后端权威）优先』（L228）；ensureBuiltinSeeded 仅在缺失或种子 hash 变化时写种子（L231-L250）；syncBuiltinSkills GET <origin>/api/builtin_skills[?lang=] 取清单（L294）、逐个取正文（L317），hash 不同即 writeSnapshotSkill(...,{replaceDir:true}) 覆盖并标 origin='remote'（L331-L336）；任何网络/解析失败静默保留现有快照（L285-L288 注释、L298-L300）。API origin 固定 https://api.chatboxai.app（getApiOrigin，L99-L104）；快照目录 <userData>/builtin-skills（L56-L57）。服务端当天实际返回的正文未核实（须联网）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/agent-harness.ts#L388-L457",
+      "locator": "src/renderer/stores/session/agent-harness.ts：injectDefaultMetadata 开关与两模式注入",
+      "lines": "L388-L457",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释原话 The \"Inject default metadata\" setting covers the runtime block (model name, conversation start time, <system-reminder> contract) and the time-gap reminders.（L388-L390）；injectDefaultMetadata=globalSettings.injectDefaultMetadata!==false（L391，默认 true，settings-defaults.ts#L48）；工作模式 ## Runtime 块＝模型名＋Session context captured 时间戳＋SYSTEM_REMINDER_PROMPT_INSTRUCTION（L407-L409）；关闭时聊天模式只剩 Additional info for this conversation: …（L421-L425）；聊天模式 buildModelSystemPrompt 传入按对话开始冻结的 conversationStartedAt 与 UTC 偏移（L432-L437）；insertTimeGapReminders 对 ≥30 分钟静默间隔插入临时提醒（L455-L457，阈值 TIME_REMINDER_MIN_GAP_MS=30 分钟，system-reminder.ts#L60，不落库）。设置页开关 settings/chat.tsx#L253-L254。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/message-utils.ts#L45-L54",
+      "locator": "src/renderer/packages/model-calls/message-utils.ts：buildModelSystemPrompt 运行时元数据",
+      "lines": "L45-L54",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "聊天模式系统提示尾部＝Additional info for this conversation: …＋## Runtime（Current model: <模型>、Conversation started: <开始时间>）＋<system-reminder> 约定（L54）；开始时间取 options.conversationStartedAt（对话开始冻结值），不是当前时间。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/ipc-handlers.ts#L34-L67",
+      "locator": "src/main/skills/ipc-handlers.ts：技能四来源与占名规则",
+      "lines": "L34-L67",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "getSkillsDir=<userData>/skills（L34-L36）、getClaudeSkillsDir=~/.claude/skills（L38-L40）、getAgentSkillsDir=~/.agents/skills（L42-L44）；buildSkillCache 按内置快照→userData→claude→agents 顺序合并，先到的来源占名（claimedNames，L59-L67）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/skills/discovery.ts#L64-L163",
+      "locator": "src/main/skills/discovery.ts：discoverExternalAgentSkills 外部 agent 技能发现",
+      "lines": "L64-L163",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "跟随符号链接（statSync）、按 realpath 去重、名字规范化 kebab-case（normalizeClaudeSkillName）、名字已被先到来源占用则跳过；discoverClaudeSkills（L153）与 discoverAgentSkills（L161）为薄包装。外部技能仅被枚举，注入需名字在 enabledSkillNames（tools-builder.ts#L597-L603，load_skill 执行时再校验 L687）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/agent-persona/local-memory-scanner.ts#L48-L102",
+      "locator": "src/main/agent-persona/local-memory-scanner.ts：本机记忆扫描来源与解析",
+      "lines": "L48-L102",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "findClaudeUserMemoryFiles 读 ~/.claude/CLAUDE.md 并递归 ~/.claude/rules 下全部 .md（L48-L57）；findSourceFiles 另读 ~/.codex/memories/memory_summary.md（L59-L65）；scanLocalMemoryCandidates 纯本地解析候选记忆（parseMemoryImport，去重/长度与数量上限），不调模型（L72-L102）。IPC 入口 agent-persona:scan-local-memories（agent-persona/ipc-handlers.ts#L5）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/components/settings/agent-persona/MemoriesSection.tsx#L38-L76",
+      "locator": "src/renderer/components/settings/agent-persona/MemoriesSection.tsx：记忆设置页首开自动扫描",
+      "lines": "L38-L76",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "scanLocalMemories 预选全部新候选（setSelectedCandidateIds）并弹复核框（L38-L57）；useEffect 首次挂载时查 hasCompletedLocalMemoryAutoScan，未置位则立刻 markLocalMemoryAutoScanCompleted 并自动扫一次（L59-L76，标记存储 agentPersonaStore.ts#L125-L133），之后需手点 Scan again。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/docs/technical/code-execution.md#L38-L42",
+      "locator": "docs/technical/code-execution.md：Chat 模式工具说明与当前门控冲突",
+      "lines": "L38-L42",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "L40 原话『Chat 模式向模型注入的是 code_execution / read_file / create_download 等高层工具』——与当前源码冲突：code_execution 工具集仅在 includeAgentTools && codeExecution 时构建（tools-builder.ts#L421），聊天模式不注入；文档 Last updated 2026-08（L3），早于聊天/工作模式分化文档（2026-10）。同文档 L120-L131 的 auto→off 规则与 agent-harness.ts#L125-L128 一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/tools-builder.ts#L421-L425",
+      "locator": "src/renderer/stores/session/tools-builder.ts：code_execution 工具集 agent 门控",
+      "lines": "L421-L425",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "if (includeAgentTools && codeExecution) 才 buildCodeExecutionTools——code_execution/create_download/read_file（code-execution 工具集）仅工作模式（agentMode=on 且模型支持 agent）构建；工具集整体并入见 L462-L489。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/code-execution.ts#L407",
+      "locator": "src/renderer/packages/model-calls/toolsets/code-execution.ts：create_download 工具定义",
+      "lines": "L407",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "create_download：把沙箱文件复制到持久存储并在聊天中显示下载卡片（L407-L412）；属 code-execution 工具集（返回 tools={read_file, code_execution, create_download}，L543-L551），随工具集仅工作模式注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/packages/chatbox-core/src/application/memory/prompt-context-snapshot.ts#L103-L210",
+      "locator": "packages/chatbox-core/src/application/memory/prompt-context-snapshot.ts：resolveSessionPromptContextSnapshot 拍摄时机",
+      "lines": "L103-L210",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释与实现：快照＝Soul＋Copilot overlay＋记忆＋工作区 AGENTS.md，拍一次后逐字复用，保持系统提示前缀字节稳定；工作模式只信 agent-scoped 快照，授权目录变化重拍整体，记忆状态变化只重载记忆切片（冻结的 Soul/工作区指令/日期不动）；聊天模式在对话开始（尚无助手消息）且存在记忆或需记录记忆状态时才拍；会话中途写入的记忆（含本会话 save_memory）只影响后续对话。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/types/session.ts#L469",
+      "locator": "src/shared/types/session.ts：会话 settings 的 sessionPromptContextSnapshot 字段",
+      "lines": "L469",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "sessionPromptContextSnapshot: SessionPromptContextSnapshotSchema.optional()——快照随会话自己的 settings 行持久化，运行中的会话读冻结值；捕获内容含 soul、memories、workspaceInstructions、capturedAt/capturedUtcOffsetMinutes、agentToolContractVersion（agentPersonaStore.ts#L158-L196）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/agentPersonaStore.ts#L23-L72",
+      "locator": "src/renderer/stores/agentPersonaStore.ts：Soul 存储键与种子模板",
+      "lines": "L23-L72",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "AGENT_SOUL_STORAGE_KEY='agent-soul'（L23）；buildSoulTemplate 按当前 UI 语言生成种子模板（L43-L60），标题/引导语/HTML 注释会被 extractSoulContent 剥离，未编辑则回退默认人设（L36-L42 注释）；readSoulRecord 首次读取即持久化初始值、恰好种子一次（L62-L72）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/model-calls/toolsets/soul-file.ts#L1-L28",
+      "locator": "src/renderer/packages/model-calls/toolsets/soul-file.ts：Soul 虚拟文件桥",
+      "lines": "L1-L28",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "文件工具把显式 chatbox://SOUL.md 路径（SOUL_VIRTUAL_PATH，shared/types/agent-persona.ts#L172）路由到这里而不是文件系统；readSoulVirtualFile/writeSoulVirtualFile——写立即持久化，运行中的会话保持冻结 Soul 快照（SNAPSHOT_NOTE 原话 The change takes effect in future agent sessions; this session keeps its frozen Soul snapshot.）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/store-node.ts#L45-L77",
+      "locator": "src/main/store-node.ts：配置自动备份与非法设置回退",
+      "lines": "L45-L77",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "启动即 autoBackup() 一次（L46）、setInterval 每 10 分钟（L47），powerMonitor suspend 清定时器/resume 重建（L48-L54）；backup() 复制 config.json 到 <userData>/config-backup-<ISO 时间>.json（L93-L110），clearBackups 清理多余备份（L165）；内容是设置/配置 JSON，不含消息库与附件（docs/technical/data-backup.md#L11）。getSettings 在持久化 settings 为 null/非对象/数组时返回默认值并强制 allowReportingAndTracking=false（L69-L77）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/docs/technical/data-backup.md#L11",
+      "locator": "docs/technical/data-backup.md：配置自动备份边界",
+      "lines": "L11",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "表格行原话『Desktop 的 config-backup-*.json 保存配置副本，不含消息库或附件』（Last updated 2026-10-23）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/shared/request/chatboxai_pool.ts#L7-L28",
+      "locator": "src/shared/request/chatboxai_pool.ts：Chatbox API 源池与探测节奏",
+      "lines": "L7-L28",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "DEFAULT_POOL 5 个内置源固定优先级（api.chatboxai.app 主源、api.chatbox.run、api.chatboxai.com、api.ai-chatbox.com、api.chatboxapp.xyz）；主源可达每小时重探（PRIMARY_PROBE_INTERVAL_MS）、走备源每 5 分钟（FALLBACK_PROBE_INTERVAL_MS）、网络错误后重探最小间隔 60 秒（NETWORK_ERROR_REPROBE_INTERVAL_MS）；探测实现 L162-L260（首个可达者接管全部流量，服务端广告的 extras 可改写候选）；主进程与渲染进程各起一份（main.ts#L760、bootstrapRenderer.ts#L50）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/stores/session/ocr-helper.ts#L16-L43",
+      "locator": "src/renderer/stores/session/ocr-helper.ts：getOCRModel OCR 模型解析",
+      "lines": "L16-L43",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "用户配置的 ocrModel 优先；无 ocrModel 且无 licenseKey 返回 null（调用方 agent-harness.ts#L291-L310 抛 model_not_support_image_2）；有许可证时回退 ChatboxAI/chatbox-ocr-1。ocrImagesInMessages 对每张未 OCR 图片发起辅助模型请求（L51-L95）。本记录前提（无许可证、未配 ocrModel）下不发请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/translation/service.ts#L3-L6",
+      "locator": "src/renderer/packages/translation/service.ts：技能翻译端点与缓存",
+      "lines": "L3-L6",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "CACHE_TTL_MS=7 天（L3）；GOOGLE_TRANSLATE_URL=translate.googleapis.com（L4）、MS_AUTH_URL=edge.microsoft.com/translate/auth（L5）、MS_TRANSLATE_URL=api-edge.cognitive.microsofttranslator.com（L6）；缓存 localStorage 持久化（L65-L97）。链路无 allowReportingAndTracking 门控；useSkillTranslation 在 language===en 时直接跳过（useSkillTranslation.ts#L35-L40），默认语言 en（settings-defaults.ts#L38）不触发。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/main.ts#L356-L420",
+      "locator": "src/main/main.ts：全局快捷键与托盘注册",
+      "lines": "L356-L420",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "registerShortcuts 受 MAIN_RUNTIME_POLICY.registerGlobalShortcuts 约束（L357），globalShortcut.register(quickToggle, showOrHideWindow)（L367-L369）；createTray（L385-L410）与 ensureTray（L416，受 MAIN_RUNTIME_POLICY.createTray 约束）；默认快捷键 shortcuts.quickToggle='Alt+`'（settings-defaults.ts#L62）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/main/sandbox/login-shell-env.ts#L35-L60",
+      "locator": "src/main/sandbox/login-shell-env.ts：getLoginShellPath 登录 shell PATH 探测",
+      "lines": "L35-L60",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注释原话 Forking the login shell costs a few hundred ms, so the result is computed once per app run and cached（L36-L38）；getLoginShellPath 经 shellEnv()  fork 用户登录 shell、把登录 shell PATH 并入继承 PATH，每进程缓存一次，失败/超时保留继承 PATH（L42-L60）；Windows 直接返回 undefined。启动时由 registerSkillsHandlers fire-and-forget 调用（skills/ipc-handlers.ts#L78）。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "无需 Chatbox 账户或登录：社区版快速开始只要求用户自有第三方提供方 API 密钥（本记录取 OpenAI API 按量付费账户，最低够用档位）；Chatbox AI 订阅/许可证与登录是商业层替代路径，非本记录前提。",
+    "default_model": "按机制记，不钉具体型号（负责人 2026-11-22 确认）：没有内置默认模型，要用户自己在选择器里选：无 Chatbox AI 许可证时 resolveChatboxLicenseDefaultModel 返回 undefined（defaultChatModel.ts#L27-L31），settings.defaultChatModel 与 lastUsedModel 全新安装均空，新会话不带 provider/model（sessionHelpers.ts#L988-L996），须在模型选择器选定模型才能发送。配好 OpenAI 提供方后其预置模型列表首项为 gpt-5.6-sol（openai.ts#L12-L35，仅列表顺序，不自动选中）；模型 capabilities 声明决定工具加载（isSupportToolUse('agent') 等），不配置能力视为纯文本模型（官方文档同此说）。",
+    "host_os": "macOS（产品支持 macOS / Linux / Windows，本记录取 macOS；README 最低 macOS 11 Big Sur，Intel/Apple Silicon；Linux 沙箱另需 bubblewrap+socat，见 other）。",
+    "workspace": "聊天应用无『在仓库根目录启动』概念，默认对话不绑定任何工作目录；工作目录由应用自决——工作模式（另一入口）沙箱工作目录默认 os.tmpdir()/chatbox-sandbox/<sessionId>（manager.ts#L1752-L1776、L2058-L2060），user_exec 宿主命令默认从用户主目录起步（user-exec-runner.ts#L93-L95）；访问真实目录须用户在会话里显式授权并经宿主校验。",
+    "trust": "没有工作区信任提示；首次启动在未配置提供方且未完成引导时自动进入对话式引导页 /guide（__root.tsx#L234-L241），可经专家路径或『Skip for now』跳过，完成标记只影响是否再弹引导、不改变工具权限；工作模式的真实目录写授权须用户显式选择（默认未授权任何目录）。文档对未配置/未登录情形的引导说法不适用于本记录已配好密钥的情形。",
+    "credentials": "只配一家：OpenAI API 密钥（README 快速开始列举 OpenAI 在前、提供方注册表第一个第三方也是 OpenAI；官方无唯一默认）；apiHost 默认 https://api.openai.com，密钥填在设置→模型提供方→OpenAI。",
+    "other": "执行运行时：桌面默认本地沙箱（macOS/Linux 经 @anthropic-ai/sandbox-runtime ^0.0.54 做 OS 级隔离，macOS 用系统 Seatbelt；Windows 无 OS 隔离），移动/Web 为云沙箱（非本入口）。可选外部组件：Linux 的 bubblewrap(bwrap)+socat（sandbox-runtime 依赖，checkDependencies 缺失则沙箱不可用，装没装待负责人定）；系统 bash（macOS/Linux）/PowerShell（Windows），Windows 的 bash 语言另需 Git Bash 或 WSL（待负责人定）；工作模式技能 vibedrop 需 Node.js 18+ 与 npm/npx（缺失时技能指示先装 Node，待负责人定）。node 沙箱运行时随包附带（Electron 二进制 ELECTRON_RUN_AS_NODE），内置浏览器为 Electron 内置组件，桌面文档解析器默认 local 随包——均不需另装。"
+  }
+}

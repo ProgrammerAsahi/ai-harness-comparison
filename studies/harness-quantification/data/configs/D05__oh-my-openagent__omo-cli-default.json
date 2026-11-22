@@ -1,0 +1,688 @@
+{
+  "schema_version": "config-0.1",
+  "config_id": "D05__oh-my-openagent__omo-cli-default",
+  "round": "batch-5",
+  "tool_id": "D05",
+  "product": "Oh My OpenAgent／OmO",
+  "view": "configured",
+  "version_or_commit": "v5.1.79；提交 822bd923038c88427b450744de75e0fa7d7401cd",
+  "mode": "local",
+  "representative_rationale": "沿用试编码约定：当前正式版的默认安装与默认权限模式，入口取主产品形态",
+  "entrypoint": "独立的 omo 命令（OmO Native）：在仓库根目录运行 omo 进入交互式 TUI 主代理会话，用自然语言描述任务。这是官方快速开始（README L50 与 omo.dev/en/docs/install）带用户走的主路径：curl -fsSL https://get.omo.dev/install.sh | bash 安装原生编译二进制到 ~/.local/bin/omo，然后 omo。执行核心是 senpi 引擎——维护者自研的 pi（badlogic/pi-mono）分支，npm 包名 @code-yeongyu/senpi，本发布精确钉住 2026.11.18-3（packages/omo-native/package.json L20）；原生二进制把引擎打包在内（compile-entry.ts L448 直接 import 引擎 cli），npm 包 omo-ai 则把它作为精确版本依赖并在 postinstall 预备（bin/senpi-patch.mjs）。代理循环是 senpi 引擎自己的循环；OmO 本体是挂在 senpi 上的扩展（packages/omo-senpi，注册 task/memory/lsp/telemetry 等组件）加共享核心包，不是另一个循环。OpenCode 插件版（npm 包 oh-my-openagent / oh-my-opencode，bin oh-my-opencode）是另一个入口：它作为插件跑在 OpenCode 的代理循环里，本记录不取。",
+  "install_method": "官方快速开始：curl -fsSL https://get.omo.dev/install.sh | bash（macOS/Linux/WSL；Windows 用 install.ps1），不需要 Node.js/npm/Bun。脚本按 OS/CPU/libc 选编译好的 omo 二进制，对照发布 SHA256SUMS 校验后装到 ~/.local/bin/omo（install.sh L14-L18、L281），默认通道 latest（L270）。版本解析写法：get.omo.dev/channels/latest 先读 R2 镜像指针（GitHub release 的 CDN 副本），缺失时回退 npm registry 的 omo-ai dist-tags（packages/get-worker/src/channels.ts L6、L22-L40）；镜像不可用时脚本直接从 GitHub Releases 下载同一文件。官方等价替代：bun add -g omo-ai 或 npm i -g omo-ai（README L56，『installs the same OmO』），postinstall 预备钉住的 senpi 引擎。install.sh 与 omo update 实际装到的版本取决于当天 latest 通道指向（本记录钉 v5.1.79 / 提交 822bd923），线上当前指向未核实；且原生 release 二进制在交互式启动时每天后台自更新一次（compiled-auto-update.ts L16-L61），安装后版本可能漂移，见 note。",
+  "permission_mode": "默认权限预置是 full-access（senpi 权限系统的判定顺序：settings → 会话标志 → full-access 默认，full-access.ts L4-L7；remote-sessions.md L41 同）：读文件、写/改文件、执行 shell 命令、联网都不逐次审批，直接执行。预置共六档 full-access / workspace / accept-edits / auto / read-only / ask（permission-presets.ts L1-L20）：workspace 放行 read/edit/bash，accept-edits 再去掉 bash，read-only 再去掉 edit，ask 全部要问，auto 只自动放行自己的允许名单；需要审批的预置下，子代理的审批对话框转发到父会话 UI 回答（child-parent-wiring.ts）。本记录按已信任工作区、已登录账户的情形取默认值；引擎对『未信任项目』另有处理（full-access.ts 注释与 runtime-context.ts 的项目信任判定），其具体降级行为在快照外的 senpi 引擎代码里，未核实，不适用于本记录的默认值位置。computer 工具另有独立的 computer:read / computer:exec 权限层与前台控制确认（full-access 下免确认），并受 macOS 屏幕录制/辅助功能系统授权约束（见 enabled_extensions）。默认没有网络出口限制；应用自身会发模型 API、PostHog 遥测（默认开）、context7/grep_app MCP（懒连接）、每日自更新检查、Claude Code 可执行文件下载（registry.npmjs.org，Anthropic 订阅档位且本机无 claude 时首次使用触发）、comment-checker 二进制（GitHub Releases，首次使用时）等请求；用户触发 /feedback、/bug 时会把会话转录与引擎日志经宿主去密后上传到 OmO 服务 API（默认 api.omo.dev，OMO_SERVICE_API_URL 可改指向），宿主缺去密能力则拒绝。",
+  "operating_system": "macOS、Linux、Windows（原生二进制按 OS/CPU/libc 分发，含 musl/baseline 变体；本记录取 macOS）。npm 包 omo-ai 路径需要 Node 或 Bun 运行时；原生二进制路径不需要。",
+  "model_policy": "架构层不绑定模型；适配记录另存",
+  "evidence_cutoff": "2026-11-19",
+  "note": "代表配置取 v5.1.79 默认安装、默认权限预置 full-access、官方快速开始的独立 omo TUI 主代理入口。执行核心 senpi 引擎（pi 的分支）精确钉住 2026.11.18-3，但其源码与文档不在本快照内（外部 npm 依赖 @code-yeongyu/senpi，仓库 github.com/code-yeongyu/senpi）：引擎内置工具全量名单、recommended-model 切换的内部实现、自动压缩默认值、首次启动信任对话框、会话标题生成等引擎侧行为均未核实，文中逐处标明。版本钉住机制：install.sh 默认 latest 通道（R2 指针→npm dist-tag omo-ai），线上当天指向未核实；原生 release 二进制交互式启动每天后台跑一次 detached omo update（OMO_OFFLINE / OMO_SKIP_VERSION_CHECK 等可关，SENPI_/PI_ 前缀同效），故实际运行版本可能晚于 v5.1.79。文档不一致（各引原话）：①omo.dev/en/docs 主页『With no model_profile, a fresh OmO Native session picks the first model you have connected from the Recommended list (Opus 5.5, Fable 5.1, Kimi K3, GPT-6 Astra, GPT-6.1 Sol, GPT-6 Sol, GLM 5.3)』，而同站 Pick a profile 小节说『Leave the key unset and omo doesn't touch the session model at all』；仓库内较新的 docs/guide/agent-model-matching.md L20/L34 与 docs/reference/configuration.md L399 澄清：recommended profile 已退役（builtin-profiles.ts L64），desktop/headless 未设置走 daily-normal 泳道，交互式 TUI 根本不应用 model_profile，由 senpi 引擎自己的 recommended-model 切换按同一六模型顺序选（文档原文写 six-model order，但推荐阶梯实际列出 7 个模型：Opus 5.5、Fable 5.1、Kimi K3、GPT-6 Astra、GPT-6.1 Sol、GPT-6 Sol、GLM 5.3；引擎侧真实顺序在快照外，未核实）。②团队模式：omo.dev 与 docs/guide/team-mode.md 说 OFF by default（team_mode.enabled 默认 false，team-core/config.ts L4），但那是 OpenCode 版的开关；Native 源码里 6 个 lead 团队工具默认注册、没有 enabled 开关，组队需要用户写团队 spec（runtime-config.ts L11-L35、team-service.ts L125-L150）。③computer-use：schema 描述与 omo.dev 都说 macOS/Linux/Windows 默认开（实验性），与『实验功能默认关』的直觉相反，按源码记默认开。许可：LICENSE.md 为 Sustainable Use License 1.0（SUL-1.0），不是 MIT；README 徽章同。命名：仓库根 package.json 仍名 oh-my-opencode；npm oh-my-openagent/oh-my-opencode 是 OpenCode 插件版（bin oh-my-opencode），npm omo-ai 才是 Native 的 omo 命令；npm 上无关的 omo 包是别人的（README L56）。子代理：默认安装后模型不改设置即可经 task 工具委派（类别路由 + 7 个内置子代理零配置：4 个只读 curated + ulw-loop 复审三件套，后者会写复审报告工件、非只读），subagents_enabled=true。编码前由第二位读者（Qwen3.8-Max，经编排器配置 qwen-3-8-max-tp 调用）对照快照复核，逐条回到快照核实后（Qwen4-Max-Preview，经编排器配置 qwen-4-max-preview-tp 调用，和起草者是同一型号的另外的独立运行，2026-11-22）改了 7 处：①委派引擎默认参数条目与 note 末句：零配置可派的内置子代理由 4 个改为 7 个（ulw-loop 复审三件套会写报告工件、非只读，默认也在 task 工具的 Available agents 里）；②新增 claude-code 扩展条目与可选依赖⑧：Anthropic 订阅档位下 claude 不在 PATH 且 CLAUDE_CODE_EXECUTABLE 未设时，首次提示自动从 registry.npmjs.org 下载 Claude Code 可执行文件（npm 安装路径无 pin 文件、不触发）；③权限模式条目的网络出口清单补 npm registry、comment-checker 的 GitHub Releases 与用户触发 /feedback、/bug 的去密上传；④默认关开关条目的 goal 句标为 OpenCode 版键与工具：Native 无 goal 配置键与组件，只有 side_panel.sections.goal 面板显示（默认 true），senpi 引擎自带 /goal（引擎侧 goal 工具与默认值未核实）；⑤委派默认参数、执行位置条目与执行运行时前提补 task.host_shard_prewarm 默认 first-turn（本机 task host 首回合与第一次模型调用并行预热），task 默认值证据小卡 note 同步；⑥默认注册工具清单补 omo_browser_bridge、omo_desktop_toolkit 两个 eval-only 工具；⑦持久记忆条目补 memory 下 search／people／agreements／soul.edit_notice／write_notice／project_scope.nudge+recall 亦默认 true。",
+  "synthetic": false,
+  "subagents_enabled": true,
+  "enabled_extensions": [
+    "默认注册给模型的 OmO 扩展工具（packages/omo-senpi/src/extension/component-list.ts 注册顺序，task 组件 AGENTS.md L65-L67）：task、task_send、task_cancel、task_output（委派/后台子代理），workflow（DAG 编排，dag-tool.ts L26），workpool（search 暴露、按名懒激活，workpool.ts L94-L117），6 个 lead 团队工具 team_create、team_delete、task_create、task_get、task_list、task_update（默认注册，但组队需要用户先在 omo.jsonc 的 teams 或项目团队文件里写 spec），memory、memory_apply_patch（顺序执行），6 个 lsp_* 工具（search 暴露、懒激活），js_kernel_guard、omo_browser_bridge（浏览器技能与 app 之间的内部状态/停止通道，browser-bridge/index.ts L39-L53）、omo_desktop_toolkit（app 托管 toolkit 的请求通道，app 未提供 toolkit 时注册返回 unavailable 的占位版，desktop-toolkit/index.ts L13-L58）三者均 eval-only（component-list.ts L73-L74），computer（search 暴露，受支持主机默认注册），onboarding_understand / onboarding_memory_apply / onboarding_session_history（首次引导期）。senpi 引擎另内置 read/bash/edit/write/grep/find/ls/todo/eval/websearch/webfetch/tool_search/ask_user_question 等工具（引擎代码在快照外，名字据仓库文档与技能文本，全量名单未核实）。",
+    "委派引擎默认参数（schema/task.ts L94-L119）：default_execution_mode=auto（会话宿主可达且有能力时走 process，否则 in-process）、default_concurrency=5、max_depth=1、resume_children=true，task.host_shard_prewarm 默认 first-turn（L104-L108：首个回合与第一次模型调用并行预热本会话的本机 task host，不等第一个 process 子代理；off 才等第一个 process 子代理，session-start 连不提示的会话也预热；子会话与显式 in-process 不预热）；零配置可派的内置子代理共 7 个，都钉 in-process（task-agents.ts L11-L20）：4 个只读 curated（explore、librarian、plan-consultant、plan-reviewer，plan-* 两个受 ulw-plan 调用门控）+ ulw-loop 复审三件套（omo-native-code-reviewer／omo-native-qa-executor／omo-native-gate-reviewer，会写复审报告工件、非只读，默认也在 task 工具的 Available agents 名单里，builtin/index.ts L14-L32），仓库 AGENTS.md L67 与 features.md L5 只数了前 4 个，与代码不一致；类别 quick/deep/ultrabrain/architect/visual-engineering/artistry/writing 等按各自模型链路由；task.isolation.enabled 默认 false（L51-L56），即默认不开工作区隔离副本。",
+    "团队模式：OpenCode 版开关 team_mode.enabled 默认 false（team-core/config.ts L4，docs/guide/team-mode.md）；Native 没有这个开关，6 个 lead 工具默认注册，team_create 从 omo.jsonc teams 记录或项目团队 spec 文件解析队伍（team-service.ts L125-L150），传输层默认值在 Native 侧固定 enabled:true（runtime-config.ts L11-L35）——属于『默认开放的扩展点 + 用户添加内容即可用』；tmux 可视化是 OpenCode 版能力，Native 成员走 process 模式。",
+    "持久记忆 memory.enabled 默认 ON（schema/memory.ts；AGENTS.md L64）：会话启动绑定按项目派生的记忆身份（~/.omo/memory/agents/<id>/），before_agent_start 注入编译好的记忆块；memory/memory_apply_patch 两个工具默认注册（子代理排除）。memory 下 search.enabled（L49）、people.enabled（L146，max_entries=40）、agreements（memory-agreements.ts L3）、soul.edit_notice（L158）、write_notice.enabled（L168）、project_scope.nudge/recall（L90-L91）亦全部默认 true（根 schema 接线 L388-L393、L404）。",
+    "默认会自发的辅助模型请求①——Kibitzer 召回侧车（memory.recall.enabled 默认 true，schema/memory.ts L66-L81）：常驻只读侧车，prompt/工具调用出现未判定的记忆候选时才 wake，走 quick 类别模型（仅 Anthropic 登录时解析为 anthropic-subscription/claude-haiku-5-5 medium，fallback-chains.ts L132-L138），每次 wake 只有 read/grep/session_entries/memory(只读)/nudge 五个只读工具、≤8 次工具调用、90 秒，全机最多 2 个并发 wake，每次 wake 最多 surface 2 条记忆提示（max_items=2，文档按 wake 计；schema/memory.ts 的 Recall 节注释写『每回合 nudge 上限』，与文档口径不一致），不写记忆（omo-json.md L196；omo.dev/en/docs Kibitzer 小节）。",
+    "默认会自发的辅助模型请求②——反思 reflection.enabled 默认 true，触发 step_count=25 与 on_compaction=true（schema/memory.ts L23-L31；configuration.md L678-L686）：agent_settled 后派 detached senpi -p 子进程，经 quick 类别模型在 git worktree 里回顾对话并写记忆，merge=auto、timeout 15 分钟、sandbox=auto、全机并发 1；自动记忆作业要等本引擎运行内被接受的非扩展用户 prompt 才启动/排空（omo-json.md L200）。",
+    "默认会自发的辅助模型请求③——事实抽取 facts.enabled 默认 true、debounce_settles=4（schema/memory.ts L117-L121）：模型取显式配置的 categories.quick，否则继承当前会话模型（omo-json.md L202）；④dream.enabled 默认 true：空闲 30 分钟、间隔≥24 小时、shutdown_launch=true（L129-L137）；⑤nudge.enabled 默认 true、每 10 个用户回合提醒保存（L106-L110）。memory.sync.enabled 默认 true 但需要 OmO 账户登录且账户开启同步才生效，默认未登录→无同步流量。上下文压缩本身由 senpi 引擎执行（自动压缩默认值在引擎代码里，未核实）；会话标题是否自动生成未核实（引擎侧）。",
+    "LSP：lsp_diagnostics、lsp_goto_definition、lsp_find_references、lsp_symbols、lsp_prepare_rename、lsp_rename 六个工具，两个开关（LSP 工具、编辑后诊断）默认 true，search 暴露 + 首次按名调用懒激活（lsp/index.ts L134-L175）；经打包的 @code-yeongyu/lsp-daemon 进程外执行，语言服务器需已装（PATH/仓库本地解析，不自动下载；缺服务器时工具报 not_installed，lsp-setup 技能引导安装）。",
+    "ast-grep：默认注册 _ast_grep stdio MCP 服务器（ast-grep/index.ts L14-L51），用 process.execPath（node 或 bun）跑随包 staged 的 MCP 运行时，提供 search/rewrite/scan 三个工具（ast-grep-mcp/src/mcp.ts L154-L210），本机子进程执行，无需另装 ast-grep CLI。",
+    "内置远程 MCP（AGENTS.md L54）：context7（https://mcp.context7.com/mcp，库文档）与 grep_app（https://mcp.grep.app，GitHub 代码搜索）默认 enabled:true、lifecycle:lazy（首次用到才连接）；context7 默认匿名，CONTEXT7_API_KEY 存在时转 bearer。mcp.json 同名条目可覆盖/关闭。",
+    "comment-checker：write 类工具结果后跑共享注释检查流程（AGENTS.md L51），首次使用时从 GitHub Releases 下载钉住 v0.8.0 的二进制并缓存（comment-checker-core/release.ts L4；downloader.ts L28-L46），下载失败则该进程内禁用；不是默认常驻服务。",
+    "遥测默认开（telemetry.enabled 默认 true，schema/telemetry.ts L15/L34）：向 PostHog（美国）发伪匿名数据，含每 UTC 日一次的 omo_senpi_daily_active 活动事件（AGENTS.md L52）、每回合/每委派任务的 token 与成本、内置提供方/模型/技能使用计数、崩溃报告；不发 prompt/代码/路径/命令；关闭方式 telemetry.enabled:false 或 DO_NOT_TRACK=1 / OMO_DISABLE_TELEMETRY=1 / OMO_DISABLE_POSTHOG=1 / OMO_SEND_ANONYMOUS_TELEMETRY=0，CI 与测试自动关（docs/guide/telemetry.md L3-L46）。",
+    "computer-use（实验性）默认开：macOS/Linux/Windows 上 computer.enabled 默认 true（schema/computer.ts L14-L18；senpi-desktop-tool/settings.ts L11-L13；omo.dev/en/docs『Computer use is on by default…』），computer 工具默认注册进每个 Native 会话（search 暴露），激活前不碰桌面；首次激活时定位或下载 computer 引擎二进制；截图/输入受 macOS 屏幕录制/辅助功能授权约束；computer:read/computer:exec 分层审批，前台控制默认逐次确认（full-access 预置下免确认）；cua_adapter 默认 false（computer_actions 不注册）；配套 computer-use 技能随 resources_discover 提供。",
+    "关键词/提示注入组件（默认开，提示层、不额外起模型请求）：ultrawork/ulw 关键词注入隐藏指令（AGENTS.md L39），skill-pointers 按关键词注入技能指针（L41），todo-fanout-reminder（L45），question-gates 把门控问题的 required 置 true（L46），fallback-architect 在 fable-5 因拒答回退时注入架构师咨询指令（L50，咨询经 task architect 类别发生模型请求），git-master 技能默认追加 Co-authored-by  trailer（include_co_authored_by 默认 true，L49）；claim-receipt 默认 shadow 模式（只写判定记录，nudge 开关 omo-senpi-claim-receipt-nudge 默认关，L47）。",
+    "内置技能默认随包提供、按需加载：bundled-skills 经 resources_discover 贡献进 <available_skills> 索引与 /skill: 命令，不预载进上下文，disabled_skills 可排除（bundled-skills/index.ts L24-L34）；技能池=native 11 个（dag-library、give-me-tips、hyperplan、init-deep、mass-ulw、onboarding、ultrawork、ulw-loop、ulw-plan、ulw-research、visualize）+ 共享池（ast-grep、browser、coding-agent-sessions、data-scientist、debugging、eval-integrity、frontend、git-master、lsp-setup、programming、refactor、remove-ai-slops、review-work、ultimate-browsing、ulw-execute、visual-qa 等，重名以 native 覆盖）（AGENTS.md L80）；x-search 技能与 computer-use 技能按条件提供。",
+    "默认关着但常被提到的开关：side_panel 默认 off（AGENTS.md L38，--omo-side-panel 可单次强开）；goal.enabled 与 goal.auto_start 默认 false、create_goal/update_goal/get_goal 仅在 goal.enabled=true 时注册是 OpenCode 版的键与工具（实现只在 packages/omo-opencode/src/hooks/goal/tools.ts L84-L90 与 config/schema/goal.ts L5/L7；overview.md L244、features.md L368-L372 未标版本，overview.md L3 自称只讲 Native，属文档与代码不一致）；Native 配置 schema 无 goal 键、组件表无 goal 组件，只有 side_panel.sections.goal 面板显示开关（默认 true，side-panel.ts L32）；senpi 引擎自带 /goal 命令（skill-commands/documented-commands.test.ts L83 按引擎内置命令表断言），引擎侧 goal 的工具与默认值未核实；x_search 工具与技能仅在存在 xAI 凭据（auth.json xai 条目或 XAI_API_KEY）时注册（AGENTS.md L56）；team_mode.enabled（OpenCode 版）默认 false；hashline_edit 为 Opt-in（OpenCode 版键，features.md）。",
+    "首次引导 onboarding：每个 state 目录在第一个真实交互式 UI prompt 时认领一次（onboarding/component.ts L274-L309 的 before_agent_start 处理器），扫描本机既有代理配置为只读文件系统扫描、不触模型不开 socket；理解步骤（onboarding_understand）仅在 consent:true 时用调用方模型跑事实抽取；device-service 引导在 TUI 启动时派 detached omo remote bootstrap 子进程，未登录（signed_out）静默、无网络动作（AGENTS.md L30）。",
+    "所选入口的代码执行位置：主会话与 in-process 子代理在本机 omo/senpi 进程内（原生二进制为 Bun 编译单文件，npm 路径为 node/bun 运行时 + 精确钉住的 senpi 依赖）；process 子代理跑在本机会话宿主（omo daemon 的 RPC shard）或子进程，该宿主默认在首个回合预热启动（task.host_shard_prewarm 默认 first-turn，与第一次模型调用并行，schema/task.ts L104-L108）；反思子代理是 detached senpi -p 本机进程（git worktree 内）；ast-grep MCP 为本机 stdio 子进程；LSP 经本机进程外 daemon；computer 引擎为本机子进程；context7/grep_app 为远端 HTTPS MCP 服务；模型推理在所连提供方云端 API（默认 Anthropic）。默认不用容器或远端沙箱（task.isolation.enabled 默认 false）。",
+    "自动更新：原生 release 二进制交互式启动时每天一次后台 detached omo update（compiled-auto-update.ts L16-L61；compile-entry.ts L541-L547），走与安装相同的 get.omo.dev/GitHub Releases 校验通道；host/daemon/update/doctor/setup/thread/remote 子命令与 -p/--version 等不触发；OMO_OFFLINE/OMO_SKIP_VERSION_CHECK（及 SENPI_/PI_ 前缀）跳过。",
+    "claude-code（默认注册，按模型提供方条件触发）：原生二进制的运行时目录带构建期写入的 claude-code-pin.json（钉住 @anthropic-ai/claude-agent-sdk-<平台> 的 npm 版本与 lockfile 的 sha512，script/claude-code-pin.ts、build-omo-binary.ts L617-L619；npm 安装路径无此 pin 文件，组件不动作）。回合模型 provider 为 anthropic-subscription 且 CLAUDE_CODE_EXECUTABLE 未设、claude 不在 PATH 时，在 input/before_agent_start 钩子上自动从 registry.npmjs.org 下载钉住的平台包 tarball、校验 sha512、缓存进运行时目录并写入 env.CLAUDE_CODE_EXECUTABLE（claude-code/index.ts L82-L87、L118、L125-L126；acquire.ts L17、L24-L27、L33-L37）；本记录的 Anthropic 订阅前提下第一个提示即可能触发；无网络时提示联网一次下载、或自装 Claude Code 使 claude 在 PATH、或设 CLAUDE_CODE_EXECUTABLE（acquire.ts L56-L58）。实际钉住的版本号在构建产物里，未核实。"
+  ],
+  "evidence": [
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/README.md#L45-L56",
+      "locator": "README.md：产品定位与快速开始",
+      "lines": "L45-L56",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "L45：OmO 是一个 omo 命令，跑在 senpi（pi 的分支，badlogic/pi-mono）上；L50：curl -fsSL https://get.omo.dev/install.sh | bash；L56：bun add -g omo-ai（或 npm i -g omo-ai）装同一个 OmO，npm 上无关的 omo 包是别人的。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://omo.dev/en/docs/install",
+      "locator": "Install OmO 页：首屏安装命令与 Check the install",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "『One command installs the native omo binary for your OS and CPU. You don't need Node.js, npm or Bun.』；装到 ~/.local/bin/omo，对照发布 SHA256SUMS 校验；二进制来自 get.omo.dev（每个 GitHub release 的 CDN 副本），不可用时回退 GitHub Releases；然后『open a project, run omo, and describe the job』。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/get-worker/scripts/install.sh#L14-L18",
+      "locator": "packages/get-worker/scripts/install.sh：安装器头部说明",
+      "lines": "L14-L18",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "用法 curl … | bash [-s -- latest|beta|X.Y.Z]；OMO_INSTALL_DIR 默认 ~/.local/bin；OMO_INSTALL_BASE_URL 默认 https://get.omo.dev，GitHub 为回退。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/get-worker/scripts/install.sh#L270-L281",
+      "locator": "packages/get-worker/scripts/install.sh：默认通道与安装目录",
+      "lines": "L270-L281",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "L270 want=\"${want:-latest}\"：不带参数默认 latest 通道；L281 dir=\"${OMO_INSTALL_DIR:-$HOME/.local/bin}\"。当天 latest 实际指向的版本要联网核对。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/get-worker/src/channels.ts#L6-L40",
+      "locator": "packages/get-worker/src/channels.ts：通道版本解析",
+      "lines": "L6-L40",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "L6 NPM_DIST_TAGS=https://registry.npmjs.org/-/package/omo-ai/dist-tags；resolveChannel 先读 R2 镜像指针（验证过的 GitHub release 镜像），缺失回退 npm dist-tag（latest/beta 同义）。线上指针当前值未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-native/package.json#L2-L20",
+      "locator": "packages/omo-native/package.json：omo-ai 包定义",
+      "lines": "L2-L20",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "name=omo-ai，version=5.1.79，bin.omo=bin/omo.js，postinstall=node bin/senpi-patch.mjs，dependencies 精确钉住 @code-yeongyu/senpi=2026.11.18-3（执行核心版本随包钉死，不取最新）。"
+    },
+    {
+      "evidence_kind": "default_release",
+      "source_url": "https://registry.npmjs.org/omo-ai/5.1.79",
+      "locator": "输入快照 npm-view-omo-ai.json（npm view omo-ai --json，研究者 2026-11-19 采集）",
+      "version": "5.1.79",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "latest=5.1.79（2026-11-19T06:16Z 发布）；bin omo；依赖 @code-yeongyu/senpi 2026.11.18-3；postinstall senpi-patch.mjs。GitHub release v5.1.79 同日 06:08:57Z 发布、非预发布（SOURCE.txt）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-native/bin/senpi-patch.mjs#L12-L34",
+      "locator": "packages/omo-native/bin/senpi-patch.mjs：postinstall",
+      "lines": "L12-L34",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "npm 安装后预备包内入口：bun bin shim、preparePluginLaunchSpec（插件启动规格）、prepareInstalledEngine（解析已安装的 @code-yeongyu/senpi 并预备）、写版本戳。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-native/compile-entry.ts#L448",
+      "locator": "packages/omo-native/compile-entry.ts：编译入口 import 引擎",
+      "lines": "L448",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "await import(\"../../node_modules/@code-yeongyu/senpi/dist/cli.js\")：原生编译二进制把钉住的 senpi 引擎打包在内，代理循环即引擎循环。引擎源码不在本快照。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-native/compiled-auto-update.ts#L16-L61",
+      "locator": "packages/omo-native/compiled-auto-update.ts：自更新门控与执行",
+      "lines": "L16-L61",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "L16-L21：仅交互式 release 启动触发，host/daemon/update/doctor/setup/thread/remote 与 -p/--version 等跳过，OMO/SENPI/PI 前缀的 _OFFLINE 或 _SKIP_VERSION_CHECK 跳过；每日一个 .check 标记仲裁；L50-L61：spawn(launcher, [\"update\"], {detached:true})，与 omo update 同一校验安装器。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-native/compile-entry.ts#L541-L547",
+      "locator": "packages/omo-native/compile-entry.ts：启动时挂自更新",
+      "lines": "L541-L547",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "安装",
+      "note": "void startCompiledAutoUpdate({args, interactive: stderr.isTTY, release, launcher, env})：编译入口启动即挂每日自更新。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/computer-use/full-access.ts#L1-L25",
+      "locator": "packages/omo-senpi/src/components/computer-use/full-access.ts：权限预置判定注释",
+      "lines": "L1-L25",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "L4-L7：getPermissionPreset 是 senpi 权限系统自己的判定（senpi#3301）——settings，然后会话标志，然后 full-access 默认，带与执行相同的未信任项目处理；Full access 意为不提示。判定实现本体在快照外的引擎里。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/thread/contracts/permission-presets.ts#L1-L20",
+      "locator": "packages/omo-senpi/src/components/thread/contracts/permission-presets.ts：六档预置",
+      "lines": "L1-L20",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "预置 full-access/workspace/accept-edits/auto/read-only/ask；注释引引擎规则：full-access 全放行，workspace 放行 read/edit/bash，accept-edits 去掉 bash，read-only 去掉 edit，ask 全问，auto 只放行自身允许名单。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/reference/remote-sessions.md#L41-L42",
+      "locator": "docs/reference/remote-sessions.md：open 的默认模式",
+      "lines": "L41-L42",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "权限",
+      "note": "『open runs the new session in MODE (default: this device's own setting, else full-access)』：无设备设置时默认 full-access。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/task/runtime-context.ts#L169-L171",
+      "locator": "packages/omo-senpi/src/components/task/runtime-context.ts：项目信任判定",
+      "lines": "L169-L171",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "projectTrusted() 返回父会话的项目信任判定（来自引擎 ctx.isProjectTrusted()，L33/L97），首次事件前为 undefined。信任对话框的具体形态在引擎侧，快照未见描述，未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/senpi-task/changes.md#L563",
+      "locator": "packages/senpi-task/changes.md：项目层与信任",
+      "lines": "L563",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "『The project layer reaches the child only when the parent session trusted the project … an unknown decision counts as untrusted.』：未信任项目下子代理拿不到项目配置层。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/model-profile/index.ts#L283-L292",
+      "locator": "packages/omo-senpi/src/components/model-profile/index.ts：TUI 跳过 profile",
+      "lines": "L283-L292",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "session_start 处理器首行 if (isTuiSession(eventCtx) || !isFreshSessionWithoutExplicitModel(payload)) return：交互式 TUI 不应用 model_profile（isTuiSession 定义 L150）。L27 注释：TUI 的默认型号由 senpi 自己的 recommended-models builtin 与 /model 改写 settings.json 的 defaultProvider/defaultModel 决定。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/reference/configuration.md#L399",
+      "locator": "docs/reference/configuration.md：Senpi 的 model_profile 语义",
+      "lines": "L399",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "『In the Senpi harness, model_profile applies to OmO Desktop and headless sessions; the interactive TUI keeps the model it started with. … unset config starts on Daily · Normal … the retired recommended id starts the same default with one log line.』"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/guide/agent-model-matching.md#L34",
+      "locator": "docs/guide/agent-model-matching.md：TUI 默认型号规则",
+      "lines": "L34",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "『The interactive TUI ignores model_profile, pins included … A TUI session that starts on an implicit default is moved by Senpi's own recommended-model switch, which uses the same six-model order.』L20：desktop/headless 未设置走 Daily · Normal；没有单独的 Recommended profile。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/model-profile/builtin-profiles.ts#L56-L95",
+      "locator": "packages/omo-senpi/src/components/model-profile/builtin-profiles.ts：默认泳道",
+      "lines": "L56-L95",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "DEFAULT_MODEL_PROFILE_ORDER=[daily-normal, daily-heavy, geeky-normal, geeky-heavy]；recommended id 已退役（L64）；daily-normal 第一级 anthropic-subscription 等 CLAUDE_PROVIDERS 的 claude-opus-5-5（medium），注释称与 senpi 随附的 Opus 5.5 回退链一致（senpi#6699）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/model-core/src/latest-models.ts#L13-L17",
+      "locator": "packages/model-core/src/latest-models.ts：最新型号常量",
+      "lines": "L13-L17",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "claudeOpus=claude-opus-5-5，claudeHaiku=claude-haiku-5-5，claudeFable=claude-fable-5-2（L16）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/senpi-task/src/category/fallback-chains.ts#L132-L138",
+      "locator": "packages/senpi-task/src/category/fallback-chains.ts：quick 类别链",
+      "lines": "L132-L138",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "quick 第一级 chatgpt-subscription/openai 的 gptLunaFast（low），第二级 anthropic-subscription/anthropic/anthropic-api/github-copilot 的 claude-haiku-5-5（medium）：仅 Anthropic 登录时 kibitzer/反思等 quick 类别辅助调用落在 claude-haiku-5-5。L15-L16 注释：每个 claude-* 级以 anthropic-subscription（Claude Pro/Max）为首。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/guide/installation.md#L266-L317",
+      "locator": "docs/guide/installation.md：订阅问题与 Claude 推荐",
+      "lines": "L266-L317",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "本页是 OpenCode/Codex 插件版的安装指南（L3『This page covers the plugin editions for OpenCode and Codex』），订阅问题在『If the user picked OpenCode or Both』分支（L264）：Step 0 订阅问题第一个是『Do you have a Claude Pro/Max Subscription?』（L266）；L317：『WHEN THE USER HAS NO CLAUDE SUBSCRIPTION, THE MAIN AGENT'S RECOMMENDED MODEL IS UNAVAILABLE - WARN STRONGLY.』体现官方对 Claude 订阅的推荐倾向，但不是 Native 快速开始流程；Native 的推荐依据见 omo.dev/en/docs 与 agent-model-matching.md 各卡。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/guide/installation.md#L199-L213",
+      "locator": "docs/guide/installation.md：OAuth 登录方式",
+      "lines": "L199-L213",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "OAuth 登录要在 omo 内重做：/login anthropic、/login github-copilot、/login chatgpt-subscription；凭据进引擎 auth store（~/.omo/agent/auth.json），omo auth 只打印/检查已有凭据。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L65-L67",
+      "locator": "packages/omo-senpi/AGENTS.md：task 组件",
+      "lines": "L65-L67",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "task 组件注册 4 个 task 工具（task/task_send/task_cancel/task_output）+ 6 个 lead-only 团队工具；引擎叠加 4 个内置只读 curated 子代理（explore/librarian/plan-consultant/plan-reviewer），任何会话零配置即可 task(subagent_type:…) 委派；curated 代理钉死 in-process。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/task.ts#L94-L119",
+      "locator": "packages/omo-config-core/src/schema/task.ts：task 默认值",
+      "lines": "L94-L119",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "default_execution_mode=auto（L94）、host_engine_policy=upgrade（L101）、host_shard_prewarm=first-turn（L104-L108：首个回合与第一次模型调用并行预热本会话的本机 task host，不等第一个 process 子代理；子会话与显式 in-process 不预热）、default_concurrency=5（L109）、max_depth=1（L113）、resume_children=true（L119）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/task.ts#L51-L56",
+      "locator": "packages/omo-config-core/src/schema/task.ts：isolation 默认值",
+      "lines": "L51-L56",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "task.isolation.enabled 默认 false、backend=auto、apply=true、merge=patch：默认不开工作区隔离副本，子代理直接在原工作区/宿主里跑。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/team-core/src/config.ts#L3-L5",
+      "locator": "packages/team-core/src/config.ts：team_mode 开关",
+      "lines": "L3-L5",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "TeamModeConfigSchema.enabled 默认 false（OpenCode 版 team_mode 开关；docs/guide/team-mode.md『OFF by default』）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/senpi-task/src/team/runtime-config.ts#L11-L35",
+      "locator": "packages/senpi-task/src/team/runtime-config.ts：Native 团队配置投影",
+      "lines": "L11-L35",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "注释：tmux+mailbox 传输字段『senpi never drives』，固定 team-core 默认（enabled:true）；toTeamCoreConfig 只映射 task.team 的边界。Native 团队能力不经 team_mode.enabled 开关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/task/team-service.ts#L125-L150",
+      "locator": "packages/omo-senpi/src/components/task/team-service.ts：createTeam",
+      "lines": "L125-L150",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "createTeam 经 resolveTeamSpec(input, ports, cwd, omoTeams) 从 omo.jsonc 的 teams 记录或项目 spec 文件解析队伍后才创建：默认注册的团队工具要用户添加 spec 内容才真正组队。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/memory.ts#L23-L31",
+      "locator": "packages/omo-config-core/src/schema/memory.ts：reflection 默认值",
+      "lines": "L23-L31",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "reflection.enabled=true，trigger={step_count:25, on_compaction:true}，merge=auto，category=quick，timeout_minutes=15，max_concurrent_runs=1，sandbox=auto。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/memory.ts#L66-L81",
+      "locator": "packages/omo-config-core/src/schema/memory.ts：recall（kibitzer）默认值",
+      "lines": "L66-L81",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "recall.enabled=true，max_items=2，category=quick，sidecar_max_tokens=48000，max_concurrent_wakes=2，tool_budget=8，query_expansion=false。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/memory.ts#L106-L137",
+      "locator": "packages/omo-config-core/src/schema/memory.ts：nudge/facts/dream 默认值",
+      "lines": "L106-L137",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "nudge.enabled=true、every_user_turns=10；facts.enabled=true、debounce_settles=4；dream.enabled=true、idle_minutes=30、min_hours_between=24、shutdown_launch=true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/reference/omo-json.md#L196-L202",
+      "locator": "docs/reference/omo-json.md：memory 块参考",
+      "lines": "L196-L202",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "memory.enabled 默认 true；recall 即常驻只读 Kibitzer 侧车（prompt/工具调用触发、只 nudge 不写记忆）；L200 自动记忆作业等被接受的非扩展用户 prompt；L202 facts 模型取显式 categories.quick 配置否则继承会话模型。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://omo.dev/en/docs",
+      "locator": "Memory / Kibitzer 小节（侧车 wake 机制）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "侧车只在出现未判定记忆候选时 wake；每次 wake 恰有 read/grep/session_entries/memory(只读)/nudge 五个只读工具，无 shell 无写工具，tool_budget 次调用、90 秒；全机租约最多 max_concurrent_wakes 个；quick 链无已连接提供方时给一次警告并提示 /login。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/reference/configuration.md#L678-L686",
+      "locator": "docs/reference/configuration.md：Reflection 默认值表",
+      "lines": "L678-L686",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "reflection.enabled=true、trigger.step_count=25（0 关步数触发）、on_compaction=true、category=quick、sandbox=auto；与 schema 一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/lsp/index.ts#L134-L175",
+      "locator": "packages/omo-senpi/src/components/lsp/index.ts：LSP 开关与工具",
+      "lines": "L134-L175",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "LSP_TOOLS_ENABLED_FLAG 与 LSP_POST_EDIT_DIAGNOSTICS_ENABLED_FLAG 默认 true；注册 lsp_diagnostics/lsp_goto_definition/lsp_find_references/lsp_symbols/lsp_prepare_rename/lsp_rename，exposure=search、allowLazyActivation=true，经打包 daemon 运行时进程外执行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/ast-grep/index.ts#L14-L51",
+      "locator": "packages/omo-senpi/src/components/ast-grep/index.ts：ast-grep MCP 注册",
+      "lines": "L14-L51",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认注册 _ast_grep stdio MCP：command=process.execPath（node 或 bun），args=[staged entry, \"mcp\"]，本机子进程；staged 运行时缺失则跳过并告警。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/ast-grep-mcp/src/mcp.ts#L154-L210",
+      "locator": "packages/ast-grep-mcp/src/mcp.ts：MCP 工具名单",
+      "lines": "L154-L210",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "注册 search（L154）、rewrite（L181）、scan（L210）三个工具；服务器名 ast_grep（L37）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L54",
+      "locator": "packages/omo-senpi/AGENTS.md：builtin-mcps 组件",
+      "lines": "L54",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "context7（https://mcp.context7.com/mcp）与 grep_app（https://mcp.grep.app）以 type:http 声明，enabled:true、lifecycle:lazy；context7 默认匿名，CONTEXT7_API_KEY 非占位值时转 bearer；senpi 自带 websearch/webfetch 内置工具故无 websearch MCP。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/comment-checker-core/src/release.ts#L4",
+      "locator": "packages/comment-checker-core/src/release.ts：钉住版本",
+      "lines": "L4",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "COMMENT_CHECKER_RELEASE_VERSION=\"0.8.0\"：comment-checker 二进制钉住 0.8.0。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/comment-checker/downloader.ts#L28-L46",
+      "locator": "packages/omo-senpi/src/components/comment-checker/downloader.ts：首次下载",
+      "lines": "L28-L46",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "按平台/架构解析钉住 release 资产，无对应资产则告警跳过；首次使用下载 release v0.8.0 归档并缓存（GitHub Releases）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/telemetry.ts#L15-L35",
+      "locator": "packages/omo-config-core/src/schema/telemetry.ts：遥测默认值",
+      "lines": "L15-L35",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "enabled 默认 true（L15）；isOmoTelemetryEnabled 返回 config.telemetry?.enabled ?? true（L34）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/guide/telemetry.md#L3-L46",
+      "locator": "docs/guide/telemetry.md：遥测内容与关闭",
+      "lines": "L3-L46",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "默认开；发往 PostHog（美国）；每产品每日一次活动事件、每回合/每委派任务 token 与成本、内置提供方/模型/技能计数、崩溃报告；不发 prompt/代码/路径/命令/账号；DO_NOT_TRACK=1、OMO_DISABLE_TELEMETRY=1、OMO_DISABLE_POSTHOG=1、OMO_SEND_ANONYMOUS_TELEMETRY=0 关闭，CI/测试自动关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/computer.ts#L14-L18",
+      "locator": "packages/omo-config-core/src/schema/computer.ts：computer.enabled 默认",
+      "lines": "L14-L18",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "『Experimental: register the computer tool in OmO Native sessions (default: on where the host is supported; false leaves it unregistered)』；默认值按主机解析（senpi-desktop-tool/src/settings.ts L11-L13 同）。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://omo.dev/en/docs",
+      "locator": "Computer use 小节（默认开、激活、安全模型）",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "『Computer use is on by default on macOS, Linux and Windows hosts: the computer tool is registered in every OmO Native session, and nothing touches your desktop until the agent (or you) activates it.』engine_path 未设时定位或下载引擎二进制；computer:read/computer:exec 分层；前台控制逐次确认，full-access 预置下免确认；macOS 屏幕录制/辅助功能授权约束；cua_adapter 默认 false。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/guide/overview.md#L244",
+      "locator": "docs/guide/overview.md：Goal 默认关",
+      "lines": "L244",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "『Goal is opt-in: goal.enabled and goal.auto_start both default to false.』"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/docs/reference/features.md#L368-L372",
+      "locator": "docs/reference/features.md：goal 工具注册条件",
+      "lines": "L368-L372",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "『Tools (registered only when goal.enabled is true)』：create_goal/update_goal/get_goal 默认不注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L38",
+      "locator": "packages/omo-senpi/AGENTS.md：side-panel 默认关",
+      "lines": "L38",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "side_panel 默认 off，--omo-side-panel 单次强开；面板自身不发网络请求。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L56",
+      "locator": "packages/omo-senpi/AGENTS.md：x-search 凭据门控",
+      "lines": "L56",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "x_search 工具与技能仅在 auth.json 有 xai oauth/api_key 条目（或文件缺失时的 XAI_API_KEY）时注册；默认无 xAI 凭据→不注册。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/bundled-skills/index.ts#L24-L34",
+      "locator": "packages/omo-senpi/src/components/bundled-skills/index.ts：技能贡献方式",
+      "lines": "L24-L34",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "经 resources_discover 贡献随包技能（减 disabled_skills），进 <available_skills> 索引与 /skill: 命令；插件 manifest 故意不声明 pi.skills，避免把每个技能塞进每次运行。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L80",
+      "locator": "packages/omo-senpi/AGENTS.md：技能池同步",
+      "lines": "L80",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "sync-skills.mjs 从三池同步：组件自有（ulw-loop）、native skills/（dag-library、give-me-tips、hyperplan、init-deep、mass-ulw、onboarding、ultrawork、ulw-plan、ulw-research、visualize）、仓库 shared-skills 池（ulw-execute 等，senpi 兼容横幅）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/task/dag-tool.ts#L26",
+      "locator": "packages/omo-senpi/src/components/task/dag-tool.ts：workflow 工具名",
+      "lines": "L26",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "WORKFLOW_TOOL_NAME=\"workflow\"：DAG 编排工具默认注册（registerDagTool）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/senpi-task/src/tools/workpool.ts#L94-L117",
+      "locator": "packages/senpi-task/src/tools/workpool.ts：workpool 工具",
+      "lines": "L94-L117",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "name=\"workpool\"，注释：searchable、首次按名调用激活（#11454）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L68",
+      "locator": "packages/omo-senpi/AGENTS.md：thread 组件",
+      "lines": "L68",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "11 个跨会话 thread_* 工具 + 4 个 chat-thread relay 工具无条件注册，但 eval-only（exposure \"eval\"）：有 eval 工具时不进直接工具列表，在 eval cell 里以 tool.thread_*() 调用；无多会话 socket 时返回 host_unavailable。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/js-kernel-guard/index.ts#L24-L31",
+      "locator": "packages/omo-senpi/src/components/js-kernel-guard/index.ts：eval-only 守卫工具",
+      "lines": "L24-L31",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "js_kernel_guard 以 exposure:\"eval\" 注册（带 kernelPrelude、executionMode:\"parallel\"）：只在 eval cell 内可见。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/onboarding/component.ts#L274-L309",
+      "locator": "packages/omo-senpi/src/components/onboarding/component.ts：首次引导认领",
+      "lines": "L274-L309",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "before_agent_start 处理器（trigger=prompt）经 claimOnboarding 每个 state 目录认领一次（L274-L309，claim 实现 L211-L226）；普通 session_start 不认领，仅 --onboard 强制路径在 session_start 立即认领（L252-L258）；扫描懒加载、只读文件系统、不触模型不开 socket（AGENTS.md L34-L35）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L30",
+      "locator": "packages/omo-senpi/AGENTS.md：device-service 引导",
+      "lines": "L30",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "仅顶层交互式 TUI、omo 启动器启动的引擎、非 CI、非 task 子进程：首绘后派 detached omo remote bootstrap --json；signed_out/store_unavailable 静默（无 keyring 即无登录证明），device_service.enabled:false 可关。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L39-L50",
+      "locator": "packages/omo-senpi/AGENTS.md：提示注入与守卫组件",
+      "lines": "L39-L50",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "ultrawork 关键词注入隐藏指令（L39）；skill-pointers 关键词技能指针（L41）；todo-fanout-reminder（L45）；question-gates 置 required（L46）；claim-receipt 默认 shadow、nudge 需 opt-in 标志（L47）；git-master co-author 默认 true、commit_footer 默认 false（L49）；fallback-architect 在 fable-5 拒答回退时注入 architect 咨询指令（L50）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/AGENTS.md#L64",
+      "locator": "packages/omo-senpi/AGENTS.md：memory 组件",
+      "lines": "L64",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "memory.enabled 默认 ON；身份按项目派生（~/.omo/memory/agents/<id>/）；before_agent_start 注入编译记忆块；反思为事件触发的 detached senpi -p 子进程（quick 类别、git worktree、硬超时）；memory/memory_apply_patch 两工具，子代理排除。"
+    },
+    {
+      "evidence_kind": "official_doc",
+      "source_url": "https://omo.dev/en/docs",
+      "locator": "What each role does and which model it gets 小节",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "环境前提",
+      "note": "『Claude Opus 5.5 is the recommended choice … With no model_profile, a fresh OmO Native session picks the first model you have connected from the Recommended list (Opus 5.5, Fable 5.1, Kimi K3, GPT-6 Astra, GPT-6.1 Sol, GPT-6 Sol, GLM 5.3).』与仓库内 agent-model-matching.md（recommended 已退役、TUI 由引擎切换）说法不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/LICENSE.md#L1-L13",
+      "locator": "LICENSE.md：许可",
+      "lines": "L1-L13",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "版本",
+      "note": "第三方组件按原许可；其余内容采用 Sustainable Use License 1.0（SUL-1.0；“Version 1.0”在 L12），非 MIT。README L37 徽章同。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/senpi-task/src/agents/builtin/index.ts#L14-L32",
+      "locator": "packages/senpi-task/src/agents/builtin/index.ts：内置子代理表",
+      "lines": "L14-L32",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "子代理",
+      "note": "BUILTIN_AGENT_DEFAULTS＝4 个只读 curated（explore/librarian/plan-consultant/plan-reviewer）＋ulw-loop 复审三件套（omo-native-code-reviewer/omo-native-qa-executor/omo-native-gate-reviewer），共 7 个；L21-L22 注释：三件套会写复审报告工件，故不在只读 curated 集里、但仍随包 builtin。task-agents.ts L11-L20 把 7 个全钉 in-process；tools/task/categories.ts L41 只过滤 disable===true，tools/task/description.ts L58 默认把非 plan 门控代理列进 Available agents（invocation-guard.ts L15-L18 门控只含 plan-consultant/plan-reviewer）；AGENTS.md L67 与 features.md L5 只数 4 个 curated，与代码不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/claude-code/index.ts#L73-L127",
+      "locator": "packages/omo-senpi/src/components/claude-code/index.ts：条件下载与挂钩",
+      "lines": "L73-L127",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "组件无条件在组件表里（component-list.ts L75），但运行时目录有 claude-code-pin.json 才动作（L79-L80；L27-L28 注释：原生二进制带 pin，npm 安装没有）。L118：回合模型 provider 为 anthropic-subscription 才动作；L82-L87：CLAUDE_CODE_EXECUTABLE 已设或 claude 在 PATH 即短路；否则 acquireClaudeCode 下载缓存并写 env.CLAUDE_CODE_EXECUTABLE（L112）；L125-L126 挂 input 与 before_agent_start。pin 文件构建期写入（script/build-omo-binary.ts L617-L619），版本与 sha512 从引擎的 claude-agent-sdk 依赖树与 bun.lock 读出（script/claude-code-pin.ts L35-L45），实际钉住版本号未核实。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/claude-code/acquire.ts#L17-L37",
+      "locator": "packages/omo-senpi/src/components/claude-code/acquire.ts：下载源与校验",
+      "lines": "L17-L37",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "L17 REGISTRY=https://registry.npmjs.org；L24-L27 按 pin 的 name/version 拼 @anthropic-ai/claude-agent-sdk-<平台> tarball URL；L33-L37 只接受 sha512 integrity 校验；缓存命中直接复用（L70-L71）。L56-L58 无网络时的提示：联网一次让 omo 下载、或自装 Claude Code 使 claude 在 PATH、或设 CLAUDE_CODE_EXECUTABLE。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-opencode/src/hooks/goal/tools.ts#L84-L90",
+      "locator": "packages/omo-opencode/src/hooks/goal/tools.ts：goal 工具（OpenCode 版）",
+      "lines": "L84-L90",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "createGoalTools 返回 create_goal/update_goal/get_goal（L86-L88），实现只在 OpenCode 版包里；goal.enabled 与 goal.auto_start 默认 false 也只在 packages/omo-opencode/src/config/schema/goal.ts L5/L7。Native 侧：omo-config-core schema 无 goal 键（只有 side-panel.ts L32 的 sections.goal 面板显示，默认 true），omo-senpi 组件表无 goal 组件；overview.md L3 自称只讲 Native 却在 L244 讲 goal opt-in，features.md L368-L372 未标版本，属文档与代码不一致。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/browser-bridge/index.ts#L39-L53",
+      "locator": "packages/omo-senpi/src/components/browser-bridge/index.ts：eval-only 浏览器桥",
+      "lines": "L39-L53",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "omo_browser_bridge（L3）以 exposure:\"eval\" 注册（L51）：浏览器技能与 app 之间的内部通道，state 转发 omo.browser.state、stopped/status 记录并读取用户停止；omo.browser.stop RPC（L68-L71）与 input 钩子（L73-L77）复位停止态。组件表无条件注册（component-list.ts L73）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/desktop-toolkit/index.ts#L13-L58",
+      "locator": "packages/omo-senpi/src/components/desktop-toolkit/index.ts：eval-only toolkit 通道",
+      "lines": "L13-L58",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "omo_desktop_toolkit（L3）以 exposure:\"eval\" 注册（L44）：app 托管 toolkit 的请求通道；会话上下文提供 omo_toolkits 且有 RPC 时才加载运行时（L21-L31），否则注册返回 unavailable 的占位版（L33-L55，TUI 会话落此分支）。组件表无条件注册（component-list.ts L74）；AGENTS.md L28 同。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-config-core/src/schema/memory.ts#L388-L404",
+      "locator": "packages/omo-config-core/src/schema/memory.ts：memory 其余默认 true 子开关",
+      "lines": "L388-L404",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "根 schema 接线：people（L388，enabled=true、max_entries=40，子 schema L146-L147）、agreements（L389，默认 enabled=true，memory-agreements.ts L3）、soul.edit_notice（L390，子 schema L158）、write_notice（L391，子 schema L168）、sync（L392）、search（L393，子 schema L49）、project_scope.nudge/recall（L404，子 schema L90-L91）全部默认 true。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/feedback/index.ts#L156-L165",
+      "locator": "packages/omo-senpi/src/components/feedback/index.ts：/feedback 与 /bug 命令",
+      "lines": "L156-L165",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "feedback 组件默认注册（component-list.ts L70），注册 /feedback 与 /bug 命令（L156-L165），用户触发；上传目标默认 https://api.omo.dev（L19），OMO_SERVICE_API_URL 可改指向（L106）；须有宿主去密能力 pi.redactForUpload，缺则拒绝并提示（L52-L53、L116-L123）；收集内容含引擎日志与会话转录（collect-host.ts L67-L74），先做结构化去密（collect.ts blankConfigSecrets）。"
+    },
+    {
+      "evidence_kind": "source_path",
+      "source_url": "https://github.com/code-yeongyu/oh-my-openagent/blob/822bd923038c88427b450744de75e0fa7d7401cd/packages/omo-senpi/src/components/skill-commands/documented-commands.test.ts#L83",
+      "locator": "packages/omo-senpi/src/components/skill-commands/documented-commands.test.ts：引擎内置命令表断言",
+      "lines": "L83",
+      "retrieved_at": "2026-11-19",
+      "configuration_scope": "扩展",
+      "note": "expect(engineCommandNames()).toContain(\"goal\")：该测试把 senpi 引擎 dist 的 BUILTIN_SLASH_COMMANDS 与内置扩展 registerCommand 读作数据（L14-L19），断言引擎命令表含 goal，即引擎自带 /goal 命令。引擎 dist 不随仓库提供，Native 侧 goal 的工具与默认值未核实；features.md L394『continuous goal pursuit is now handled by /goal』与此一致。"
+    }
+  ],
+  "environment_premises": {
+    "account_tier": "Anthropic Claude Pro/Max 订阅（最低够用档位 Pro），在 omo 内 /login anthropic 走 OAuth 登录。官方快速开始不强制某一家提供方；取 Anthropic 为推荐的依据：omo.dev/en/docs 明言『Claude Opus 5.5 is the recommended choice』，agent-model-matching.md 的推荐阶梯首位是 Opus 5.5 且『Daily is OmO's recommendation』，daily-normal 泳道第一级即 anthropic-subscription/claude-opus-5-5（builtin-profiles.ts L91），各 claude-* 级以 anthropic-subscription（Claude Pro/Max）为首（fallback-chains.ts L15-L16）。注意：installation.md L266/L317 的『订阅问题第一位是 Claude Pro/Max』『无 Claude 订阅时主代理推荐模型不可用、WARN STRONGLY』属于 OpenCode 插件版的代理安装指南（该页 L3 自述只覆盖 OpenCode/Codex 插件版，L264 为『If the user picked OpenCode or Both』分支），不是 Native 快速开始流程，只作官方推荐倾向的旁证。其他可选登录（ChatGPT Plus、Copilot、Kimi Code、Z.ai、各家 API key 等）。",
+    "default_model": "没有写死的产品默认型号，按机制记，不钉具体型号（负责人 2026-11-22 确认，同第四批先例）：交互界面取推荐顺序里第一个已连上的提供方的型号，接 Anthropic 时当前是 Claude Opus 5.5（anthropic-subscription/claude-opus-5-5），会随推荐顺序和最新型号常量变动。依据：本入口是交互式 TUI，model_profile 组件对 TUI 直接跳过（model-profile/index.ts L284；configuration.md L399），默认型号由 senpi 引擎自己的 recommended-model 切换决定，按与 OmO 相同的六模型顺序取第一个已连接提供方（agent-model-matching.md L34；文档原文写 six-model order，但推荐阶梯实列 7 个模型，引擎侧真实顺序未核实，见 note）；顺序首位是 Opus 5.5，其首位提供方为 anthropic-subscription（builtin-profiles.ts L91、fallback-chains.ts L15-L16、latest-models.ts L13）。仅 Anthropic 登录时当前落在 anthropic-subscription/claude-opus-5-5（Claude Opus 5.5），这是当前推荐顺序的结果，不是写死的默认。推理档位随引擎默认（快照文档未写明 TUI 档位，未核实；desktop/headless 的 daily-normal 泳道为 medium）。引擎切换的内部实现在快照外的 @code-yeongyu/senpi 代码里，未核实。",
+    "host_os": "macOS（原生二进制 darwin-arm64/x64；工具同样支持 Linux 与 Windows，本记录取 macOS）。",
+    "workspace": "已有提交的 Git 仓库，在仓库根目录启动（omo 于当前目录开 TUI 会话；记忆身份默认按项目路径派生，git-master/反思 worktree/side-panel 文件栏都按 git 仓库工作）。",
+    "trust": "senpi 引擎有项目信任判定（扩展经 ctx.isProjectTrusted() 读取，runtime-context.ts L33/L97/L169-L171）：未信任项目会影响权限执行（full-access.ts L4-L7『same untrusted-project handling as enforcement』）并使子代理拿不到项目配置层（senpi-task/changes.md L563，未知判定按未信任）。快照源码与文档未见首次启动信任对话框的具体描述（对话框与默认答案在快照外的引擎代码里），是否有提示、默认怎样答未核实。本记录按已信任工作区情形取默认：权限预置 full-access，读/写/执行/联网不逐次审批。",
+    "credentials": "只配 Anthropic 一家：Claude Pro/Max 订阅 OAuth，启动 omo 后 /login anthropic（installation.md L199/L213），凭据存引擎 auth store（~/.omo/agent/auth.json）。不配其他提供方密钥；quick 类别辅助调用（kibitzer/反思）在此登录下解析为 anthropic-subscription/claude-haiku-5-5（fallback-chains.ts L132-L138），无需另配。",
+    "other": "执行运行时默认本机进程：主会话与 in-process 子代理在 omo/senpi 进程内，process 子代理在本机会话宿主（omo daemon RPC shard）或子进程（该宿主默认首回合预热，task.host_shard_prewarm=first-turn），无容器/远端沙箱（task.isolation.enabled 默认 false）。可选依赖（负责人 2026-11-22 定：语言服务器不另装、不给电脑操控授权、遥测与自动更新照默认开）：①LSP 语言服务器（typescript-language-server 等；本记录不装）不随包附带、不自动下载，需已装在 PATH 或仓库本地，缺了 lsp_* 工具报 not_installed、编辑后诊断无输出，lsp-setup 技能引导安装；②comment-checker 二进制首次使用时自动从 GitHub Releases 下载（钉住 0.8.0），缺网络则该进程内注释检查禁用；③computer 引擎二进制首次激活时定位或下载，macOS 另需屏幕录制/辅助功能系统授权，缺授权则截图/输入被拒；④git（git-master 技能、反思 worktree、记忆同步镜像需要）；⑤ast-grep MCP 运行时随包 staged，无需另装；⑥tmux 仅 OpenCode 版团队可视化需要，Native 不需要；⑦原生二进制安装路径无需 Node/npm/Bun，npm omo-ai 路径需要 Node 或 Bun；⑧Claude Code 可执行文件：本记录不预装，Anthropic 订阅档位下 claude 不在 PATH 且 CLAUDE_CODE_EXECUTABLE 未设时，首次提示自动从 registry.npmjs.org 下载钉住版本+sha512 的平台包并缓存（claude-code/acquire.ts L17、L24-L27）。"
+  }
+}
