@@ -1,0 +1,218 @@
+{
+ "round": "batch-5",
+ "checker": {
+  "model": "claude-sonnet-5-5",
+  "checked_at": "2026-11-23",
+  "runs": 3
+ },
+ "note": "对 crosscheck.json 里 kind 为 missed_fact 的 23 条逐条核三件事：location（读者引的位置对不对）、default_basis（读者对是否在默认路径上的判断有没有依据）、other_side_silent（另一方是否确实没提）。只核读者给的依据，不重新编码，不改读者的结果。三次独立运行，各看一部分配置。条目顺序和 crosscheck.json 里 missed_fact 条目的顺序一致。",
+ "items": [
+  {
+   "config_id": "B03__devin__desktop-local-default",
+   "field": "F04",
+   "mechanism": "编辑后 lint 错误由框架注入对话、代理自动复查修正（有注入次数上限）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "changelog.txt L1293-L1301 在 CLI stable v2026.4.9-0（标题 L1157，Fixed 节 L1259 起）下，docs-llms-full.txt L18535-L18541 同文，措辞对得上。Devin Local 与 CLI 共用代理外壳（docs L33555、L33754），无开关写明；但 Desktop 里 lint 来源（编辑器诊断还是外壳自查）文档没写，乙的 coder_note 也承认。甲 F04 的 value_note、coder_note、evidence 均无 lint，只写畸形调用和流停滞重试。"
+  },
+  {
+   "config_id": "B03__devin__desktop-local-default",
+   "field": "F30",
+   "mechanism": "trigger: manual 的规则由用户从 @ 菜单按名拉入、展开为一段提示",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "changelog.txt L2118（v3.6.21 Devin Local 段，L2109 起）：Added Rules to the @-mention menu so you can pull a manual-trigger rule；docs-llms-full.txt L33599-L33604 trigger 表 manual = Only when you invoke it，都对。规则文件是 Devin Local 默认开放的扩展面，无开关。甲 F30 value_note 只写规则每会话注入、技能斜杠入口展开同一份技能、Claude Commands 导入未满足 prompt_template，未提 manual 规则或 @ 菜单；近似指这两条别的按名调用路径。"
+  },
+  {
+   "config_id": "B11__warp__terminal-agent-default",
+   "field": "F16",
+   "mechanism": "相关时自动把适用规则和 Warp Drive 内容按相关性拉入（挑选在服务端）",
+   "location": "部分对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "docs-llms-full.txt L2321 小节、L2325 原句只说 Agents automatically pull in applicable rules，未写 Warp Drive 内容、也未写按相关性检索；“Warp Drive 内容”来自另一个开关（app/src/settings/ai.rs 的 warp_drive_context_enabled，knowledge_page.rs 说明含 Workflows/Notebooks/环境变量），引得偏宽。memory_enabled、warp_drive_context_enabled 均 default: true（settings/ai.rs L1693 起），默认依据成立。乙 F16 值与 value_note 无此机制；近似指 coder_note 的 FetchConversation 不是检索库、evidence 里的 memory_enabled 开关。"
+  },
+  {
+   "config_id": "B11__warp__terminal-agent-default",
+   "field": "F20",
+   "mechanism": "RunAgents 重复派发前按规范化代理名查已启动记录并拒绝重复创建子代理",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "run_agents.rs L606-L647 duplicate_launched_agents_reason（normalize_agent_name 小写去空白）、L649-L683 existing_launched_agents_for_conversation 除内存表外扫描会话 RunAgentsResult::Launched，L562 在 prepare_request_for_execution 里返回 Denied，调用点 L486-L491，都对。细节：只有请求的全部代理都已启动才拒绝（collect::<Option> 遇到新名字即返回 None），部分重复不拒。配置记录写 run_agents 默认可用、AlwaysAsk。甲 F20 value_note 只提 last_event_sequence 和 action_model.rs finished_action_results 两条内存去重，未提 RunAgents 查重。"
+  },
+  {
+   "config_id": "B11__warp__terminal-agent-default",
+   "field": "F24",
+   "mechanism": "云端会话元数据带登录账户 creator（云会话存储默认开）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "server_api/ai.rs L4241 与 L4281 creator: value.creator.map(Into::into)；conversation.rs L5013 注释 creator 为 Public profile when available（Option）；settings/privacy.rs L109-L119 is_cloud_conversation_storage_enabled default: true。这些行证明元数据类型带 creator 且存储开关默认开，但“默认本地会话一定带 creator”由服务端定，读者已注明。甲 F24 value_note 写“identity 不计：本地记录没有账户编号”，只判了本机记录，没提云端会话元数据这层。"
+  },
+  {
+   "config_id": "B12__antigravity__app-default",
+   "field": "F04",
+   "mechanism": "读不了的二进制文件时工具向代理回传明确错误（v2.15.0 改进条）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "changelog.txt L680（v2.15.0 标题 L662）与 docs-pages.txt L2008 同文：The agent now reports a clear error when it tries to read a binary file it cannot display, instead of returning unreadable content；主语是 agent，读作工具结果为错误而非乱码，略含糊但可接受。文件读取为默认工具（view_file），changelog 此行之上无改写条目。乙 F04 value_note 把“将工具错误交回模型自修”列为文档未涉及，coder_note 称未找到错误回传模型的判定句，未提此条。"
+  },
+  {
+   "config_id": "B12__antigravity__app-default",
+   "field": "F14",
+   "mechanism": "MCP 工具返回的大型二进制附件存成文件、对话里只留引用（v2.9.1）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "changelog.txt L898（v2.9.1 标题 L878）与 docs-pages.txt L2226 同文，机制对得上；L1-897 内无改写此行为的条目。配置记录写文档未提预装 MCP 服务器，须用户经 Customizations 添加，optional 有依据。乙 F14 value_note 写“文档未涉及：工具结果是否被整条替换”，值只有 truncation，未引此条。"
+  },
+  {
+   "config_id": "B12__antigravity__app-default",
+   "field": "F17",
+   "mechanism": "同一 v2.9.1 修复：大型 MCP 附件另存文件、会话里留引用（external_reference）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "同 F14：changelog.txt L898 / docs-pages.txt L2226，原句 saved to a file and referenced in the conversation。触发以先接入 MCP 服务器为前提，optional 有依据。乙 F17 在 value_note 讨论了 artifacts 目录是否只存引用并不计（近似的另一条 external_reference 路径），未提 MCP 附件。"
+  },
+  {
+   "config_id": "B12__antigravity__app-default",
+   "field": "F31",
+   "mechanism": "SDK 的 on_compaction 生命周期钩子（ActionCompaction 事件）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "docs-pages.txt L5657（SDK v0.1.10，标题 L5648）、L5574-L5601（v0.1.15，含 L5577、L5601 的 on_compaction）确有该钩子，L5664 还修了事件被抑制的问题；L17658-L17687 lifecycle 页示例只有 pre_turn、on_tool_error，未列压缩钩子，读者说法准确；快照中无后续版本撤销该钩子。SDK 不是 App 默认入口（配置记录 note 将 SDK 列为其他入口），两位编码者都按总则 R5 官方构件库计入，不进 via_default_entry，optional 有依据。甲 F31 value_note 写“文档未涉及：保存与上下文压缩钩子”，值里无 context_compaction。"
+  },
+  {
+   "config_id": "B14__qoder__app-default",
+   "field": "F26",
+   "mechanism": "agent 类型 Hook 在所配置事件触发时由框架派生核验子代理",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "docs-pages.txt L5087-L5094 Handler types 表有 agent 行；\"与 CLI 同一套事件和处理器类型\"实在 L5062（读者写 L5061，差一行）；L19250-L19273 为 agent (sub-agent verification)，独立会话、可用工具核验。默认依据：快照与配置记录都说没有预置 Hook，是用户自己加 Hook 条目；按码本 R2，默认开放的扩展点加内容算开放，故站得住。opus 的 F26 只在 coder_note 否掉 Skill evolution，没提 Hook。"
+  },
+  {
+   "config_id": "B14__qoder__app-default",
+   "field": "F28",
+   "mechanism": "agent Hook 的核验结果默认阻塞当前动作",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "L19134 组级 async 行写明 true 才在后台不阻塞（默认阻塞）；L19250-L19252 ok=false blocks。默认依据同 F26（R2 添加内容）。opus F28 只写\"synchronous_return 无迹象\"，取值、note 里都没有 Hook。"
+  },
+  {
+   "config_id": "B14__qoder__app-default",
+   "field": "F31",
+   "mechanism": "Agent SDK 的 resolveModel 回调在每次模型请求前选型号",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "L36581 Dynamic selection：每次 LLM 请求前调用回调决定型号；L37286 resolveModel 在每次请求关键路径上、默认 500 ms。SDK 是另一入口，非所选桌面入口直接开放，判 optional 有依据（R5 经 via_default_entry 区分）。opus F31 value_note 提到 SDK 的 hooks 回调\"事件集相同\"，但没提 resolveModel/型号回调。"
+  },
+  {
+   "config_id": "B15__codebuddy__ide-default",
+   "field": "F13",
+   "mechanism": "每轮请求携带对话历史（修复项：压缩后下次请求带上全部历史消息）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "L35381 在 IDE 发布说明页 4.6.2 段内（段标题 L35358），opus 标 4.6.1 有误，读者已指出。该条是修复项，只是间接说明正常请求带历史，属推断；4.6.2 早于钉住的 4.12.4，对默认 Craft 对话生效。gpt F13 提到\"引用内容持续可见、每次请求携带固定说明\"，没提这条修复项，也明说未说明请求如何构造。"
+  },
+  {
+   "config_id": "B15__codebuddy__ide-default",
+   "field": "F27",
+   "mechanism": "Team 模式成员之间的消息回传",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "L35150（4.9.7 段，标题 L35144）\"修复 Teams 消息回传和状态异常问题\"、L34392（4.12.1 段）\"团队成员消息偶发丢失\"均在；L34489（4.12.0）、L34968（4.9.14）显示 Team 由自定义 Agent 创建调度。IDE 文档确实无 Team 专页（Agent Teams 页 L377 起属 cli/agent-teams，是 CLI 入口），故默认 Craft 路径能否用 Team 查不到，cannot_tell 有依据。gpt F27 只写\"文档未涉及：运行中的 messages\"，没有提 Team。"
+  },
+  {
+   "config_id": "B15__codebuddy__ide-default",
+   "field": "F28",
+   "mechanism": "团队模式下主 Agent 等待成员汇报（汇报丢失致一直等待）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "L34480 在 4.12.0 段（标题 L34423）原文\"修复团队模式下成员汇报丢失，导致主 Agent 一直等待\"。是否在默认 Craft 路径无文档，cannot_tell 有依据。gpt F28 提到 4.11.0 Team 成员取消级联（取消路径），未提等待汇报；其\"文档未涉及：async_wait\"没有 Team 内容。"
+  },
+  {
+   "config_id": "B16__zcode__desktop-default",
+   "field": "F14",
+   "mechanism": "技能装载按长度截短（SKILL.md 超 100KB 截短；元数据超预算降为仅名称）",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "L2932 \"A SKILL.md body over 100KB is truncated when loaded\"，L2934-L2935 Skill Count 段写超预算降级为仅名称，均在。内置 zcode-configuration-guide、document-skills 默认启用（配置记录），路径默认可达。gpt F14 为 unknown，取值、note 里无技能截短；其 F15 另有\"技能元数据常驻、正文按需加载不计此字段\"，不在 F14 内。"
+  },
+  {
+   "config_id": "B16__zcode__desktop-default",
+   "field": "F26",
+   "mechanism": "用户点 Generate wiki，框架起多步生成运行",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "L2758 \"Once you hit Generate wiki…\"，L2794 模型自己浏览目录树、按需读文件，均在 repo-wiki 页（L2739 起）。入口在默认文件树面板（只读或远程断开时才隐藏），不改设置即可点，判 default 有依据。gpt F26 coder_note 称查过 commands、agents、subagents、automations、memory，没有 repo-wiki，F26 内无 wiki 字样（wiki 只出现在 F01、F11）。"
+  },
+  {
+   "config_id": "B16__zcode__desktop-default",
+   "field": "F26",
+   "mechanism": "每回合结束若已有 wiki，框架自动检查代码变化并刷新",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "L2769 \"At the end of each turn, if the repo already has a wiki, ZCode checks whether the code actually changed\"。配置记录写明 wiki 生成手动、默认安装后不存在 wiki，故判 optional 有依据。gpt F26 无此机制。"
+  },
+  {
+   "config_id": "C04__chatbox__desktop-default",
+   "field": "F20",
+   "mechanism": "工具步数到限（25）暂停后点继续：读回存储消息，只在调用仍为 paused 时执行，已执行的直接返回",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "GenerationService.ts L1348 起为 continuePausedToolCallUnlocked，L1357 读 readTargetContext，L1362 `part.state !== 'paused'` 即返回，与描述一致。tool-call-limit-pause.ts L8 阈值 25，L28-L31 shouldPauseOnToolCallLimit 在无会话设置时取全局设置、缺省 true；GenerationService.ts L954-L956 只要有工具就套 withToolCallLimitPause，配置记录默认聊天仍带 save_memory 等工具，故默认路径可触发。gpt 的 F20 value_note/coder_note/evidence 里没有到限暂停续跑，只有会话中断恢复（session-generation-recovery.ts）与调用编号配对、记忆查重，属相近的另一条路径。"
+  },
+  {
+   "config_id": "D05__oh-my-openagent__omo-cli-default",
+   "field": "F02",
+   "mechanism": "ulw-loop 随包 agentToolkit SDK（createGoals/completeGoals/criteria/recordEvidence/checkpoint），checkpoint 按验收记录拦完成",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "session-toolkit.ts L115-L156 为 agentToolkit，含 createGoals/completeGoals/criteria/recordEvidence/checkpoint；L12-L13 的 import 说明符是 sdk.js，磁盘上实际文件为 packages/omo-codex/plugin/components/ulw-loop/src/sdk.ts（再导出 sdk/factory.ts），checkpoint.ts L155 起 checkpointUlwLoop 在 complete 时 requireAllCriteriaPass，能拦下。component-list.ts L58 注册 createUlwLoopComponent；compose.ts L100/L111 与 sdk-root-provisioning.ts L33-L49 默认设 OMO_AGENT_TOOLKIT_SDK_ROOT；随包 sdk.js 在 packages/omo-senpi/plugin/runtime/agent-toolkit-sdk/（reader 写的是相对 omo-senpi 的路径）。默认依据：SDK 与环境变量默认就位、模型可在 eval 里 import，但模型被告知这条路径主要靠 skill-pointers/index.ts L260 与 ulw-loop/index.ts 的续跑提示（用户提到 ulw-loop 关键词或已有活动计划时才注入），读者引的位置没有显示无关键词时模型默认知道它；按总则 R3『默认注册、模型自己能调用』算有依据。opus 的 F02 提到 todo 工具与 /ulw-plan、/ulw-execute（要用户命令），没提 goals/checkpoint SDK。"
+  },
+  {
+   "config_id": "D05__oh-my-openagent__omo-cli-default",
+   "field": "F04",
+   "mechanism": "facts 抽取失败后批次 parked，只有 /facts retry 解停并放回热队列重试一次",
+   "location": "部分对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提",
+   "note": "facts.ts L1-L5 与 L44-L57 说法属实（只有手动 retry 解停、无自动解停），facts-terminal-writes.ts L59-L68 的 fail 经 record 写失败记录并回报 parked。但并非『失败后』就 parked：memory-core/src/facts/failures-backoff.ts L7-L9、L80-L88 显示前几次失败走 60 秒至 2 小时的自动退避重试，连续第 5 次失败（PARK_AT_STREAK=5）或 payload_entry_oversize/secret_like_content 才 parked；读者的机制句把 parked 说得过早、过宽。默认依据：memory.ts L117-L123 facts.enabled 默认 true，L362-L364 memory.enabled 默认 true，component-list.ts L79 注册，index.ts L277-L288 启用门取 config.enabled 等，成立。opus 的 F04 value_note/coder_note/evidence 没有 facts 或 parked，只写『escalate_to_human 没找到框架暂停等人的出错分支』。"
+  },
+  {
+   "config_id": "D05__oh-my-openagent__omo-cli-default",
+   "field": "F04",
+   "mechanism": "task 工具 prepareArguments 在校验前截短超长 task_summary、丢弃只含填充项的 tasks",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "task-summary.ts L5-L14 clampTaskSummary 注释明言 prepareArguments 先于 schema 校验、超长值强制截断而不是让派生失败（上限 80、末尾 '...'）；tool.ts L26 `prepareArguments: normalizeTaskToolArguments`；argument-normalization.ts L1/L32 的 summaryText 调用 clampTaskSummary，L92-L106 在 prompt 存在且 tasks 全是 unused/placeholder/not used/n/a 填充项时丢掉 tasks。component-list.ts L77 默认注册 taskComponent，配置记录 enabled_extensions 也列 task。gpt 的 coder_note 写『查 task 校验…未确认…修复当前参数后执行，不计 framework_input_repair』，evidence 引 execute.ts invalidArguments（校验失败交回模型），没提 prepareArguments 这套预修整，属相近路径。"
+  },
+  {
+   "config_id": "D05__oh-my-openagent__omo-cli-default",
+   "field": "F17",
+   "mechanism": "memory 组件默认在 session_start/agent_settled 把会话分支的消息投影写成转录日志，与引擎会话文件分开存放",
+   "location": "对",
+   "default_basis": "有依据",
+   "other_side_silent": "确实没提（有近似）",
+   "note": "journal-wiring.ts L1-L7 说明 agent_settled 为权威分支增量扫描、session_start 补漏，按 source_line_id 幂等，日志在 <identity runtime>/transcripts/<sessionId>/；L53-L98 的 createMemoryJournalWiring/reconcileSession 与 register 对应；L158-L160 sessionMessageOf 只收 entry.type==='message'，其余（含 compaction）被丢，L127-L156 projectSessionEntries 按 toolCallId 把 toolResult 并进调用，一致。wiring-runtime.ts L147 创建它，memory index.ts L73 只在 isEnabled 时注册，memory.ts L362-L364 默认开，component-list.ts L79 默认注册，故默认路径上。opus 的 F17 写 event_log 与 state_snapshot，只提到 process 子代理转录另存 children/<taskId>/sessions/，不是这份记忆转录日志，故属近似；记忆仓库只写成 git 库、属 F16。"
+  }
+ ]
+}

@@ -1,0 +1,1859 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.9",
+  "synthetic": false,
+  "round": "batch-5",
+  "config_id": "B11__warp__terminal-agent-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v10",
+    "coded_at": "2026-11-22"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-22",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "桌面应用内置 Warp Agent（Native 驱动）：Warp 服务器（MAA，/ai/multi-agent）流式返回模型输出与工具调用，客户端执行工具，动作全部结束且结果未被取消时由客户端自动发下一次请求把结果交回模型，直到模型不再请求工具。模型推理、提示与最终工具注册在服务端，循环推进（续发）由客户端控制。审批停顿（命令默认 AlwaysAsk）不改变类别。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation_driver.rs",
+          "locator": "app/src/ai/agent/conversation_driver.rs：ConversationDriver::Native、owns_turn_lifecycle、executes_tool_calls_locally",
+          "lines": "L5-L41",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认会话驱动",
+          "note": "Native 是默认驱动：MAA 服务器流式下发事件，本客户端执行工具、发送后续请求并管理回合生命周期。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：BlocklistAIController::new 订阅 FinishedAction，should_trigger_follow_up_request",
+          "lines": "L493-L560",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "主循环",
+          "note": "动作全部完成且有结果需要回传时自动触发后续请求，把工具结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action_result/mod.rs",
+          "locator": "crates/ai/src/agent/action_result/mod.rs：should_trigger_request_upon_completion",
+          "lines": "L1048-L1050",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "主循环",
+          "note": "凡未取消的动作结果（含报错）都触发后续请求。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/slash-commands/",
+          "locator": "docs-llms-full.txt L2812-L2920：Slash Commands，Static slash commands 表",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "命令清单",
+          "note": "官方命令清单，用于逐项判定 secondary_modes。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "secondary_modes 按官方斜杠命令表（docs L2812-L2920）和快速开始逐项判：/agent、/new、/fork、/fork-and-compact、/fork-from、/compact-and、/init、/create-new-project、/plan、/skills、/prompts 与 Warp Drive 已存提示都是把内容交给同一模型循环，不改推进方式；/orchestrate 与 /plan 的编排由父代理（模型）用 RunAgents 派子代理，按 model_loop 的判定仍是模型循环；/queue 只排队下一条用户提示；/compact、/rewind、/model、/profile、/open-*、/rename-*、/set-tab-color、/export-*、/cost、/usage、/feedback、/changelog、/add-*、/index、/copy-debugging-id 不是任务路径；/cloud-agent、/handoff、/continue-locally、/environment、/harness、/host、/create-environment 属云端运行（另一形态，不进本入口）；/remote-control 只管第三方 CLI 代理会话。终端模式自然语言自动识别默认关（配置记录），Warp Drive Workflows 只是参数化命令、不含模型调用。定时或事件触发的代理在自动化平台（云端），不算本入口。故 secondary_modes 为 []。执行核心一部分（提示、型号调用、工具注册）在服务端，不影响由谁决定下一步：模型决定调用，客户端执行并自动续发。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "官方文档 Task Lists：代理对复杂请求自动生成带状态（当前、完成、未开始、取消）的任务表并实时更新，无需配置；服务端下发 TodoOperation（UpdateTodos、MarkAsCompleted），客户端把待办表存在会话里并在界面显示，不按表强制顺序。另有计划文档：/plan 或自然语言请求时代理用 CreateDocuments 生成可编辑计划（带版本），执行时由模型自行参照，框架不按条目推进（可选：/plan）；计划里带编排配置时，用户否决该配置后 RunAgents 被拒、已批准配置覆盖子代理的型号等字段，只约束编排参数，不按计划条目推进。默认提示在服务端，快照内不可见。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/task-lists/",
+          "locator": "docs-llms-full.txt L2921-L2975：Agent Task Lists（How task lists work、Task statuses）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认路径",
+          "note": "代理自动创建结构化任务表、逐项更新状态，无需配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs：AIConversation.todo_lists",
+          "lines": "L311-L320",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "会话状态",
+          "note": "会话保存待办表列表，最后一张为当前表。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：generate_multi_agent_output，Settings.planning_enabled、supports_todos_ui",
+          "lines": "L64-L90",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "请求设置",
+          "note": "请求声明 supports_todos_ui=true，planning_enabled 由默认请求构造置为 true（api.rs L445）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/planning/",
+          "locator": "docs-llms-full.txt L2070-L2130：Agent planning and execution（Creating a plan、Executing a plan）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "计划文档",
+          "note": "计划经 /plan 或自然语言生成，执行时由用户提示代理按计划做，框架不逐条推进。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "待办工具由服务端注册（warp-proto-apis 不在快照），客户端只见 TodoOperation 消息，所以模型自行调用这一点依据文档。RunAgents 对已批准编排配置的覆盖与否决（run_agents.rs prepare_request_for_execution）只管编排参数，判为不属 executable_flow_constraint；如果码本把它算作据计划拦下动作，需要另议。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "value_note": "模型结束信号：流以 Done 结束且没有待执行动作时不再续发，会话标为完成；用户中断：cancel_conversation_progress 取消在途请求或待执行动作，文档称可用 Ctrl+C 停止；用户拒绝某个动作也算取消、不再续发。客户端未见回合数、步数、时长或费用上限；QuotaLimit 与月度消费上限属账户或订阅一侧，不计入。未见框架在模型宣布结束后跑检查。服务端可能另有限制，快照内不可见。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：stream_finished::Reason 处理",
+          "lines": "L4087-L4097",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "主循环结束",
+          "note": "Done 结束时把响应流标为成功完成；没有动作就不触发后续请求（L540-L560）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：cancel_conversation_progress",
+          "lines": "L3381-L3391",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "用户中断",
+          "note": "取消在途请求，或取消待执行、执行中的全部动作。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/agent-profiles-permissions/",
+          "locator": "docs-llms-full.txt L590：Profiles & Permissions，auto-approve 段",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "用户中断",
+          "note": "任务进行中可用 Ctrl+C 停止。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "budget 未计入：客户端只有恢复次数上限（MAX_RECOVERY_ATTEMPTS=3，属 F04）和子代理启动超时，不是用量阈值；服务端可能设步数上限，但快照与文档都没有迹象，没写进 unresolved。子代理（RunAgents 子代理、服务端 Cli 等子代理）结束时未见框架检查结果结构。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {}
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "facets": {
+        "unresolved": [
+          "escalate_to_human"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "call_retry：响应流出错且错误可恢复时，尚未收到动作就按退避原样重发（离线则等联网后重发），已收到动作则在流结束后按退避自动发 ResumeConversation 续接，重试与续接共用每个请求 3 次的预算（MAX_RECOVERY_ATTEMPTS）。model_self_repair：工具报错（如 ReadFiles、Grep 的 Error 结果）作为动作结果回传，任何未取消的结果都触发后续请求，由模型改正。不可恢复错误或预算用完时只显示错误，会话以错误结束。未见客户端修正工具参数或工具名。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller/response_stream.rs",
+          "locator": "app/src/ai/blocklist/controller/response_stream.rs：MAX_RECOVERY_ATTEMPTS、RecoveryBudget、recovery_action",
+          "lines": "L35-L210",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "模型调用出错",
+          "note": "可恢复错误先 Retry/RetryWhenOnline，动作已下发后改 Resume，共 3 次预算，否则 Fail。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：schedule_auto_resume_after_error、resume_conversation_with_recovery_budget",
+          "lines": "L2644-L2765",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "模型调用出错",
+          "note": "退避、等联网后自动续接会话，带 is_auto_resume_after_error 标记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action_result/mod.rs",
+          "locator": "crates/ai/src/agent/action_result/mod.rs：should_trigger_request_upon_completion",
+          "lines": "L1048-L1050",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "工具出错",
+          "note": "只要结果不是取消（含 Error 结果）就把结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/terminal/view.rs",
+          "locator": "app/src/terminal/view.rs：CanResumeConversation（AIResumeButton，默认 cargo feature ai_resume_button）",
+          "lines": "L29811-L29819",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "出错后恢复",
+          "note": "最近一次交换出错或被手动取消时允许恢复会话（Cmd-Shift-R），带原历史续接。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "escalate_to_human 放进 unresolved：出错（重试预算用完）后会话状态允许用快捷键恢复、带原历史续接（resume_conversation），但没找到出错时提示用户恢复的界面（恢复按钮只在手动取消的 stopped 输出里画，output.rs L2240）；ChatGPT 订阅错误有 Retry 按钮，但不在钉住环境。认证失效（取令牌失败）只报错，未见登录后从原请求接着走的依据。服务端是否修正工具调用不可见。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "in_process",
+      "unknown_reason": null,
+      "value_note": "Warp 桌面应用一个进程里同时有界面和代理控制器（BlocklistAIController、动作执行器），控制器直接调用，持有回合生命周期并执行工具；模型推理、系统提示和最终工具注册在 Warp 服务器（app.warp.dev 的 /ai/multi-agent，HTTP POST 加 SSE/protobuf），服务器是远端服务，不是本机进程。其他入口：Warp Agent CLI（oz）是另一程序，不在本记录。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation_driver.rs",
+          "locator": "app/src/ai/agent/conversation_driver.rs：ConversationDriver::Native",
+          "lines": "L5-L41",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认入口",
+          "note": "本客户端执行工具并持有回合生命周期，服务器流式下发事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：BlocklistAIController::new（按终端界面创建，订阅动作模型）",
+          "lines": "L478-L500",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认入口",
+          "note": "代理控制器随终端界面在应用进程内创建，直接订阅同进程的动作模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_multi_agent_client/src/lib.rs",
+          "locator": "crates/warp_multi_agent_client/src/lib.rs：generate_multi_agent_output、endpoint_url",
+          "lines": "L48-L70",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "模型调用",
+          "note": "模型请求经 HTTP 发往 Warp 服务器 /ai/... 端点。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "口径疑问：Warp 的代理循环分在两处，续发和工具执行在客户端，模型调用、提示和工具清单在 Warp 云端服务。按“运行模型循环的进程”取客户端（它决定续发并执行工具），记 in_process；若把云端服务算执行核心，词表三项都不合适（远端服务，非本机），需要码本说明云端托管核心怎样记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "本机会话下：ReadFiles 在应用进程内读本地文件，Grep 用内嵌的 ripgrep 库在进程内搜索，FileGlob、ApplyFileDiffs 等文件工具同在应用进程；RunShellCommand 把命令写进该终端会话的 PTY，由应用拉起的用户登录 shell 子进程执行（shell 常驻于该终端会话，命令是它的子进程）。MCP：默认自动挂上的 warp-factory 是 Warp 托管的远端 HTTP 服务（云端，不计入）；CLI 型 MCP 服务器要用户添加，作为应用拉起的子进程（可选：用户添加服务配置）。Docker 沙箱、远端 SSH 会话（RemoteServerManager）不在默认路径。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/read_files.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/read_files.rs：execute，本机路径 read_local_file_context",
+          "lines": "L114-L250",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "文件工具",
+          "note": "只有 WarpifiedRemote 会话走远端，本机会话在进程内读文件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/grep.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/grep.rs：run_ripgrep",
+          "lines": "L386-L431",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "搜索工具",
+          "note": "本机会话用核心库里的 ripgrep，不起命令。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/shell_command.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/shell_command.rs：execute，ShellCommandExecutorEvent::ExecuteCommand",
+          "lines": "L307-L370",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "命令工具",
+          "note": "命令发到当前终端块执行（终端忙则返回 TerminalBusy）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_terminal/src/local_tty/unix.rs",
+          "locator": "crates/warp_terminal/src/local_tty/unix.rs：build_host_shell_command、spawn_command_in_pty",
+          "lines": "L275-L293",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "命令工具",
+          "note": "应用为终端会话在 PTY 中拉起用户 shell 子进程（L463-L580 spawn）。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shell 是每个终端会话常驻的子进程，不是“每条命令起一个、用完退出”，仍按“经 shell 跑命令的子进程”记 subprocess。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {}
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "应用里的代理层（AIConversation 的 task_store、BlocklistAIHistoryModel）持有会话：每次请求把当前活跃任务（含消息）整份放进 task_context 发给服务器，服务器另只回传会话令牌；会话写入本机数据库，恢复时从本机数据库懒加载任务数据。云端同步（Store AI conversations in the cloud）是镜像，关掉后只存本机、照常工作，不算 state_service。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：api::Request.task_context.tasks、metadata.conversation_id",
+          "lines": "L64-L67",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "构造请求",
+          "note": "每次请求带上客户端保存的任务（消息历史）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs：compute_active_tasks",
+          "lines": "L1564-L1585",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "构造请求",
+          "note": "从会话的 task_store 取活跃任务作为请求内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/restored_conversations.rs",
+          "locator": "app/src/ai/restored_conversations.rs：RestoredAgentConversations",
+          "lines": "L19-L26",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "恢复会话",
+          "note": "完整任务数据从本机数据库懒加载恢复。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/cloud-conversations/",
+          "locator": "docs-llms-full.txt L8642-L8700：Cloud-synced conversations（Enabling cloud conversations、Conversation syncing）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "云端镜像",
+          "note": "关掉云端同步后会话只存本机；云端存每次交互后的快照。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "同 F05：若把 Warp 云端服务当执行核心，则是“客户端每次交出历史”，记 client。按客户端代理层为核心，保存与读回状态的代码属代理层，记 execution_core。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个会话有 AIConversationId（UUID），任务和历史按会话编号存放、恢复。新会话（/agent、/new）在当前终端会话里开，和同一窗格的其他会话共用应用进程、shell 与工作目录，不另建工作树或容器。本地 RunAgents 子代理在隐藏窗格里跑，不属用户新开会话的隔离。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai_types/src/agent.rs",
+          "locator": "crates/ai_types/src/agent.rs：AIConversationId(Uuid)",
+          "lines": "L9",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "会话管理",
+          "note": "会话以 UUID 编号区分。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/restored_conversations.rs",
+          "locator": "app/src/ai/restored_conversations.rs：按会话 ID 恢复",
+          "lines": "L1-L26",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "会话存储",
+          "note": "按会话 ID 从本机数据库取回任务数据。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/read_files.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/read_files.rs：current_working_directory 取自 active_session",
+          "lines": "L105-L111",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "工作目录",
+          "note": "工具用终端会话当前目录，不为代理会话分配专用目录。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "快照里 app/src/ai 下未见 worktree 创建（只在 agent_sdk 的技能目录发布里出现该词）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {}
+    },
+    "F09": {
+      "status": "known",
+      "value": "protocol_gateway",
+      "unknown_reason": null,
+      "value_note": "客户端只说一种协议：把统一的 protobuf 请求（含型号 id、可选 BYOK 密钥、自定义提供方与路由配置）POST 到 Warp 服务器 /ai/multi-agent，SSE 返回统一事件；由服务器转给 OpenAI、Anthropic、Google、xAI、Fireworks 托管模型等各家。网关是 Warp 云端服务，不是本机进程；BYOK 与自定义端点也经服务器调用（请求里的 api_keys、custom_model_providers）。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：generate_multi_agent_output 构造 api::Request（ModelConfig、api_keys、custom_model_providers）",
+          "lines": "L64-L158",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "模型调用",
+          "note": "所有型号统一成一种请求，经 warp_multi_agent_client 发给服务器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_multi_agent_client/src/lib.rs",
+          "locator": "crates/warp_multi_agent_client/src/lib.rs：generate_multi_agent_output、endpoint_url",
+          "lines": "L48-L145",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "模型调用",
+          "note": "端点为服务器根地址下的 /ai/...，带登录令牌。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/inference/model-choice/",
+          "locator": "docs-llms-full.txt L7994-L8010：Agent model choice（Available models）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "可用型号",
+          "note": "OpenAI、Anthropic、Google 与开源模型都经 Warp 提供。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "码本的 protocol_gateway 例子是本机网关服务；这里的网关是厂商云端服务，按“独立进程或服务形式”判为本项。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "value_note": "native_structured：服务器下发结构化的 Message::ToolCall（protobuf oneof：RunShellCommand、ReadFiles、ApplyFileDiffs、CallMcpTool、Subagent 等），客户端按字段转成动作执行；模型到服务器这一段在服务端，请求设置 use_anthropic_text_editor_tools=false。protocol_translation：MCP 工具经 CallMcpTool 交给模型，客户端再转成 MCP call_tool 请求（rmcp）；默认已自动挂上 Warp 托管的 warp-factory MCP（账户可用性未核实），用户添加 MCP 服务器即可用。无脚本分派工具。转换失败的工具调用不执行；工具报错作为结果交回模型。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/convert_from.rs",
+          "locator": "app/src/ai/agent/api/convert_from.rs：api::message::tool_call::Tool 分支",
+          "lines": "L655-L770",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "工具调用解析",
+          "note": "按结构化工具调用字段生成动作。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/call_mcp_tool.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/call_mcp_tool.rs：execute、handle_call_tool_result",
+          "lines": "L79-L162",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "MCP 工具",
+          "note": "把模型的 CallMcpTool 调用转成 MCP CallToolRequest 发给服务器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：get_supported_tools",
+          "lines": "L225-L240",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "工具声明",
+          "note": "客户端向服务器声明支持的工具类型，含 CallMcpTool。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "模型到服务器之间是否用厂商原生函数调用在服务端，不可见；按客户端收到的结构化调用记 native_structured。没有迹象表明有文本解析回退，没写 unresolved。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {}
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "per_role",
+        "per_request_routing",
+        "failover",
+        "model_selected_delegation"
+      ],
+      "facets": {
+        "auxiliary_models": null
+      },
+      "unknown_reason": null,
+      "value_note": "型号由服务端决定。per_role：请求同时带 base、cli_agent、computer_use 三个型号槽位，默认分别为 auto、cli-agent-auto、computer-use-agent-auto；长时间运行命令的结果会让服务器把下一轮交给 Cli 子代理（Full Terminal Use），它取 cli_agent 槽位；computer_use 本地不注册工具。per_request_routing：钉住环境默认型号为服务端 default_id、客户端兜底 auto，文档称 Auto 由 Warp 为每个任务挑选型号（门槛：默认确为 Auto 系列）。failover：文档称所选型号不可用（提供方故障、容量）时自动改用预定义链上的回退型号继续对话（服务端实现）。model_selected_delegation：RunAgents 调用里父代理可给整批或单个子代理指定 model_id，需用户批准（run_agents 默认 AlwaysAsk）；已批准的编排配置会覆盖整批字段。可选：用户用 /model 或模型选择器换型号。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/llms.rs",
+          "locator": "app/src/ai/llms.rs：ModelsByFeature::default（agent_mode auto、cli_agent cli-agent-auto、computer_use）",
+          "lines": "L733-L801",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认型号槽位",
+          "note": "主循环与 CLI 子代理各取不同型号槽位，具体型号由服务端列表决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：ModelConfig{base, cli_agent, computer_use_agent}",
+          "lines": "L71-L77",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "请求设置",
+          "note": "每次请求把三个槽位一并交给服务器。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action_result/mod.rs",
+          "locator": "crates/ai/src/agent/action_result/mod.rs：triggers_server_subagent",
+          "lines": "L1060-L1076",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "自动派生子代理",
+          "note": "长时间运行命令的快照结果让服务器把下一轮交给 CLI 子代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action/mod.rs",
+          "locator": "crates/ai/src/agent/action/mod.rs：RunAgentsRequest.model_id、RunAgentsAgentRunConfig.model_id",
+          "lines": "L215-L268",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "派生子代理",
+          "note": "模型请求的 RunAgents 带整批与单个子代理的型号覆盖。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/inference/model-choice/",
+          "locator": "docs-llms-full.txt L8012-L8020（Auto models）与 L8148-L8158（Model fallback）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "型号选择",
+          "note": "Auto 由 Warp 动态挑选型号；所选型号不可用时自动用回退链上的型号。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/",
+          "locator": "docs-llms-full.txt L53273、L53394-L53399：Multi-agent orchestration（parent/child model、Approval mode）",
+          "lines": "",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "派生子代理",
+          "note": "子代理可用不同型号；批准后父代理仍可按子代理覆盖型号。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 写 null：清单逐项看了——标题生成（会话标题由服务端给，型号不可见）、上下文压缩（服务端 Summarization 子代理或消息替换，型号不可见）、动作审核（is_risky 随工具调用由服务端下发，是否另用分类器不可见）、联网搜索（文档：用支持原生搜索的型号的第一方工具，同一型号）、媒体理解（读图交主型号）、生成类工具（无）。前三项在服务端无从判断，整层写 null。per_request_routing 与 failover 只有文档依据（服务端实现）。Research、Advice 等服务端子代理类型的型号槽位不可见。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "hard_stop": null,
+        "soft_notice": null,
+        "mode_unknown": null
+      },
+      "unknown_reason": null,
+      "value_note": "客户端未见默认生效的输出、Token、回合数、时长或费用上限：恢复次数上限（3 次）属 F04；上下文窗口限制 context_window_limit 默认不设（0），属窗口而非预算；QuotaLimit、额度不足和月度消费上限属账户或订阅一侧；MaxTokenLimit、ContextWindowExceeded 结束原因只显示错误，没有续写或重试。单次输出上限若存在，由服务端设定、客户端无专门续写，按本字段规定不计。可选：月度消费上限在计费设置里设。WaitForEvents 的空闲超时、子代理启动超时、云端运行的空闲超时都不是本入口任务的用量上限。快照：提交 2b2ed236（替代稳定版 v0.2026.11.11.08.17，对应未核实）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs",
+          "locator": "app/src/ai/blocklist/controller.rs：stream_finished::Reason 各分支（QuotaLimit、MaxTokenLimit、ContextWindowExceeded）",
+          "lines": "L4087-L4243",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "调用结束原因",
+          "note": "到限只把会话标为错误，客户端没有续写或用量阈值处理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs：ModelConfig.base_model_context_window_limit（默认 0）",
+          "lines": "L71-L77",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "请求设置",
+          "note": "请求只带可选的窗口上限，没有输出或用量阈值字段。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "在 app/src 与 crates 里搜过 max_turns、max_steps、turn_limit、max_output_tokens、spend/cost limit 一类，只命中计费页和外部 ACP 驱动（agent_sdk，非本入口）。服务端（MAA）可能有步数或输出限制，快照内看不到，到限会以某种 stream_finished 原因交回，客户端处理里没有专门的步数原因。官方设置参考没有逐项核对完，所以 confidence 写 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "客户端维护 task 列表（每个 task 带 messages），每轮整份发给 Warp 服务端；服务端用 ClientActions 增量更新这份列表。实际发给型号的提示由服务端构造，快照里看不到，服务端那一层怎样解释 Summarization 等条目不可见。客户端可见的压缩是把连续一段消息换成一条替换消息（MoveMessagesToNewTask），属于一刀切的修整。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs",
+          "lines": "L65-L70",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "每次请求把运行中维护的 task 列表整份放进 task_context.tasks，再附新输入"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api.rs",
+          "locator": "app/src/ai/agent/api.rs",
+          "lines": "L433",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "RequestParams 的 tasks 直接取 conversation.tasks"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L2930-L3160",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "apply_client_action：服务端下发 AddMessagesToTask 等动作，客户端增量并入 task_store"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L3556-L3605",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "MoveMessagesToNewTask：把连续一段消息切出、换成一条替换消息，移进摘要子任务"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "value_note": "truncation：读文件超 1MB 截短；附加块取首尾各 5000 行；命令输出交给代理时客户端不截断。summarization：超限后自动摘要，摘要由服务端调型号生成，客户端以 Summarization 消息收到，门槛由服务端决定。另有 ToolCallResultSummary（工具结果的服务端摘要），触发条件不可见，写此处。可选：/compact 手动压缩（总则 R3 第二档）。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute.rs",
+          "lines": "L1106-L1110",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "ReadFiles 读文本文件超过 MAX_FILE_READ_BYTES=1_000_000 即截短，单文件与批量预算取较紧者"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute.rs",
+          "lines": "L1188-L1193",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "ReadFiles 读文本文件超过 MAX_FILE_READ_BYTES=1_000_000 即截短，单文件与批量预算取较紧者"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/context_model.rs",
+          "locator": "app/src/ai/blocklist/context_model.rs",
+          "lines": "L131",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "用户附加的块作为上下文时用 content_summary(5000, 5000, false) 只取首尾"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/interacting-with-agents/",
+          "locator": "Context window management",
+          "lines": "L9076-L9098",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "超过上限后 Warp 自动摘要会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/convert_from.rs",
+          "locator": "app/src/ai/agent/api/convert_from.rs",
+          "lines": "L401-L447",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "Summarization 消息分 ConversationSummary 和 ToolCallResultSummary 两种，由服务端生成"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "压缩的触发与执行都在服务端，客户端只看得到结果消息；按文档与消息类型判 summarization。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval"
+      ],
+      "facets": {
+        "unresolved": [
+          "structural_index"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "user_specified：@ 引用文件、终端块、图片、URL。keyword：Grep 工具。semantic_retrieval：SearchCodebase 按嵌入检索，按读权限自动执行（execute/search_codebase.rs L151-182），远程索引开关由服务端控制。structural_index 放疑似：嵌入检索失败时回退按文件提纲（符号）交服务端挑文件。Warp Drive 内容由服务端按相关性拉入（文档 /knowledge-and-collaboration/warp-drive/agent-mode-context/ L48868），机制不可见。网页搜索、网页抓取不计。技能经 ReadSkill 按需读正文；FetchConversation 由 @ 引用旧会话触发。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/agent-context/using-to-add-context/",
+          "locator": "Using @ to add context",
+          "lines": "L8566",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "用户用 @ 引用文件、目录等加进上下文"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs",
+          "locator": "app/src/ai/agent/api/impl.rs",
+          "lines": "L225-L303",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "get_supported_tools 注册 Grep、FileGlob、ReadFiles、SearchCodebase（本地会话）等"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/get_relevant_files/controller.rs",
+          "locator": "app/src/ai/get_relevant_files/controller.rs",
+          "lines": "L241-L310",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "FullSourceCodeEmbedding 开启时走 retrieve_relevant_files 嵌入检索；失败回退按文件提纲（符号）发 GetRelevantFiles 到服务端"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_features/src/lib.rs",
+          "locator": "crates/warp_features/src/lib.rs",
+          "lines": "L1062-L1066",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "注释说生产服务端已对 remote codebase indexing 全量开启"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/codebase-context/",
+          "locator": "Codebase Context",
+          "lines": "L626-L640",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "代码库索引供代理检索"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary"
+      ],
+      "facets": {
+        "unresolved": [
+          "retrieval_store"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "user_maintained_files：项目 AGENTS.md/WARP.md 与全局 ~/.agents/AGENTS.md 每次请求附带。auto_summary：回复后代理按内置流程建议规则（name+content），需用户点选才保存；规则存进 Warp Drive 的规则库，不是普通文件。retrieval_store 放疑似：文档说相关时自动拉入适用规则和 Warp Drive 内容，挑选在服务端、不可见。其他环境：Agent Memory 为 research preview，只对设计伙伴团队开放（/agents/agent-memory/ L182）。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/context_model.rs",
+          "locator": "app/src/ai/blocklist/context_model.rs",
+          "lines": "L355-L421",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "Always include project rules：每次请求附带项目规则 AIAgentContext::ProjectRules"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/project_context/global_rules.rs",
+          "locator": "crates/ai/src/project_context/global_rules.rs",
+          "lines": "L17-L21",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "全局规则文件 ~/.agents/AGENTS.md"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/rules/",
+          "locator": "Project rules / Rules as Agent context",
+          "lines": "L2215",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "项目规则文件；相关时自动拉入适用规则；Warp 可能建议全局规则"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/rules/",
+          "locator": "Project rules / Rules as Agent context",
+          "lines": "L2321",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "项目规则文件；相关时自动拉入适用规则；Warp 可能建议全局规则"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/settings/ai.rs",
+          "locator": "app/src/settings/ai.rs",
+          "lines": "L1365-L1375",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "rule_suggestions_enabled 默认 true：回复后代理建议可保存的规则"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/mod.rs",
+          "locator": "app/src/ai/agent/mod.rs",
+          "lines": "L3649",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "SuggestedRule{name, content}，由 suggested_rule_modal 的 AddNewRule 存入"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "event_log：task 记录里除消息外有 Summarization 压缩条目（自带类型）。external_reference：artifacts_json 只存文件、截图产物的 artifact_uid 引用，内容存在会话记录外。ModelUsed 每回合写一条，按元数据处理；UpdateTodos 只记待办变化，写此处。默认同时存云端（/agents/local-agents/cloud-conversations/ L8642-8666）。回退用的 diff 状态只在内存里，不计 state_snapshot。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/persistence/agent.rs",
+          "locator": "app/src/persistence/agent.rs",
+          "lines": "L41-L120",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "upsert_agent_conversation：tasks 以 protobuf 存进 agent_tasks 表，元数据 JSON 存进 agent_conversations 表；本地最多 200 个会话"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/convert_from.rs",
+          "locator": "app/src/ai/agent/api/convert_from.rs",
+          "lines": "L401-L447",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "Summarization 是 task 消息里自带类型的压缩条目"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/persistence/src/model.rs",
+          "locator": "crates/persistence/src/model.rs",
+          "lines": "L1172-L1225",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "AgentConversationData 含 artifacts_json、reverted_action_ids、parent_agent_id、last_event_sequence 等"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/artifacts/mod.rs",
+          "locator": "app/src/ai/artifacts/mod.rs",
+          "lines": "L31-L71",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "Artifact 的 File、Screenshot 只存 artifact_uid 等引用"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "artifact 内容存在哪里（本机还是服务端）快照里看不全；按记录只留 uid 判 external_reference。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "用 Past 列表或 /conversations 读回保存的 tasks、重建会话，等用户下一句输入；中断时进行中的动作标为取消，由模型重新决定。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L533-L541",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "new_restored 读回 tasks 重建会话，并从根任务重放 UpdateTodos"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L635-L636",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "new_restored 读回 tasks 重建会话，并从根任务重放 UpdateTodos"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/block.rs",
+          "locator": "app/src/ai/blocklist/block.rs",
+          "lines": "L3504-L3508",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "恢复时进行中的动作标为取消或拒绝"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model.rs",
+          "locator": "app/src/ai/blocklist/action_model.rs",
+          "lines": "L700-L715",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "恢复时长时间运行命令的结果改为 CancelledBeforeExecution"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/interacting-with-agents/",
+          "locator": "Past conversations",
+          "lines": "L9189",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "从 Past 列表恢复旧会话继续"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation、tool_results：task 消息里的 ToolCall/ToolCallResult 一起读回。task_plan：重放 UpdateTodos 恢复待办清单。subagent_links：按游标续传子代理事件，休眠的本地子代理收到消息会载入原历史接着做。工作区不自动回到旧状态；已执行的命令和外部请求不在恢复范围内。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L533-L541",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "恢复时读回全部 tasks 及消息，derive_todo_lists_from_root_task 重建待办清单"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/conversation.rs",
+          "locator": "app/src/ai/agent/conversation.rs",
+          "lines": "L635-L636",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "恢复时读回全部 tasks 及消息，derive_todo_lists_from_root_task 重建待办清单"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/orchestration_event_streamer.rs",
+          "locator": "app/src/ai/blocklist/orchestration_event_streamer.rs",
+          "lines": "L1859-L1928",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "on_restored_conversations：从 SQLite 读 last_event_sequence 续传事件，再从服务端取子代理 run_id"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/orchestration_event_streamer/restored_children.rs",
+          "locator": "app/src/ai/blocklist/orchestration_event_streamer/restored_children.rs",
+          "lines": "L97-L200",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "恢复的本地子代理有唤醒监听，收到消息后 restore_local_child 载入原历史接着做"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "value_note": "session_branch：fork 与 /fork-from，/rewind 截断前也自动 fork 备份会话。workspace_snapshot：/rewind 和 Revert to checkpoints 按内存里的 diff 把本会话改过的文件改回原文，只限已接受的改动、只限未从存储恢复的会话。compensation 无。不记 idempotency_key：last_event_sequence 只给编排事件去重，不管工具调用；action_model.rs L1035-1046 按 finished_action_results 跳过已有结果的动作只在内存里，不跨恢复。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/interacting-with-agents/conversation-forking/",
+          "locator": "Conversation Forking",
+          "lines": "L9332-L9425",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "/fork、/fork-from、Fork conversation from here：分出新会话，原会话保留"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/terminal/view.rs",
+          "locator": "app/src/terminal/view.rs",
+          "lines": "L26361-L26460",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "rewind_ai_conversation：倒序撤回各 AI 块的 diff，截断前先 fork 一份 PRE_REWIND_PREFIX 备份会话供以后恢复"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/inline_action/code_diff_view.rs",
+          "locator": "app/src/ai/blocklist/inline_action/code_diff_view.rs",
+          "lines": "L1040-L1064",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "revert_changes 调 restore_and_save_diff 把已接受的改动改回原文"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/slash-commands/",
+          "locator": "/rewind",
+          "lines": "L2878",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "/rewind 回到会话中的某一点"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "command_rule",
+        "file_path"
+      ],
+      "facets": {
+        "default_edit": "review",
+        "default_command": "review",
+        "default_outside_write": "review",
+        "default_network": "review"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：按改文件、读文件、运行命令、MCP、子代理等类别设 Always allow / Agent decides / Always ask。command_rule：命令 allowlist、denylist 正则。file_path：directory_allowlist 只管读文件。default_edit：AgentDecides 走用户审阅；default_command：AlwaysAsk；default_outside_write：同改文件，受保护写路径另有检查，仍是 review；default_network：curl、wget 等在默认 denylist，命中即要询问，其余命令同 AlwaysAsk。没有按主机或域名的规则。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs",
+          "locator": "crates/cloud_object_models/src/ai_execution_profile.rs",
+          "lines": "L302-L420",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "AIExecutionProfile：各动作类别权限、命令 allowlist/denylist（默认 denylist 含 bash、curl、wget、ssh、rm 等）、directory_allowlist、MCP 允许/禁止名单；默认 apply_code_diffs、read_files 为 AgentDecides，execute_commands 为 AlwaysAsk"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs",
+          "locator": "app/src/ai/blocklist/permissions.rs",
+          "lines": "L717-L1035",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "can_read_files 看 directory_allowlist；写文件 AgentDecides 返回 Denied（先让用户审）；命令 denylist 优先，AlwaysAsk 时只放行 allowlist"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/agent-profiles-permissions/",
+          "locator": "Profiles & Permissions",
+          "lines": "L456-L564",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "Apply code diffs 的 Agent decides 等同 Always ask；denylist 优先于 allowlist"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "facets": {
+        "ui_layers": [
+          "tool_call"
+        ],
+        "approver": [
+          "user"
+        ],
+        "unresolved": [
+          "whole_task"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "改文件、运行命令逐次停在调用前等用户批准，一次批准放行这一次调用。whole_task 放疑似：编排计划批准后同一计划的 RunAgents 不再逐个询问，子代理继承父 profile（child_agent_launch.rs L95-125），批准对象像任务层，但子代理内的动作仍按 profile 逐次审批。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs",
+          "locator": "app/src/ai/blocklist/permissions.rs",
+          "lines": "L891-L1035",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "改文件、运行命令在默认 profile 下逐次停下等用户批准"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/run_agents.rs",
+          "locator": "app/src/ai/blocklist/action_model/execute/run_agents.rs",
+          "lines": "L458-L500",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "计划级编排配置批准后，同一 plan_id 的 RunAgents 自动执行"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/document/orchestration_config_block.rs",
+          "locator": "app/src/ai/document/orchestration_config_block.rs",
+          "lines": "L670-L700",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "计划卡上 Use orchestration 开关设定批准状态"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/",
+          "locator": "Orchestration",
+          "lines": "L53399",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "批准编排即一并批准全程配置"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "应用检查即 Warp 的权限引擎；本机没有操作系统、容器或运行时沙箱。可选：Computer Use 默认 Never；云端代理在云环境里运行，不属本配置。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/permissions.rs",
+          "locator": "app/src/ai/blocklist/permissions.rs",
+          "lines": "L717-L1035",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "权限引擎在执行前按 profile、名单、受保护写路径判定放行、询问或拒绝"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs",
+          "locator": "crates/cloud_object_models/src/ai_execution_profile.rs",
+          "lines": "L354-L420",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "默认 profile 各项权限与名单"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/agent-profiles-permissions/",
+          "locator": "Profiles & Permissions",
+          "lines": "L456-L564",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "各权限项和名单的说明"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认 profile 由 permissions.rs 代码检查；Run to completion/auto-approve 是放宽而非限制；没有文档写明只读或只计划的内置角色或模式；Create plans 的 Never 选项由服务端处理，快照看不到有没有代码检查，判 absent 时这一项拿不准。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "value_note": "ToolCall 与 ToolCallResult 共享 tool_call_id；触发它的 UserQuery 和模型的 AgentOutput、AgentReasoning 在同一顺序记录里相邻。approval 不计：结果里只有取消、命中禁止名单等状态，分不出人工批准和自动放行。identity 不计：本地记录没有账户编号。没有专门的审计日志。 版本：按快照提交 2b2ed236 编码，与稳定版 v0.2026.11.11.08.17 的对应关系未核实（总则 R10）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/convert_from.rs",
+          "locator": "app/src/ai/agent/api/convert_from.rs",
+          "lines": "L322-L447",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "task 消息类型含 UserQuery、AgentOutput、AgentReasoning、ToolCall、ToolCallResult，同一顺序记录"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action_result/mod.rs",
+          "locator": "crates/ai/src/agent/action_result/mod.rs",
+          "lines": "L256-L290",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "RequestCommandOutputResult 只有 Completed、CancelledBeforeExecution、Denylisted 等，不记谁批准"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/persistence/agent.rs",
+          "locator": "app/src/persistence/agent.rs",
+          "lines": "L47-L120",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认 profile、本地会话、所选入口为 Warp 终端内的代理",
+          "note": "tasks 以 protobuf 持久化"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "路径：主代理调用默认声明的 RunAgents 工具（orchestration_enabled=is_any_ai_enabled 且 run_agents 非 NeverAllow，默认 AlwaysAsk），框架为每个子代理新建独立对话（本机子代理在隐藏面板里跑一个 Warp Agent 对话，云端子代理在 Warp 托管环境里跑），用 OrchestrationChildTracker/编排药丸栏跟踪状态。需用户批准：默认 AlwaysAsk 时每次派发弹确认卡（总则 R3 第一档）。另有服务端编排的 Subagent 工具（CLI/Research/Advice/Summarization/ConversationSearch 等子任务），其循环在 Warp 服务端，快照只见客户端的任务树与渲染，未作为本取值的依据。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs#L225-L297",
+          "locator": "app/src/ai/agent/api/impl.rs：get_supported_tools",
+          "lines": "L225-L297",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "本机会话默认工具声明",
+          "note": "Subagent 默认声明；orchestration_enabled 时声明 RunAgents、SendMessageToAgent、WaitForEvents。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L123-L145",
+          "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：RunAgentsPermission（默认 AlwaysAsk）",
+          "lines": "L123-L145",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认执行 profile",
+          "note": "run_agents 默认 AlwaysAsk：工具可用，派子代理前需用户明确批准。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/run_agents.rs#L402-L456",
+          "locator": "app/src/ai/blocklist/action_model/execute/run_agents.rs：RunAgentsExecutor::execute",
+          "lines": "L402-L456",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "RunAgents 执行",
+          "note": "按请求为每个子代理分发 StartAgent，汇总为 RunAgentsResult。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/",
+          "locator": "docs-llms-full.txt L53250-L53300：Multi-agent orchestration（The parent/child model、Where parent and child agents can run）",
+          "lines": "L53250-L53300",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用本机会话",
+          "note": "父代理派生子代理，每个子代理有独立 run、对话和生命周期；支持 local→local。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "配置记录 subagents_enabled=true 与代码一致。confidence 按总则 R10（快照与稳定版对应未核实）封顶 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "value_note": "主代理模型调用 RunAgents 工具决定派哪些子代理，需用户在确认卡上批准（run_agents 默认 AlwaysAsk）。/orchestrate、/plan 两个斜杠命令只是请主代理提出编排方案，创建仍由主代理的 RunAgents 调用发出，记 main_agent。/fork、/cloud-agent、/handoff 是复制历史或另开会话、不交回原会话，不算 user 创建。定时与事件触发的云端代理属自动化平台（Warp 云端），不在本入口，event_scheduling 不记；启动时注册的 ScheduledAgentManager 只管理云端 schedule。服务端 Subagent 工具（含 Summarization 类型）的创建由服务端决定，快照看不到触发条件，未计入。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/run_agents.rs#L458-L500",
+          "locator": "app/src/ai/blocklist/action_model/execute/run_agents.rs：should_autoexecute",
+          "lines": "L458-L500",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认执行 profile",
+          "note": "RunAgents 是模型发出的工具调用，非 AlwaysAllow 且无已批准配置时等用户批准。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/#approval-mode",
+          "locator": "docs-llms-full.txt L53390-L53400：Multi-agent orchestration › Approval mode",
+          "lines": "L53390-L53400",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "/orchestrate 请代理提出拆分方案并等待批准，/plan 可在计划中提议编排；批准前父代理不派子代理。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/triggers/scheduled-agents/",
+          "locator": "docs-llms-full.txt L54772-L54785：Scheduled Agents",
+          "lines": "L54772-L54785",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "自动化平台（云端）",
+          "note": "定时代理在 Warp 的基础设施上运行，不属本入口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "value_note": "每个子代理是独立对话，只收到父代理给的 prompt（launch_local_no_harness_child 在新隐藏面板里 send_agent_query_in_conversation(prompt)）。消息：SendMessageToAgent 工具和服务端持久消息总线，每个代理有按 agent ID 寻址的收件箱，已结束的子代理收到新消息会醒来接着做。共享文件：本机子代理的隐藏面板以父会话为基准取启动目录（startup_path_for_new_session），与父代理在同一工作目录读写，文档也提醒同机代理要自行分 worktree；云端子代理各自在自己的环境里，不共享文件。权限：子代理面板经 inherit_child_agent_settings 继承父界面的执行 profile。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/pane_group/pane/terminal_pane.rs#L1687-L1775",
+          "locator": "app/src/pane_group/pane/terminal_pane.rs：launch_local_no_harness_child",
+          "lines": "L1687-L1775",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "本机子代理",
+          "note": "新建隐藏面板与独立对话，只把父代理给的 prompt 作为首条查询发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/pane_group/mod.rs#L4011-L4030",
+          "locator": "app/src/pane_group/mod.rs：insert_terminal_pane_hidden_for_child_agent",
+          "lines": "L4011-L4030",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "本机子代理工作目录",
+          "note": "子代理面板以父面板会话为基准取启动目录，与父代理同一目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/send_message.rs#L33-L60",
+          "locator": "app/src/ai/blocklist/action_model/execute/send_message.rs：SendMessageToAgentExecutor",
+          "lines": "L33-L60",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认工具",
+          "note": "SendMessageToAgent 工具的客户端执行器，向其他代理发消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/#messaging-between-agents",
+          "locator": "docs-llms-full.txt L53322-L53344：Messaging between agents、Repository isolation and review",
+          "lines": "L53322-L53344",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "编排",
+          "note": "持久消息总线，每个代理有收件箱；已结束的子代理收到新消息会醒来；同机代理不靠不同提示隔离文件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "shared_state 判无：消息总线是收件箱式消息通道，不是多个代理都能读写的结构化状态；生命周期事件只发给父代理。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known",
+      "value": [
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "value_note": "RunAgents 在子代理启动后返回 Launched（各子代理的 agent_id），父代理可以继续推理；之后用 WaitForEvents 等待（带空闲超时看门狗），或由框架把子代理的消息和生命周期事件注入父对话（handle_pending_events_ready）。取消：关闭父面板时 remove_child_agent_panes 丢弃本机子代理的隐藏面板，连带停掉子代理；用户中断父代理回合（cancel_conversation_progress）只取消父代理的流和待执行动作，不停子代理。云端子代理：关闭面板只丢本地占位，文档写明取消父 run 不会自动取消子 run。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/agent/action_result/mod.rs#L1486-L1504",
+          "locator": "crates/ai/src/agent/action_result/mod.rs：RunAgentsResult",
+          "lines": "L1486-L1504",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "RunAgents 返回值",
+          "note": "Launched 只带各子代理的启动结果，不含最终结果。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/action_model/execute/wait_for_events.rs#L1-L4",
+          "locator": "app/src/ai/blocklist/action_model/execute/wait_for_events.rs：WaitForEvents 执行器",
+          "lines": "L1-L4",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认工具",
+          "note": "等待工具带空闲窗口看门狗。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs#L2586-L2606",
+          "locator": "app/src/ai/blocklist/controller.rs：handle_pending_events_ready",
+          "lines": "L2586-L2606",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "父对话",
+          "note": "框架把待处理的编排事件注入父对话。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/pane_group/mod.rs#L4682-L4700",
+          "locator": "app/src/pane_group/mod.rs：remove_child_agent_panes（close_pane L4837-L4842、discard_pane L4553-L4570 调用）",
+          "lines": "L4682-L4700",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "关闭父面板",
+          "note": "父面板关闭或丢弃时连带丢弃其子代理面板。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs#L3397-L3460",
+          "locator": "app/src/ai/blocklist/controller.rs：cancel_conversation_progress_routed",
+          "lines": "L3397-L3460",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "用户中断父代理",
+          "note": "中断只取消本对话的流与待执行动作，没有取消子代理的分支。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "cancel_coverage 三种方式：用户打断父代理当前回合——不连带（cancel_conversation_progress_routed 无子代理处理）；取消等待中的调用（WaitForEvents 随 cancel_all_pending_actions 取消）——不连带；取消父运行（关闭父面板/标签，不退出程序）——连带，本机子代理面板被丢弃。cancel_depth：文档称编排只有一层（MultiLevelOrchestration 在 DOGFOOD_FLAGS），记 direct_children。synchronous_return 判无：RunAgents 返回的是启动结果。shared_board 判无。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": "direct_children",
+        "cancel_coverage": "some_ways"
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "value_note": "内置工具写在客户端核心代码里，由 get_supported_tools 向服务端声明，最终 schema 由服务端定（warp-proto-apis 不在快照内）。MCP：在 Settings > Agents > MCP servers 加一条 CLI/Streamable HTTP/SSE 服务器即可，仓库里的 .warp/.mcp.json 也会自动检测；oz agent run 另有 --mcp 参数。默认在用：已登录的桌面应用自动挂上 Warp 托管的内置 Factory MCP 服务器（FactoryMcp 在默认构建开），其工具集和账户能否访问由服务端决定（文档写“When your account has access”），未核实。没有供用户注册工具的进程内插件接口，也没有把用户脚本注册成具名工具的机制；Warp Platform SDK 只包装云端 REST 接口，不在调用方进程里跑代理循环。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent/api/impl.rs#L225-L297",
+          "locator": "app/src/ai/agent/api/impl.rs：get_supported_tools",
+          "lines": "L225-L297",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "本机会话默认工具",
+          "note": "内置工具在核心代码里声明，含 CallMcpTool、ReadMcpResource。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/mcp/builtin.rs#L1-L20",
+          "locator": "app/src/ai/mcp/builtin.rs：内置 Warp 托管 MCP 服务器",
+          "lines": "L1-L20",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "已登录、默认构建",
+          "note": "内置 MCP 服务器对已登录用户自动挂载，由 FactoryMcp 标志门控。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/mcp/",
+          "locator": "docs-llms-full.txt L1528-L1545：Model Context Protocol (MCP)",
+          "lines": "L1528-L1545",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用本机代理",
+          "note": "配置 MCP 服务器给本机代理扩展自定义工具，支持 Streamable HTTP、SSE 等。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/factories/factory-mcp/",
+          "locator": "docs-llms-full.txt L27599-L27630：Factory MCP for coding agents › In Warp",
+          "lines": "L27599-L27630",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "账户有权限时 Warp 自动把代理会话连到 Factory MCP，无需配置。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "in_use_by_default 记 external_protocol_service：内置 Factory MCP 的服务器定义写在核心代码里，但工具由外部 MCP 服务提供、经 MCP 客户端边界进入；是否该按“写在核心代码里算内置”处理有疑问。账户能否访问未钉住，按总则 R2 计入，confidence 封顶 medium。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code",
+          "external_protocol_service"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "项目规则：AGENTS.md（WARP.md 兼容、同目录优先），全局 ~/.agents/AGENTS.md，以及存进 Warp Drive 的 Global Rules（/add-rule），每个会话自动装载（memory_enabled 默认 true）。技能：.agents/skills、.warp/skills 等目录的 SKILL.md，模型按名称和描述按需经 ReadSkill 装载；用户也可 /技能名 直接调用，同一机制只记 skill_directory。提示模板：Warp Drive Prompts，存在 Warp Drive（云端对象）里、带参数、由用户从命令面板或 /prompts 按名调用，展开成一条提示。Warp Drive Workflows 是给终端执行的命令模板，可作上下文，不算给模型的可复用指导；执行 profile 只管权限与型号，不含角色提示；Factories 的命名代理在云端，不在本入口。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/rules/",
+          "locator": "docs-llms-full.txt L2187-L2240：Rules for agents（Global Rules、Project Rules）",
+          "lines": "L2187-L2240",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "全局规则跨项目生效；项目规则 AGENTS.md/WARP.md 自动应用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/project_context/model.rs#L582-L590",
+          "locator": "crates/ai/src/project_context/model.rs：规则优先级",
+          "lines": "L582-L590",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "规则装载",
+          "note": "global > 项目 WARP.md > 项目 AGENTS.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/skills/",
+          "locator": "docs-llms-full.txt L2342-L2420：Skills for agents",
+          "lines": "L2342-L2420",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "代理在对话开始时看到技能名称与描述，需要时装载全文；也可 /技能名 调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/ai/src/skills/read_skills.rs#L55-L120",
+          "locator": "crates/ai/src/skills/read_skills.rs：技能目录读取",
+          "lines": "L55-L120",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "技能发现",
+          "note": "在技能目录的子目录里找 SKILL.md。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/knowledge-and-collaboration/warp-drive/prompts/",
+          "locator": "docs-llms-full.txt L49364-L49420：Warp Drive prompts",
+          "lines": "L49364-L49420",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "带参数的自然语言提示存在 Warp Drive，按名从命令面板执行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "executable_items 判 []：规则、技能、Drive Prompts 都是给模型读的文字，技能附带脚本由模型经命令行自己运行。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "查过同一发行版的文档（代理能力、MCP、规则、技能、Oz CLI 参考、设置）和源码，Warp Agent 没有可让用户或扩展挂处理器的钩子、插件回调或事件订阅接口。文档里的 hooks 只出现在第三方 CLI 代理（Claude Code、OpenCode 的 Warp 通知插件）和自托管 worker 的 setup/teardown 脚本；Warp Platform 的 webhooks 与编排事件流属云端服务。oz agent run 的 --output-format json/ndjson 在源码里输出 tool_call、tool_result、conversation_started 等类型化消息（output.rs），文档只把 --output-format 写在 whoami、run list 等命令上，没写 agent run 的事件格式，未计入。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/cli/oz-cli/",
+          "locator": "docs-llms-full.txt L4636-L4660：Oz CLI reference › Running locally: oz agent run",
+          "lines": "L4636-L4660",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "同一发行版 CLI",
+          "note": "oz agent run 的参数只有 cwd、profile、model、skill、mcp 等，没有钩子或回调配置。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/agent_sdk/driver/output.rs#L611-L656",
+          "locator": "app/src/ai/agent_sdk/driver/output.rs：JsonMessage",
+          "lines": "L611-L656",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "oz agent run 输出",
+          "note": "JSON 输出是写到标准输出的只读消息流，没有处理器注册或返回值接口。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "疑问：oz agent run --output-format ndjson 的类型化输出流算不算 F31 的“订阅类型化事件流的接口”。按总则 R5 只收官方有文档的入口，文档没写 agent run 的事件格式，故不计；若口径认为标准输出事件流也算，则会记 tool_before_after、session_start（均 observe_only）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": null,
+        "via_default_entry": null,
+        "observe_only": null
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "value_note": "Oz CLI（oz agent run --prompt …）随 Warp 桌面应用一起分发，可在 Warp 里直接用（要全局可用需执行 Install Oz CLI Command 加进 PATH），在本机跑 Warp Agent 并把工具调用和回复打印到标准输出；另有独立的 oz 包（brew cask oz / apt oz-stable），同名同源，不算另装官方包。不计入：Warp Platform API 与 Python/TypeScript SDK 是 Warp 云端托管的 REST 接口；Warp Agent CLI（warp 命令，warp-agent-cli）单独安装、自带完整终端界面，属另一种形态；未发现 ACP 等公共协议服务端（ACP 只用于 Warp 驱动第三方代理）；warpctrl 只在 dogfood 构建。所选入口是应用内的代理会话，oz 要换命令，不进 via_default_entry。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/cli/oz-cli/#bundled-with-warp",
+          "locator": "docs-llms-full.txt L4403-L4445：Oz CLI reference › Installing the CLI › Bundled with Warp",
+          "lines": "L4403-L4445",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "同一发行版",
+          "note": "Oz CLI 随 Warp 桌面应用自动分发，可用于脚本和 CI。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/cli/oz-cli/#running-locally-oz-agent-run",
+          "locator": "docs-llms-full.txt L4636-L4660：Running locally: oz agent run",
+          "lines": "L4636-L4660",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "CLI 本机运行",
+          "note": "oz agent run 在当前目录本机运行代理并打印工具调用与回复。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/warp_cli/src/agent.rs#L21-L35",
+          "locator": "crates/warp_cli/src/agent.rs：OutputFormat",
+          "lines": "L21-L35",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "CLI 输出",
+          "note": "CLI 输出格式有 json、ndjson、text。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/factories/developer-tools/",
+          "locator": "docs-llms-full.txt L25064-L25090：Warp Platform API & SDKs",
+          "lines": "L25064-L25090",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "云端平台",
+          "note": "Platform API 与 SDK 针对云端代理 run 和 factories，属厂商云端服务。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api"
+      ],
+      "unknown_reason": null,
+      "value_note": "用户在 Warp 应用里按 ⌘↩ 或输入发起代理会话；api 指 oz agent run（F32 的 cli_subprocess），CI 里调用也记这一项。定时（Scheduled Agents）和 Slack、Linear、webhook 等外部事件触发的都是 Warp 云端自动化平台的服务，不在所选发行版内，不记；本机 ScheduledAgentManager 只管理云端 schedule。子代理消息唤醒父代理属内部续办。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/quickstart/#5-ask-your-first-agent-question",
+          "locator": "docs-llms-full.txt L55612-L55635：Warp quickstart › 5. Ask your first agent question",
+          "lines": "L55612-L55635",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "用户在应用里发起代理会话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/cli/oz-cli/#running-locally-oz-agent-run",
+          "locator": "docs-llms-full.txt L4636-L4660：Running locally: oz agent run",
+          "lines": "L4636-L4660",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "同一发行版 CLI",
+          "note": "脚本或 CI 可经 oz agent run 提交任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/triggers/scheduled-agents/",
+          "locator": "docs-llms-full.txt L54772-L54785：Scheduled Agents",
+          "lines": "L54772-L54785",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "自动化平台（云端）",
+          "note": "定时代理在 Warp 的基础设施上运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "value_note": "代理的工具执行在 Warp 桌面应用进程里（本机 PTY、文件读写），编排循环在 Warp 服务端，靠客户端执行工具；退出应用，本机会话随之结束。macOS/Windows 发布构建默认把 Warp 登记为登录项（general.login_item 默认 true，macOS 用 SMAppService），登录时自动启动，但系统不负责退出后重启，不算 local_service。可选：用 & 前缀或 /handoff 把会话交给云端继续跑（第二档），睡眠自动交接默认关。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/terminal/general_settings.rs#L40-L52",
+          "locator": "app/src/terminal/general_settings.rs：add_app_as_login_item",
+          "lines": "L40-L52",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认设置（macOS/Windows）",
+          "note": "登录时启动 Warp，默认 true；只负责登录启动。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/quit_warning/mod.rs#L41-L57",
+          "locator": "app/src/quit_warning/mod.rs：退出前未保存状态与运行中进程汇总",
+          "lines": "L41-L57",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "退出应用",
+          "note": "退出前提示运行中的长命令与共享会话，说明它们随应用退出结束。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "continues_after_ui_exit 记 no：没找到退出应用时把本机会话交给其他进程接着跑的默认路径（handoff 要用户命令）；服务端在客户端断开后是否继续纯文本回复未核实。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "no"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是编排事件：子代理发给父代理的消息和生命周期事件存在服务端持久消息总线，客户端把已投递游标写进 SQLite；重启后 on_restored_conversations 用持久游标重建投递，事件到达后 handle_pending_events_ready 自动注入父对话、开下一轮，不需要用户再发消息。这条路径只在主代理派过子代理（需用户批准）后才有。交互输入队列：默认提交会打断当前回复；代理在驱动它启动的长命令时，提交的提示默认排队；/queue 和自动排队开关是可选路径。文档写明队列不跨重启保留，记 in_memory。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/orchestration_event_streamer.rs#L1859-L1923",
+          "locator": "app/src/ai/blocklist/orchestration_event_streamer.rs：on_restored_conversations",
+          "lines": "L1859-L1923",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "重启后恢复",
+          "note": "从 SQLite 持久游标重建编排事件投递，并向服务端取回子代理与游标。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/ai/blocklist/controller.rs#L2586-L2606",
+          "locator": "app/src/ai/blocklist/controller.rs：handle_pending_events_ready",
+          "lines": "L2586-L2606",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "父对话",
+          "note": "待处理事件就绪时自动注入对话。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/platform/orchestration/#messaging-between-agents",
+          "locator": "docs-llms-full.txt L53322-L53338：Messaging between agents",
+          "lines": "L53322-L53338",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "编排",
+          "note": "编排建立在持久的服务端消息总线上。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/local-agents/interacting-with-agents/prompt-queueing/",
+          "locator": "docs-llms-full.txt L9457-L9500：Prompt queueing（Key features、How it works）",
+          "lines": "L9457-L9500",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "交互输入",
+          "note": "长命令期间默认排队；队列不跨应用重启保留；默认提交方式是打断。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "persistent 的依据是代码里的恢复路径，没有文档明说崩溃后父代理会自动接着处理；重启后的 SSE 能否在没有用户打开该会话时自动打开（“iff a consumer registers”）没完全追到。若只看交互输入层则是 in_memory。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "阻塞审批：默认 profile 下执行命令（AlwaysAsk、denylist 命中）、写文件 diff、写入运行中命令、MCP 调用、派子代理都要用户批准；AskUserQuestion 工具（默认构建开、默认 AlwaysAsk）让模型停下来问用户。消息通知：代理完成、受阻或出错时，用户在其他标签页时会弹应用内 toast 并进通知邮箱（hoa_notifications 默认构建开）。可选：系统桌面通知默认是 Unset，只插入提示横幅请用户开启。没有持久待办或目标、也没有固定字段的交接对象（计划文档是代理自用）。版本：按快照 2b2ed236 编码，对应稳定版 v0.2026.11.11.08.17 未核实。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/crates/cloud_object_models/src/ai_execution_profile.rs#L395-L416",
+          "locator": "crates/cloud_object_models/src/ai_execution_profile.rs：AIExecutionProfile::default",
+          "lines": "L395-L416",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "默认执行 profile",
+          "note": "execute_commands、write_to_pty、ask_user_question、run_agents 默认 AlwaysAsk。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/workspace/view.rs#L3662-L3694",
+          "locator": "app/src/workspace/view.rs：ConversationNeedsAttention → agent_toast_stack",
+          "lines": "L3662-L3694",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "应用内通知",
+          "note": "会话需要注意时弹应用内 toast（HOA 通知开启时走通知邮箱路径）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/warpdotdev/warp/blob/2b2ed236f087b47b463f1cd55598485dd7965338/app/src/terminal/view.rs#L16837-L16900",
+          "locator": "app/src/terminal/view.rs：maybe_send_agent_mode_desktop_notification / send_agent_desktop_notification_or_show_banner",
+          "lines": "L16837-L16900",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "桌面通知",
+          "note": "通知模式 Unset 时不发桌面通知，改插发现横幅。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.warp.dev/agents/capabilities/agent-notifications/",
+          "locator": "docs-llms-full.txt L322-L410：Agent Notifications",
+          "lines": "L322-L410",
+          "retrieved_at": "2026-11-22",
+          "configuration_scope": "Warp 应用",
+          "note": "代理完成、需要输入或出错时在其他标签页弹 toast、进通知邮箱；Warp Agent 开箱即用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "permission",
+          "question"
+        ]
+      }
+    }
+  }
+}
