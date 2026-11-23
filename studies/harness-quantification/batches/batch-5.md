@@ -6,7 +6,7 @@
 python3 studies/harness-quantification/compare_codings.py
 ```
 
-编码文件在 `data/codings/opus/`、`data/codings/gpt/` 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前四批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)、[`batch-3.md`](batch-3.md)、[`batch-4.md`](batch-4.md)。
+编码文件在 [`batch-5/`](batch-5/) 下。它们是两位编码者各自独立的初稿，没有人工裁决，不是对任何工具的评分，也不进入方法报告正文。前四批的记录见 [`batch-1.md`](batch-1.md)、[`batch-2.md`](batch-2.md)、[`batch-3.md`](batch-3.md)、[`batch-4.md`](batch-4.md)。
 
 ## 怎样做的
 
@@ -214,7 +214,7 @@ python3 studies/harness-quantification/compare_codings.py
 
 ## 编码文件在哪里
 
-- 这一批：`data/codings/opus/`、`data/codings/gpt/` 下各 12 份，按 `fields-0.9` 填写并通过了 `validate_data.py`。码本再修订时，它们连同当时的码本移到 `batch-5/` 下，不参加之后的校验和对比。
+- 这一批：[`batch-5/`](batch-5/) 下的 `opus/`、`gpt/` 各 12 份，连同当时的码本 `batch-5/fields-0.9.json`。编码完成时它们放在 `data/codings/` 下，按 `fields-0.9` 填写并通过了 `validate_data.py`；码本小修订为 `fields-0.10` 后移到这里，不参加现在的校验和对比。修订定了什么见 `data/schema/definition-decisions-0.10.md`。
 - 交叉核对：[`batch-5/crosscheck-card.md`](batch-5/crosscheck-card.md) 是读者拿到的任务卡，[`batch-5/crosscheck.json`](batch-5/crosscheck.json) 是 180 条逐条结果，写明每个配置里“甲”“乙”各是哪位编码者；[`batch-5/spotcheck.json`](batch-5/spotcheck.json) 是对其中 23 条“一方没提”的抽查结果。
 - 前四批：[`batch-1/`](batch-1/)、[`batch-2/`](batch-2/)、[`batch-3/`](batch-3/)、[`batch-4/`](batch-4/)，各连同当时的码本。
 - 三轮试编码：[`../pilot/`](../pilot/) 下各轮连同当时的码本，只作历史记录，不参加现在的校验和对比。
