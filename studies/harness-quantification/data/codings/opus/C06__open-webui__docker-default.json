@@ -1,0 +1,1899 @@
+{
+  "schema_version": "coding-0.1",
+  "codebook_version": "fields-0.10",
+  "synthetic": false,
+  "round": "recode-1",
+  "config_id": "C06__open-webui__docker-default",
+  "coder": {
+    "id": "opus",
+    "model": "claude-opus-5-5",
+    "prompt_version": "coding-card-v11",
+    "coded_at": "2026-11-24"
+  },
+  "independent": true,
+  "evidence_cutoff": "2026-11-24",
+  "fields": {
+    "F01": {
+      "status": "known",
+      "value": "model_loop",
+      "facets": {
+        "secondary_modes": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认的原生（Native）工具调用模式下，服务端中间件在一次回复内循环：模型回复里有工具调用就执行，把结果交回模型再请求，直到模型不再请求工具、到达迭代上限或被中止。可选：把模型参数 function_calling 设为 legacy（改设置）后走旧的提示词注入路径，内部仍是模型决定下一步。Pipelines、Pipe 函数等能把编排交给自写代码的路径要管理员另加内容，镜像不预置。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：process_chat_response 中的 while tool_calls 循环",
+          "lines": "L5855-L5862",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式、网页界面聊天",
+          "note": "框架按模型回复里的工具调用逐轮执行并续发请求，下一步由模型输出决定。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：use_builtin_tools 判定（function_calling != 'legacy'）",
+          "lines": "L2069-L2075",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认工具调用模式",
+          "note": "没有设成 legacy 的模型走原生工具调用路径。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features",
+          "locator": "Chat Features：Chat Input Commands / Built-in Slash Commands",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "所选入口的命令清单",
+          "note": "官方列出的输入触发符和内置斜杠命令，用来逐项核对其他控制方式。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "secondary_modes 核对：内置斜杠命令 /compact（上下文压缩默认关，命令不出现）、/status、/fork、/side（侧聊天，仍是同一模型循环）、/model（换型号）、/settings、/compare（只比对文本，不调模型）、/skills:create（让模型用 create_skill 把对话存成技能，仍是模型循环）、/temporary；输入触发符 @（换模型或加上下文）、#（加知识或文件）、$（提及技能）、/（提示词与技能）都不改变推进方式。+ 菜单里的代码解释器、联网搜索、图像生成开关只给模型循环加工具。多模型聊天、语音模式各自仍是模型循环。子代理与定时器（ENABLE_SUBAGENTS 默认关）不在本配置；自动化由调度器按时启动独立任务，按 F01 定义属任务发起（F33），不记 event_scheduling。笔记里的 AI 菜单只是给笔记聊天填建议提示，仍是模型循环。没有找到 user_stepwise、explicit_workflow 或 event_scheduling 的原生路径，故写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F02": {
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "value_note": "内置任务工具 create_tasks、update_task 默认注册（is_builtin_tool_enabled('tasks') 缺省为真，且要求已保存的聊天；网页界面的新聊天默认保存，临时聊天和频道里不注册）。条目带 pending/in_progress/completed/cancelled 状态，存在聊天记录上并在界面显示进度；框架不按条目推进，也不拦偏离计划的动作。默认没有要求先写计划的系统提示，也没有计划模式。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py：get_builtin_tools 的任务管理分支",
+          "lines": "L905-L908",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认注册的内置工具（已保存聊天）",
+          "note": "任务类别缺省开启时，已保存聊天注册 create_tasks 与 update_task。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py：create_tasks、update_task",
+          "lines": "L4146-L4240",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "任务工具实现",
+          "note": "条目带状态，写入聊天记录并推送界面；只保存展示，不约束执行顺序。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/task-management",
+          "locator": "Task Management：How It Works / Enabling It",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认内置工具",
+          "note": "官方说明模型用两个内置工具维护任务表，存于聊天层并在界面显示进度；按模型内置工具类别控制，默认开启。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "查过 config.py 的默认提示模板（标题、标签、查询生成等任务提示）和中间件，没有找到要求先出计划的主循环系统提示；middleware 里也没有读回任务表来驱动或拦截的代码。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F03": {
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_end_signal：模型回复里没有工具调用时循环结束；模型调用 ask_user 时框架保存状态、暂停等用户作答（模型自己提出）。budget：每条回复的工具调用轮数上限 CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS 默认 1024，到达后拒绝再执行工具，发一次不带工具的请求让模型写最终回答。user_interrupt：界面的停止按钮调用 /api/tasks/chat/{chat_id}/stop 取消该聊天正在跑的任务。同一调用连续失败两次后的收尾、截断后不执行半截调用分别记在 F04、F12。工具审批暂停默认关（ENABLE_TOOL_PERMISSIONS=False）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：while tool_calls 循环与迭代上限判定",
+          "lines": "L5855-L5862",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "没有工具调用就不进循环（模型结束）；到达迭代上限时把本轮调用记为错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：final_answer_requested 与 final_answer_payload",
+          "lines": "L6267-L6271",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "停止原因或迭代上限成立时，下一次请求关掉工具，只要最终回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py：CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS",
+          "lines": "L1083-L1100",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认环境变量",
+          "note": "每条回复的工具调用轮数默认上限 1024，-1 才不限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte",
+          "locator": "src/lib/components/chat/Chat.svelte：stopResponse",
+          "lines": "L4809-L4834",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页聊天界面",
+          "note": "停止按钮按聊天编号或任务编号请求后端停止任务。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py",
+          "locator": "backend/open_webui/main.py：stop_tasks_by_chat_id_endpoint",
+          "lines": "L2260-L2270",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "服务端接口",
+          "note": "后端提供按聊天停止正在运行任务的接口。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "verification_condition：中间件在模型不再请求工具后直接收尾，没有找到跑检查或拒绝结束的代码；默认没有插件或过滤器（Functions 镜像不预置）。ask_user 归在 model_end_signal 的说明里，因为暂停由模型调用工具提出。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F04": {
+      "status": "known",
+      "value": [
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "model_self_repair：工具报错、参数解析失败（'Correct the arguments before retrying'）、找不到工具都作为 function_call_output 交回模型；同一调用（同名同参）连续失败两次后再出现，框架返回错误并改发不带工具的最终回答请求，纠正无效即收尾。framework_input_repair：执行前 parse_arguments 接受代码块包裹、二次编码的 JSON 和 Python 字面量，_coerce 按工具参数模式把字符串转成数字、布尔、对象，粘在一起的多个调用拆成几次调用；官方文档另说非 MCP 工具未声明的参数会被丢弃。模型接口出错（HTTP 错误或异常）时只把错误显示在消息上并结束本轮，没有自动重发，也没有专门的重试入口；工具审批默认关，没有框架发起的人工升级。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_calling.py",
+          "locator": "backend/open_webui/utils/tool_calling.py：parse_arguments、_coerce_scalar、normalize_arguments",
+          "lines": "L102-L194",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 工具调用",
+          "note": "执行前修整参数：去代码块、字面量恢复、解一层二次编码、按模式做类型转换。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_calling.py",
+          "locator": "backend/open_webui/utils/tool_calling.py：tool_repetition_error、prepare_tool_call",
+          "lines": "L285-L318",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 工具调用",
+          "note": "参数错误返回可操作的错误给模型；同一调用连续失败两次后返回停止错误。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：工具循环中错误写成 function_call_output",
+          "lines": "L5880-L5921",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "解析、找不到工具、重复失败等错误作为工具结果交回模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：续发请求出错时 emit_message_error 后 break",
+          "lines": "L6296-L6310",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "模型调用失败只显示错误并结束，没有重发。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/tools",
+          "locator": "Tools：Malformed tool calls in Native Mode",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "Native 模式",
+          "note": "官方列出执行前的参数修正项和循环停止情形。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "call_retry：openai.py、ollama.py 只把 Retry-After 头转给调用方，chat.py 与中间件里没有重发循环（middleware 里的 MAX_RETRIES=5 属于旧式代码解释器标记检测，要聊天里打开代码解释器，且不是出错重发）。escalate_to_human：pause_for_tool_approval 只在审批模式 ask（默认 full）或模型调 ask_user 时触发，后者是模型自己求助。workflow_branch：没有默认流程。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F05": {
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "value_note": "前端是浏览器里的 SvelteKit 页面，经 HTTP（/api/chat/completions 等）和 WebSocket 连到 Docker 容器里的 Python 服务（容器内 8080，映射到本机 3000）；执行核心（工具循环）在这个服务进程里。容器以 --restart always 由 Docker 维持，关掉浏览器页面后服务和后台任务照常存活。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/getting-started/quick-start",
+          "locator": "Quick Start：Docker 页签的 docker run 命令与参数表",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "官方快速开始的 Docker 安装",
+          "note": "docker run -d -p 3000:8080 … --restart always，服务由容器运行时维持并随重启回来。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile",
+          "locator": "Dockerfile：EXPOSE 8080 与 CMD start.sh",
+          "lines": "L215-L236",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": ":main 镜像",
+          "note": "镜像启动常驻的后端服务，对外开 8080 端口。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py",
+          "locator": "backend/open_webui/main.py：POST /api/chat/completions",
+          "lines": "L1103-L1105",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "前端调用核心的接口",
+          "note": "浏览器前端经本机 HTTP 接口调用执行核心。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F06": {
+      "status": "known",
+      "value": [
+        "main_process",
+        "container"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "默认注册的内置工具（记忆、笔记、知识库、聊天检索、任务、自动化、日历、create_skill、create_tool 等）都是 Python 函数，由执行核心所在的服务进程直接 await 调用；这个进程运行在 Docker 容器里（核心与工具同一个容器，以 root 运行）。可选：代码解释器 execute_code 要在聊天里手动打开，默认引擎 Pyodide 在用户浏览器里运行（frontend_host）；直连工具服务（ENABLE_DIRECT_CONNECTIONS 默认关）经浏览器执行；MCP/OpenAPI 工具服务、Open Terminal、Jupyter 都要管理员另加。模型推理在宿主机的 Ollama，不在容器里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：execute_tool_call 调用 tool['callable']",
+          "lines": "L3232-L3258",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认内置工具",
+          "note": "非直连工具在服务进程内直接 await 工具函数；直连工具才经前端事件执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile",
+          "locator": "Dockerfile：USER 与 CMD",
+          "lines": "L215-L236",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": ":main 镜像 Docker 安装",
+          "note": "服务进程在容器里启动运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py：execute_code 注册条件",
+          "lines": "L858-L867",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "代码解释器（可选）",
+          "note": "execute_code 要求本次请求 features.code_interpreter 为真，新聊天默认关。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "没有找到默认内置工具另起子进程的路径。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F07": {
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "value_note": "聊天和消息存在服务端数据库（默认 SQLite 文件 webui.db，位于数据卷 /app/backend/data），由同一个后端服务读写；构造请求时中间件按 chat_id 从数据库读回消息链（数据库保留结构化的工具输出），前端只显示并经核心的接口提交。临时聊天不落库，另当别论。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：从数据库加载消息（load_messages_from_db）",
+          "lines": "L2063-L2080",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "已保存聊天",
+          "note": "注释写明以数据库为准重建请求，因为前端会丢掉结构化输出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py：DATABASE_URL 默认值",
+          "lines": "L261-L261",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "默认数据库是数据目录下的 SQLite 文件，由后端进程直接访问。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "SQLite 嵌在核心进程里访问，不是独立服务，所以不记 state_service；配置 PostgreSQL 或 Redis 才有独立服务，属改设置。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F08": {
+      "status": "known",
+      "value": [
+        "logical_id"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "每个聊天在 chat 表里有主键 id，消息按 chat_id 分开存放；所有聊天共用同一个服务进程、同一个数据卷，没有按会话分配的目录、文件系统视图或容器。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/chats.py",
+          "locator": "backend/open_webui/models/chats.py：Chat 表定义",
+          "lines": "L183-L191",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "会话存储",
+          "note": "聊天以主键 id 区分，历史存在各自的记录里。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py：DATABASE_URL 默认值",
+          "lines": "L261-L261",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "所有会话共用同一个数据库文件。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F09": {
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "value_note": "核心内部用 OpenAI Chat Completions 形式的请求：Ollama 模型经 convert_chat_completions_payload_to_ollama 转成 Ollama /api/chat 格式、回复再转回；OpenAI 类连接按连接配置 api_type 发 Chat Completions 或转成 Responses API 格式。这些转换都随默认安装附带、在核心进程里。钉住环境用本机 Ollama。Anthropic 地址的特殊处理只见于模型列表和计数接口，聊天请求是否另有转换未逐一核对。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/chat.py",
+          "locator": "backend/open_webui/utils/chat.py：generate_chat_completion 的 Ollama 分支",
+          "lines": "L343-L372",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "钉住的 Ollama 后端",
+          "note": "Ollama 模型的请求和流式回复在核心里双向转换。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/openai.py",
+          "locator": "backend/open_webui/routers/openai.py：generate_chat_completion 的 is_responses 分支",
+          "lines": "L1508-L1556",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "OpenAI 类连接",
+          "note": "按连接配置转成 Responses API 请求或照发 Chat Completions。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F10": {
+      "status": "known",
+      "value": [
+        "native_structured",
+        "text_parsing"
+      ],
+      "facets": {},
+      "unknown_reason": null,
+      "value_note": "默认 Native 模式把工具定义放进请求的 tools 字段，模型回复的 tool_calls 按结构化字段取参数。模型没给原生调用、回复只由 <tool_call> 或 <function=…> 包装块组成且工具名在本次工具表里时，框架从文本里恢复成调用照常执行（混有其他文字的不算）。调用被截断时不执行（见 F12）。可选：模型设成 legacy 时由提示词注入工具说明、再从回复里解析；MCP/OpenAPI 工具服务由管理员在 Admin > Connections 添加后，还要在聊天的 + 菜单里打开或写进模型的默认工具才会交给模型（按总则 R2，不记 protocol_translation）；execute_code 要手动打开，且不做内部工具分派。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：流式处理结束后的 recover_tool_calls 与 split_tool_calls",
+          "lines": "L5680-L5751",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "原生 tool_calls 优先；没有时从纯包装块文本恢复调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_calling.py",
+          "locator": "backend/open_webui/utils/tool_calling.py：recover_tool_calls",
+          "lines": "L235-L273",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "只接受完全由调用包装块组成、工具名在允许清单里的回复。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/tools",
+          "locator": "Tools：Native Mode / Malformed tool calls in Native Mode",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "Native 模式",
+          "note": "官方说明原生模式走提供方接口的结构化工具调用，并说明只含包装块的回复会作为工具调用执行。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "外部工具服务只添加连接、不在会话里打开就不进工具表（Chat.svelte 里 selectedToolIds 来自聊天里手选或模型 meta.toolIds），所以按 R2 的工具调用触发规则写可选。若码本认为“添加服务连接”即满足 F10 的“只需添加一条服务配置”，则应加记 protocol_translation，这里两句规则的界线请确认。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F11": {
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "facets": {
+        "auxiliary_models": [
+          "single_fixed"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "主循环全程用用户在选择器里选的那个型号；子代理（ENABLE_SUBAGENTS 默认关）不在本配置，没有失败换型号（ENABLE_CUSTOM_MODEL_FALLBACK 默认关，且只管自定义模型缺底座）、按请求路由或模型自选型号。辅助调用：标题、标签、跟进问题生成默认开，TASK_MODEL、TASK_MODEL_EXTERNAL 默认空，get_task_model_id 退回当前聊天的型号。可选：Arena 模型（ENABLE_EVALUATION_ARENA_MODELS 默认关）随机挑型号；用 /model 或选择器中途换型号。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/task.py",
+          "locator": "backend/open_webui/utils/task.py：get_task_model_id",
+          "lines": "L17-L37",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "辅助任务型号",
+          "note": "没设任务型号时辅助任务用当前聊天的型号。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py：TASK_MODEL、TASK_MODEL_EXTERNAL",
+          "lines": "L2244-L2246",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "两个任务型号默认都为空。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py：ENABLE_FOLLOW_UP/TAGS/TITLE_GENERATION 等",
+          "lines": "L2389-L2397",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "标题、标签、跟进问题生成默认开。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py：ENABLE_CONTEXT_COMPACTION、ENABLE_TOOL_PERMISSIONS_AUTO",
+          "lines": "L2260-L2264",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "上下文压缩和审批自动分类默认关。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "auxiliary_models 核对清单：标题生成——有，同一型号；上下文压缩或摘要——默认关，无；动作审核分类——默认关，无；联网搜索与网页抓取——联网搜索默认关，# 加网址抓取不调生成模型，无；媒体理解——图片直接交给主型号，没有另用型号，无；生成类工具——图像生成默认关，无。另有标签与跟进问题生成，同一型号。疑问：知识库、附件、记忆检索工具内部用本地嵌入模型 all-MiniLM-L6-v2，是固定的另一个模型，但不是生成调用，清单也没列，这里没按 per_role 记，请确认嵌入模型算不算辅助调用。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F12": {
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "facets": {
+        "hard_stop": [
+          "output_limit",
+          "call_count"
+        ],
+        "soft_notice": [],
+        "mode_unknown": []
+      },
+      "unknown_reason": null,
+      "value_note": "call_count：每条回复的工具调用轮数默认上限 1024（CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS），到达后本轮调用记为错误不执行，再发一次关掉工具的请求让模型写最终回答。output_limit：框架默认不给请求填 max_tokens（用户设参数才有，钉住的 Ollama 一侧上限属服务端）；但回复因长度或内容过滤被截断（finish_reason 为 length 等）时有专门处理：其中的工具调用标为不完整、不执行，并改发一次不带工具的最终回答请求；纯文本截断没有续写，界面的“继续”按钮对任何最后一条回复都有，不算专门处理。没有总 Token、时长或金额上限；网络请求超时（AIOHTTP_CLIENT_TIMEOUT 300 秒）不计。可选：上下文压缩阈值、子代理的轮数上限都要先开开关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py：CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS",
+          "lines": "L1083-L1100",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认环境变量",
+          "note": "工具调用轮数默认上限 1024。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：迭代上限与最终回答请求",
+          "lines": "L5855-L5862",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "到上限后本轮调用不执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py：finish_reason 截断判定与 INCOMPLETE_CALL_ERROR",
+          "lines": "L5680-L5751",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "截断的回复里的调用标为不完整、不执行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_calling.py",
+          "locator": "backend/open_webui/utils/tool_calling.py：FINAL_ANSWER_PROMPT、INCOMPLETE_CALL_ERROR（final_answer_payload 见 L321-L328）",
+          "lines": "L14-L21",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 模式",
+          "note": "停止后续发的最终回答请求和不完整调用的错误文本。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/env-configuration",
+          "locator": "Environment Variable Configuration：CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认环境变量",
+          "note": "官方说明每条回复内的工具轮数上限，到上限后模型得到一次不带工具的请求并写最终回答，默认 1024。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "output_limit 拿不准：框架不设单次输出上限，截断后的处理是“不执行半截调用、改发一次不带工具的收尾请求”，不是让模型接着原文续写或重试同一调用，而且只对带工具调用的截断回复生效。我按“对截断有专门的续写、重试处理”计入，请确认收尾请求算不算这类处理；不算的话应只记 call_count。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F13": {
+      "status": "known",
+      "value": "sequential_messages",
+      "facets": {
+        "layers": [
+          "sequential_messages"
+        ]
+      },
+      "unknown_reason": null,
+      "value_note": "每个用户回合开始时，process_chat_payload 按 chat_id 与 user_message_id 从数据库沿 parentId 链读回当前分支的消息（load_messages_from_db），再由 process_messages_with_output 把助手消息的 output 分片（文字、工具调用、工具结果、推理）转成 OpenAI 格式消息；同一回合内工具循环维护一份 messages 列表，每轮只追加新转换出的工具消息后发出。默认记录里只有消息：上下文压缩默认关（ENABLE_CONTEXT_COMPACTION=False），open_webui:context_compaction 分片和 contextSummary 不会产生；open_webui:code_interpreter 分片被转成文字。parentId 分支、usage、model 等属消息元数据。可选：管理员开压缩后，按最近一个摘要检查点一刀切（之前的换成摘要），仍属定位起点。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py load_messages_from_db",
+          "lines": "L1855-L1882",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认路径：网页界面已保存聊天的每个用户回合",
+          "note": "每回合从数据库读回当前分支的消息链，只保留重建请求所需的消息字段。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py process_chat_payload（DB 读回与 process_messages_with_output）",
+          "lines": "L2073-L2202",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认路径：请求构造",
+          "note": "用读回的消息替换前端传来的 messages，压缩关闭时 apply_summary_checkpoint 原样返回，再逐条转成模型消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/misc.py",
+          "locator": "backend/open_webui/utils/misc.py convert_output_to_messages",
+          "lines": "L575-L667",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "消息分片转换",
+          "note": "output 分片按 message、function_call、function_call_output、reasoning、code_interpreter 转换，其余 open_webui: 扩展分片跳过。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py 工具循环 new_form_data 构造",
+          "lines": "L6119-L6193",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认路径：回合内工具循环",
+          "note": "回合内把本轮工具调用和结果转成消息追加到 messages 列表，再整份发出。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py ENABLE_CONTEXT_COMPACTION",
+          "lines": "L2260",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "上下文压缩默认关闭，默认记录里不会出现压缩控制条目。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "回合开始从存储重读整条分支的那一层：记录里默认没有控制条目，按 scope_rule 记 sequential_messages，不记 typed_event_rebuild；它跨轮不保留（下一回合重新读），回合内沿用并追加的列表算 sequential_messages 一层，所以 layers 只写一项。若把压缩开关视为默认，open_webui:context_compaction 也只用于定位起点，结论不变。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F14": {
+      "status": "known",
+      "value": [
+        "truncation"
+      ],
+      "unknown_reason": null,
+      "value_note": "截断只见于默认注册工具自己的上限：view_knowledge_file（以及有附件时的 view_file）按字符或行分页返回，单次结果有服务端硬上限 VIEW_FILE_MAX_CHARS=100000 字符，超出部分不进上下文、留分页信息；自动召回的记忆按 user、context 两段各截到约 2000 字符后放进上下文；view_chat 的字符上限 VIEW_CHAT_MAX_CHARS 默认未设。可选：上下文压缩（摘要替换旧历史，阈值 80000 令牌）默认关，要管理员打开（总则 R3 第三档）。没有整条工具结果换占位的机制（strip_tool_images 只在模型关掉视觉能力时把图片分片换成“[image]”）。主对话历史本身不截短，超出模型窗口时由模型后端（如 Ollama 的 num_ctx）处理，不属框架。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py _numbered_lines_within_cap 与 view_knowledge_file",
+          "lines": "L2869-L2880",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认注册的知识库文件读取工具",
+          "note": "按 VIEW_FILE_MAX_CHARS 截住单次返回的内容，超出部分不返回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py VIEW_FILE_MAX_CHARS、VIEW_FILE_DEFAULT_MAX_CHARS",
+          "lines": "L1177-L1178",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "单次读文件上限默认 100000 字符，默认请求 10000 字符。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/memory.py",
+          "locator": "backend/open_webui/utils/memory.py recall_memories",
+          "lines": "L375-L398",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认开启的记忆自动召回",
+          "note": "召回结果按 user、context 两段截到字符上限（默认 2000）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/context_compaction.py",
+          "locator": "backend/open_webui/utils/context_compaction.py compact_messages_for_request、_load_config",
+          "lines": "L46-L59",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置下的压缩",
+          "note": "压缩开关读 chat.context_compaction.enable，默认 False 时原样返回消息，摘要不在默认路径上。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "只算到工具级的单条截短；判 truncation 依据的是“单条内容进入上下文时被截短”。view_knowledge_file 默认还需要有知识库或模型附加知识才有内容可读（添加内容，总则 R2）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F15": {
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_specified：用户在聊天里上传附件、用 # 引用知识库、笔记或旧聊天；默认 Native 模式下（模型 file_context 缺省关）框架把附件以 <attached_files> 标签随用户消息发出、图片直接作为图像分片进请求，文档正文由模型用 view_file、query_chat_files 等工具读取。keyword：grep_knowledge_files、grep_chat_files 按字面或正则匹配。semantic_retrieval：query_knowledge_files、query_knowledge_bases、query_chat_files 在 ChromaDB 里按向量检索（本地 all-MiniLM-L6-v2 嵌入）。全新安装没有知识库，建知识库或上传文件算添加内容。没有代码结构索引。# 加网址抓网页、联网搜索（默认关）不计；技能清单（有技能时随回复注入、正文按需用 view_skill 读）写在这里不计；search_chats、view_chat 读旧聊天，归 F16 说明。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py get_builtin_tools 知识库与聊天工具注册",
+          "lines": "L753-L797",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认注册的内置工具（管理员账户，Native 模式）",
+          "note": "默认注册 grep_knowledge_files、query_knowledge_files、query_knowledge_bases 等检索工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py grep_knowledge_files、query_knowledge_files",
+          "lines": "L2748-L2760",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "知识库检索工具",
+          "note": "grep 工具做精确或正则匹配，说明里注明 query_knowledge_files 为语义向量检索。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py query_knowledge_files",
+          "lines": "L3346-L3360",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "知识库检索工具",
+          "note": "按语义或向量相似度检索用户可访问的知识库、文件和笔记。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py add_file_context",
+          "lines": "L1415-L1445",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 聊天的附件",
+          "note": "把用户附加的文件、笔记、知识库、聊天以 attached_files 标签放回对应的用户消息。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py is_file_context_enabled",
+          "lines": "L588-L593",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 聊天",
+          "note": "网页界面的 Native 聊天缺省不预载附件全文，改由附件工具读取。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "user_specified 的“由框架读入上下文”：默认 Native 路径上文档正文不自动预载，只放附件引用标签和图片，正文靠模型调工具读。这里按“用户显式指定的材料经框架进入请求”计入；若判定要求框架自己读入正文，文档部分不满足，只剩图片和引用标签。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F16": {
+      "status": "known",
+      "value": [
+        "structured_records",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "value_note": "structured_records：记忆表每条有 id、type（user/context）、path，模型用 add_memory、replace_memory_content、delete_memory 等按条写入、修改、删除（默认注册，管理员账户、新聊天的记忆开关缺省开）。retrieval_store：记忆同时写进向量库 user-memory-<用户>，默认开启的自动召回（ENABLE_MEMORY_SYSTEM_CONTEXT=True）在每条新回复开始前按最近几条用户消息向量检索，把结果作为隐藏的 recall_memories 工具结果放进上下文；模型也可调 search_memories。type=user 的记忆每次整份带入。可选：后台记忆复盘（ENABLE_MEMORY_BACKGROUND_REVIEW）默认关。没有每会话自动读入的说明文件；用户设置里的系统提示和技能存在数据库里，不算 user_maintained_files。模型还能用 search_chats、view_chat 检索并读本人旧聊天、用 search_notes 读笔记，作为同类检索写在这里。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/memories.py",
+          "locator": "backend/open_webui/models/memories.py Memory",
+          "lines": "L15-L28",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "记忆存储",
+          "note": "记忆按条存储，有 id、type、path、content，并关联向量集合。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/memory.py",
+          "locator": "backend/open_webui/utils/memory.py recall_memories",
+          "lines": "L290-L401",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认开启的记忆自动召回",
+          "note": "按最近用户消息向量检索记忆（k=8），连同全部 user 类记忆渲染进上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py 记忆预载分支",
+          "lines": "L2358-L2375",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认 Native 聊天、管理员账户",
+          "note": "记忆开关和系统上下文开关为真时，Native 路径调用 preload_memory 自动召回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py ENABLE_MEMORIES、ENABLE_MEMORY_SYSTEM_CONTEXT、ENABLE_MEMORY_BACKGROUND_REVIEW",
+          "lines": "L408-L410",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "记忆与自动召回默认开，后台复盘默认关。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/memory",
+          "locator": "Memory & Personalization：Native Memory Tools、Memory Types & Paths",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "官方文档",
+          "note": "文档说明模型用 add_memory、replace_memory_content、delete_memory、search_memories 等工具按 id 管理记忆，记忆带 type 与 path。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "auto_summary 的核对：后台复盘默认关，其余写入都经专门的记忆工具按条进行，归 structured_records。旧聊天可被 search_chats 检索，但它是会话记录本身，按 R8 只在 value_note 说明，不另立取值。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F17": {
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "value_note": "会话存在数据卷里的数据库：chat 行保存聊天 JSON（history 消息树），chat_message 表逐条存消息，助手消息的 output 列保存文字、推理、工具调用和工具结果分片，带 usage、model、status_history 等元数据；默认没有控制条目（压缩默认关，审批默认关，分支只是消息的 parentId 字段）。external_reference：用户上传的附件存进 uploads 目录和 file 表，消息的 files 只留编号与地址；工具结果里的图片另存为文件、output 里只留地址（store_tool_result_image）。chat 行的 tasks 字段只记任务清单这个子对象，不计；技能、工具的版本历史是产品内容的版本，不是运行记录。可选：审计日志 AUDIT_LOG_LEVEL 默认 NONE。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/chat_messages.py",
+          "locator": "backend/open_webui/models/chat_messages.py ChatMessage",
+          "lines": "L161-L199",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认存储",
+          "note": "每条消息一行，含 role、parent_id、content、output、files、usage、context_summary 等列。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py store_tool_result_image",
+          "lines": "L689-L710",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "已保存聊天的工具结果图片",
+          "note": "工具结果里的图片另存为文件，聊天 JSON 里只留文件地址。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py UPLOAD_DIR",
+          "lines": "L174",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认数据目录",
+          "note": "上传文件存在数据目录下的 uploads 子目录。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py AUDIT_LOG_LEVEL",
+          "lines": "L1228",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "审计日志级别默认 NONE，默认不写审计账本。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F18": {
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "value_note": "容器重启后从侧栏重新打开聊天，前端载入保存的聊天和消息树；用户发下一句时后端从数据库读回分支消息重建上下文再调模型；未完成的回复可点“继续”（assistant_message_id），把它已有的 output 读回后发一次新的模型请求。中断时处于 in_progress 的工具调用不接续执行（resume_tool_calls 遇到 in_progress 直接返回）。可选：管理员开 Tool Permissions 后，待批调用保存在消息上、刷新后仍呈现，批准后照原样执行，按判定仍属本项。临时聊天的 resume 接口只在同一进程（Redis 会话）内有效。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py process_chat_payload（DB 读回与继续回复）",
+          "lines": "L2073-L2114",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "已保存聊天的继续与下一轮",
+          "note": "从数据库读回消息链，继续回复时把未完成回复的内容一并读回后再请求模型。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py resume_tool_calls",
+          "lines": "L3317-L3344",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "待处理工具调用的续跑",
+          "note": "有 in_progress 的调用时直接返回、不重跑；只执行已批准或 full/auto 模式下的待处理调用。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte",
+          "locator": "src/lib/components/chat/Chat.svelte 载入已保存聊天",
+          "lines": "L3100-L3106",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面重新打开聊天",
+          "note": "打开聊天时载入保存的内容、附件和任务清单。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F19": {
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "value_note": "conversation：当前分支的全部消息从数据库读回进上下文。tool_results：output 里的 function_call 与 function_call_output 按调用编号成对回放进请求，不重新执行。task_plan：create_tasks、update_task（已保存聊天默认注册）把清单存在 chat 行的 tasks 字段，重开时界面照原样显示，模型用 update_task 从库里读出后接着更新。没有工作区这一层，workspace 不适用；子代理默认关（ENABLE_SUBAGENTS=False），没有子代理关联。隐藏的 recall_memories 等预载结果也随 output 回放。外部副作用（已发出的请求、已写入的外部系统）不在恢复范围内。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/misc.py",
+          "locator": "backend/open_webui/utils/misc.py convert_output_to_messages",
+          "lines": "L575-L604",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "恢复后重建请求",
+          "note": "保存的工具调用与工具结果被转回 tool_calls 与 tool 消息，结果直接进上下文。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/chats.py",
+          "locator": "backend/open_webui/models/chats.py update_chat_tasks_by_id、get_chat_tasks_by_id",
+          "lines": "L3072-L3090",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "任务清单存储",
+          "note": "任务清单持久存在 chat 行的 tasks 字段并可读回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py get_builtin_tools 任务工具注册",
+          "lines": "L905-L908",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "已保存聊天",
+          "note": "已保存聊天默认注册 create_tasks、update_task。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte",
+          "locator": "src/lib/components/chat/Chat.svelte 载入已保存聊天",
+          "lines": "L3104-L3105",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面重新打开聊天",
+          "note": "重开聊天时从 chat 行读回任务清单显示在界面上。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F20": {
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "value_note": "编辑旧消息或重新生成回复会在同一聊天的消息树里生成兄弟分支，原分支保留，界面上用左右箭头切回；另有“分叉”（/fork，复制到某条消息为止的分支成新聊天）和“克隆”整个聊天，原聊天保留在列表里。没有工作区和文件快照；技能、工具的版本历史是产品内容的版本，不是工作区快照。没有补偿操作。幂等：默认路径上没有会把已记录调用再执行一遍的路径（中断时 in_progress 的调用不续跑）；按 call_id 与已存结果配对、只执行没有结果的调用的逻辑只在可选的 Tool Permissions 审批续跑路径上用到，不计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Messages.svelte",
+          "locator": "src/lib/components/chat/Messages.svelte showPreviousMessage、showNextMessage",
+          "lines": "L254-L298",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面聊天",
+          "note": "在同一消息的兄弟分支之间切换，旧分支仍可回到。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/chats.py",
+          "locator": "backend/open_webui/routers/chats.py fork_chat_by_id",
+          "lines": "L1841-L1880",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "聊天分叉接口",
+          "note": "从某条消息分叉出新聊天，原聊天不变。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/chat_fork.py",
+          "locator": "backend/open_webui/utils/chat_fork.py build_fork_history",
+          "lines": "L1-L41",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "聊天分叉",
+          "note": "复制源消息到根的整条分支作为新聊天的历史。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py resume_tool_calls",
+          "lines": "L3317-L3344",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "待处理工具调用续跑",
+          "note": "调用与结果按编号配对只服务于审批续跑；遇到 in_progress 调用直接返回，不重跑。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F21": {
+      "status": "known",
+      "value": [
+        "tool_category",
+        "network_target"
+      ],
+      "facets": {
+        "default_edit": "allow",
+        "default_command": "allow",
+        "default_outside_write": "allow",
+        "default_network": "allow"
+      },
+      "unknown_reason": null,
+      "value_note": "tool_category：管理员在模型设置的 Builtin Tools 里按类别（记忆、笔记、知识库、聊天、技能、工具等）去掉内置工具，在用户组权限里按功能开关（联网搜索、代码解释器、工作区工具等，管理员不受限），并按工具设访问授权；实验功能 Tool Permissions 默认关，开后只有 full、ask、auto 三种整体模式。外部工具服务按连接地址登记，记在这一项。network_target：WEB_FETCH_FILTER_LIST 与 ENABLE_LOCAL_WEB_FETCH 按域名或地址限制网页抓取，仅限该工具，不管命令联网。四个默认效果：默认没有 shell 或文件工具，也没有工作区；唯一能运行代码、写文件、联网的默认路径是管理员账户下默认注册的 create_tool，保存工具时在服务端进程（容器内 root）里 exec 模型写出的模块，不经任何审批，所以四项都取 allow。可选：代码解释器（浏览器 Pyodide）要在聊天里手动打开。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py get_builtin_tools is_builtin_tool_enabled、has_user_permission",
+          "lines": "L646-L675",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "模型级内置工具类别与用户功能权限",
+          "note": "按模型 builtinTools 类别和用户功能权限决定内置工具是否给模型，管理员直接通过权限检查。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_permissions.py",
+          "locator": "backend/open_webui/utils/tool_permissions.py resolve_tool_approval_mode、requires_tool_approval",
+          "lines": "L72-L119",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认权限模式",
+          "note": "审批模式只有 full、ask、auto；功能关闭时一律 full，full 模式不需要审批。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/env-configuration",
+          "locator": "Environment Variable Configuration：WEB_FETCH_FILTER_LIST",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页抓取",
+          "note": "文档说明按域名或地址的允许与阻止名单限制网页抓取，默认带一份元数据地址阻止名单。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py create_tool",
+          "lines": "L3909-L3946",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户默认注册的工具",
+          "note": "工具说明写明保存时在服务端执行该 Python 模块，只检查作者权限。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/plugin.py",
+          "locator": "backend/open_webui/utils/plugin.py load_tool_module_by_id",
+          "lines": "L223-L241",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "工具模块载入",
+          "note": "按 frontmatter 运行 pip install 后用 exec 执行工具源码。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile",
+          "locator": "Dockerfile ARG UID/GID 与 USER",
+          "lines": "L24-L25",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": ":main 镜像",
+          "note": "UID、GID 默认 0，服务进程在容器内以 root 运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "四个默认效果的口径疑问：本配置没有 shell、文件编辑工具，也没有“工作区”。我按“同一类动作取能让它发生的最宽一条路径”，把 create_tool 的保存即执行视为运行命令、写文件、联网的路径，四项都记 allow（default_edit 的“工作区内”按容器内数据卷理解）。若码本的“这类工具”指按用途是改文件、运行命令的工具，四项应记 unavailable，请主控裁定。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F22": {
+      "status": "known_absent",
+      "value": [],
+      "facets": {
+        "ui_layers": [],
+        "approver": []
+      },
+      "unknown_reason": null,
+      "value_note": "默认权限模式为 full：ENABLE_TOOL_PERMISSIONS 默认 False，功能关闭时请求一律按 full 执行，模型发出的工具调用直接执行，不暂停等批准。ask_user 是模型向用户提问，记 F36。联网搜索确认 ENABLE_WEB_SEARCH_CONFIRMATION 默认关、联网搜索本身默认关。可选：管理员打开 Tool Permissions 后，ask 模式在每次工具调用前暂停（tool_call，批准者 user）；再开 Auto 时由引擎先判是否需要批准（auto_reviewer 判定，需批准时仍由 user 放行）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_permissions.py",
+          "locator": "backend/open_webui/utils/tool_permissions.py resolve_tool_approval_mode、requires_tool_approval",
+          "lines": "L72-L119",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认权限模式",
+          "note": "功能未开时模式解析为 full，full 模式下 requires_tool_approval 返回 False。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py ENABLE_TOOL_PERMISSIONS、ENABLE_TOOL_PERMISSIONS_AUTO",
+          "lines": "L2262-L2264",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "工具审批与自动审批默认都关闭。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/tools",
+          "locator": "Tools：Tool Approval",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "官方文档",
+          "note": "文档说明默认模型一发出工具调用就执行，审批是管理员另开的实验功能。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F23": {
+      "status": "known",
+      "value": [
+        "application_check",
+        "container_policy"
+      ],
+      "facets": {
+        "prompt_only": "absent"
+      },
+      "unknown_reason": null,
+      "value_note": "application_check：内置工具在动作前按资源归属和权限检查范围并拒绝，例如 view_chat 只取本人聊天、记忆的修改删除只作用于本人记忆、create_tool 与 create_skill 要求管理员或工作区权限；管理员绕过笔记、知识库等访问授权检查（BYPASS_ADMIN_ACCESS_CONTROL 默认开），覆盖范围因工具而异。container_policy：所选入口是 docker run，服务进程和它执行的工具代码（含 create_tool 保存时执行的模块）都在容器里，只挂载命名卷 open-webui；但以 root 运行、网络不受限。没有操作系统级隔离。可选：代码解释器在浏览器 Pyodide（WebAssembly）里跑，要在聊天里手动打开，属第二档，不进取值；Tool Permissions 审批默认关。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py view_chat",
+          "lines": "L1713-L1740",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认注册的聊天历史工具",
+          "note": "按 chat_id 和当前用户取聊天，不是本人聊天则返回拒绝。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py create_tool 权限检查",
+          "lines": "L3925-L3936",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户默认注册的工具",
+          "note": "非管理员且没有 workspace.tools 权限时拒绝创建工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/Dockerfile",
+          "locator": "Dockerfile USER",
+          "lines": "L230",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": ":main 镜像",
+          "note": "镜像以构建参数 UID:GID（默认 0:0）运行服务进程。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/getting-started/quick-start",
+          "locator": "Quick Start：Docker（docker run -v open-webui:/app/backend/data）",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "所选入口",
+          "note": "官方 Docker 命令只把命名卷挂到 /app/backend/data，服务在容器内运行。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "prompt_only 逐项：默认模式（full，产品没有把它说成某种限制）；不改设置能切换的内置模式（Tool Permissions 入口要管理员先开，默认没有可切换的模式）；默认调用的内置子代理或角色（子代理默认关，没有内置角色）；文档列出的限制设置（模型内置工具类别、用户功能权限、WEB_FETCH_FILTER_LIST、CODE_INTERPRETER_BLOCKED_MODULES）都有代码检查。故记 absent。container_policy 拿不准：容器是部署方式而非专为代理设的沙箱，且以 root、网络不限；按判定“在容器里运行、靠挂载限制可见范围”计入。官方文档链接取快速开始页，Docker 命令所在页签的精确小节名未逐一核对。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F24": {
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result",
+        "identity"
+      ],
+      "unknown_reason": null,
+      "value_note": "审计记录就是普通会话记录（chat_message 表与 chat JSON），没有专门的审计日志（AUDIT_LOG_LEVEL 默认 NONE，可选）。助手消息的 output 按顺序存推理和说明文字、function_call（call_id、工具名、参数）、function_call_output（同一 call_id 的结果与状态），触发它的用户消息是父消息，所以意图、实际操作、结果能按 call_id 对上。身份：消息行和聊天行带 user_id，产品有多账户登录。approval 不计：默认 full 模式没有逐次批准或拒绝决定；approved、permission_review 等字段只在审批开启后写入。覆盖的动作只有内置工具调用（记忆、笔记、知识库、create_tool 等）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/chat_messages.py",
+          "locator": "backend/open_webui/models/chat_messages.py ChatMessage",
+          "lines": "L161-L199",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认存储",
+          "note": "消息行带 user_id、parent_id、output 等列，按会话持久化。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py 工具循环写入 function_call_output",
+          "lines": "L6070-L6105",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认路径工具循环",
+          "note": "每个工具结果以 function_call_output 写入 output，并按 call_id 回填对应调用的状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/env.py",
+          "locator": "backend/open_webui/env.py AUDIT_LOG_LEVEL",
+          "lines": "L1228",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认设置",
+          "note": "审计日志默认 NONE。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "identity 依据是多账户登录与消息、聊天行的 user_id；首个账户即管理员，按 identity 判定“部署后暂时只有一个账户也算”计入。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F25": {
+      "status": "known",
+      "value": "present",
+      "unknown_reason": null,
+      "value_note": "走的是自动化（Automations）路径：管理员默认有 create_automation 等自动化工具（automations.enable 默认开），存下的自动化由服务启动时起的调度循环到点直接执行 execute_automation：新建一个聊天、按前端同样的载荷调完整的聊天补全管线（session_id=automation:<id>，原生工具循环、内置工具照常注册，最多 1024 轮工具调用），聊天 meta 记 automation_id，运行结果记进 AutomationRuns，运行中可按 chat_id 查任务。编辑页的 Run now 按钮也直接起同样的运行。可选：delegate_task 与 timer 子代理工具要 ENABLE_SUBAGENTS（默认 False）；Open Terminal 里的编码代理要另装另连终端。多模型并排聊天由用户在选择器里选多个模型，共用同一份历史，不按代理计。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: scheduler_worker_loop",
+          "lines": "L69-L125",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装（automations.enable 默认开）",
+          "note": "调度循环轮询到期自动化（Automations.claim_due），对每条直接 create_task(execute_automation)。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: execute_automation",
+          "lines": "L334-L534",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "自动化运行",
+          "note": "每次运行新建聊天（meta 记 automation_id），以 session_id=automation:<id> 调 CHAT_COMPLETION_HANDLER 走完整管线，结束后 _record_run 记 success/error。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py: use_builtin_tools 与原生工具循环",
+          "lines": "L2069-L2073",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "原生工具调用（默认）",
+          "note": "请求带 session_id 且非 legacy 时注册内置工具；自动化运行带 session_id，所以运行本身能多步调用工具。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py: while tool_calls 循环（max_tool_call_iterations）",
+          "lines": "L5803-L5862",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "原生工具调用（默认）",
+          "note": "工具调用循环按轮重复，默认上限 CHAT_RESPONSE_MAX_TOOL_CALL_ITERATIONS=1024。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py: get_builtin_tools 自动化工具",
+          "lines": "L910-L918",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户、原生模式",
+          "note": "create_automation 等五个自动化工具在 automations.enable 与权限满足时注册（管理员不受权限限制）。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py",
+          "locator": "backend/open_webui/main.py: list_tasks_by_chat_id_endpoint",
+          "lines": "L2220-L2240",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "可按 chat_id 查询正在运行的任务，用于跟踪运行状态。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py: ENABLE_SUBAGENTS",
+          "lines": "L2096-L2097",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "委派与定时器子代理开关默认 False，所以 delegate_task/timer 只作可选路径。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/automations",
+          "locator": "Automations：开头与 Notes",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "每次运行建一个聊天并走正常聊天补全管线，工具照常适用；运行在后台工作循环里按轮询间隔执行，每次记录状态。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "配置记录 subagents_enabled=false 只对应 delegate_task；按 F25 计入清单里“定时器或外部事件直接起的独立代理运行”，自动化运行算框架管理的另一个代理，所以按代码记 present。跟踪按 chat meta 的 automation_id、AutomationRuns 和按聊天查任务的接口判。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F26": {
+      "status": "known",
+      "value": [
+        "user",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "value_note": "event_scheduling：调度循环到点直接 execute_automation，不经主代理。user：自动化编辑页的 Run now 按钮直接调 /automations/{id}/run 起同样的运行，结果进新聊天和该自动化的运行记录（汇总界面）。主代理用 create_automation 只是建定时任务，真正起运行的是调度器，所以不记 main_agent；自动化来源记在 F33。可选：ENABLE_SUBAGENTS 打开后主代理可调 delegate_task（main_agent）。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: scheduler_worker_loop",
+          "lines": "L100-L111",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "定时器（调度循环）直接创建自动化运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/automations.py",
+          "locator": "backend/open_webui/routers/automations.py: run_automation_by_id",
+          "lines": "L343-L365",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户",
+          "note": "Run now 接口直接 create_task(execute_automation)，不经主代理。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/tools/builtin.py",
+          "locator": "backend/open_webui/tools/builtin.py: create_automation",
+          "lines": "L4260-L4289",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户、原生模式",
+          "note": "模型工具只创建按 RRULE 定时运行的自动化，本身不起运行。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/automations",
+          "locator": "Automations：What You Can Automate / Edit and Manage",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "按计划运行，或用 Run Now 手动触发；编辑页可看执行记录并打开运行聊天。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "user 一项取决于把自动化运行记录页算作 F25 所说的“汇总界面”；Run now 要先有一条自动化（用户添加内容）。",
+      "review_status": "single_review",
+      "vocabulary_proposals": []
+    },
+    "F27": {
+      "status": "known",
+      "value": [
+        "independent_context"
+      ],
+      "unknown_reason": null,
+      "value_note": "两条路径都没有父代理：每次自动化运行新开一个聊天，上下文只有自动化保存的提示（加系统提示和记忆召回），看不到发起它的聊天。权限：运行以自动化所有者身份发令牌，执行前重新检查所有者角色和 features.automations 权限，工具权限随所有者。各次运行和主聊天都能经内置工具读写同一用户的记忆、笔记、聊天，但这是用户数据，不是供代理协作的运行状态，不记 shared_state。可选：给自动化指定 Open Terminal 终端和工作目录后，会和别的运行共用终端文件区。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: execute_automation",
+          "lines": "L349-L476",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "自动化运行",
+          "note": "运行前重查所有者权限、用所有者身份发令牌，新建聊天，消息只有 automation.data['prompt'] 一条用户消息。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/automations",
+          "locator": "Automations：开头",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "每次运行创建一个聊天，记忆按聊天同样的规则带入。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "F26 没有主代理委派路径，start_context 按词表先后取 user（Run now）路径：带进的是保存的自动化提示，记 task_brief。记忆、笔记这类用户数据算不算 shared_state 拿不准，按“运行状态”口径没记。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "start_context": "task_brief"
+      }
+    },
+    "F28": {
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "value_note": "两条路径都没有调用方代理：定时运行结果写进新聊天和运行记录；Run now 接口在起任务后立即返回，界面只提示“Automation triggered”，结果同样去新聊天和运行记录，失败进收件箱。没有共享看板。停止靠单独的按聊天停止接口，不连带。可选：ENABLE_SUBAGENTS 打开后 delegate_task 才有同步等待、后台运行和取消处理。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/automations.py",
+          "locator": "backend/open_webui/routers/automations.py: run_automation_by_id",
+          "lines": "L343-L365",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户",
+          "note": "Run now 用 asyncio.create_task 起运行后直接返回，没有等待或结果交回。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: execute_automation 结尾",
+          "lines": "L500-L534",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "自动化运行",
+          "note": "运行结果只写进聊天、AutomationRuns 和事件，没有交回任何调用方。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py: ENABLE_SUBAGENTS",
+          "lines": "L2096-L2097",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "委派工具默认不注册，没有默认的委派返回或取消路径。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "Run now 的调用方是人：界面只给触发提示、之后由人去看运行记录，我按“没有调用方代理”处理，没记 async_wait；若把人算调用方、把查看运行记录算查询结果，可能会记 async_wait。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "cancel_depth": null,
+        "cancel_coverage": null
+      }
+    },
+    "F29": {
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "value_note": "internal_code：内置系统工具写在 tools/builtin.py，由 get_builtin_tools 注册。plugin_api：工作区工具（Python 模块里的 Tools 类）经 Workspace > Tools 或模型的 create_tool 保存后在服务进程内加载，新建默认启用。external_protocol_service：管理员在设置里加 MCP（Streamable HTTP）或 OpenAPI 工具服务连接，工具进模型工具表。embedder_declared：经文档化的 HTTP 接口调用时在请求体给出 tools，服务端不解析自身工具、原样交给模型，模型发出的调用以原始 tool_calls 交回调用方，调用方再把结果发回。工具选用：工作区工具和外部服务的工具还要在聊天里勾选或绑到模型。user_script 没有：没有把脚本注册成独立工具的机制。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tools.py",
+          "locator": "backend/open_webui/utils/tools.py: get_builtin_tools",
+          "lines": "L634-L918",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装、原生模式",
+          "note": "内置工具在核心代码里按开关注册。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/tools.py",
+          "locator": "backend/open_webui/models/tools.py: Tool.is_active",
+          "lines": "L37",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "工作区工具新建默认 is_active=True，添加即生效。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py: payload_tools 透传与服务端工具解析",
+          "lines": "L2653-L2760",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "调用方在请求里给了 tools 时跳过服务端解析原样透传；否则合并工作区工具（tool_ids）与 MCP 工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/tools",
+          "locator": "Tools：Tooling Taxonomy",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "工作区工具是服务端执行的 Python 插件，另有外部工具服务等几类工具。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/mcp",
+          "locator": "MCP Support",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "原生支持连接 MCP 服务，把服务的工具交给模型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/server-side-tool-calling",
+          "locator": "Server-side tool calling：The one rule that decides your whole integration",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "HTTP 接口调用",
+          "note": "不走服务端循环时，原始 tool_calls 交回调用方。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "embedder_declared 只是 OpenAI 式的工具透传（调用方下一次请求把结果发回），算不算“框架把调用交回嵌入方再把结果交给模型”有些勉强；HTTP 接口要 API 密钥（默认关）或登录令牌，所以没进 via_default_entry。in_use_by_default 按配置记录：镜像不预置工作区工具、函数和外部服务。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [
+          "internal_code"
+        ],
+        "via_default_entry": [
+          "internal_code",
+          "plugin_api",
+          "external_protocol_service"
+        ]
+      }
+    },
+    "F30": {
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "value_note": "都存在产品数据库里，不是磁盘文件。project_rules：Settings > General 里的个人系统提示随每个聊天请求作为 system 消息发出（聊天自己的 system 参数会覆盖它）。skill_directory：工作区技能，原生模式每次请求把可用技能清单交给模型，模型用 view_skill 按需装载；用户也可用 $ 提及或绑定到模型。role_template：Workspace > Models 预设（基座模型加系统提示、工具、知识、技能），在模型选择器按名选用。prompt_template：Workspace > Prompts，用 / 命令展开，可带输入变量。文件夹系统提示只作用于该文件夹里的聊天，没记进 project_rules。没有工作流定义：Pipe 函数是一次运行的代码，不由框架按定义推进步骤。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/lib/components/chat/Chat.svelte",
+          "locator": "src/lib/components/chat/Chat.svelte: 发送载荷里的 system 消息",
+          "lines": "L4514-L4519",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面",
+          "note": "每个聊天请求都带 params.system 或个人设置 $settings.system 作为系统提示。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py: skill_tools_enabled 与技能清单",
+          "lines": "L2484-L2490",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "原生模式",
+          "note": "未由调用方给 tools 且用内置工具时启用技能工具，按需装载技能。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/workspace/skills",
+          "locator": "Skills：开头与 On-demand context loading",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "技能按名称和描述列出，模型需要时装载；也可用 $ 提及或绑定模型。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/workspace/prompts",
+          "locator": "Prompts：开头",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "保存的提示作为 / 命令展开，可带输入变量。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/workspace/models",
+          "locator": "Models：开头",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "模型预设在基座模型上绑定系统提示、知识、工具、技能，按名选用。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "个人系统提示是设置项里的说明正文，照 project_rules 判定句算添加内容。executable_items 判过：提示模板的变量只是替换，技能文件不由框架执行，模型预设引用的过滤器是另装的函数、不随预设一并装载，所以写 []。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "executable_items": []
+      }
+    },
+    "F31": {
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "end",
+        "session_start",
+        "context_compaction"
+      ],
+      "unknown_reason": null,
+      "value_note": "过滤器函数：inlet（每轮开始改写输入）、request（每次模型请求前改写载荷）、stream（改写流式输出）、outlet（最终回复后改写）。事件函数和管理员事件网络回调订阅事件目录：message.created（输入）、chat.created（会话开始）、chat.finished/chat.failed（结束）、chat.compacted（压缩），事件函数经 create_task 异步分发，只能观察。没有工具调用前后的事件或过滤器。函数新建默认停用（is_active=False），要另外打开，所以过滤器和事件函数不算所选入口直接开放；管理员在设置里新增一条事件网络回调（名称加 URL）算添加内容，直接开放的几项由它提供。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/functions/filter",
+          "locator": "Filter Function：Basic Skeleton / Filter Execution Flow",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "全部入口",
+          "note": "inlet 每轮一次，request 在每次发给提供方之前，stream 在流式中，outlet 在最终回复后，处理器返回值即改写后的内容。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/filter.py",
+          "locator": "backend/open_webui/utils/filter.py: 按 filter_type 取处理器并采用返回值",
+          "lines": "L135-L206",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "全部入口",
+          "note": "按 inlet/request/stream/outlet 取函数模块的同名方法，返回值作为新的 form_data。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/events.py",
+          "locator": "backend/open_webui/events.py: CHAT_CREATED、CHAT_FINISHED、CHAT_COMPACTED",
+          "lines": "L201-L224",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "全部入口",
+          "note": "事件目录里的会话创建、回复结束、压缩事件。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/events.py",
+          "locator": "backend/open_webui/events.py: dispatch_event_functions / schedule_event_function_dispatch",
+          "lines": "L1190-L1240",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "全部入口",
+          "note": "事件函数的 event() 经 create_task 异步调用，返回值不被使用，只能观察。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/functions.py",
+          "locator": "backend/open_webui/models/functions.py: Function.is_active",
+          "lines": "L32",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "函数新建默认停用。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/administration/webhooks",
+          "locator": "Webhooks：Event Webhooks / Admin Webhook Configuration",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "管理员账户",
+          "note": "管理员在 Settings > Admin > General > Events > Webhooks 加名称和 URL，按事件过滤接收事件目录里的事件。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "save 没记：chat.updated 只在用户改聊天的接口里发，message.created 是顺带落盘的通知，按输入阶段判。把管理员事件网络回调算作事件订阅处理器、并据此进 via_default_entry，是本次的判断，拿不准。in_use_by_default 写 []：配置记录说函数不预置，核心里的收件箱等监听属于编进核心的处理器。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "in_use_by_default": [],
+        "via_default_entry": [
+          "input",
+          "end",
+          "session_start",
+          "context_compaction"
+        ],
+        "observe_only": [
+          "session_start",
+          "context_compaction"
+        ]
+      }
+    },
+    "F32": {
+      "status": "known",
+      "value": [
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "value_note": "服务本身对外有文档的 HTTP 接口：/api/chat/completions 带 chat_id、id、stream 时在服务端跑完整的原生工具循环，结果写进聊天记录（Path A）；另有 OpenAI 兼容（/api/v1/chat/completions、Responses）和 Anthropic Messages 兼容端点，但不走 Path A 时最多一轮工具或原样交回 tool_calls，不跑完整代理循环，所以不记 public_protocol。没有非交互命令行模式、公开的库或宿主扩展接口；open-webui serve 只是启动服务。不算直接开放：API 密钥要管理员先打开 ENABLE_API_KEYS（默认 False），JWT 是登录得到的会话令牌、界面不显示。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/server-side-tool-calling",
+          "locator": "Server-side tool calling：The one rule that decides your whole integration",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "HTTP 接口",
+          "note": "三种请求方式里只有带 chat_id+id+stream 的才跑完整多轮原生循环，其余一轮或交回原始 tool_calls。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/api-endpoints",
+          "locator": "API Endpoints：Authentication / Chat Completions / Anthropic Messages API",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "HTTP 接口",
+          "note": "接口用 API 密钥或 JWT 认证，列出聊天补全与兼容端点。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py",
+          "locator": "backend/open_webui/main.py: chat_completion 路由",
+          "lines": "L1103-L1104",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "/api/chat/completions 与实验性的 /api/v1/chat/completions 共用同一处理函数。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/config.py",
+          "locator": "backend/open_webui/config.py: ENABLE_API_KEYS",
+          "lines": "L2566",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "API 密钥功能默认关。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "OpenAI 兼容端点在带 chat_id 时也能触发完整循环，但那时 HTTP 响应体为空、结果在聊天记录里，不像“模型接口兼容”，归 service_api。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [],
+        "needs_official_package": []
+      }
+    },
+    "F33": {
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "value_note": "user_interaction：网页聊天界面（频道里点名模型也属此项，频道默认关）。api：F32 的 HTTP 接口，F32 没有直接开放项，所以不进 via_default_entry。schedule：原生自动化（RRULE），用户在 Automations 页或模型用 create_automation 都能建，调度循环到点起运行。external_event 没有：频道入站网络回调只把消息贴进频道、不触发模型；频道应用是外部服务自己作答；日历提醒只发通知。可选：timer 工具（ENABLE_SUBAGENTS）到点往聊天投提示。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/automations.py",
+          "locator": "backend/open_webui/utils/automations.py: scheduler_worker_loop",
+          "lines": "L69-L125",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "原生调度循环按到期自动化起运行。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/routers/channels.py",
+          "locator": "backend/open_webui/routers/channels.py: post_webhook_message",
+          "lines": "L2241-L2314",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "频道（默认关）",
+          "note": "入站网络回调只写消息并广播，不调用 model_response_handler。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/automations",
+          "locator": "Automations：Create an Automation / Managing Automations from Chat",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "用户在界面建定时自动化，模型也可在聊天里用内置工具建。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/reference/server-side-tool-calling",
+          "locator": "Server-side tool calling：Before you start",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "HTTP 接口",
+          "note": "外部脚本可经 API 提交任务，需要管理员先打开 API 密钥。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "via_default_entry": [
+          "user_interaction",
+          "schedule"
+        ]
+      }
+    },
+    "F34": {
+      "status": "known",
+      "value": "local_service",
+      "unknown_reason": null,
+      "value_note": "容器运行时托管：快速开始的 docker run 带 -d 和 --restart always，宿主重启或进程退出后由 Docker 拉起。界面是浏览器页面，关掉页面后服务端的聊天后台任务继续跑完。可选：Python 方式 open-webui serve 在前台运行。",
+      "evidence": [
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/getting-started/quick-start",
+          "locator": "Quick Start：Docker 命令与参数说明表（--restart always: Comes back after a reboot）",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "Docker 默认安装",
+          "note": "官方启动命令带重启策略 always。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/socket/main.py",
+          "locator": "backend/open_webui/socket/main.py: disconnect",
+          "lines": "L1421-L1443",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "页面断开只清理会话数据，不取消正在跑的任务。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/extensibility/plugin/development/events",
+          "locator": "Events：Persistence & Browser Disconnection / Server-Side Execution Continues",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "聊天请求起的后台任务不绑 HTTP 或 Socket 连接，关掉标签页后继续跑完。"
+        }
+      ],
+      "confidence": "high",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "continues_after_ui_exit": "yes"
+      }
+    },
+    "F35": {
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "value_note": "最强一层是自动化：定义和下次运行时间存在数据库，服务启动时就起调度循环，按 next_run_at 认领到期记录继续触发；模型用默认注册的 create_automation 也能建（总则 R3 第一档）。认领时先推进 next_run_at，崩溃时正在跑的那次不重试。交互层：运行中发的消息排在前端内存队列里（默认开），刷新或关页即丢。ask_user 的暂停记录写进聊天，但那是等人回答的阻塞，不算排队。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/main.py",
+          "locator": "backend/open_webui/main.py: lifespan 启动 scheduler_worker_loop",
+          "lines": "L449-L451",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "每次服务启动都起调度循环。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/models/automations.py",
+          "locator": "backend/open_webui/models/automations.py: claim_due",
+          "lines": "L297-L330",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "从数据库按 next_run_at 认领到期自动化并立即推进下次时间。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/message-queue",
+          "locator": "Message Queue：Persistence / Settings",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面默认设置",
+          "note": "消息队列默认开，只在内存里，刷新、新开或关闭标签页即清空。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "interactive_queue": "in_memory"
+      }
+    },
+    "F36": {
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "value_note": "blocking_approval：默认注册的 ask_user 让模型提 1–3 个问题，已保存的聊天里框架把调用标为 pending、写进聊天后停下，用户回答后经 resolve 接口接着走。权限审批默认没有（tool_approval_mode 缺省 full，ENABLE_TOOL_PERMISSIONS 默认 False），可选：管理员打开后才有。工具轮数到上限时直接以错误结束，不问人。message_notification：用户在别的聊天或页面在后台时，回复完成会弹应用内通知卡片（可点回该聊天）；侧栏收件箱默认开，收自动化运行失败等条目。浏览器系统通知默认关，用户网络回调通知默认关。没有持久待办和结构化交接：create_tasks 是代理自用的任务表，自动化运行记录只是状态和错误文本。",
+      "evidence": [
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/middleware.py",
+          "locator": "backend/open_webui/utils/middleware.py: stage_ask_user_tool_calls 与 pause_for_tool_approval",
+          "lines": "L5926-L5948",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "原生模式、已保存聊天",
+          "note": "ask_user 调用被暂存为 pending，保存聊天后本轮返回，等用户回答。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/backend/open_webui/utils/tool_permissions.py",
+          "locator": "backend/open_webui/utils/tool_permissions.py: requires_tool_approval",
+          "lines": "L116-L119",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认权限模式",
+          "note": "缺省 full 模式下工具调用不需要审批。"
+        },
+        {
+          "evidence_kind": "source_path",
+          "source_url": "https://github.com/open-webui/open-webui/blob/b0e6098e940942281d9c83f3529ea117287a3a22/src/routes/+layout.svelte",
+          "locator": "src/routes/+layout.svelte: chat:completion 事件的 NotificationToast",
+          "lines": "L796-L842",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "网页界面默认设置",
+          "note": "事件来自别的聊天或页面在后台时，完成后弹应用内通知；浏览器通知要 notificationEnabled（默认 false）。"
+        },
+        {
+          "evidence_kind": "official_doc",
+          "source_url": "https://docs.openwebui.com/features/chat-conversations/chat-features/notifications",
+          "locator": "Notifications：Inbox / Enabling Notifications",
+          "lines": "",
+          "retrieved_at": "2026-11-24",
+          "configuration_scope": "默认安装",
+          "note": "收件箱默认开，收自动化运行失败等；网络回调通知默认关。"
+        }
+      ],
+      "confidence": "medium",
+      "coder_note": "ask_user 在未保存聊天里走实时 socket 回调，同样阻塞等回答。自动化运行记录有状态、错误、聊天链接几个固定字段，没按 structured_handoff 记，判定句要的是目标、遗留问题一类交接字段。",
+      "review_status": "single_review",
+      "vocabulary_proposals": [],
+      "facets": {
+        "block_kind": [
+          "question"
+        ]
+      }
+    }
+  }
+}
