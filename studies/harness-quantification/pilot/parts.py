@@ -6,7 +6,8 @@
                                                                             # parts -> data/codings/<coder>/<config_id>.json
 
 Run from the repository root. merge reads <parts>/<coder>/<config_id>/<groups>.json, where <parts> is the
-PILOT_PARTS environment variable or, by default, tmp/quant-pilot/parts (not in Git).
+PILOT_PARTS environment variable or, by default, tmp/quant-pilot/parts (not in Git). The coding takes its
+config's round unless PILOT_ROUND names a round that lists the config with role "recode".
 """
 import datetime
 import json
@@ -110,7 +111,7 @@ def merge(coder, config_id, model, prompt_version, dry=None):
     rec = json.loads((vd.DATA / "templates/coding.template.json").read_text(encoding="utf-8"))
     today = datetime.date.today().isoformat()
     config = json.loads((vd.DATA / "configs" / f"{config_id}.json").read_text(encoding="utf-8"))
-    rec.update(round=config["round"], config_id=config_id, evidence_cutoff=today,
+    rec.update(round=os.environ.get("PILOT_ROUND") or config["round"], config_id=config_id, evidence_cutoff=today,
                coder={"id": coder, "model": model, "prompt_version": prompt_version, "coded_at": today})
     errors = []
     written_fields = set()

@@ -422,6 +422,18 @@ class TreeLinks(Base):
         self.edit(f"configs/{CFG_A}.json", lambda r: r.update(synthetic=False))
         self.assertError(self.errors(), r"fixture records must be marked synthetic")
 
+    def test_recode_round_may_code_an_earlier_config(self):
+        def recode_round(role):
+            rnd = json.loads((self.tmp / "rounds/synthetic-1.json").read_text())
+            rnd.update(round="synthetic-2", tools=[dict(rnd["tools"][0], role=role)])
+            (self.tmp / "rounds/synthetic-2.json").write_text(json.dumps(rnd, ensure_ascii=False))
+        for coder in ("coder-a", "coder-b"):
+            self.edit(f"codings/{coder}/{CFG_A}.json", lambda r: r.update(round="synthetic-2"))
+        recode_round("holdout")
+        self.assertError(self.errors(), r"round differs from its config's round")
+        recode_round("recode")
+        self.assertFalse([e for e in self.errors() if "round" in e])
+
     def test_round_tool_must_exist_in_round(self):
         self.edit("rounds/synthetic-1.json", lambda r: r["tools"].pop(0))
         self.assertError(self.errors(), r"tool Z90 is not listed in round")

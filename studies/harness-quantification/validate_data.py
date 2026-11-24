@@ -34,6 +34,7 @@ ROLES = {
     "control_editor_host": "编辑器宿主对照",
     "control_resident_gateway": "常驻网关对照",
     "holdout": "没参与码本修订、用来检验码本的配置",
+    "recode": "已在前一批编过、换现行码本重编的配置；配置记录仍归原批次",
 }
 # Words that would point at single private-bench tasks; never allowed near a bench reference.
 BENCH_FORBIDDEN = ("题目", "题号", "单题", "题面", "评分细则", "task_id", "bench_task", "task id", "rubric")
@@ -766,9 +767,12 @@ def validate_tree(root, ctx):
         if cfg is None:
             errors.append(f"{rel(p)}: config {rec.get('config_id')!r} has no configs/ record")
             return None
-        if rec.get("round") != cfg.get("round"):
-            errors.append(f"{rel(p)}: round differs from its config's round")
         rnd = rounds.get(rec.get("round"), {})
+        # A recode round codes a config again under the current codebook; the config record keeps its first round.
+        recode = any(isinstance(t, dict) and t.get("config_id") == rec.get("config_id") and t.get("role") == "recode"
+                     for t in rnd.get("tools", []))
+        if rec.get("round") != cfg.get("round") and not recode:
+            errors.append(f"{rel(p)}: round differs from its config's round")
         if coder not in [c.get("id") for c in rnd.get("coders", []) if isinstance(c, dict)]:
             errors.append(f"{rel(p)}: coder {coder!r} is not listed in round {rec.get('round')}")
         return cfg
