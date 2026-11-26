@@ -110,6 +110,7 @@ npm run check:cached-sources
 - `research/private-bench/configs.json`：公开的组合说明（外壳、模型、思考强度、资源上限）、任务类型的中文名、项目类型名称和最小公开格（默认 5 题且 15 次判过）。账本里出现这里没有的组合时，导出会停下。
 - `research/private_bench.py export`：只读打开账本，按殿试报表相同的判定规则汇总。判过运行不足最小公开格的组合只列名称；任务类型先按全轮题数合并过小的类别（例如只有 1 题的文档类并入相邻类别），某组合合并后仍有过小的格子时整行不拆分；项目类型只给题数，不给结果。导出前自动校验，不合格不写文件。
 - `research/private_bench.py check` 与 `research/test_private_bench.py`：检查已入库的汇总，并在合成账本上测试导出、合并、校验和渲染；`npm run check:private-bench` 运行两者，也包含在 `npm run check` 中。
+- `research/test_*.py`：生成脚本的单元测试（占位符替换、来源核对、旧稿修订、引用渲染、私有题库汇总），全部用临时目录和合成数据，不读写正文；`npm run test:research` 运行全部，也包含在 `npm run check` 中。
 - 正文用 `{{bench:<轮次>.scope}}`（口径说明）、`totals`（各组合总数）、`by-category`（按任务类型）、`resources`（上限、API 等价与用时）引用。表格按 `configs.json` 的固定顺序排列，不按结果排序。
 
 一轮评测结束后，在作者机器上运行（账本路径与私有的任务分组文件不写进仓库）：
