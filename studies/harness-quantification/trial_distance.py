@@ -196,15 +196,21 @@ def compute(root=HERE):
     return {"schema": schema, "codings": codings, "configs": configs, "closed": closed, "ids": ids, "pairs": pairs, "variants": variants}
 
 
-def round_agreement(res, root=HERE):
-    """Inter-coder agreement per round, recomputed with compare_codings.compare_pair under the current codebook."""
+def round_rows(res, root=HERE):
+    """Inter-coder agreement per round, recomputed with compare_codings.compare_pair under the current codebook.
+
+    One dict per round, in archived_rounds order and then data/codings (when non-empty, named after the
+    round field of its first record). Codings whose round field differs from the round are skipped.
+    Rates are fractions; closed and open are (mean or None, count); mean and agree_value_among_both_known
+    are None when nothing was compared."""
     from compare_codings import compare_pair
     schema, closed = res["schema"], res["closed"]
     rounds = [(b.name, b) for b in archived_rounds(root)]
     current = sorted((root / "data" / "codings" / "opus").glob("*.json"))
     if current:
         rounds.append((load_json(current[0])["round"], root / "data" / "codings"))
-    out = ["round | codebook | configs | mean agreement | closed (n) | open (n) | agree-value among both-known"]
+    mean = lambda xs: statistics.fmean(xs) if xs else None
+    rows = []
     for name, base in rounds:
         rates, cl, op, av, bk, cb = [], [], [], 0, 0, set()
         for p in sorted((base / "opus").glob("*.json")):
@@ -217,8 +223,19 @@ def round_agreement(res, root=HERE):
             av += r["outcomes"].get("agree_value", 0)
             bk += r["both_known"]
             cb.add(a["codebook_version"])
-        m = lambda xs: f"{100 * statistics.fmean(xs):.1f}% ({len(xs)})" if xs else "- (0)"
-        out.append(f"{name} | {', '.join(sorted(cb))} | {len(rates)} | {100 * statistics.fmean(rates):.1f}% | {m(cl)} | {m(op)} | {100 * av / bk:.1f}%")
+        rows.append({"round": name, "codebooks": sorted(cb), "configs": len(rates), "mean": mean(rates),
+                     "closed": (mean(cl), len(cl)), "open": (mean(op), len(op)),
+                     "agree_value_among_both_known": av / bk if bk else None})
+    return rows
+
+
+def round_agreement(res, root=HERE):
+    """round_rows laid out as a table."""
+    pct = lambda x: "-" if x is None else f"{100 * x:.1f}%"
+    m = lambda g: f"{pct(g[0])} ({g[1]})"
+    out = ["round | codebook | configs | mean agreement | closed (n) | open (n) | agree-value among both-known"]
+    for r in round_rows(res, root):
+        out.append(f"{r['round']} | {', '.join(r['codebooks'])} | {r['configs']} | {pct(r['mean'])} | {m(r['closed'])} | {m(r['open'])} | {pct(r['agree_value_among_both_known'])}")
     return "\n".join(out)
 
 
