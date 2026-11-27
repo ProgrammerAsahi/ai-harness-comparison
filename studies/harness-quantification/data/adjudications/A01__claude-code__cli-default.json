@@ -1,0 +1,86 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A01__claude-code__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Qwen4-Max (qwen-4-max-tp)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F16": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_maintained_files"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在对事实的认定：Cron 一次性提醒能否算跨会话记忆。scheduled-tasks 页写明任务是会话级的，只在同一会话里运行，--resume/--continue 时恢复（属 F18/F19），关掉会话就不再触发，跨会话调度要改用云端或桌面定时任务；F16 只计新会话能用上的记忆，structured_records 的触发式提醒也要把内容带进触发当时的会话，这里永远只是建它的那个会话，所以不计。auto memory 主题文件由 Claude 用标准文件工具按需读、索引整份载入，不够 structured_records 或 retrieval_store；CHANGELOG 的 memory recall/extraction 只是迹象。",
+      "evidence": "docs-llms-full.txt#L47649（Tasks are session-scoped… restores on --resume）；#L47767-L47808（Set a one-time reminder；Cron 工具表）；Limitations 小节 L47864-L47872；#L37604-L37616（memory › How it works）"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者都认 user、main_agent、framework_internal（agent hook 是往默认开放的 hooks 扩展点添加自带 prompt 的定义，框架在生命周期事件上派生最多 50 轮、能调工具的子代理），分歧只在 event_scheduling，属对文档的读法不同。scheduled-tasks 页把定时触发分成两种：Claude 可自行调用的技能会被执行，disable-model-invocation 等技能则以纯文本交给 Claude；skills 页写 context: fork 技能由 Claude Code 起子代理，定时任务以它为提示触发时也等结果。disable-model-invocation 那一行说的是能否在定时触发时运行的准入条件，没有说由主模型调用，所以定时器到点不经主代理决定就创建子代理，计 event_scheduling，与甲一致。",
+      "evidence": "docs-llms-full.txt#L47681-L47688（A scheduled fire only runs skills… reach Claude as plain text instead of executing）；#L48823（disable-model-invocation）；#L49214-L49229（Run skills in a subagent）；#L72807-L72849（Agent-based hooks）"
+    },
+    "F32": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "Agent SDK 包装 CLI 子进程，按 F32 library 条款记背后的边界 cli_subprocess（已记），不另记 library；与 A02、A04、B08、B09、A18 的记法统一。字段条款与 R5 构件库一句冲突，按 R7 以字段为准。",
+      "evidence": ""
+    },
+    "F36": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "resumable_todo 不应计入：SendFeedback 草稿是写给 Anthropic 的产品反馈，属代理已做完、留在审阅区（草稿队列）等人接受（发送）或撤销（丢弃）的产出，不是任务本身的待办或目标，也不是索要材料/凭据/确认的请求，按判定排除，乙多记了此项。blocking_approval（auto 模式仍弹权限提示、AskUserQuestion 默认持续等回答）与 message_notification 双方一致且成立。",
+      "evidence": "docs-llms-full.txt tools-reference › SendFeedback tool behavior L103961-L104003；settings feedbackDrafts L100408-L100418"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A17__step-code__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "opus",
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F02 判定顺序先看可执行流程约束：task_* 默认注册且框架只保存、展示待办表并不按表推进或拦动作，命中的只是 structured_task_list；iterate() 的 Planner/Developer/QA 固定阶段属运行时推进的工作流原语，码本明文规定模型现写或事先写好的工作流定义都不算计划条目、不因此记 executable_flow_constraint。计划模式仅用户 /plan/--plan 进入（总则 R3 第二档），不入取值。乙的取值站得住。",
+      "evidence": "packages/coding-agent/src/features/workflow/runtime.ts#L836-L911; packages/coding-agent/src/step/system-prompt.ts#L195-L213; packages/coding-agent/src/step/system-prompt.ts#L319; packages/coding-agent/src/features/step-capabilities.ts#L22-L49"
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "目标续跑经默认注册的 create_goal 启动，按总则 R3 第一档算默认（工具说明写“只在用户要求时用”不改变档次）；回合以错误结束（重试后失败）时框架按自身规则把目标置为 blocked/usage_limited 并停止续发，留下可恢复的任务状态，用户须 /goal resume 才继续（普通消息明确不恢复），正合 escalate_to_human 判定句“框架按自己的规则……回合以错误结束判定受阻……用户要下一条恢复命令才继续的也算”。乙多记的 escalate_to_human 成立，集合无多记，选乙。",
+      "evidence": "packages/coding-agent/src/features/step-schedule.ts#L782-L797; packages/coding-agent/src/features/step-schedule.ts#L1057-L1064; packages/coding-agent/src/features/step-schedule.ts#L1181-L1195; apps/cli/src/bootstrap/extensions.ts#L43-L72; docs/goal-lifecycle.md（User controls）"
+    },
+    "F21": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "tool_category",
+        "file_path"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F21 范围规则明文收录“用户在……预存的工作流文件里写、只约束某一个工具的路径或命令规则，按总则 R2 计入对应维度”：saved workflow（项目 .stepcode/workflows/saved 或全局 workflows/saved，用户可预存）脚本里的 agent 选项 readOnly/writable 挂载由 checkWorkflowPathAccess 按路径放行/拒绝子代理读写，属可写的声明式路径规则，计入 file_path（仅限该工具链）；模型内联脚本自报范围不计。乙只否了计划模式的固定计划文件（写死名单），未覆盖工作流文件里的路径声明，集合漏项。命令规则仅内置写死名单，双方排除正确。甲的集合正确。",
+      "evidence": "packages/coding-agent/src/features/workflow/step-workflow.ts#L74-L111; packages/coding-agent/src/features/workflow/tool-profile.ts#L78-L128; docs/plan-loop-cron-workflow-hoh.md（Workflow 脚本 API、saved/ 用户维护的脚本）"
+    },
+    "F33": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "事实双方一致（官方示例 file-trigger 在 session_start 设 fs.watch，逐条 sendMessage(triggerTurn) 注入，空闲时立即开一轮），分歧在读法：读者一把它比作“自写操作系统定时脚本”，但那句针对框架外脚本调命令行；本例是装进默认开放、自动发现的扩展目录的一个脚本，按 R2 属添加内容、扩展包能带来的形式计入取值，且 F33 取值按 R5 收全部有文档入口。外部事件判定明写“框架之外的文件变化……由会话里设立的订阅收下……不论订阅由谁设立”，事件逐条送进会话而非后台命令结束一次交回，故 external_event 应记入取值。",
+      "evidence": "packages/coding-agent/examples/extensions/file-trigger.ts#L14-L40; packages/coding-agent/docs/extensions.md#L109-L120（Extension Locations）, #L1455-L1472（sendMessage triggerTurn）, #L3064; packages/coding-agent/src/core/package-manager.ts#L2356-L2366; packages/coding-agent/src/core/extensions/loader.ts#L49-L76"
+    }
+  }
+}

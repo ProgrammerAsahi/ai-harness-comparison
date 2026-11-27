@@ -25,6 +25,8 @@
 
 码本修订后，也可以把已经编过的配置换现行码本重编一次，看修订有没有减少分歧。这样的一轮单独写一条轮次记录，工具的角色记 `recode`；配置记录的 `round` 仍是原批次，编码文件的 `round` 写重编那一轮，校验只在轮次记录把这份配置列为 `recode` 时放行。第一次重编写在 `rounds/recode-1.json`：从第三到第五批挑出十个配置，按 `fields-0.10` 重编。编码者照样看不到这些配置在原批次里的编码、交叉核对和批次记录。做法、一致率和它能说明什么见 [`../batches/recode-1.md`](../batches/recode-1.md)；这 20 份编码现在在 `codings/` 下，下一批开始编码之前移到 `../batches/recode-1/`。
 
+两位编码者的分歧逐项裁决过一轮，记录在 `adjudications/<config_id>.json`：每个配置一份，只含两人判得不同的字段，逐字段写最终状态和取值、选了哪位编码者（或都不对）、由谁定下（两位读者一致、第三读者或主控统一）、各读者的选择、理由和证据位置。裁决按现行码本 `fields-0.10` 做，只改分歧字段，不改编码文件；子维度不裁决。`../adjudicate.py check` 校验这些记录和编码、码本对得上。做法、结果和局限见 [`../batches/adjudication-1.md`](../batches/adjudication-1.md)。裁决结果同样不是对任何工具的评分。
+
 ## 为什么用 JSON
 
 选 JSON 而不是 YAML：校验、比较和测试只用 Python 标准库就能读，不增加依赖，也和本研究已有的 `sources.json`、`examples.json` 以及 `research/private-bench/*.json` 一致；JSON 没有 YAML 的隐式类型转换（例如 `no`、`on`、日期被自动改类型），对编码者手填的取值更安全。代价是不能写注释，所以每条记录都留了 `note`、`value_note`、`coder_note` 等说明字段。

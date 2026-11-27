@@ -1,0 +1,118 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C06__open-webui__docker-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F11": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "single_fixed"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者事实一致（update_automation 带 model_id，存入任务定义，execute_automation 到点用它跑完整聊天循环），差在读法：自动化运行算不算主循环自动派生的子任务。按 R4 与 F11 question_rule，value 只看一个任务过程中的主循环和它自动派生的子代理；自动化由调度器到点直接起、新建独立聊天（新 chat_id），结果不回到发起它的循环，正是 F26 event_scheduling 所说“定时器直接创建、中间不经主代理决定”的另一项任务，不是本任务的子代理或子任务；create_automation 本身固定用当前型号。主循环用所选型号，辅助调用经 get_task_model_id 退回同一型号，故记 single_fixed，模型可给自动化改型号写进 value_note。",
+      "evidence": "backend/open_webui/tools/builtin.py#L4259-L4360, #L4363-L4465; backend/open_webui/utils/automations.py#L69-L112, #L334-L400; backend/open_webui/utils/tools.py#L910-L918"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "默认 ask_user 暂停路径（不需开 Tool Permissions）经 pause_for_tool_approval 把整批调用按 call_id 连同已存结果写进消息，续跑时 resume_tool_calls 用 pending_tool_calls 按调用编号与已存 function_call_output 配对、跳过已有结果的调用——正是 idempotency_key 判定句里'重入路径上的配对查重（含恢复时现建的表）'。甲称配对只在可选审批路径用到与代码不符，故幂等标识成立。",
+      "evidence": "backend/open_webui/utils/middleware.py#L5933-L5950, #L3448-L3475, #L3316-L3344; backend/open_webui/utils/tool_approval.py#L23-L31; backend/open_webui/main.py#L1961-L1976"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F28 口径明写'用户直接发起、F26 已记入的路径按默认路径算'；Run now 用 asyncio.create_task 起后台运行后立即返回，完成时框架发 automation:result 通知、失败也入运行记录，调用方可经 get_automation_runs 查询结果，符合 async_wait'调用方先继续做别的，之后由框架通知完成或由调用方查询结果'。调度直接起的独立运行确实无调用方，不参与；无取消传播与共享看板。",
+      "evidence": "backend/open_webui/routers/automations.py#L343-L365; backend/open_webui/utils/automations.py#L505-L534"
+    },
+    "F29": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "请求体带 tools 键时服务端跳过自身工具解析、把调用方的工具定义原样交给模型，模型发出的调用以未执行的 tool_calls 交回调用方、结果由调用方经下一轮请求交回模型——即'嵌入方经嵌入接口（F32 任一种）为会话声明工具，框架把调用交回嵌入方执行再把结果交给模型'，按判定句'一律记本项'记 embedder_declared；该边界有官方文档（Server-Side Tool Calling 的三种请求形态表与'Do not send your own tools array'注）。",
+      "evidence": "backend/open_webui/utils/middleware.py#L2653-L2661, #L2788-L2810, #L3232-L3246; backend/open_webui/main.py#L1284-L1298; docs-llms-full.txt「User Tool Servers vs. Global Tool Servers」"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "end",
+        "session_start",
+        "context_compaction"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "chat.updated 仅在 update_chat_by_id、update_chat_params 两个用户改聊天的 REST 接口后发布，属'save 判定句'里'消息更新这类顺带落盘的通知'，按所属阶段判、无对应任务阶段不记；任务过程中框架自己写会话记录（models/chats.py 的 upsert/update）不发任何事件，save 无'以写入为本义'的事件点。其余五个阶段两人一致且有 Filter inlet/request/stream/outlet 与 chat.created/finished/compacted 事件支持。",
+      "evidence": "backend/open_webui/events.py#L213-L215; backend/open_webui/routers/chats.py#L1510-L1531; docs-llms-full.txt「The Event Catalog」"
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "唯一跑完整代理循环的 Path A 是自定义 REST 流程（建聊天→带 chat_id/id/stream 发起→轮询→读聊天记录），HTTP 响应体为空或仅受理回执，不是'按通用大模型接口格式收发'；返回 OpenAI 形状的模式（Path B、无 chat_id 的原样交回）又不跑完整代理循环，public_protocol 的模型兼容句两条件凑不齐，按'自家定义的 HTTP 协议记 service_api'记 service_api。",
+      "evidence": "docs-llms-full.txt「The one rule that decides your whole integration」「Anthropic Messages API」"
+    }
+  }
+}

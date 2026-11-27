@@ -1,0 +1,96 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B18__codecompanion-nvim__neovim-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-4",
+    "gpt": "batch-4"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "message_too_big 检查整段会话 token 是否超过型号输入上限（max_prompt_tokens/context_window），属于 F12 明确排除的\"整段上下文超过模型窗口时拒绝发送\"，不是预算截止，故 budget 不计入。甲的 model_end_signal 和 user_interrupt 均有源码依据。",
+      "evidence": "lua/codecompanion/interactions/chat/init.lua#L1313-L1341; lua/codecompanion/interactions/chat/helpers/context.lua#L27-L41"
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F12 scope_rule 明确排除\"整段上下文超过模型窗口时拒绝发送或报错（这属于窗口限制，超窗处理见 F13、F14）\"。message_too_big 估算整段会话 token 后与 input_limit（max_prompt_tokens 或 context_window）比较、超限拒发并警告，正是被排除的窗口限制检查，不属 total_tokens 预算。copilot schema 无输出上限，无截断续写，无步数/时长/金额阈值，故 known_absent []。",
+      "evidence": "lua/codecompanion/interactions/chat/init.lua#L1313-L1341; lua/codecompanion/interactions/chat/helpers/context.lua#L27-L41"
+    },
+    "F19": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "conversation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者对事实无分歧（序列化连同 tools 存取消息、load 写回 chat.messages），差在码本读法：F19 scope_rule 只说恢复命令本身不按 R3 降档，tool_results 判定没有像 task_plan 那样写明“不按 R3 第二档排除”；按 R2，只能由工具调用产生的内容，要用户在消息里用 @{...} 加工具才有触发来源的，按 R3 第二档不计、写“可选：”。所选配置 default_tools 为空，默认路径上不会出现工具结果，故只计 conversation。",
+      "evidence": "lua/codecompanion/config.lua#L348-L350; lua/codecompanion/interactions/chat/sessions/init.lua#L284-L308; lua/codecompanion/interactions/chat/sessions/serializer.lua#L25-L50"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "workflow_definition",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "environment_premises.other 确认研究机器装有 Tree-sitter yaml 解析器、技能路径按可用处理。skills 目录默认扫描（config L1370-L1376），add_skill 注入名称与描述并附 read_file 供模型按需读全文（skills/init.lua L164-L191），符合 skill_directory 判定\"框架从约定目录发现技能包，按名称或描述在需要时装载进上下文\"。甲以解析器可选为由排除，与配置记录钉住的环境前提不符。",
+      "evidence": "lua/codecompanion/skills/init.lua#L55-L70; lua/codecompanion/skills/init.lua#L160-L191; lua/codecompanion/config.lua#L1368-L1380"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F35 scope_rule 明确写\"用户在任务运行中提交的后续消息那一层也参与 value 的比较\"，构成对 R3 的字段级覆盖。默认 buffer 布局下普通提交遇 current_request 直接返回，但 gm 键（默认绑定）将后续消息存入 chat._btw（进程内存），agent_loop after_response 检测到 _btw 后自动提交下一轮（L16-18）。_btw 不序列化、崩溃即丢，符合 in_memory。interactive_queue 同为 in_memory。",
+      "evidence": "lua/codecompanion/interactions/chat/init.lua#L1178-L1202; lua/codecompanion/config.lua#L830-L835; lua/codecompanion/interactions/chat/prompt/buffer.lua#L91-L97; doc/usage/chat-buffer/index.md#L33"
+    }
+  }
+}

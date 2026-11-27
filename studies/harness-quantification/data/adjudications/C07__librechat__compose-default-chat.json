@@ -1,0 +1,143 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C07__librechat__compose-default-chat",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-4",
+    "gpt": "batch-4"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按现行码本 fields-0.10 总则 R2 与 F12 scope_rule（内部上限有无触发来源仍按 R2 判），默认普通聊天不注册任何工具、无多步工具循环，50 步 recursionLimit 不可能触发，不计 budget；输出截断续写按 R8 与 F03 scope_rule 只在 F12 记，故仅保留 model_end_signal 与 user_interrupt。",
+      "evidence": "packages/api/src/agents/load.ts#L104-L122; api/server/controllers/agents/client.js#L5148-L5171; docs-llms-full.txt Message Composer 快捷键 L38650-L38662"
+    },
+    "F12": {
+      "choice": "neither",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "neither",
+        "r3": "neither"
+      },
+      "rationale": "两位读者对 call_count 一致（F12 scope_rule 明写触发来源按 R2 判，默认零工具普通聊天碰不到 50 步上限和只在工具批次上累计的步数提醒，不计，乙错）；分歧在事实：截断后是否真有 Continue。核对源码：普通聊天走 /api/agents/chat，悬停 Continue 要求 finish_reason 非空且非 stop、非步数上限，而服务端只在用户中止时写 'incomplete'、步数用尽时写步数上限原因，输出截断不写 finish_reason，所以截断后不出现 Continue；文档那句与代码不符，按代码判。OpenAI 的 max_tokens 默认 undefined，getModelMaxOutputTokens 只有定义没有调用，没有框架默认输出上限，output_limit 不计（甲错）。余额默认关。故 known_absent []。",
+      "evidence": "client/src/hooks/useGenerationsByLatest.ts#L64-L76; api/server/middleware/abortMiddleware.js#L54; api/server/controllers/agents/request.js#L3010-L3024; api/server/routes/agents/chat.js#L23-L90; packages/data-provider/src/schemas.ts#L477-L479; packages/api/src/utils/tokens.ts#L752（全仓无调用）; docs-llms-full.txt#L38916（Message Actions 表 Continue 一行，与代码不符）"
+    },
+    "F23": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F23 question_rule/scope_rule 与总则 R2，只记“机制所管的动作在默认配置里能够发生”的代理动作约束；默认普通聊天不注册工具（工具与 MCP 均须会话内打开，属 R3 第二档），按 F24 口径模型文字回复不算动作，既无代理动作可经 Compose 容器边界约束，历史附件用户归属过滤也属网页端请求鉴权而非代理动作检查，故为 known_absent []。",
+      "evidence": "packages/api/src/agents/load.ts#L104-L122"
+    },
+    "F24": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "现行码本 fields-0.10 的 F24 scope_rule 明确界定“动作指框架替模型执行、在模型之外产生效果的操作……模型的文字回复不算动作。默认路径上有没有动作按总则 R2 判”；默认普通聊天零工具、无代理动作发生，会话消息库里的问答与用户编号不能对应代理动作，故为 known_absent []。",
+      "evidence": "packages/api/src/agents/load.ts#L104-L122"
+    },
+    "F25": {
+      "choice": "gpt",
+      "status": "known_absent",
+      "value": "absent",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F25 question_rule 与 present 判定，“代理”须“有自己的上下文、能自己多步调用工具”，且多个模型调用不自动算多代理；普通聊天默认零工具（工具开关和 MCP 芯片须在会话内显式开启，属 R3 第二档），按 + 开启的多会话并排回复在默认配置下只是并排比较模型单步文本回复，子代理、记忆代理、定时聊天与事件触发亦均默认关，故为 known_absent absent。",
+      "evidence": "api/server/services/Endpoints/agents/addedConvo.js#L25-L40; packages/api/src/agents/load.ts#L104-L122"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F25 判为 absent，按门控规则条件字段 F26 记 not_applicable。",
+      "evidence": ""
+    },
+    "F27": {
+      "choice": "gpt",
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F25 判为 absent，按门控规则条件字段 F27 记 not_applicable。",
+      "evidence": ""
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "not_applicable",
+      "value": null,
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F25 判为 absent，按门控规则条件字段 F28 记 not_applicable。",
+      "evidence": ""
+    },
+    "F30": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F30 skill_directory 判定，模型按名称或描述按需装载是关键条件，且按总则 R2/R3 在会话里打开工具开关或用提及符号启用工具属第二档；普通聊天临时代理的技能开关默认关，仅添加技能文件模型看不到技能目录，须先在输入区开 Skills 开关或按 $ 提及，故不计 skill_directory。Presets（含默认预设，按 fields-0.10 role_template 判定不归 project_rules）与 Prompts 库分别记 role_template、prompt_template。",
+      "evidence": "packages/api/src/agents/skills.ts#L353-L373; client/src/components/Chat/Input/SkillsCommand.tsx#L100-L110,L202-L215; client/src/Providers/BadgeRowContext.tsx#L105-L113,L257-L263"
+    }
+  }
+}

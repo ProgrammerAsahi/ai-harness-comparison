@@ -1,0 +1,149 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A16__grok-build__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "opus",
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "现行码本（fields-0.10）F02 判定与总则 R8 明确规定：由运行时或框架推进的脚本和工作流定义不算计划条目、本字段不因它记 executable_flow_constraint（模型现写和事先写好的都一样），乙以 workflow 脚本计 executable_flow_constraint 的理由被现行码本排除；todo_write 默认注册、条目带状态、框架保存展示而不强制顺序，命中 structured_task_list。TodoGate 内置默认 false（远端 todo_gate_enabled 才开），不构成按计划条目推进或拦截。两人用的 fields-0.6 与现行口径的差异以现行版为准。",
+      "evidence": "crates/codegen/xai-grok-agent/src/config.rs#L256-L288; crates/codegen/xai-grok-agent/src/system_reminder.rs#L50-L68"
+    },
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt",
+        "verification_condition"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "budget 的唯一依据是循环定时任务 7 天到期（RECURRING_TASK_TTL_DAYS），按跨配置统一口径不算任务级用量阈值。",
+      "evidence": ""
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "两位读者补上的 output_limit（截断后续写、连续 5 次硬停）保留；time 的唯一依据是循环定时任务 7 天到期，按统一口径不记。",
+      "evidence": ""
+    },
+    "F20": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "workflow journal 按 seq+req_hash 持久记录宿主调用结果，重入（同进程暂停/恢复、脚本从头重跑）时先 replay：已有结果的调用直接取旧结果不再执行、分歧报错——正是幂等标识判定里“运行时推进的工作流在重入时按持久日志跳过已有结果的宿主调用”一款（被打断那步未提交的调用会重做，照计）。乙未把该路径计入。会话分支与工作区快照两人一致。",
+      "evidence": "crates/codegen/xai-workflow/src/journal.rs#L11-L18,L174-L193; crates/codegen/xai-grok-shell/src/session/workflow/manager.rs#L166-L257"
+    },
+    "F23": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "workflow 脚本在受限 Rhai 引擎内执行：限制操作数/调用深度/表达式深度/字符串与容器尺寸、DummyModuleResolver 禁模块加载、disable eval、timestamp/sleep/exit 注册为报错，脚本只能经登记宿主函数（agent、budget、complete、pause 等）与外界交互，命中 runtime_sandbox 的代码行为判据。workflow 默认开启、模型可用默认工具起脚本，属默认生效。乙只记 application_check，未计入该项。",
+      "evidence": "crates/codegen/xai-workflow/src/engine.rs#L119-L160; crates/codegen/xai-grok-shell/src/agent/config_tests.rs#L4787-L4795"
+    },
+    "F26": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow",
+        "user"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在 R10 的读法：快照（替身 1.0.45）里调度器工具默认注册，定时触发由调度器直接起 general-purpose 后台子代理，快照用户指南也写“not as a turn in your conversation”；钉住版本 1.0.77 文档把同一句改写成“each firing is a new agent turn”，去掉了子代理说法、改用旧文档正面否定的“turn”，但没说是主会话回合还是新代理的回合，属于 R10“文档改了说法、又看不出改成什么”，event_scheduling 应进 unresolved 而非取值；若把新文档读成明确改为主会话回合，按文档同样不进取值。user、main_agent、workflow 两位编码者一致。",
+      "evidence": "crates/codegen/xai-grok-tools/src/implementations/grok_build/scheduler/actor.rs#L465-L475,L572-L790; crates/codegen/xai-grok-agent/src/config.rs#L256-L276; crates/codegen/xai-grok-pager/docs/user-guide/20-background-tasks.md#L82-L86; docs-llms-full.txt /build/features/background-tasks「Scheduled prompts」(L613-L621)"
+    },
+    "F29": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "ACP 入口（官方有文档的嵌入接口，F32 公共协议服务端）开放嵌入方声明工具的边界：官方 grok-agent-sdk 经 session/new _meta x.ai/mcp/servers 声明宿主进程内工具，模型调用经反向 x.ai/mcp/sdk_call 交回嵌入方执行再回传结果，逐句命中 embedder_declared 判定；wire 层常量与 initialize 能力位（x.ai/mcp/sdk）即协议面，用户指南 10-hooks 亦点名该 SDK、15-agent-mode 说明 x.ai/* 扩展按 initialize 发现（清单非穷尽）。乙称未找到有文档的嵌入方声明边界，与源码协议面和指南记载不符。internal_code 与 external_protocol_service 两人一致。",
+      "evidence": "crates/codegen/xai-grok-shell/src/session/acp_mcp.rs#L1-L10; docs-llms-full.txt /build/cli/headless-scripting「ACP」; crates/codegen/xai-grok-pager/docs/user-guide/10-hooks.md#L302"
+    },
+    "F36": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "workflow 的 await_user 记录等待点并暂停整个运行，暂停状态持久化落盘、进程恢复时保留暂停记录（仅 Active 转 Interrupted），界面（/workflow runs，p 暂停 / r 恢复）列出暂停运行供人决定恢复或放弃——命中 resumable_todo“持久保存、进程重启后仍然存在、明确等人处理或决定是否恢复”，与码本例句（工作流引擎持久化暂停任务、人在列表里决定恢复或放弃）逐句对应。await_user 恢复时经 journal 回放直接放行、不收取回答，不属“代理停下等回答的审批或提问”（那是 blocking_approval 的范围，由 Ask 审批与 ask_user_question 承担），不与之重复。甲只记 blocking_approval 与 message_notification。",
+      "evidence": "crates/codegen/xai-workflow/src/engine.rs#L754-L769; crates/codegen/xai-grok-shell/src/session/workflow/tracker.rs#L50-L53,L589-L631; crates/codegen/xai-grok-shell/src/session/acp_session_impl/spawn.rs#L1677-L1684; crates/codegen/xai-grok-pager/docs/user-guide/04-slash-commands.md#L319-L326"
+    }
+  }
+}

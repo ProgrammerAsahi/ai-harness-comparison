@@ -1,0 +1,192 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B09__amp__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Qwen4-Max (qwen-4-max-tp)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "ThreadState 注释明写 'A failed inference turn with an automatic retry pending is reported as running'，即框架不经模型自动重发失败的推理回合，满足 call_retry 判定。甲漏记此项。model_self_repair 双方一致，不另议。",
+      "evidence": "docs-pages.txt#L19754-L19756（plugin-api ThreadState）；#L10723-L10733（customize/plugins tool.result）；#L20897-L20900（plugin-api 工具 execute 抛错）"
+    },
+    "F05": {
+      "choice": "opus",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "差在事实认定：SDK 页说默认 agent runs in the local Amp CLI process，但同一版本文档又说默认 local 是把当前客户端当 executor、serverOnly 可在 thread actor 上完全不挂 executor 地运行、本机 execute 计时含 thread connection 与 server work、当前线程区分 legacy TUI 与 Neo thread-actor；orb 页对同一 executor 说法明写 agent loop 在 Amp 服务器。即使不借 orb 页，后几处也不属其他形态，与 SDK 那句相冲突，模型循环究竟在本机进程还是服务端 thread actor 无实现可查，按 R6 类别字段记 unknown（closed_source）；乙的 in_process 只靠被这些说法动摇的一句，站不住。",
+      "evidence": "docs-pages.txt#L16203-L16208（sdk Remote Executors）；#L18892-L18896（plugin-api RunAgentOptions executor）；#L20959（plugin-api serverOnly）；#L12899-L12904（customize/mcp thread actor）；#L13926-L13929（cli/execute-mode Timings）；#L19598-L19600（plugin-api ThreadMessageID）；#L7544-L7549（orbs/self-hosted What Leaves Your Network）"
+    },
+    "F07": {
+      "choice": "opus",
+      "status": "known",
+      "value": "state_service",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "Threads 页明写每个线程有 ampcode.com/threads/T-… URL，同一线程在网页、CLI、各 App 打开，'Where the agent runs is separate from where you look at it'；Cross-Client Access 默认启用，网页可向运行中的 CLI 线程发消息；Orbs 页写 'Amp stores this with the thread'。线程状态存在 Amp 服务端、独立于任何 particular 前端与执行位置，多端读写，满足 state_service 判定。文档没有关闭同步只存本机的选项，不按云端镜像处理。",
+      "evidence": "docs-pages.txt#L1006-L1015（threads 开头）；#L1129-L1147（threads Continue a Thread Anywhere）；#L15511-L15515（cli/remote-control）；#L21525-L21529（enterprise/minimal-data-retention）；#L12899-L12903（customize/mcp thread actor）"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "event_log"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "MCP 页明写 'The thread records each answer below the code_exec call: the tool, whether it was approved or declined, the user ID of the person who answered, and the time. The agent does not see this record.' 审批决定作为独立记录挂在 code_exec 调用下、代理不可见，满足控制条目条件（1）独立分片挂在消息下和（2）审批类。有一类控制条目即够 event_log。压缩摘要在插件视图里作为 user message 呈现，存储格式不明，单凭它不够；但审批记录独立成立。添加远程 MCP 服务器属 R2 添加内容，机制算开放。",
+      "evidence": "docs-pages.txt#L12932-L12940（customize/mcp Controlling Remote Tools）；#L19715-L19724（plugin-api ThreadMessagesOptions.full）"
+    },
+    "F18": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "amp threads continue 可重新附着线程，streaming-json 页提到 'a turn that Amp resumes when you continue a thread'，但文档未交代中断时未完成的工具调用是不经模型接续（checkpoint_resume）还是由模型重新决定（rebuild_and_rerun）。'resumes' 一词两种读法都说得通，关键条件文档未涉及。按 F18 unknown_rule '只知道支持恢复、看不出恢复时读回的是对话还是执行状态时写 unknown'，记 unknown（closed_source）。甲按保守选 rebuild_and_rerun 不符合 unknown_rule 的要求。",
+      "evidence": "docs-pages.txt#L1129-L1136（threads Continue a Thread Anywhere）；#L14463-L14469（cli/streaming-json 后台子代理与排队段）"
+    },
+    "F24": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "approval",
+        "result",
+        "identity"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "intent：线程持久保存提示、回复和每次工具调用，助手消息里同一步的文字、thinking 块和带 id 的 tool_use 块存在同一条消息里，属于“模型同一步写下的理由、持久化的思考”，乙漏记。approval：MCP 页明写批准和拒绝都记在对应 code_exec 调用下，带工具、决定、答复者 user ID 和时间，能对上具体调用；触发来源是添加带 requiresUserInteraction 的远程 MCP 服务器（R2 添加内容），甲放进 unresolved 不对。actual_operation、result、identity 双方一致。",
+      "evidence": "docs-pages.txt#L1006-L1010（threads 开头）；#L19615-L19690（plugin-api ThreadToolUseBlock/ThreadToolResultBlock/ThreadAssistantMessage）；#L12924-L12940（customize/mcp Controlling Remote Tools）"
+    },
+    "F27": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者只在 shared_files 上分歧，是对闭源门槛句的读法不同。文档点明了目录：Task 子代理的工作包括 searching code in your workspace，同时带文件编辑和终端工具；官方示例 use one subagent per file 让子代理直接改用户的文件；全文没有隔离副本或另建工作区的说法（They work in isolation 后接 so 解释的是上下文与通信隔离）。这已超出“只说能读写文件、没说在哪个目录”，按 shared_files 的闭源写法算说到同一工作区、默认不隔离（边界判断，low）。",
+      "evidence": "docs-pages.txt#L471-L497（models-and-subagents Subagents）；#L934-L942（tools Subagents）；#L621（prompting 示例）"
+    },
+    "F28": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "streaming-json 页明写 Task 以 mode:async 启动后台子代理时 'An assistant message with stop_reason: end_turn can arrive while they are still running'，即异步模式下父代理可先结束回合。反面推知默认（不带 async）调用时父代理不能先结束回合、须等子代理结果返回，满足 synchronous_return '父代理不能再推理、也不能再发起新的工具调用'。models-and-subagents 页写 'The main agent receives their final summary' 佐证结果作为工具结果返回。async_wait 由 mode:async 参数直接确认（R3 第一档）。乙仅凭'报告最终摘要'否定同步返回，忽略了 async 对照提供的关键条件。",
+      "evidence": "docs-pages.txt#L14455-L14466（cli/streaming-json background subagents）；#L14293-L14300（subagent_finished schema）；#L473-L476、#L489-L491（models-and-subagents Subagents）"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在 F31 scope_rule 类型化事件流一句的读法。--stream-json 是按类型逐条推送的通知流（init、user、assistant、result、subagent_finished），文档说每条 message 作为单独对象发出；assistant 是一次完整模型回复，带 stop_reason 与 usage，每次模型调用结束发一条，标出模型调用阶段的结束，不属 scope_rule 排除的回复文字或推理增量块。按该句记 model_call（仅观察、需 -x --stream-json，不进 via_default_entry）；其余四项双方一致。",
+      "evidence": "docs-pages.txt#L14180-L14181、#L14186-L14200（cli/streaming-json Basic Usage 与示例）；#L14211-L14265（Message Schema assistant）；#L20562-L20583（plugin-api PluginEventMap）"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "streaming-json 页明写 'Background subagents keep running when the Amp process that started them exits'，继续线程时 init 列出仍在运行者，完成后框架发 user 消息开启新回合——用户只需重新打开会话（continue 命令），不用再发消息，框架自动接着执行。同页 'a turn that Amp resumes when you continue a thread' 佐证主代理回合也被自动恢复。满足 persistent 判定第二句。乙认为流式输入描述不足以判交互 TUI，但 amp threads continue 和后台子代理是线程级机制，不限于流式模式；配置记录本身也引用该段。",
+      "evidence": "docs-pages.txt#L14463-L14469（cli/streaming-json）；#L1129-L1136（threads Continue a Thread Anywhere）"
+    },
+    "F36": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "model-selector 页明写 'Before it changes which model runs, Amp shows the current and new values in a dialog that only you can confirm'——模型经默认工具 manage_amp 提出改设置，框架在对话框里等用户确认后才执行，属权限审批（R3 第一档、F36 scope_rule '批准放行的是改设置动作记 blocking_approval, block_kind permission'）。这是内置默认机制，不需添加 MCP 或改设置。乙说'文档未确认默认本机配置已有这些触发来源'忽略了 model-selector 确认对话框。message_notification 双方一致（notifications.enabled 默认 true）。",
+      "evidence": "docs-pages.txt#L319-L321（model-selector Workspace Settings）；#L1509（projects manage_amp 归档确认）；#L12924-L12940、#L12968-L12975（customize/mcp Controlling Remote Tools、Questions From Remote Servers）；#L14681-L14686（cli/settings amp.notifications.enabled）"
+    }
+  }
+}

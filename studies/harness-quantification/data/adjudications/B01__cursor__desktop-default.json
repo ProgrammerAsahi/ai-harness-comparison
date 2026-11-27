@@ -1,0 +1,192 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B01__cursor__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "opus",
+      "status": "known",
+      "value": "structured_task_list",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "判定顺序先看结构化任务表。发布说明 3.22 写代理读取自己的待办清单时聊天显示清单本身、3.25 修复很长的待办清单让代理崩溃，说明框架保存展示一份由工具维护、可含多条目的任务表，独立于普通回复，按 R6 外部表现足以归为 structured_task_list；Plan 模式（自动建议+用户点选）只到提示文本层级，按判定顺序取前者。",
+      "evidence": "docs-pages.txt#L3179 (release-notes 3.22); #L2094 (3.25 Fixes to agent tools); #L44154 (enterprise/deployment-patterns: CLI is the same agent); #L37580-L37604 (cli/acp todos status); #L4658-L4672 (agent/plan-mode)"
+    },
+    "F05": {
+      "choice": "opus",
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "3.23 写承载 AI 功能的扩展宿主由 Cursor 自动重启、3.26 写跑本地代理的宿主中途退出时聊天界面仍存活并给出 Resume，前端（编辑器聊天界面）与执行核心（宿主内跑本地代理）分属不同进程；核心由应用拉起、不比应用活得久，按生灭关系判 subprocess_protocol（R6 推断，low）。乙记 unknown 不成立：宿主生灭与崩溃语义文档已涉及。",
+      "evidence": "docs-pages.txt#L1614 (release-notes 3.26 IDE: extension host running a local agent); #L2895 (3.23: Cursor restarts the extension host that powers AI features)"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "SDK 文档明说驱动 IDE 里同一个代理，且写明“Local 描述代理循环与文件系统访问在哪里跑”（本进程内跑循环、文件来自磁盘），按 R6 借此推断文件工具在核心所在进程即 main_process；shell 命令经终端/沙箱子进程执行记 subprocess。F06 的“文档说工具由程序自身执行”分支满足，main_process 不需进 unresolved。",
+      "evidence": "docs-pages.txt#L25099 and #L25120-L25130 (sdk/typescript: same agent; Local means local agent loop and filesystem access); #L5090-L5097 (agent/tools/terminal)"
+    },
+    "F14": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "浏览器工具页写日志写入文件、模型收到总行数与预览片段再 grep 选读，正是 truncation 判定句“截短后余下内容另存文件留路径”；F14 范围明确含进入上下文时的工具结果处理（tool_result_replacement 判定句覆盖进入上下文时整条换掉），故工具输出截短计入。自动摘要（prompting/3.24）两人一致。",
+      "evidence": "docs-pages.txt#L4756-L4758 (agent/prompting Context usage); #L5154-L5157 (agent/tools/browser Efficient log handling, Smart prompting)"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "对话历史存本机数据库、可从会话列表重开继续（3.26 修复“重开对话后提问不再被跳过”），崩溃后 Resume 同样是读回对话再发调用；F18 scope 明说会话列表发起的恢复算默认机制。按 R6 外部表现（存在哪里、谁恢复）足以归类为 rebuild_and_rerun；Cursor 检查点只回退文件属 F20，不是控制流检查点。乙记 unknown 不成立。",
+      "evidence": "docs-pages.txt#L62620-L62630 (help/troubleshooting/install-issues chat history); #L1628 (release-notes 3.26 reopen a chat); #L27018 and #L27033 (sdk/typescript Reattach, Conversation context)"
+    },
+    "F19": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "neither",
+        "r3": "neither"
+      },
+      "rationale": "两位读者对 tool_results 一致认可（prompting 页 Conversation 含工具结果，SDK 明说驱动同一代理、本地检查点跨进程重启后后续运行看到同一上下文，R6 可借），甲把它放 unresolved 偏保守；分歧在 subagent_links。子代理页写明适用于编辑器，按编号续跑保留全部上下文、后台子代理边跑边写状态、完成后仍可续跑，正合判定第（1）条（含“框架按原编号载入原子代理记录另起一次运行也算”），读者二引 R8 排除与该句相抵，故三项都记，置信度只能 low。",
+      "evidence": "docs-pages.txt#L7383-L7389 (subagents 开头：editor 可用)；#L7671-L7681 (Resuming subagents)；#L4756-L4769 (agent/prompting Context usage)；#L25097 (sdk/typescript 同一代理)；#L27031-L27033 (sdk/typescript Conversation context)"
+    },
+    "F24": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "默认持久化的对话记录含工具调用与结果（shared-transcripts），.jsonl 转录带 tool_use_id 与 preToolUse 对齐可把同一调用对上（发布说明 3.24/hooks），按顺序记录中调用与其前后消息相邻可对上 intent/actual_operation/result。identity 明说不包含（shared-transcripts），approval 只在界面显示、未证落盘，均不记。乙记 unknown 不成立：至少 actual_operation、result 可确认。",
+      "evidence": "docs-pages.txt#L62620-L62630 (install-issues); #L27033 (sdk Conversation context); #L4756-L4768 (prompting Context usage); #L8734 (hooks transcript_path); #L2483 (release-notes 3.24 tool_use_id correlation)"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F25 scope 明确“用户用命令让框架新开的对话、框架跟踪并把结果交回发起会话的算框架派出的代理”。/side 由用户直接开附属代理对话（side-chats：durable child conversation、@ 提及带回上下文），创建调用直接出自用户，记 user；主代理经 Task 派子代理记 main_agent。/name 只是提示内请求、创建调用仍出自主代理，不另计。",
+      "evidence": "docs-pages.txt#L7383-L7420 (subagents); side-chats help page (What is a side chat; How do I open; How do I bring side chat context back); #L4395-L4399 (agent/overview Side chats)"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧只在 afterAgentResponse 算不算 model_call。码本 model_call 要求“每次模型请求发出前后”的事件点；文档只说代理完成一条助手消息后调用、输入为 assistant final text、归在 Track agent responses，既没说按每次模型请求触发，也不能改写请求或回复，按 R6 关键条件未出现，不确认 model_call，归 end（stop 已记 end），故取甲的集合。",
+      "evidence": "docs-pages.txt#L7899-L7916 (hooks Hook categories)；#L9137-L9172 (beforeSubmitPrompt、afterAgentResponse、afterAgentThought)"
+    },
+    "F33": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "内置 /loop 技能“Runs a prompt or skill repeatedly at a specified interval”，overview 写可按固定或可变间隔重复运行、“不指定固定间隔时 agent 选择唤醒时机”，文档描述了按间隔发起新运行的外部表现，按 R6 足以记 schedule；F33 不受 R3 第二档排除。/goal 逐步推出按 R10 不记，但 /loop 是独立内置技能。",
+      "evidence": "docs-pages.txt#L7074 (skills Built-in Cursor skills /loop); #L4415 (agent/overview Goals with /goal); #L10820 (cloud-agent capabilities Timers row)"
+    },
+    "F35": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "事实分歧：3.26 只说扩展宿主崩溃后对话给出 Resume，未说未完成运行或排队消息写盘、整个应用重启后能否由框架接着执行；存活的界面进程可能在内存里持有状态，persistent 判定句的“写进磁盘或数据库”这一关键条件文档没说到。队列相关发布说明只涉及轮次结束时不丢，没有重启语义。按 R6 线索不足，类别字段记 unknown（closed_source）。",
+      "evidence": "docs-pages.txt#L1614 (release-notes 3.26 Agents stopped by an extension host crash can be resumed)；#L4358-L4386 (agent/overview Queued messages)；#L2815、#L2907、#L3167 (发布说明 队列不丢只限轮次结束)"
+    }
+  }
+}

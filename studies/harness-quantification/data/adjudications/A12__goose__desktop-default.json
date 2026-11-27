@@ -1,0 +1,155 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A12__goose__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F16": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "structured_records",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "R3 第一档成立：默认注册的 manage_extensions 可按名启用随包 memory、chatrecall（get_extension_by_name 回退到随包可用扩展，Enable 变更自动应用），启用后机制计入。memory 按 category/data/tags 固定字段写入并按类别取回记 structured_records，chatrecall 按查询跨会话检索、只带回命中消息记 retrieval_store，用户维护文件两人一致；乙以默认关闭整体排除不成立。",
+      "evidence": "crates/goose/src/agents/platform_extensions/ext_manager.rs#L135-L199; crates/goose/src/config/extensions.rs#L141-L160,L241-L273; crates/goose-mcp/src/memory/mod.rs#L59-L100; crates/goose/src/agents/platform_extensions/chatrecall.rs#L127-L225; crates/goose/src/session/chat_history_search.rs#L179"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧只在 state_snapshot，属读法分歧：事实上双方一致（Todo 经模型自行启用后，todo_write 把整段自由文本计划笔记写进 sessions 表的 extension_data 列，get_moim 每回合读回注入）。这份内容是模型自写的笔记，不是某一时刻工作区文件或执行状态的副本；它存在会话元数据列里，F17 scope_rule 明写会话元数据不计入 state_snapshot、只记任务清单这类子对象的不计，故不记 state_snapshot。",
+      "evidence": "crates/goose/src/agents/platform_extensions/todo.rs#L38-L90,L165-L178；crates/goose/src/session/extension_data.rs#L85-L100；crates/goose/src/session/session_manager.rs#L1181"
+    },
+    "F19": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "task_plan 判定句明写“恢复时自动带回的目标，不论当初由模型的工具还是用户的命令设立，都计入”；TodoState 恢复后回到可用状态且模型可继续更新，todo 默认关但模型可用默认 manage_extensions 自行启用（R3 第一档），乙只以“todo 默认关闭”排除不成立。",
+      "evidence": "crates/goose/src/agents/platform_extensions/todo.rs#L54-L90,L165-L178; crates/goose/src/session/extension_data.rs#L102-L130,L199-L221; crates/goose/src/agents/execute_commands.rs#L43-L50; crates/goose/src/agents/state_machine/ops_retry.rs#L183-L214"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "session_branch"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "idempotency_key 判定句明写“执行循环在正常的一轮里按调用编号配对、只执行还没有结果的，这件事本身不算查重”，乙描述的正是这一机制；唯一会重发已记录调用的续跑回合只在有待批确认时启动，Auto 下没有审批触发来源（总则 R2），故不计。[session_branch] 站得住。",
+      "evidence": "crates/goose-agent/src/tool_call_state.rs#L29-L76; crates/goose/src/agents/services.rs#L974-L993; crates/goose/src/acp/server/load_session.rs#L401-L450"
+    },
+    "F21": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "command_rule 的唯一依据是管理员扩展允许列表，但该清单按扩展安装命令匹配、管的是能装哪些扩展（工具从哪里来），按 tool_category 判定句“只限定能连接哪些外部协议服务器（按服务器地址或启动命令匹配）的名单……不记 network_target、command_rule”归 tool_category；没有按命令文本的用户规则，[tool_category] 正确。",
+      "evidence": "documentation/docs/guides/allowlist.md#L11-L17; crates/goose/src/permission/permission_inspector.rs#L155-L215"
+    },
+    "F23": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "application_check 站得住：Apps 的 app_path 在执行前按路径作用范围拒绝（判定句明写作用范围检查即使在参数校验里也算、单工具入口写范围），子代理禁管扩展由代码直接拒绝，均在默认配置生效；runtime_sandbox 站得住：Code Mode 默认关但模型可自行启用（scope 明写此情形按 R3 第一档计入），脚本在 Boa 里只有 tools/console 宿主出口。乙记 known_absent 与这些代码检查不符。",
+      "evidence": "crates/goose/src/agents/platform_extensions/apps.rs#L236-L251; crates/goose/src/agents/platform_extensions/ext_manager.rs#L154-L160; crates/goose/src/agents/platform_extensions/code_execution.rs#L24; crates/goose/src/agents/platform_extensions/javascript.rs#L214-L253"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧只在带 retry 的 recipe 是否记 workflow_definition，属读法分歧。代码与文档一致：回合结束后框架跑 checks，失败则跑 on_failure、把对话重置回最初的同一条 kickoff 重跑，直到通过或达上限；这是同一条提示的重试，不是按定义逐步发出不同提示、在步骤间选路或派子代理，不满足 workflow_definition 判定。executable_items 规则正好举例“指导文件里写的检查命令”在“回合结束、检查失败”时执行，记进它所在的取值，即 prompt_template 加 executable_items。",
+      "evidence": "crates/goose/src/agents/state_machine/ops_retry.rs#L223-L278；documentation/docs/guides/recipes/recipe-reference.md#L411-L445（Retry / How Retry Logic Works）"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "save 的唯一候选是 GDK EffectHandler::apply_effects，但官方文档把它定性为调用方自己的存储实现（EffectHandler 把 effects 转成自家 store 的记录），不属于“框架自己把会话记录写盘前后的事件点”；scope 只把主流程之外、为某阶段专设并被框架使用返回值的方法算处理器（如请求准备器），存储主方法不算。input/model_call/tool_before_after/end/session_start 两人一致。",
+      "evidence": "crates/goose-agent/src/machine.rs#L34-L38; documentation/docs/gdk/concepts/state-machine.md#L60-L77"
+    }
+  }
+}

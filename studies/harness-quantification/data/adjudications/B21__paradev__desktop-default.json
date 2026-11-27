@@ -1,0 +1,207 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B21__paradev__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-4",
+    "gpt": "batch-4"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者事实一致，分歧在旧版材料能否作证据。乙的依据只有 2.1.201 的测试录制（低于 acpCatalogue 定的下限 2.1.226）和标明 not a captured run、按 adapter 0.56.0 复原的内部笔记，而现行依赖是 adapter 0.85.0、SDK 0.3.286。按 R6 末段，嵌入的闭源核心只能依据对应版本的官方文档推断；R7 也把钉住版本以外的材料排除在迹象之外。Paradev 文档只泛泛提到 plan reviews，说不到 structured_task_list 的关键条件，所以按 F02 unknown_rule 记 unknown。",
+      "evidence": "packages/host-service/src/chat-v3/acpCatalogue.ts#L21-L33; packages/host-service/package.json#L90; packages/chat-runtime/src/harness/claude/fixtures/abort-mid-tool.jsonl#L1; apps/mobile/plans/acp-vs-claude-sdk.html#L1755-L1761; docs-llms-full.txt Chat / Inline Prompts (L157-L159)"
+    },
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "escalate_to_human 双方一致。分歧只在 model_self_repair，它唯一的依据是 2.1.201 的 SDK harness 录制，属其他版本（R6、R7）。Chat 不向代理声明 fs 和 terminal 能力，工具全由闭源的 Claude Code 自己执行；快照里的官方文档也没写报错交回代理或代理据报错改正。按 F04 闭源口径，这一项写“文档未涉及”，不收。",
+      "evidence": "packages/chat-runtime/src/harness/acp/acpAdapter.ts#L973-L981; packages/chat-runtime/src/sessions/liveSession/liveSession.ts#L493-L545; packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl#L1"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "main_process",
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F06 scope_rule 闭源推断规则：acpAdapter 不声明 fs/terminal 能力并明注由代理用自身 Read/Edit/Bash 在 workspace 无头运行，官方文档亦说明代理自行改文件与跑命令且未提另起服务，可低置信度推断 main_process，命令经 shell 为 subprocess。模型经通用 Bash 调 superset CLI 再访问 Paradev 自身的 host-service，并非执行核心默认接入外部工具服务器（session/new 传空 mcpServers），不另记 local_service。",
+      "evidence": "packages/chat-runtime/src/harness/acp/acpAdapter.ts#L964-L984; plugins/superset/skills/orchestrate/SKILL.md#L78-L95"
+    },
+    "F08": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "logical_id",
+        "process"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "这是码本读法分歧。按 F08 的 scope_rule 和 working_directory 判定，“几个会话可以共用同一目录的，不算”。代码按 workspaceId 解析 worktreePath，新 Chat 绑定已有工作区；官方文档也写同一 workspace 里可以另起会话，fork 出的会话共用同一 workspace。worktree 是给工作区的，不是给每个新会话的专用资源。⌘N 新建 workspace 时附带新 worktree，这一点不改变判定。",
+      "evidence": "packages/host-service/src/chat-v3/resolveCwd.ts#L12-L19; packages/host-service/src/trpc/router/sessions/create-chat-session.ts#L16-L35; docs-llms-full.txt Agent Sessions / fork (L202-L226); docs-llms-full.txt mobile session tabs (L2670)"
+    },
+    "F09": {
+      "choice": "opus",
+      "status": "known",
+      "value": "vendor_sdk",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R6 及 F09 scope_rule、unknown_rule：Paradev 官方文档明示不代理模型调用，并在 providers 页列出 Claude Code 的全部提供方接法——Anthropic 直连、任何提供 Anthropic 兼容接口的端点（ANTHROPIC_BASE_URL）以及承载 Claude 模型的 Bedrock/Vertex/Foundry（按 F09 属同一协议的外层封装与认证切换），足以低置信度推断为 vendor_sdk。",
+      "evidence": "docs-llms-full.txt「Use with OpenRouter, Bedrock, Vertex, or Vercel」L3130-L3289（含 Other Anthropic-Compatible Providers）"
+    },
+    "F10": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "protocol_translation 双方一致。native_structured 的依据只有 2.1.201 录制，script_dispatch 的依据只有按 adapter 0.56.0、SDK 0.3.201 复原的笔记，都不是所配版本的官方文档（R6、R7）。F10 unknown_rule 要求文档写明走模型接口的工具调用字段才记 native_structured，Workflow 执行器是否默认启用也无从确认，两项都不收。",
+      "evidence": "docs-llms-full.txt Chat interface (L749-L751); packages/chat-runtime/src/harness/claude/fixtures/edit-approved.jsonl#L1; apps/mobile/plans/acp-vs-claude-sdk.html#L2014"
+    },
+    "F15": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_specified"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "toAcpPrompt 与 resolveAttachment 证实宿主将用户附件转为图像或 resource_link 送入上下文（user_specified）。乙增记的 keyword 仅依据旧 claude-code harness 的 UI 分类表 mapToolUse.ts（列出 Glob/Grep），按总则 R6 仅有工具名映射不足以确认所配 Claude Code（≥2.1.226）默认注册检索工具（且 2.1.201 录制 init.tools 中甚至未列出 Glob/Grep）。",
+      "evidence": "packages/chat-runtime/src/harness/claude/fixtures/*.jsonl 的 system init tools（L1）; packages/chat-runtime/src/harness/claude/mapToolUse/mapToolUse.ts#L18-L32; packages/chat-runtime/src/harness/acp/acpAdapter.ts#L2375-L2410"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "event_log",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "chat_journal 是 Paradev 自己的开源记录，按代码判。approval_request 是独立条目类型，带 status 和 decision，属审批类，满足控制条目的两条要求，所有 item 都写进 journal。分歧在默认全权限下有没有触发来源。Chat 为了保住 AskUserQuestion 专门声明了 form elicitation，elicitation 会落成 approval_request；官方文档也写问题、审批和计划审阅都在聊天里出现。触发来源默认存在，按 R2 计入。session 和 notice 条目不作依据。",
+      "evidence": "packages/chat/src/protocol/items.ts#L244-L268; packages/chat-runtime/src/harness/acp/acpAdapter.ts#L973-L980,L2131-L2135,L2284-L2318; packages/chat-runtime/src/sessions/liveSession/liveSession.ts#L718-L736; docs-llms-full.txt Inline Prompts (L157-L159)"
+    },
+    "F22": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "specific_operation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按总则 R2、R3 第一档与 F22 specific_operation：虽默认全权限跳过 Claude 通用工具审批，但模型默认可通过 Bash 调捆绑的 superset CLI（如 browser extensions install/remove、import-login），由桌面端 browser-bridge／web-store 在执行中弹窗等待用户批准、拒绝即返 403 阻止生效。一次 Bash 调用已开始运行且可含多个动作，每次弹窗只放行单个扩展变更或登录导入效果，故落在 specific_operation；乙判 known_absent 遗漏该路径。",
+      "evidence": "packages/cli/src/commands/browser/extensions/install/command.ts#L6-L22; apps/desktop/src/main/lib/browser/extension-host/web-store.ts#L80-L104; docs-llms-full.txt「Extensions」L675-L687"
+    },
+    "F30": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "skill_directory"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "skill_directory 双方一致。prompt_template 的依据 scan-claude.ts 只把 .claude/commands 的文件名、描述和参数提示列进补全菜单；SlashCommand 不带正文，Paradev 自己不展开命令。真正装载和展开命令文件的是闭源 Claude Code，快照里没有它的官方文档，按 R6 只算线索，说不到“展开为一条提示”这个关键条件。文档里 ~/.agents/commands 的 /superset/feedback 写的是 in-app chat，不是 claude-acp 路径，所以不收。",
+      "evidence": "packages/host-service/src/trpc/router/agent-tooling/scan-claude/scan-claude.ts#L66-L120; packages/shared/src/slash-commands.ts#L42-L50; docs-llms-full.txt Skills / Using Skills & How They're Delivered (L3749-L3767)"
+    },
+    "F33": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "api",
+        "user_interaction"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "Automations 的定时和事件判定在厂商云端，按 R5 和 F33 scope_rule 不记 schedule、external_event，与 A08、B01、B08、B09、B10、B11 一致。",
+      "evidence": ""
+    },
+    "F36": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F36 resumable_todo 判定与示例：关闭时未完成的聊天（含中断回合与排队提示）由 writeClosedChats 持久化落盘，重启后经 restoreClosedChats 恢复并在桌面端弹出 InterruptedChatsPrompt（Resume / Keep paused），明确等待用户决定是否恢复未完成工作（恢复时自动注入 CONTINUE_PROMPT 并重放队列），区别于普通历史会话恢复，符合 resumable_todo。",
+      "evidence": "apps/desktop/src/renderer/routes/_authenticated/components/InterruptedChatsDialog/components/InterruptedChatsPrompt/InterruptedChatsPrompt.tsx#L50-L81; packages/host-service/src/chat-v3/chatAgentBridge.ts"
+    }
+  }
+}

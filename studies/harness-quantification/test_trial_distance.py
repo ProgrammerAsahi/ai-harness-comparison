@@ -3,7 +3,7 @@ import json
 import unittest
 from pathlib import Path
 
-from trial_distance import agreed, distance, spearman
+from trial_distance import adjudicated, agreed, distance, spearman
 
 SCHEMA = json.loads((Path(__file__).parent / "data" / "schema" / "fields.json").read_text(encoding="utf-8"))
 FIELDS = {f["id"]: f for f in SCHEMA["fields"]}
@@ -57,6 +57,17 @@ class TrialDistance(unittest.TestCase):
         self.assertEqual(c["F02"]["status"], "unknown")
         self.assertEqual(c["F03"], {"status": "known", "value": a["F03"]["value"]})
         self.assertEqual(c["F26"]["status"], "not_applicable")
+
+    def test_adjudicated_takes_record_fields_and_keeps_the_rest(self):
+        a = coding()
+        v1 = FIELDS["F01"]["vocabulary"][1]["id"]
+        rec = {"fields": {"F01": {"choice": "gpt", "status": "known", "value": v1, "settled_by": "lead"},
+                          "F02": {"choice": "neither", "status": "unknown", "value": None, "unknown_reason": "not_found"}}}
+        c = adjudicated(a, rec)
+        self.assertEqual(c["F01"], {"status": "known", "value": v1})
+        self.assertEqual(c["F02"], {"status": "unknown", "value": None})
+        self.assertEqual(c["F03"], {"status": "known", "value": a["F03"]["value"]})
+        self.assertEqual(adjudicated(a, None)["F01"], {"status": "known", "value": a["F01"]["value"]})
 
     def test_spearman_handles_ties(self):
         self.assertAlmostEqual(spearman([1, 2, 2, 3], [1, 2, 2, 3]), 1)

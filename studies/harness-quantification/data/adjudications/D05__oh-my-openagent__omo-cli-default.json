@@ -1,0 +1,229 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "D05__oh-my-openagent__omo-cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-5",
+    "gpt": "batch-5"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "gpt",
+      "status": "known",
+      "value": "executable_flow_constraint",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者对事实认定一致（ulw-loop SDK 默认预备、技能默认进 available_skills），分歧在 completeGoals/续跑/checkpoint 算不算“框架按计划条目推进”。代码里 startNextUlwLoop 由框架在目标表里先续 in_progress、否则取首个合资格 pending 条目并置为当前目标，agent_settled 时有未完成目标就注入续跑，checkpoint 不满足本条及全计划验收就拒绝完成，这就是按计划条目逐条推进；目标表是任务中由 createGoals 产出的计划，不是 R8 排除的脚本或工作流定义。模型不经用户命令就能读随包技能并在默认 eval 里调用 SDK，按 R3 第一档（技能说明“用户要时用”不排除），按 F02 判定顺序优先于 todo 的 structured_task_list。",
+      "evidence": "packages/omo-codex/plugin/components/ulw-loop/src/plan-crud.ts#L45-L47,L152-L192; packages/omo-codex/plugin/components/ulw-loop/src/sdk/factory.ts#L196; packages/omo-codex/plugin/components/ulw-loop/src/checkpoint.ts#L155-L180; packages/omo-senpi/src/components/ulw-loop/index.ts#L21-L24,L152-L186; packages/omo-senpi/src/extension/compose.ts#L100-L116; packages/omo-senpi/src/components/bundled-skills/index.ts#L24-L61; packages/omo-senpi/skills/ulw-loop/SKILL.md#L1-L30"
+    },
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 R3 第一档与 F03 verification_condition 判定，ulw-loop 组件默认无条件注册、SDK 环境变量激活即设且技能在 <available_skills> 中，模型无需用户命令即可经 eval 启动；回合结束时 agent_settled 检查未完成目标并续跑，标记完成需经 checkpoint 与 quality-gate 校验结构化验收字段及磁盘报告/证据文件存在性，不满足即拒，应计 verification_condition。",
+      "evidence": "packages/omo-codex/plugin/components/ulw-loop/src/checkpoint.ts#L155-L215; packages/omo-codex/plugin/components/ulw-loop/src/evidence.ts#L196-L205; packages/omo-senpi/src/components/ulw-loop/index.ts#L306-L321"
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F04 与 R6 判定：model_self_repair 双方一致；call_retry 有引擎 agent_end.willRetry、AgentSettledEvent 不含自动重试定义及引擎默认约 62s 指数退避同模型重试说明佐证；framework_input_repair 确有 task 工具的 prepareArguments 在校验前截断超长 task_summary 并丢弃与 prompt 互斥的填充 tasks 使调用免于校验失败。乙所引 facts parked 仅静默写账本，不暂停任务也不主动请用户决定，不符 escalate_to_human。",
+      "evidence": "packages/omo-senpi/src/components/ulw-execute-continuation/agent-end-eligibility.ts#L6-L53; packages/omo-senpi/src/components/memory/AGENTS.md#L42; packages/senpi-task/src/task-summary.ts#L1-L14; packages/omo-codex/plugin/components/ulw-loop/src/checkpoint.ts#L91-L114"
+    },
+    "F09": {
+      "choice": "opus",
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F09 unknown_rule 与 R6 判定，omo 原生进程内嵌 senpi/pi-ai，官方文档与导入器明载核心内置 openai-completions、anthropic-messages、openai-responses 三种不同线协议，用户添加 models.json 配置或 /login 即可直连切换，可推断为 adapter_layer。",
+      "evidence": "docs-pages.txt L377（Setup migration：Custom providers）; packages/omo-native/bin/lib/setup-opencode-providers.js#L19-L25"
+    },
+    "F10": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧只在 native_structured：读者一认为引擎在快照外、只有参数模式等线索。快照里有用真实 senpi CLI 对假模型服务录下的请求体金样：POST /v1/chat/completions 带 tools（type: function）和 tool_choice，后续请求的历史里有 assistant 的 tool_calls 条目和 role: tool 的结果，这正是走模型接口原生工具调用字段的直接证据，超过 unknown_rule 所说的线索门槛；金样走的是 OpenAI 兼容接口，钉住的 Anthropic 路径同为原生调用属推断，置信度宜低。protocol_translation、script_dispatch 双方一致。",
+      "evidence": "packages/omo-senpi/scripts/qa/fused-equivalence-e2e.mjs#L2-L23; packages/omo-senpi/scripts/qa/fused-equivalence-golden/darwin-arm64/E21.json#L7-L52,L930-L996"
+    },
+    "F13": {
+      "choice": "opus",
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧在材料是否足以归类。除 context-tail.ts 对钉住引擎投影的描述（压缩条目只定位起点，属一刀切）外，快照里的测试夹具直接实例化引擎核心 Agent、跑完后从 session.state.messages 取消息，说明运行中维护的是一份消息列表；每次模型调用前 context 事件交给扩展的是 messages 数组；录下的请求体也是逐轮累积的消息历史。按 F13 scope_rule，投影只在载入或压缩后重建列表、其余每轮直接取列表的仍记 sequential_messages；编辑类条目的处理看不到，但不影响每轮取运行中列表这一点，置信度 low。",
+      "evidence": "packages/omo-senpi/src/extension/hand-browser-placement.test-fixture.ts#L125-L140; packages/omo-senpi/src/components/thread/remote/context-tail.ts#L5-L17; packages/omo-senpi/src/components/thread/remote/ports.ts#L243-L251; packages/omo-senpi/src/components/ultrawork/index.ts#L159-L185; packages/omo-senpi/scripts/qa/fused-equivalence-golden/darwin-arm64/E21.json#L930-L990"
+    },
+    "F14": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F14 与 R6 判定：truncation 双方一致；summarization 有充分依据，钉住引擎默认开启自动压缩（facts-oversized-child 需显式 setAutoCompactionEnabled(false) 关闭）、按用量自适应阈值触发必需自动压缩，压缩产出摘要条目并从 firstKeptEntryId 起保留原文，配置文档亦载明 compaction 模型覆盖与 on_compaction 触发。",
+      "evidence": "packages/omo-senpi/src/components/ulw-execute-continuation/agent-end-eligibility.ts#L22-L26; packages/omo-senpi/src/components/memory/AGENTS.md#L92; packages/omo-senpi/src/components/memory/prompt.ts#L266-L285"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "structural_index"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F15 user_specified 判定，官方 OmO Native 指南明写钉住引擎自带 @path（带模糊补全与 Tab 接受）用于在输入里附加文件，结合双方一致的 keyword（grep）与 structural_index（ast-grep MCP），应含 user_specified。",
+      "evidence": "docs/guide/migrating-from-opencode.md#L119-L134"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "messages",
+        "event_log",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F17 scope_rule“分开存放的几份记录各自判”，除含控制条目的会话树/DAG WAL（event_log）及检查点/任务记录（state_snapshot）外，默认启用的 memory 组件还在 session_start 与 agent_settled 时将过滤控制条目后的纯消息投影增量落盘为独立的 runtime/transcripts/<session>/transcript.jsonl，应另记 messages。",
+      "evidence": "packages/omo-senpi/src/components/memory/journal-wiring.ts#L127-L173"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F18 unknown_rule 与 R6，官方 Native 文档明载引擎提供 omo -c、omo -r、/sessions、/resume 且恢复会话从历史重建转录；源码调用引擎 SessionManager.open 重建会话时不重放原提示并回到 IDLE，尾部停在中止或未答时引擎不自行接续，可推断为 rebuild_and_rerun。",
+      "evidence": "docs/guide/migrating-from-opencode.md#L119-L125; packages/senpi-task/src/runners/in-process/child-handle.ts#L381-L386; packages/senpi-task/src/manager/manager-respawn.ts#L251-L256"
+    },
+    "F19": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F19 判定：tool_results 与 subagent_links 双方一致；conversation 随默认恢复入口从会话历史投影重建回到上下文；task_plan 按现行码本“恢复时自动带回的目标不论由工具还是命令设立都计入、不按 R3 第二档排除”，ulw-loop 与 ulw-execute-continuation 在恢复原会话后均自动读取持久化计划并驱动续跑。",
+      "evidence": "packages/omo-senpi/AGENTS.md#L42-L43; packages/omo-senpi/src/components/ulw-loop/index.ts#L152-L187"
+    },
+    "F20": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F20 与 R6 判定：idempotency_key 双方一致；session_branch 有官方 Native 文档直接记载钉住引擎提供 /fork 分叉当前会话与 /tree 显示分支树（且保留 /sessions、/resume 切换），源码亦多处按分支树与分支摘要投影，应计 session_branch。",
+      "evidence": "docs/guide/migrating-from-opencode.md#L125; packages/omo-senpi/src/components/thread/remote/context-tail.ts#L8-L10"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "workflow",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按现行码本 F26 判定（“定时器到点直接起的代理运行记事件调度，不记 framework_internal”），默认启用的 memory.dream 通过 setTimeout 空闲 30 分钟定时器到点直接触发 launch，派生独立 detached senpi -p --tools bash,edit 代理进程，不经主代理决定，除双方一致四项外应计 event_scheduling。",
+      "evidence": "packages/omo-senpi/src/components/memory/dream-trigger.ts#L1-L11,L144-L177"
+    }
+  }
+}

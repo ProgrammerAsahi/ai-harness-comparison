@@ -1,0 +1,68 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B06__zed__editor-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "分歧只在 framework_input_repair：现行码本该项收“执行前按输入模式改正参数格式、免于解析失败后照常执行”，快照里 edit_file 的 edits 参数带 deserialize_maybe_stringified，模型把 edits 写成 JSON 字符串时框架先解析再照常执行，正合词表示例；按 R2 只覆盖单个工具也计入。共识的 call_retry、model_self_repair、escalate_to_human 三项逐一核对均成立，甲的集合不多不少。",
+      "evidence": "crates/agent/src/tools.rs#L43-L70; crates/agent/src/tools/edit_file_tool.rs#L61-L72"
+    },
+    "F12": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在事实认定：80%/100% 提醒量的是什么。源码里 used_tokens 取最近一次请求的 total_tokens（输入+输出+缓存），max_tokens 取模型窗口 max_token_count，衡量的是当前上下文占窗口的比例而非按会话累计的 Token；横幅只在窗口小于 MIN_COMPACTION_CONTEXT_WINDOW（80000，不能自动压缩）时出现，提示 /compact 或开新线程，属 scope_rule 排除的窗口限制／压缩替代提示，用量环则是用量显示。不合 total_tokens“累计”标准，其余各维两位编码者一致为无，故 known_absent。",
+      "evidence": "crates/acp_thread/src/acp_thread.rs#L3522-L3545; crates/agent/src/thread.rs#L120-L124, #L2504-L2531; crates/agent_ui/src/conversation_view/thread_view.rs#L13294-L13325; crates/language_model_core/src/language_model_core.rs#L538-L543"
+    },
+    "F19": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results",
+        "subagent_links"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "分歧在 subagent_links：进程重启恢复父线程后，from_db 读回消息，spawn_agent 输出里的 session_id 随工具结果落盘、replay 重建 subagent_session_info，界面按工具调用引用自动 load_session 从数据库载入原子代理线程并注册进 sessions，父会话用默认 spawn_agent 带 session_id 即可带原上下文续派，符合该项判定第（1）条及“框架按原编号载入原子代理的记录、另起一次运行接着做”。乙的“原编号续办仅查活进程 sessions、不从磁盘载入”与 open_thread 的数据库载入回退不符。",
+      "evidence": "crates/agent_ui/src/conversation_view.rs#L1680-L1692, #L2585-L2645（load_subagent_session 文档注释写明用于从数据库载入的线程）; crates/agent/src/agent.rs#L1812-L1835, #L3279-L3292, #L3690-L3719"
+    }
+  }
+}

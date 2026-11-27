@@ -1,0 +1,119 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A04__qwen-code__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Qwen4-Max (qwen-4-max-tp)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "opus",
+      "status": "known",
+      "value": "prompt_text_only",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "现行 F02 定义明写“由运行时或框架推进的脚本和工作流定义不算计划条目……本字段不因它记 executable_flow_constraint”（总则 R8 同），甲的唯一依据 Workflow 脚本被排除；双方对计划模式事实无异议：enter_plan_mode 默认注册、默认权限 allow、Auto 下不拦模型自主进入，exit_plan_mode 只保存 Markdown 文本、不按条目检查执行，todo_write 默认关，按判定顺序命中 prompt_text_only。",
+      "evidence": "packages/core/src/config/config.ts#L13917-L13928; packages/core/src/tools/enterPlanMode.ts#L35-L46,#L97-L130; packages/cli/src/config/settingsSchema.ts#L3222-L3243,#L4521-L4530; packages/core/src/config/config.ts#L13639-L13644"
+    },
+    "F10": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "native_structured",
+        "text_parsing",
+        "protocol_translation",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "script_dispatch 要求执行器默认启用（R3）：Workflow 随包默认关，但模型经默认注册的 skill 工具调随包 review 即为本会话注册（skill-utils L510-L516 → enableReviewWorkflow，默认设置下各禁用条件均不成立），属 R3 第一档“模型自行启用后”；工具接受模型现写的 inline script（workflowNameOnly 默认 false），agent() 与 agent 工具同走 SubagentManager.createAgentHeadless，符合“脚本里的派生函数和模型能直接调用的派生工具走同一个执行器”；乙以 review 自身跑程序生成脚本为由不记，忽略了工具本身开放模型现写脚本这一机制。",
+      "evidence": "packages/core/src/tools/skill-utils.ts#L498-L516; packages/core/src/config/config.ts#L11287-L11302; packages/cli/src/config/config.ts#L2999; packages/cli/src/config/settings.ts#L673-L687; packages/core/src/tools/workflow/workflow.ts#L184-L227; packages/core/src/agents/runtime/workflow-orchestrator.ts#L1544-L1563; packages/core/src/tools/agent/agent.ts#L3788; packages/core/src/skills/bundled/review/SKILL.md#L1-L15,#L396"
+    },
+    "F11": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "per_request_routing",
+        "model_selected_delegation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "per_request_routing：视觉桥接在带图请求且主型号非图像时自动选同提供方视觉候选，agentCapable 候选整轮替换主型号；配置记录明写默认型号由订阅网关服务端决定、无法离线核实，源码常量 qwen3.8-max 不是钉住的实测值，按 R2“能否触发取决于环境前提没钉住的参数（例如服务端下发的默认型号）照样计入、confidence 不高于 medium”和 R10 机制照记，乙把常量当钉住值排除桥接不符合 R2。model_selected_delegation：Workflow 经 review 默认可达（R3 第一档），脚本 agent() 可指定 model 与 effort，框架写入子代理配置并校验执行，钉住环境未限定单一型号且 effort 可改，按 R2 计入；single_fixed 不与其他取值并列，乙不成立。",
+      "evidence": "packages/core/src/agents/runtime/workflow-sandbox.ts#L588-L627; packages/core/src/agents/runtime/workflow-orchestrator.ts#L1258-L1263,#L1544-L1559; packages/cli/src/ui/hooks/use-llm-stream.ts#L1945-L1995; packages/core/src/services/visionBridge/vision-bridge-service.ts#L66-L74,#L140-L189; packages/core/src/models/modelConfigResolver.ts#L163-L177; packages/core/src/core/modalityDefaults.ts#L56-L59"
+    },
+    "F16": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "structured_records",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "neither",
+        "r3": "neither"
+      },
+      "rationale": "两位读者的分歧在 auto_summary 是否另有独立机制（structured_records 两人都认）。默认提取子代理每条事实单写一个带固定 frontmatter（name/description/type/category/keywords/usage_scenarios）的文件，召回按条挑选、按 doc.type 加权，/forget 按条删除，属逐条存取条目，按 structured_records 判定句记本项、不记 auto_summary；MEMORY.md 是由同一批条目机械重建的指针索引，提示明写“an index, not a memory”“Never write memory content directly into MEMORY.md”，不是把会话提炼成自由文本的另一条写入路径，按 R8 不另记。快照里未见别的自由文本整份写入、读回的默认记忆路径，故甲多记 auto_summary、乙漏记 structured_records。",
+      "evidence": "packages/core/src/memory/extractionAgentPlanner.ts#L44-L78,L434-L450; packages/core/src/memory/prompt.ts#L58-L74,L486,L501; packages/core/src/memory/indexer.ts#L189-L229,L404-L420; packages/core/src/memory/recall.ts#L295-L320; packages/core/src/memory/forget.ts#L483-L500; packages/core/src/tools/manage-memory.ts#L52-L57"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "messages",
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "scope_rule 明写“分开存放的几份记录各自判”，R4 把自动派生子代理纳入：主会话 jsonl 含 chat_compression、session_model、rewind、branch_checkpoint 等控制条目记 event_log；普通非 fork 子代理默认另写自己的 jsonl（agent.ts 后台路径传 initialUserPrompt，bootstrapHistory/launchTaskPrompt 仅 fork），其中 ui_telemetry（工具生命周期）、agent_retry、agent_session_ready 均属只标记流程的条目，不满足控制条目第（2）条，恢复时 system 记录整体剔除、不改回放取材，故该份记录记 messages；乙只判了主会话一份，漏了子代理转录。state_snapshot、external_reference 双方一致且与配置记录相符。",
+      "evidence": "packages/core/src/agents/agent-transcript.ts#L634-L657,#L800-L860,#L915-L960; packages/core/src/tools/agent/agent.ts#L3914,#L4871"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "idempotency_key 判定要求重放/恢复/重入路径上执行前按存储标识查重：getHistoryToolCallFingerprints 由会话历史里调用编号与结果的配对现建指纹表（恢复会话后由存储重建，符合判定），use-llm-stream 每批执行前以 providerCallId＋(name,args) 指纹比对，命中即过滤出执行队列并返回 not_started 的重复拒绝响应、不再执行（判定明写“跳过、取旧结果或拒绝都算”）；这不是正常一轮里只执行无结果调用的配对，也不是恢复时修补历史，默认开着无需改设置。乙查的是 client.ts 按编号挑工具名的另一机制，漏了 use-llm-stream 这条重放查重路径。session_branch、workspace_snapshot 双方一致。",
+      "evidence": "packages/core/src/core/llm-chat.ts#L6479-L6518; packages/cli/src/ui/hooks/use-llm-stream.ts#L3817-L3845,#L3933-L3956; packages/core/src/core/toolCallIdUtils.ts#L76-L125; packages/core/src/core/turn.ts#L354-L364; packages/core/src/core/agent-loop.ts#L83-L88"
+    }
+  }
+}

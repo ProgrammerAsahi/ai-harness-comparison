@@ -1,0 +1,142 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B10__factory-droid__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者是事实认定之争：v0.200.0 Failed pull confirmation 是否算框架规则触发的暂停等人。原文只说 Droid 在修复失败的 pull 前先询问、不再自行改工作树，没说是框架规则暂停任务、答复后原任务接着走，也可能是模型自行提问（scope_rule 不计）或常规写操作审批（记 F22）；按 R6 未说到 escalate_to_human 判定句的关键条件，不进取值。v0.182.0 只是预选重新认证，判定句明说只见重新登录提示的不记。故取甲的 [call_retry, model_self_repair]。",
+      "evidence": "docs-llms-full.txt#L52456-L52462（CLI v0.200.0 Failed pull confirmation）；#L52735（v0.182.0 Re-authentication default）；#L9322（git pull 属 --auto medium 档的常规操作）"
+    },
+    "F05": {
+      "choice": "neither",
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "推断（low）：发布说明 v0.60.0 写“TUI-spawned daemon”在 TUI 关闭时被停止，v0.105.0 有“TUI daemon session switching”，v0.111.0 写 /new、/clear 时预先初始化 daemon 会话，说明交互 droid 拉起一个 daemon 承载会话、且不比 TUI 活得久；当前文档未涉及进程结构，按 R6 延续旧说明。按 F05 只看生灭关系：核心由应用拉起、随应用退出结束，记 subprocess_protocol（传输方式未见文档）。甲的 in_process 只凭“没提另起进程”，与这些条目相反；乙的 local_service_api 要求核心在界面退出后仍存活，与 v0.60.0 的“退出时停止”相反。",
+      "evidence": "docs-llms-full.txt#L55239（CLI v0.60.0 TUI daemon shutdown）；#L54272-L54273（v0.105.0）；#L54081（v0.111.0）；#L2174（droid daemon 子命令）"
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "output_limit 判定标准明写“对截断有专门的续写、重试处理，才算”；v0.242.0 Long responses cut short 与 v0.233.0 Cut-off replies now retry 是单次输出被截断后的专门重试，按 R8 只在 F12 记，且 output_limit 计入即默认进 hard_stop。甲按流中断记 F04 并写 known_absent，与现行码本不合。",
+      "evidence": "docs-llms-full.txt#L51389（v0.242.0）；#L51612（v0.233.0）；#L51417（v0.241.0）；Settings: Context and compaction #L1685-L1704"
+    },
+    "F13": {
+      "choice": "opus",
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F13 未知规则允许在文档说明对话历史逐轮累积进请求、只在阈值压缩时低置信记 sequential_messages；SDK 文档写模型输入可含指令、工具、对话历史和最新消息、旧对话计入后续轮的输入，compactionTokenLimit 按 Token 阈值自动压缩，属该情形，乙判 unknown 过严。",
+      "evidence": "docs-llms-full.txt#L13300-L13312（inputTokens、Earlier conversation can be counted again）；#L13318-L13334（getContextStats、压缩阈值）；#L12378-L12382（Compact）"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "rewind 恢复文件依赖文件快照（RewindFileSnapshot 含 content_hash、size，evicted_files 带淘汰原因），且 v0.129.0 写重载已保存会话时初始化文件快照；按 R6 低置信推断存在持久副本且回退流程读取，state_snapshot 进取值，乙站得住。",
+      "evidence": "docs-llms-full.txt#L12391-L12429（Python SDK Rewind 与 RewindFileSnapshot）；#L2432（/rewind-conversation）；#L53648（v0.129.0 Session load file snapshots）"
+    },
+    "F21": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "command_rule",
+        "file_path",
+        "network_target",
+        "tool_category"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "规则维度按能不能配置记，不看沙箱默认开没开；与 A03、B04 一致。",
+      "evidence": ""
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess",
+        "library"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "JetBrains 与 Zed 以 Agent Client Protocol（ACP）客户端身份经 droid exec --output-format acp 驱动 Droid，Droid 为协议服务端并跑完整代理循环，按判定顺序先记 public_protocol；乙只据 v0.56.0 旧条目缩写否定，与现行 IDE Integrations 文档不合。",
+      "evidence": "docs-llms-full.txt#L9223（--output-format … acp）；#L15329-L15330、#L15361-L15425（IDE Integrations: JetBrains、Zed ACP）"
+    },
+    "F35": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "not_found",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者都认可有运行中排队（v0.146.0 Ctrl+Enter），分歧在 v0.226.0“queued message arrives once after your session restarts”能否证明 persistent。该条只说会话重启后送达，没说存放位置，也没说“session restart”指 CLI 进程崩溃或重启；同版和前后版本的排队修复多涉及远端机器、连接断开和 daemon，v0.230.0 待答问题跨重启存活也不是排队工作项。按 R6，原文没说到 persistent 判定句“进程崩溃或重启后由框架恢复”的关键条件，类别字段记 unknown；乙的 unknown（not_found）与 closed_source 按卡算同一种。",
+      "evidence": "docs-llms-full.txt#L51847（v0.226.0 Queued messages after restart）；#L53313（v0.146.0 Queue message shortcut）；#L51692（v0.230.0 Pending questions across restarts）；#L51008、#L51782（远端排队消息修复）"
+    }
+  }
+}

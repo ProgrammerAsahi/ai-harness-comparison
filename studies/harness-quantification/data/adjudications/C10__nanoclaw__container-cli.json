@@ -1,0 +1,158 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C10__nanoclaw__container-cli",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "send_card 在校验前用 normalizeLinkUrl 把非 ASCII URL 按输入模式改正、丢弃不合法按钮后照常发送（有损修正但工具仍执行、不经模型重发），符合 framework_input_repair 判定；乙称此项只能在闭源核心里是漏看了这段开放源码。call_retry、model_self_repair 两人一致。",
+      "evidence": "container/agent-runner/src/mcp-tools/interactive.ts#L92-L128, #L325-L350; container/agent-runner/src/mcp-tools/server.ts#L134-L140"
+    },
+    "F05": {
+      "choice": "opus",
+      "status": "known",
+      "value": "local_service_api",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "界面（pnpm run chat 单次客户端）与模型循环进程（容器内 Claude Code）之间隔着常驻宿主，按 F05 scope 取两端生灭关系：核心的宿主由 launchd/systemd 维持、界面退出后仍存活且前端经 Unix 套接字接入，记 local_service_api；甲单取 runner→Claude Code 一跳正是码本禁止的取层方式。",
+      "evidence": "docs-llms-full.txt「CLI channel」Using it / How it works; scripts/chat.ts#L1-L15"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "subprocess",
+        "container"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "模型的文件、命令与 MCP 工具都执行在会话容器内（Bash 与 MCP bun 子进程，加记 container），与两人一致；ncl 只是经邮箱访问宿主管理面的 CLI 客户端（产品文档自述它管理安装），宿主 dispatch 属命令后端而非模型工具执行位置，按“只查询/委托常驻后端按工具代码自己位置记”的口径不加记 local_service。",
+      "evidence": "container/agent-runner/src/cli/ncl.ts#L1-L76; container/agent-runner/src/index.ts#L97-L108; src/cli/guard.ts#L49-L118"
+    },
+    "F10": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "native_structured",
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "neither"
+      },
+      "rationale": "两位读者都同意甲的 script_dispatch 不成立，分歧只在乙的 text_parsing。ncl 是模型经原生 Bash 工具运行的产品命令行程序，发出的是 cli_request 宿主命令，不在模型工具表里，也不和任何 MCP 工具共用执行器（add_mcp_server 走的是另一个 system action），所以不满足“脚本里调用其他工具、接到真实工具”。<message to> 块是本回合回复内容的收件人标记：分派函数按收件人投递正文，不经工具处理器，也不把工具结果交回模型；任务回合里只认显式工具。这是内容投递格式，不是从文本里识别出的工具调用，所以不记 text_parsing。两位编码者一致认定的原生结构化调用和 MCP 协议转换保留。",
+      "evidence": "container/agent-runner/src/poll-loop.ts#L1173-L1267; container/agent-runner/src/destinations.ts#L131-L139; container/agent-runner/src/cli/ncl.ts#L40-L76; container/agent-runner/src/mcp-tools/self-mod.ts#L190-L211; container/agent-runner/src/mcp-tools/cli.instructions.md#L1-L46"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "messages"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "send_file 的 outbox 附件在投递完成即被 clearOutbox 逐个删除，按 F17 scope 明文“向外投递的附件投递完成就删的，不计入”，不记 external_reference；会话邮箱按消息行持久化记 messages，与两人一致。",
+      "evidence": "src/delivery.ts#L704-L737; src/session-manager.ts#L560-L587"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "分歧在于宿主按持久 delivered 表过滤出站行算不算 idempotency_key。drainSession 每一轮都读 delivered 集合，只投还没投过的行，这是队列正常排空时请求与已有结果的配对，F20 写明这种配对本身不算。失败重试（L458）重发的是没有 delivered 记录的那一行，这张表在重试时并不拦截什么；超时停放的行和防重入守卫只记在内存里。因此这条路径不够条件，无论“消息提交”排除句怎样读都不计。NanoClaw 一侧没有接 fork、检查点或回退入口，也没有补偿步骤（grep 不到 checkpoint、forkSession、rewind；/clear 只重置 continuation）。嵌入的 Claude Code 内核恢复时对已记录调用怎样处理，快照里没有代码也没有文档，按 R6 记 unknown（closed_source）。",
+      "evidence": "src/delivery.ts#L313-L375; src/delivery.ts#L450-L460; container/agent-runner/src/poll-loop.ts /clear 处理"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "SDK_DEEP_DIVE 明确写流式输入下后台子代理继续运行、完成后 task_notification 通知主代理继续处理子代理结果，且当前 runner 确实用 AsyncIterable 流并翻译 task_notification，按 R6 以“推断：”记 async_wait（known/low）成立；乙称分不清子代理还是后台命令与该文档表述不符，记 unknown(not_found) 不成立。",
+      "evidence": "docs/SDK_DEEP_DIVE.md#L374-L413; container/agent-runner/src/providers/claude.ts#L262-L276, #L422-L424"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "模板是可按名选用（ncl groups create --template <ref>）或派给子代理（create_agent 带 ref）的可复用角色预设，用户不写代码、不另装包即可在本地 templates/ 新增，命中 role_template 的“主要由可执行插件组合构成的预设，带可单独复用的角色提示时才记”；盖章后 persona 落入 instructions.prepend.md 每会话装载归 project_rules（默认常驻指令亦独立支撑该项），两条装载路径并存，甲把模板角色并入 project_rules 少记一项。",
+      "evidence": "docs-llms-full.txt「Templates」What a template carries / Templates create new agents only; ncl 参考 groups create 行; src/cli/guard.ts#L49-L51"
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "pnpm run chat 是 cli.sock 的单次客户端（脚本自述经套接字发送、以服务运行为前置），不把核心当子进程启动，按客户端背后边界归 service_api，不记 cli_subprocess；cli.sock 的行 JSON 协议有文档、任意持套接字程序可发任务，service_api 成立。ncl 线协议无文档不另记。",
+      "evidence": "docs-llms-full.txt「CLI channel」Using it / How it works; scripts/chat.ts#L1-L15"
+    }
+  }
+}

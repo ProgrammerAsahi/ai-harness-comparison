@@ -1,0 +1,94 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C09__anythingllm__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-4",
+    "gpt": "batch-4"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F06": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "main_process",
+        "local_service"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "四个默认技能的 handler 在服务端核心进程内执行（main_process）；web-scraping 的抓取代码在 collector 里跑，collector 是另起的 express 应用、监听固定端口的常驻服务，核心无条件经 http://127.0.0.1:<COLLECTOR_PORT> 调它，桌面包装层闭源不影响它是核心以外的独立本地服务，故 local_service 可确认、不必放 unresolved。collector 抓取时再起的无头 Chromium 是该服务内的一跳、不是核心为工具另起的子进程，按 F06“经过几跳记真正执行工具代码的位置、中间各跳写 value_note”不另记 subprocess。",
+      "evidence": "server/utils/collectorApi/index.js#L51-L55; collector/index.js#L22,L226-L229; collector/processLink/convert/generic.js#L145-L185; server/utils/agents/aibitat/plugins/web-scraping.js#L97-L145"
+    },
+    "F22": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "tool_call"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按现行 F22 tool_call 判定句「一次工具调用已经执行了部分效果后暂停、一次批准放行这次调用剩下的全部效果的，也记这一项」：summarizeContent 在完成前三段、将开始第四段前请求一次批准，批准一次即放行余下全部段落（拒绝或超时则返回已得要点），正落在调用层；甲的 vocabulary_gap 是 fields-0.8 旧口径下三个判定都不满足，现行码本已明确覆盖此情形，以现行版为准。",
+      "evidence": "server/utils/agents/aibitat/utils/summarize.js#L138-L162; server/utils/agents/aibitat/plugins/websocket.js#L222-L262; server/utils/helpers/agents.js#L12; server/.env.example#L584"
+    },
+    "F24": {
+      "choice": "gpt",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F24 scope_rule「记录里认不出动作本身、只留下取回内容的，算对不上」和「对得上」定义：workspace_chats 每轮只落用户 prompt、最终回复和聚合引用（URL/文档全文/检索片段等取回内容），工具名、参数、逐次审批只进 console 与内存事件，无调用编号，同一轮多次调用也无法唯一对上，intent 与 result 均不计；absent 检查按 R7 以源码注册点代替缺失文档，已核对 chat-history 落盘、prisma 两张表和执行路径，known_absent [] 成立。",
+      "evidence": "server/utils/agents/aibitat/plugins/chat-history.js#L97-L122; server/utils/agents/aibitat/index.js#L218-L244; server/utils/agents/aibitat/plugins/web-scraping.js#L67-L86; server/prisma/schema.prisma#L198-L212"
+    },
+    "F29": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按现行 F29 plugin_api 判定句「在产品的构建器里搭好、作为具名工具注册给模型的流程定义，和按插件接口写的本地文件一样记这一项；插件接口包括框架为这类流程设的注册路径」：Agent Flows 是界面搭建的流程定义、经 loadFlowPlugin 注册成 @@flow_<uuid> 具名工具，归 plugin_api，按 R8 词表先后不另记 user_script；导入技能 handler.js 亦走同一插件注册路径。甲的 internal_code/plugin_api/external_protocol_service 三项集合正确，乙多记 user_script。",
+      "evidence": "server/utils/agents/imported.js#L214-L250; server/utils/agents/defaults.js#L9-L100"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者对事实认定一致（aibitat 内核有 onStart/onMessage/onToolCallResult/onTerminate/onInterrupt 等订阅方法），分歧在读法：内部订阅方法算不算“用户或扩展能挂处理器、官方有文档的事件点”。扩展文档在站外，按 R7 末句改查源码注册点：导入技能的 setup 由框架写死，只调 aibitat.function 注册一个函数，执行时框架只调用其 handler，函数配置里没有任何会在生命周期被调用的回调槽；MCP 与 Agent Flows 也只转成工具；on* 监听器只由编进核心的内置插件（websocket、chat-history、model-router-cooldown 等）挂接，aibitat 不单独发布、快照内无文档，不算 R5 的官方构件库。读者一所说经 this.super 在工具运行中自行调用 on* 属对未开放内部对象的用法，不是注册点。故没有可挂处理器的事件点，known_absent、[] 成立；甲的 unknown(not_found) 不成立，因为 R7 已给出文档缺席时以源码注册点代替的查法，且事件名已找到、并非“只见功能介绍”。",
+      "evidence": "server/utils/agents/imported.js#L214-L250; server/utils/agents/aibitat/index.js#L170-L173, #L1099, #L1267, #L1604-L1607; server/utils/agents/index.js#L640-L730; server/utils/agents/aibitat/plugins/websocket.js#L434-L450; README.md#L60-L70（扩展文档均为站外链接）"
+    }
+  }
+}

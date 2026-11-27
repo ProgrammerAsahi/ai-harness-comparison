@@ -1,0 +1,148 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B08__augment__auggie-cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-5",
+    "gpt": "batch-5"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F04 model_self_repair 判定句要求'工具报错作为结果回传'或闭源文档写明报错交回代理。permissions 页 tool-response 事件明确写'Check after execution but before returning results to agent'且载荷含 isError，hooks 页 PostToolUse 的 additionalContext 是'appended to the tool's result, so the agent reads them together with the tool output'，共同说明工具错误结果作为返回交回代理（模型）。甲称'仅有工具错误元数据'不准确——文档说的是数据流（交回代理），不只是元数据存在。",
+      "evidence": "docs-llms-full.txt#L2448-L2452, #L2553-L2558 (cli/permissions Event types、tool-response)；#L292-L296, #L352 (cli/hooks PostToolUse、tool_error)"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "settings 页 shellPath/shellCommandPrefix 明写 bash 工具经 shell 运行命令，按 subprocess 判定推断（低置信）。文件工具（read/edit/write/grep/find/ls）在文档中列出但对执行方式完全没提，按 F06 scope 把 main_process 写进 unresolved。甲据 integrations 页'Auggie runs commands and tools automatically'推断 main_process 站不住——该句说的是自动执行不需批准，不是执行位置。",
+      "evidence": "docs-llms-full.txt#L3398-L3399 (cli/settings shellPath、shellCommandPrefix)；#L15879 (cli/reference --tools)；#L1794-L1796 (cli/integrations NOTE)"
+    },
+    "F09": {
+      "choice": "opus",
+      "status": "known",
+      "value": "protocol_gateway",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F09 protocol_gateway 判定句明写'闭源配置的文档写明可选多家提供方的型号、而调用都经厂商服务的，算说到了这一项的关键条件'。available-models 页列多家厂商型号，pricing 页写每次模型调用按提供方列表价加 40% 服务费由 Augment 计费，admin-checklist 页 BYOK 在 Augment 服务端配置，说明调用经 Augment 后端统一转给各家。甲称'未说明转换在 CLI 内还是独立网关'不影响判定——判定句已覆盖厂商托管云端网关情形。",
+      "evidence": "docs-llms-full.txt models/available-models Current models (#L35905-L35996)；models/token-based-pricing How tokens are billed (#L36017-L36030)；BYOK (#L9841-L9845)"
+    },
+    "F11": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F11 scope 明确'本字段不按总则 R2 的扩展点口径：只按默认安装后已有的角色和它们默认解析到的型号记；用户自己添加的子代理或角色定义里写的型号，写 value_note 可选'。乙的 per_role 依赖自定义代理定义的 model 字段，被 F11 scope 排除。默认角色（主循环+内置三代理）均沿用当前型号/组织默认，但组织默认可能是固定型号也可能是 Prism（按请求路由），无法确定默认机制是 single_fixed 还是 per_request_routing。文档未涉及全新安装的默认型号分配，按 closed_source 记 unknown。",
+      "evidence": "docs-llms-full.txt cli/subagents About subagents、Frontmatter configuration (#L3826-L3835, #L3906-L3907)；models/available-models Prism routing options、Choosing a model (#L35976-L35990)"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "codebase-retrieval 是默认可用工具，查询上下文引擎的工作区索引。Context Engine MCP 概览页明写'Semantic understanding — Not just grep. A full search engine for code that understands meaning, not just text'，且 Local Server 节写明 Auggie CLI 即为本地服务器、客户端经 codebase-retrieval 访问。CLI 文档多处确认使用同一上下文引擎。按总则 R6，同一后端的另一方文档关于该部件行为的说明可作推断依据。甲拒绝借用 Context Engine 描述过于严格——F15 semantic_retrieval 判定句要求'按向量或语义相似度取回材料'，Context Engine 的语义描述正好说到这一关键条件。",
+      "evidence": "docs-llms-full.txt context-services/mcp/overview What is the Context Engine?、Local Server (#L19814-L19837)；cli/subagents Tool restrictions (#L3923-L3943)；cli/hooks 工具名表 (#L280)；cli/overview Introduction (#L2103)"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F18 rebuild_and_rerun 判定句要求'把保存的对话记录读回、重建上下文，再从下一条用户输入或一次新的模型调用接着跑'。文档描述 /export 保存为 HTML 或 JSONL（对话记录格式）、/import 从 JSONL 恢复会话、--continue/--resume 载入已保存会话文件继续对话，未提及保存执行状态（循环位置、待执行调用）或检查点。甲称'JSONL 文件名不证明恢复算法'——但 export 到 HTML（对话转录）和 import 从 JSONL 恢复的外部表现已足以按 R6 归类为重建对话再运行，且 checkpoint_resume 要求'中断点上那一步不经模型重新决定就能接着执行'，文档无此描述。",
+      "evidence": "docs-llms-full.txt cli/reference Sessions (#L15820-L15836)；cli/interactive Built-in slash commands /export /fork /import /resume /tree (#L15599-L15620)"
+    },
+    "F22": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F22 absent_rule 要求'默认模式下任何动作都不会停下来等批准（没有权限系统，或默认全部放行）时写 known_absent'。integrations 页正面陈述'Auggie runs commands and tools automatically'，默认安装不带任何 toolPermissions 规则，动作不逐次等批准。permissions 页'implicit runtime behavior'未定义具体内容，但与 integrations 页的正面陈述不冲突——隐式行为即自动执行。甲称'无法确定默认强制拦截点'，但已知全部默认工具均自动运行，无审批拦截点。",
+      "evidence": "docs-llms-full.txt cli/integrations NOTE (#L1794-L1796)；cli/permissions Notes on Unmatched Tools、Permission Types (#L2208-L2227)"
+    },
+    "F23": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者都认定乙的 application_check 不成立（F23 scope_rule：规则引擎在跑但默认无规则、什么都不拦，算保护默认关闭，只写“可选：”），分歧只在 known_absent 还是 unknown，属码本读法分歧。按 R6，known_absent 要官方文档正面说明没有或有完整清单；本机 CLI 1.x 文档只说未匹配规则时走“implicit runtime behavior”且未定义其内容，integrations 页那句“runs commands and tools automatically”只说明自动运行、没说明有无 OS 隔离或容器，“runs with your user permissions”一句只针对第三方扩展；扩展端的敏感文件审批属另一形态不借。文档未正面否认、也未覆盖这一方面，按 R6 记 unknown（closed_source）。",
+      "evidence": "docs-llms-full.txt#L1796（integrations NOTE）；#L2192-L2214（permissions：Where Permissions Are Enforced、Notes on Unmatched Tools）；#L2244-L2255（配置文件来源）；#L15905-L15907（扩展以用户权限运行，仅限扩展）；changelog.txt#L212、#L256（敏感文件审批属 IntelliJ/VS Code 扩展）"
+    },
+    "F27": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F27 shared_files 判定句明写'闭源配置的文档写明子代理在同一工作区或项目目录里读写、默认不隔离的，算说到这一项（隔离是可选开关、默认关着的也算）'。subagents 页 frontmatter 的 isolation 字段可选值为 worktree（单独 git worktree），不设时默认不在隔离副本运行——正是'隔离是可选开关、默认关着的'情形。甲称'isolation 只说明可隔离，未明确默认共享目录'，但判定句已覆盖此情形。independent_context 两人一致。",
+      "evidence": "docs-llms-full.txt cli/subagents About subagents (#L3826-L3835)、Frontmatter configuration isolation (#L3915)"
+    }
+  }
+}

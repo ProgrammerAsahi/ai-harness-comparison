@@ -1,0 +1,89 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A10__cline__vscode-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者对事实认定不同：stepCountIs(8) 到点后是回主循环继续，还是结束任务。核对：本地工具在 AI SDK 侧不带 execute，有本地调用的那一步本来就会停，所以 8 步上限只在连续 8 步都只有 web_search 时才起作用；此时输出里没有本地 tool-call，外层 toolCalls 为 0，也没有完成提醒（completionPolicy 未设），于是 finishRun('completed')，按调用次数结束了任务。web_search 默认挂载（全局默认 enabled、Cline 提供方声明支持、Act 非 yolo），有触发来源；按 R2 只覆盖一个工具也计入，budget 成立，与 F12 hard_stop 含 call_count 对应。",
+      "evidence": "sdk/packages/llms/src/providers/ai-sdk.ts#L2471-L2473,L867-L887; sdk/packages/agents/src/agent-runtime.ts#L880-L905,L950-L973; sdk/packages/core/src/runtime/orchestration/runtime-builder.ts#L450-L461; sdk/packages/core/src/services/global-settings.ts#L369-L381; sdk/packages/llms/src/providers/vendors/cline.ts#L271-L287; sdk/packages/llms/src/providers/builtins.ts#L676-L677"
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "提供方错误重试耗尽后，框架以 ask:api_req_failed 收尾并在界面留下 Retry/Sign In/Buy Credits 按钮，属 escalate_to_human 判定标准中\"框架为这次失败给出的专门入口（错误处的重试按钮）\"；用户点 Retry 后同一会话收到 TASK_RESUMPTION_PROMPT 续跑，原有历史保留、不必重述任务。码本明确\"按用户看到的行为判，不按底层运行是否结束判\"且\"从原处接着走不要求恢复同一次被中断的调用\"。",
+      "evidence": "apps/vscode/src/sdk/message-translator.ts#L1322-L1347；apps/vscode/webview-ui/src/components/chat/chat-view/shared/buttonConfig.ts#L30-L37；apps/vscode/src/sdk/sdk-followup-coordinator.ts#L169-L196"
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者对 output_limit 看法一致，分歧在 stepCountIs(8) 算不算 call_count。码本 F12 的 call_count 包括代理步数和模型调用次数，并不要求是任务级上限；scope_rule 明确计入写在代码里始终生效的内部上限，R2 规定只覆盖一个工具的也计入。这些模型调用属于主模型自己的多步循环，web_search 的 execute 只调搜索接口，不属于 R4 所说的辅助调用。到 8 步就不再发下一次调用，外层随后以 completed 结束，属于 hard_stop。",
+      "evidence": "sdk/packages/llms/src/providers/ai-sdk.ts#L2471-L2473; sdk/packages/llms/src/providers/vendors/cline.ts#L105-L124,L216-L217,L287; sdk/packages/agents/src/agent-runtime.ts#L950-L973"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "前台命令超 300 秒自动 detach（timeout 分支）时框架把后续输出写入临时目录日志文件并在工具结果中只返回日志路径，后续输出不进会话记录，满足 external_reference 判定。日志文件跨进程保留、按年龄 50 小时和容量 2 GB 定期清理，符合持久性要求。超时触发是默认行为，不需要用户操作。",
+      "evidence": "apps/vscode/src/sdk/vscode-run-commands-tool.ts#L51-L52,L121-L123,L209-L216,L253-L269；apps/vscode/src/shared/storage/state-keys.ts#L77-L81；apps/vscode/src/services/temp/ClineTempManager.ts#L17-L19,L39-L40"
+    }
+  }
+}

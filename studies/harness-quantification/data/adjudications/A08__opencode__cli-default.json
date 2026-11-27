@@ -1,0 +1,68 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A08__opencode__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F13": {
+      "choice": "gpt",
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按现行 scope_rule，每轮从存储重读后控制条目只用来定位起点、只被一对一修整的记 sequential_messages。默认免费型号路径的压缩是摘要式：compaction.mdx Providers 小节写明 native 要经 settings.compaction 显式开启、默认 OpenCode 自己写摘要，model-resolver.ts L130 注明省略即 summary，compaction.ts L314 只有型号声明 compaction.type=native 才走原生压缩。系统条目过滤（history.ts L228-L232）只对原生压缩条目生效，默认设置下没有触发来源，按 R2 属「要先改设置才有触发来源」不计入、只写「可选：」。甲引的另一处依据「不能重放时退回更早压缩边界」在现行 scope_rule 明文属定位起点（「位置可以在几个边界里选，退回更早一个边界也算」），不支持 typed_event_rebuild。",
+      "evidence": "packages/core/src/session/history.ts#L35-L53, #L193-L235; packages/core/src/session/compaction.ts#L300-L330; packages/core/src/model-resolver.ts#L210-L222, #L505; packages/core/src/plugin/provider/chatgpt.ts#L285-L320; packages/core/src/models-dev/snapshot.txt（无 native 字样）; packages/core/src/session/runner/to-llm-message.ts#L226-L301"
+    },
+    "F29": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "internal_code",
+        "plugin_api",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "现行 embedder_declared 判定写明「工具由嵌入方经嵌入接口为某个会话声明的，一律记本项，不记 plugin_api」，并限定「plugin_api 只收经插件或扩展接口注册、对所有会话生效的工具」。官方 SDK（与所选程序同一源码提交，R5 按 library 记）的 instances 机制由嵌入方按会话 metadata 选键、configure 返回带工具的应用插件（packages/sdk/README.md Session-Selected Plugins），工具只对该键会话生效，不满足「对所有会话生效」，按上述两句归 embedder_declared；「即使嵌入方和核心在同一进程里也这样记」覆盖该进程内场景。甲称「SDK 传入的插件对整个宿主生效」与 README 的 instances 文档不符，但其取值少记 embedder_declared 一项。",
+      "evidence": "packages/sdk/README.md#L31-L74（Session-Selected Plugins）; packages/sdk/src/promise.ts#L21-L43; services/site/src/docs/content/build/sdk/index.mdx#L72-L99"
+    },
+    "F33": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "neither"
+      },
+      "rationale": "两位读者差在事实认定：schedules 是否算发行版有文档的入口、console_watches 是否算发行版内的事件接收。schedule 进取值：钉住版本自带本地原生定时器（SQLite 表、到点经 sessions.prompt 唤醒会话），模型用 schedule_create、用户用 /schedule 能建任务；除配置 schema（config.mdx 称其为可用字段的 source of truth）的开关说明外，发行说明 v2.2.1、v2.2.4 也写明经 experimental.schedules 开启，按 R5 改设置才开放的入口照记进 F33 取值，不该放 unresolved。external_event 不进：Slack、GitHub 等的监视和事件订阅由厂商云端 Console 的 /api/event-watches 服务承担（服务端不在本仓库），本机只拉取 Console 的事件流，且还要 Console 端为工作区开启 watches，按 F33 scope_rule「托管在厂商云端的定时或事件服务不在所选发行版内，不记」排除，写 value_note。",
+      "evidence": "packages/schema/src/config/flag.ts#L6-L21; packages/schema/src/config/experimental.ts#L17-L21; packages/core/src/flag.ts#L34-L71; packages/core/src/schedule.ts#L71-L80、L262-L275; packages/core/src/tool/plugin/schedule.ts#L45-L62; CHANGELOG.md#L517（v2.2.1）、#L268（v2.2.4）; services/site/src/docs/content/config.mdx#L111-L127（Schema）; packages/core/src/plugin/provider/opencode-watches.ts#L13-L31、L455-L527; packages/core/src/plugin/provider/opencode.ts#L336-L358"
+    }
+  }
+}

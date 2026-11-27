@@ -1,0 +1,119 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A14__mistral-vibe__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "空参数字符串转 {} 后照常执行；不做这一步调用会因 JSON 解析失败而作废，属于使调用免于解析失败的修正，不是\"不做也不会失败\"的规范化（码本 framework_input_repair 判定标准），应记入。其余三项双方一致。",
+      "evidence": "harness/core/src/core/turn/completion/candidate.rs#L479-L494; harness/core/src/core/tools/execution/batch.rs#L89-L111; harness/core/src/core/tools/arguments.rs#L44-L77"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "恢复时在跑的工具调用按 fail 处理返回失败事件交回模型重新决定，命中 checkpoint_resume 判定中\"运行中的调用被作废、交给模型重新决定的，记 rebuild_and_rerun\"的规则；文件系统 idempotent_retry 属于 value_note 的并存细节，不改变主分类。",
+      "evidence": "harness/runtimes/python/python/mistralai_vibe_local_harness/vibe/_runtime.py#L1498-L1530, #L4722-L4729, #L5798-L5834; harness/runtimes/python/python/mistralai_vibe_local_harness/protocol.py#L1095-L1109"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "模型可用 run_typescript 现写编排脚本经 tools.agents.spawn 循环或并发派子代理，创建时机与数量由脚本代码决定而非逐次模型决定；码本 workflow 判定明文\"脚本是预先保存的还是模型当场写的都记这一项\"，应记入 workflow。",
+      "evidence": "harness/core/src/core/prompt/snapshots/_native__core__prompt__instruction_snapshots__built_in_tools_unix.snap#L74-L118, #L1145-L1151"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "用户 /name 调用入口由技能目录本身生成（user-invocable 技能成为斜杠命令），展开的就是该技能内容；码本 skill_directory 判定明文\"同一份技能既能由模型按需装载、又能由用户按名调用的，只记本项，不记 prompt_template\"。快照中无技能目录之外的独立命令文件装载路径。",
+      "evidence": "vibe/app_server/_skill_invocation.py#L1-L19; docs-llms-full.txt 'Skills' > 'Custom slash commands'"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在 context_compaction：都认 SessionCompacted 存在，分歧在 app-server 事件流算不算官方有文档、对外可订阅的接口（读法与事实认定兼有）。钩子 HookType 七种里没有压缩点；SessionCompacted 只经 AppServerSession.events() 交出，其文档只在仓库开发参考页，语境是自家交付客户端的边界（ADR 0009“attached delivery clients”），docs/README 索引和 docs.mistral.ai 导出都未提及 app-server，未说明供外部程序订阅，按 F31 证据须指向官方有文档的订阅接口及 R7，至多算疑似，不进 value；vibe-acp 只在用户 /compact 时发 tool_call 更新，不是标出压缩阶段的事件类型；--output streaming 按消息输出、run-server 与 agent socket 协议也无压缩事件。",
+      "evidence": "vibe/core/hooks/models.py#L20-L42; vibe/app_server/events.py#L64-L66; vibe/app_server/session.py#L413-L434; docs/reference/app-server-protocol.md#L1-L25; docs/adr/0009-app-server-boundary.md#L1-L27; docs/README.md#L5-L11; vibe/acp/commands/controller.py#L180-L199; docs/programmatic-mode.md#L36-L72"
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "cli_subprocess",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在 library：对“public Python facades”一句的读法不同。该页把“public”用作与私有 Runtime/Core 对象相对的边界词，对象是自家交付客户端（ADR 0009、AGENTS.md 称 app-server 服务 TUI、Desktop 等），没说供外部程序嵌入；且所列门面 AppServerHost.connect 只接一个已建好的 AppServerClient，进程内拉起核心的 LocalHarnessHost 不在所列门面里，产品文档和 docs/README 索引也未提及。按 F32 library“文档提到了、但没说是否供外部使用的，写进 unresolved”，取值 cli_subprocess、public_protocol。",
+      "evidence": "docs/reference/app-server-protocol.md#L9-L25; docs/adr/0009-app-server-boundary.md#L1-L7; vibe/app_server/__init__.py#L11-L17; vibe/app_server/host.py#L68-L99; vibe/app_server/local.py#L68-L106; docs/README.md#L5-L11; docs/programmatic-mode.md#L1-L7"
+    }
+  }
+}

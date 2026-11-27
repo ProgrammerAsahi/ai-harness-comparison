@@ -1,0 +1,203 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "D02__n8n__selfhost-agent-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F04 的 escalate_to_human 判定，框架为失败给出的专门重试入口且能带原状态续跑的计入本项。源码显示执行列表仅对 error/crashed 状态提供重试菜单，execution.service.ts 的 retry 拒绝成功执行，读回已保存的 execution.data 与 nodeExecutionStack 并清除末节点错误后续跑（AI Agent 失败压回栈时亦经 collectSubNodeResults 取回已完成工具结果）。",
+      "evidence": "packages/cli/src/executions/execution.service.ts#L260-L352；packages/frontend/editor-ui/src/features/execution/executions/composables/useExecutionHelpers.ts#L74-L76；packages/@n8n/config/src/configs/executions.config.ts#L153-L171"
+    },
+    "F06": {
+      "choice": "gpt",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按总则 R7 与 F06 scope_rule，本字段明确不按总则 R2 的扩展点口径，只记默认安装后已经有工具在其中执行的位置。钉住源码证实默认 AI Agent v3.1 的 getTools/getConnectedTools 仅读画布 ai_tool 接线且模型 builtInTools 默认为空，未接线时本地没有任何工具执行，应记 known_absent 与 []。",
+      "evidence": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/ToolsAgent/common.ts#L535（getTools 只读 ai_tool 接线）"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "neither",
+        "r3": "opus"
+      },
+      "rationale": "两位读者都认 semantic_retrieval、都不认 user_specified（Chat Trigger 的 allowFileUploads 默认 false，打开属改设置），差在 keyword 是否成立，属对 R2“接上的部件按它们的默认行为记”的适用。Data table 节点虽默认加载、usableAsTool，但默认操作是 insert；要当关键词检索用，得把操作改成 Get、配 Contains 条件并让模型填值，这些是改节点参数，不是部件的默认行为；它本身也是通用持久表的增删改查节点，不是框架自带的资料检索工具，所以不计 keyword。",
+      "evidence": "packages/nodes-base/nodes/DataTable/actions/row/Row.resource.ts#L70-L78；packages/nodes-base/nodes/DataTable/DataTable.node.ts#L14-L29；packages/nodes-base/nodes/DataTable/common/methods.ts#L99-L102；packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/ChatTrigger.node.ts#L95-L101"
+    },
+    "F16": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F16，Simple Memory 存在进程内 Map 且按同一 sessionId 隔离、闲置 1 小时清除，不是跨会话持久记忆；Postgres/Redis 记忆节点需要环境前提之外的数据库凭据。Data table 是通用持久数据表节点，没有内置跨会话记忆流程与记忆条目语义，不计 structured_records，故为 known_absent 与 []。",
+      "evidence": "packages/nodes-base/nodes/DataTable/DataTable.node.ts#L27"
+    },
+    "F18": {
+      "choice": "gpt",
+      "status": "known",
+      "value": "checkpoint_resume",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F18 词表及总则 R8（同一机制按词表先后取第一项命中），n8n 失败重试与等待恢复均持久化并读回 nodeExecutionStack 与既有 runData，直接从栈顶未执行节点或挂起点接着跑，而非从起点按事件日志重放工作流；checkpoint_resume 符合实际机制且排在 workflow_replay 之前。",
+      "evidence": "packages/cli/src/executions/execution.service.ts#L333-L352（“Stack will determine what to run next”）"
+    },
+    "F19": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "conversation",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧在 subagent_links：父执行等待子执行、WaitTracker 重启后回填结果的机制确实存在，但只有子工作流进入持久等待时才走到。默认部件下子工作流进不了持久等待：Wait 默认 5 秒、按时间间隔恢复，在进程内 sleep；Form 节点要求上游有 Form Trigger，经 Workflow Tool 调起的子流程没有；Chat 的 send-and-wait 要把 Chat Trigger 响应模式改成 responseNodes；其他 send-and-wait 要另配凭据。F18 的默认入口 Retry 也不会把原子执行的结果送回父执行，所以只记 conversation 和 tool_results。",
+      "evidence": "packages/nodes-base/nodes/Wait/Wait.node.ts#L394-L436；packages/core/src/execution-engine/node-execution-context/base-execute-context.ts#L141-L158；packages/nodes-base/nodes/Form/Form.node.ts#L461-L469；packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/Chat.node.ts#L347-L362；packages/@n8n/nodes-langchain/nodes/tools/ToolWorkflow/v2/utils/WorkflowToolService.ts#L284-L304"
+    },
+    "F22": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R1、R2 与 F22，Slack/Gmail/Telegram 等外部 HITL 审批节点需要环境前提未提供的第三方服务凭据；免凭据的 chatHitlTool 在 Chat.execute 中强制要求上游 Chat Trigger 的 options.responseMode 为 responseNodes，而 Chat Trigger 默认是 lastNode/streaming，接上部件按默认行为运行会报错，改动已有选项值属改设置，故默认模式无强制审批（known_absent，[]）。",
+      "evidence": "packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/Chat.node.ts#L333-L361；packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/ChatTrigger.node.ts#L725-L880"
+    },
+    "F24": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result",
+        "identity"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F24 的 approval 判定，默认模式下没有任何逐次批准或拒绝决定时不计 approval。结合 F22 结论（默认模式无审批，外部审批缺凭据、Chat 审批需改 Chat Trigger 的 responseMode），审计记录仅关联 intent、actual_operation、result 与 identity。",
+      "evidence": "packages/@n8n/nodes-langchain/nodes/trigger/ChatTrigger/Chat.node.ts#L357-L361"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "分歧在“发布工作流”算添加内容还是改设置。新建工作流的 activeVersionId 为空（未发布），只有发布后 ActiveWorkflowManager 才注册定时和外部事件触发器；这正是 R2 所说“新建后默认停用、要另外打开开关才生效的，打开开关算改设置”，按 R3 第三档不进取值。编辑器里的手动执行、测试监听要用户每次按键发起，也不算定时器或外部事件直接创建，所以不记 event_scheduling。",
+      "evidence": "packages/@n8n/db/src/entities/workflow-entity.ts#L38-L40；packages/@n8n/db/src/entities/workflow-entity.ts#L106-L107；packages/cli/src/active-workflow-manager.ts#L121-L130"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R3、R5 与 F31 scope_rule，F31 收录同一自托管发行版里官方有文档的全部钩子与类型化事件流接口，不因需企业许可（换账户档位）排除，仅观察事件也计入 value。官方文档导出收录了 Log streaming，同提交源码证实其推送 n8n.ai.llm.generated（model_call）、n8n.ai.tool.called 与 n8n.node.started/finished（tool_before_after）以及 n8n.workflow.*，叠加 External hooks 的 workflow.preExecute/postExecute，四项均成立。",
+      "evidence": "packages/cli/src/eventbus/event-message-classes/index.ts#L35-L73；packages/cli/src/external-hooks.ts#L72-L110；docs-llms-full.txt「Log streaming」「Backend hooks」小节"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "读者一认为持久等待都要改参数、配凭据或发布，所以判 in_memory；但他漏了 Form 节点。按 R2，作者接上默认参数的 Form Trigger 和 Form 节点属添加内容，测试运行不用发布。Form 节点调用 putExecutionToWait 时不带 acceptsResumeRequest:false，执行以 waiting 状态存库；崩溃恢复的 markAsCrashed 跳过 waiting 执行，重启后收到表单提交，就从数据库读回执行接着跑。按 R9 取最强一层，记 persistent。读者二依据的“发布后的定时流程”属改设置，不作依据。",
+      "evidence": "packages/nodes-base/nodes/Form/Form.node.ts#L454-L488；packages/core/src/execution-engine/node-execution-context/base-execute-context.ts#L141-L158；packages/cli/src/executions/execution-crash.service.ts#L24-L41；packages/cli/src/webhooks/waiting-webhooks.ts#L225-L232；packages/cli/src/wait-tracker.ts#L79-L125"
+    },
+    "F36": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F36 的 message_notification 判定，切到同一应用其他页面仍会弹出的应用内通知计入本项。源码显示 MainHeader 在编辑器、执行记录、测试视图间持续维护 pushConnection，执行完成时经 executionFinished 与 useToast 在应用根层 #n8n-app 弹出通知；而阻塞审批/提问需外部凭据或修改 Chat Trigger 的 responseMode（与 F22/F24 一致），默认路径不计 blocking_approval。",
+      "evidence": "packages/frontend/editor-ui/src/app/composables/usePushConnection/handlers/executionFinished.ts#L168-L175,L493-L512；packages/frontend/editor-ui/src/app/router.ts#L342-L346；packages/frontend/editor-ui/src/app/layouts/WorkflowLayout.vue#L103"
+    }
+  }
+}

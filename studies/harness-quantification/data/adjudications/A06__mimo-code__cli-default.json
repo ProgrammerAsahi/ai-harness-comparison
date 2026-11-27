@@ -1,0 +1,90 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A06__mimo-code__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "user_interrupt",
+        "verification_condition"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "循环定时和 loop 的 7 天到期是触发来源的存活期限，不是一次任务的用量阈值；同一机制在 A01、A04、A05、A11、A17、A18 都没有据此记 budget，这里统一不记。",
+      "evidence": ""
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F04 scope_rule 明写“循环检测由框架直接发起权限询问或确认、暂停等用户决定的，记 escalate_to_human，审批的形式另记 F22”；快照里同一工具同参连续 3 次触发 permission.ask(doom_loop)（processor.ts L36、L671-L698），默认 doom_loop: ask（agent.ts L127-L129），暂停等用户允许后原调用继续，故应计入 escalate_to_human；乙把它只归 F22 与现行码本的这句不符。",
+      "evidence": "packages/cli/src/session/processor.ts#L671-L697；packages/cli/src/agent/agent.ts#L129"
+    },
+    "F12": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "time 只计一次任务、一轮或一个会话的总时长；7 天到期限的是还会不会再触发，与 F03 同口径不记。",
+      "evidence": ""
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "shared_board",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "差在任务表加 progress.md 算不算“调用方或协调者从那里汇总”。模型可传 task_id（R3 第一档）；派生时框架在任务库把任务 start 并记 owner；子代理写 tasks/<TID>/progress.md，框架 postStop 校验必需小节并注入 frontmatter（memory.disable_write 默认 false）；默认开的 checkpoint 每次写入前由 buildProgressDiff 扫描新增或改动的 progress.md，交 checkpoint-writer 按任务表整合进主 checkpoint，供主会话重建上下文。这是框架维护结构、有内置汇总流程的共享任务表，与通知返回并存；读者二说的“未见汇总路径”漏看了这条 reconcile。",
+      "evidence": "packages/cli/src/tool/actor.ts#L147-L153；packages/cli/src/actor/spawn.ts#L381-L394；packages/cli/src/plugin/subagent-progress-checker.ts#L125-L170；packages/cli/src/memory/write-gate.ts#L31-L33；packages/cli/src/session/checkpoint.ts#L850-L851；packages/cli/src/session/checkpoint-progress-reconcile.ts#L85-L100；packages/cli/src/agent/prompt/checkpoint-writer.txt#L10-L16、#L99-L112"
+    }
+  }
+}

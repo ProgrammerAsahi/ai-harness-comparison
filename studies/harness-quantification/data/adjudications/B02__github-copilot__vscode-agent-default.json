@@ -1,0 +1,162 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B02__github-copilot__vscode-agent-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按总则 R4 与 F03 scope（子代理默认上限计入 budget，口径同 F12）：客户端原生执行子代理默认开启且默认 10 轮工具调用上限，到限强制停循环并有末轮提示，属调用次数阈值结束子任务，budget 应入取值；乙漏记 budget。verification_condition 双方都未确认按默认路径拦结束，不入取值。",
+      "evidence": "src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts#L1343-L1365；src/vs/platform/agentHost/common/copilotCliConfig.ts#L325-L328；extensions/copilot/src/platform/configuration/common/configurationService.ts#L789-L801；extensions/copilot/src/extension/intents/node/toolCallingLoop.ts#L1445-L1457"
+    },
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "escalate_to_human 判定句的专门入口命中：主回合失败生成 resumable=true 错误条目，界面在错误处给 Try Again 按钮（错误处的重试按钮），点击后 resume 以 sendMessages({messages:[]}) 带原历史接着走、不必重述任务；乙引 FAQ“自己重试”排除不成立。工具失败交回模型的 model_self_repair 双方一致。",
+      "evidence": "src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts#L11198-L11238；src/vs/platform/agentHost/common/state/sessionState.ts#L129-L135；src/vs/workbench/contrib/chat/browser/agentSessions/agentHost/agentHostSessionHandler.ts#L2494-L2510；src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts#L6822-L6852"
+    },
+    "F05": {
+      "choice": "gpt",
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F05 scope 两端生灭关系判：界面与模型循环进程之间隔着 Agent Host 不单取一跳，运行时子进程经 RuntimeConnection.forStdio 由应用拉起、随应用退出而结束（不比应用活得久），且“退出界面”按 F34 scope 指应用整体退出，核心及其宿主都不在界面退出后存活，记 subprocess_protocol；乙取界面到 Agent Host 单跳、按窗口关闭算退出，与现行 scope 相反。",
+      "evidence": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts#L79-L86, L201-L209；docs: code.visualstudio.com Agent Host 页 Session lifetime and client dependencies"
+    },
+    "F09": {
+      "choice": "opus",
+      "status": "known",
+      "value": "adapter_layer",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在事实认定：读者二只看 BYOK 回环路径（核心对本机代理只说 Responses），读者一看默认的 Copilot 服务路径。快照显示运行时在默认路径上对 Copilot 服务按型号分别发 /chat/completions、/responses、/v1/messages 三种协议（Agent Host 对运行时 model.call_failure 事件的分类，非 BYOK 时保留型号名；SDK 文档 assistant.usage 的 apiEndpoint 同样列三种），核心并非只对网关说一种协议，protocol_gateway 的关键条件不成立；核心内有把统一请求转成两种以上协议的适配实现，命中 adapter_layer，且按 R8 词表先后也先于 protocol_gateway。BYOK 回环代理是另加的路径，写 value_note 即可；运行时闭源，按 R6 confidence 为 low。",
+      "evidence": "src/vs/platform/agentHost/node/copilot/copilotFailureTelemetry.ts#L45-L51, L457-L474；src/vs/platform/agentHost/node/copilot/byokLmProxyService.ts#L121-L127；docs: copilot-sdk/features/streaming-events（apiEndpoint 字段表）；copilot-sdk/observability/opentelemetry > Trace context propagation；copilot-sdk/auth/byok > Wire API format"
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_count"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 R4 与 F12 scope（子代理自己的默认上限计入、口径写明范围）：执行子代理默认开启（package.json 与设置默认 true），默认 10 轮工具调用上限，到限 hitToolCallLimit 强制截止、末轮注入结束提示，call_count 同入 hard_stop 与 soft_notice；乙的 known_absent 与“存在默认生效上限”不符（absent_rule 要求完整设置参考里无任何默认上限）。运行时实验可能以闭源 execution_subagent 替换客户端实现，替换后预算未知，按 R10 本地默认判。",
+      "evidence": "src/vs/platform/agentHost/common/copilotCliConfig.ts#L325-L328；src/vs/platform/agentHost/node/copilot/copilotSessionLauncher.ts#L1343-L1365；extensions/copilot/src/platform/configuration/common/configurationService.ts#L789-L801；extensions/copilot/src/extension/tools/node/executionSubagentTool.ts#L66-L79；extensions/copilot/src/extension/intents/node/toolCallingLoop.ts#L1445-L1457"
+    },
+    "F19": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan",
+        "tool_results"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 R6 由同一执行核心的官方 SDK 会话持久化文档推断：规划状态（plan.md、待办）随会话持久化并在恢复时从磁盘载入，属于“恢复时自动带回的目标”；宿主恢复后仍可经 plan.read/readSqlTodosWithDependencies 读回，模型可用 manage_todo_list 接着更新，满足 task_plan“回到可用状态、模型和界面能接着更新”。乙因闭源内部读回不可见放 unresolved，低于 R6 的归类标准。",
+      "evidence": "docs: copilot-sdk/features/session-persistence How sessions work；What gets persisted?；src/vs/platform/agentHost/node/copilot/copilotAgentSession.ts#L6188-L6203"
+    },
+    "F31": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F31 scope：订阅类型化事件流的接口，事件流里标出某阶段开始或结束的事件类型时按该阶段记事件点，仅观察照入 value 并写 observe_only。SDK 事件流的 assistant.turn_start/turn_end 每次模型请求一对（同一执行核心，R5 构件库条款入取值、不进 via_default_entry），model_call 成立；乙以“没有可改写处理器”为由放 unresolved 与 scope 的观察通知也计入相反。",
+      "evidence": "docs: copilot-sdk/features/agent-loop The tool-use loop；copilot-sdk streaming events assistant.turn_start"
+    },
+    "F33": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 R5：F33 收发行版里官方有文档的全部入口，R3 第二、三档排除不适用，默认可用性由 via_default_entry 区分。Agent merge（文档小节 Finish a pull request with agent merge）监视会话 PR，由 GitHub 侧评审、检查失败、冲突等框架外事件触发，经专门监视机制向会话派修复提示并起代理回合，命中 external_event 判定句（源头在外、逐条送进会话、空闲会话开始新一轮）；甲只排除了云端仓库事件形态，漏了本机入口。",
+      "evidence": "docs: code.visualstudio.com/docs/agents/run/agents-window Finish a pull request with agent merge；ai-settings Agent merge；src/vs/platform/agentHost/common/agentMerge.ts"
+    },
+    "F34": {
+      "choice": "opus",
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F34 scope：“退出界面”对应用内窗口/面板按应用整体退出判，关窗口不算退出；Agent Host utility process 挂在主进程关闭流程上、随应用退出被销毁，不满足 background_daemon“退出界面后仍然存活”，按判定顺序记 foreground_process。甲把关窗口当 UI exit 判后台与现行 scope 不符。",
+      "evidence": "src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts#L79-L86, L201-L209；docs: Agent Host 页 Session lifetime and client dependencies"
+    }
+  }
+}

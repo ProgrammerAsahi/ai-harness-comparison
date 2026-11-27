@@ -1,0 +1,199 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B14__qoder__app-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "neither"
+      },
+      "rationale": "两位读者都认 model_self_repair、escalate_to_human，只差 call_retry 是确认还是疑似（事实认定）。桌面 0.5.13 写上下文超限错误本应被识别后经压缩恢复，桌面上下文页写 Qoder 会在需要时自动压缩，正对 call_retry 里“重发前只做压缩仍记本项”；另按 R6 的 SDK 条款（SDK 概览明说开放的是 Qoder 产品家族背后的 Harness，产品家族含桌面应用），SDK 参考写 qodercli 对网络/服务错误自动重试（api_retry 消息），模型排队时 qodercli 等待后重试，关键条件已说到，call_retry 可确认（low）。甲整字段 unknown 过严，乙漏 call_retry。",
+      "evidence": "changelog.txt#L28 (app 0.5.13); docs-pages.txt#L2602 (qoder/context-compaction); docs-pages.txt#L25094 (sdk/overview Harness behind product family); docs-pages.txt#L41575-L41590 (SDKAPIRetryMessage); docs-pages.txt#L37737; changelog.txt#L108,L114 (0.5.6); docs-pages.txt#L25773-L25775 (sdk/how-it-works)"
+    },
+    "F07": {
+      "choice": "opus",
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F07 unknown_rule 的简化推断：任务记录存于本机、继续任务时由程序读回（损坏的本地记录会阻止对话继续），远端同步只是有界镜像且不删桌面历史，文档未提界面层与执行核心分开，记 execution_core（low）。",
+      "evidence": "docs-pages.txt#L1161 (overview); docs-pages.txt#L2009-L2011 (Continue an existing task); docs-pages.txt#L5774 (Recent history); changelog.txt#L44,L170"
+    },
+    "F13": {
+      "choice": "opus",
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "符合 F13 unknown_rule 第二种推断情形（对话历史逐轮累积进请求、接近窗口才压缩）：context-compaction 页写明一次请求的上下文由系统提示/工具/Skills 与对话消息共同占用、需要时把较早内容压成摘要供后续请求使用，可记 sequential_messages（low）。",
+      "evidence": "docs-pages.txt#L2574-L2624 (Context windows and compaction / What compaction changes)"
+    },
+    "F24": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者都认 actual_operation、result，差在 intent：读者一把“唯一对上”读成一条请求对一次调用。码本 intent 明列“触发它的用户请求”，判定方向是给定一个动作能否唯一找到其意图；任务记录持久保存（可重开、搜索用户消息与代理回复、导出），命令卡片与触发它的用户请求在同一份按序记录里，每次调用的触发请求是唯一确定的，按 R6 推断可收 intent（low）。",
+      "evidence": "docs-pages.txt#L1930-L1940 (task-management: return/search); docs-pages.txt#L2009-L2014, L2040 (continue, Export history); docs-pages.txt#L2121-L2123 (Inspect running commands); docs-pages.txt#L3461 (goal-driven task record)"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "main_agent",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "桌面 Hooks 列出 agent 处理器（Ask an Agent to process the event and return a result），借自 CLI Hooks 其为独立会话多步用工具的子代理（maxTurns 50、StructuredOutput 判定），在 Stop/PreCompact 等框架阶段条件上自动派生、无用户或主代理的创建请求，记 framework_internal；用户添加钩子配置属添加内容（R2），不改变创建方归属（比照定时器直起记 event_scheduling）。",
+      "evidence": "docs-pages.txt#L5062-L5113, L5140 (desktop Hooks); docs-pages.txt#L19250-L19274 (CLI Hooks agent handler); docs-pages.txt#L5267-L5281 (Delegate through conversation); docs-pages.txt#L3478, L3538-L3542 (Automations)"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "钩子 agent 以 StructuredOutput 的 ok/reason 决定当前流程放行或阻断、默认同步等待（async=true 才后台并下一轮注入），按父流程在拿到结果前不能续走记 synchronous_return；自定义 Agent 委派先返回任务已建立、结果稍后回到当前对话，记 async_wait。",
+      "evidence": "docs-pages.txt#L19127-L19135 (group async); docs-pages.txt#L19250-L19274 (agent handler); docs-pages.txt#L5279-L5281 (delegation result returns later)"
+    },
+    "F30": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template",
+        "prompt_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "data-import 写明全局规则与 Qoder IDE 共用配置目录并被继承，借自 user-guide/rules 的 Always Apply\"对全部请求加载\"，构成每会话自动装载的常驻说明，记 project_rules（low，借自）；skill_directory、role_template、prompt_template 双方一致。",
+      "evidence": "docs-pages.txt#L2154 (data-import: global rules inherited); docs-pages.txt#L4897 (plugins bundle rules); docs-pages.txt#L8911-L8940 (IDE Rules / Always Apply)"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "其余六个阶段一致，差在 save 是否收 SDK 的 SessionStore.append（码本读法分歧）。F31 定义只把“框架在某阶段调用、并使用其返回值”的提供方方法算处理器，且提供方主方法不算；append 是外部存储提供方的必需主方法、返回 void，写失败只由 SDK 自己重试并发 mirror_error，不影响主流程，不是为某阶段专门调用、返回值被使用的处理器，也不是事件订阅；桌面与 CLI Hooks 事件表都没有写盘事件，save 不记。",
+      "evidence": "docs-pages.txt#L28228-L28247, L28487-L28511, L28619 (sdk/session-storage); docs-pages.txt#L5096-L5113 (qoder/hooks)"
+    },
+    "F32": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "cli_subprocess"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "How it works 写明三种 Agent SDK 都启动本机 qodercli、经标准输入输出 JSONL 交换任务和结果；按 F32 library 条款“只包装子进程的客户端库按背后边界记”（负责人 11-25 认可，字段条款优先于 R5 构件库一句），记 cli_subprocess（需另装官方包），不记 library；library 末句例外只管没有线协议文档的本机服务，不管子进程。",
+      "evidence": ""
+    },
+    "F33": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_interaction",
+        "api",
+        "schedule",
+        "external_event"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "桌面 Hooks 列出 FileChanged 事件，借自其指向的 CLI Hooks 完整配置：watchPaths 注册文件监视、command 处理器 asyncRewake 在退出码 2 时构建提醒并唤醒模型，构成框架外文件变化经专门监视机制逐条送进会话、可让空闲会话开始新一轮；用户写钩子配置属添加内容（R2），记 external_event。user_interaction、api、schedule 双方一致。",
+      "evidence": "docs-pages.txt#L5096-L5113, L5140 (desktop Hooks); docs-pages.txt#L19150-L19160 (asyncRewake); docs-pages.txt#L19830-L19866 (CwdChanged watchPaths / FileChanged)"
+    },
+    "F35": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "本地 Automations 的定义存在执行设备上、到点时应用须在运行，但文档没写重启后按计划继续触发；F35 要求写明，只看到存盘不够。与 B07、B15 同样证据记 unknown 对齐。",
+      "evidence": ""
+    }
+  }
+}

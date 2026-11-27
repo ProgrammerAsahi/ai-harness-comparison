@@ -1,0 +1,67 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "D04__swe-agent__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F08": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "logical_id",
+        "container"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "working_directory 要求框架给每个会话分配专用目录作为隔开手段；快照里仓库固定拷入 /<仓库名>（各会话路径相同，仅随容器独有），目录本身不隔开会话，隔离全归 container，故甲的 logical_id+container 成立，乙多记 working_directory。",
+      "evidence": "https://github.com/SWE-agent/SWE-agent/blob/3ea751c087f32b16e039a2233dd6eefecef325d5/sweagent/environment/repo.py#L163-L187; sweagent/environment/swe_env.py#L176-L188"
+    },
+    "F10": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "native_structured",
+        "script_dispatch"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者对事实无分歧（默认工具包可执行文件由框架装进同一 bash 会话的 PATH，原生调用也只是拼成命令行在该会话里执行），分歧在 script_dispatch“框架把内部调用接到真实工具上”的读法。按代码，框架为原生调用和 bash 脚本内调用准备的是同一条执行路径：同一会话、同一可执行文件、同一 registry 状态，脚本输出里的提交标记也照样被框架识别并读取补丁；比照判定句“走同一个执行器就算调用了其他工具”，且 bash 默认注册、模型无需用户操作即可写循环／条件脚本调用 str_replace_editor、submit，属 R3 第一档、在一次调用内跑完交回同一循环（R8），故 native_structured 加 script_dispatch 成立。",
+      "evidence": "sweagent/tools/tools.py#L292-L312；sweagent/tools/tools.py#L372-L376；sweagent/agent/agents.py#L936-L1004；sweagent/agent/agents.py#L870-L895；sweagent/tools/commands.py#L209-L223；tools/review_on_submit_m/bin/submit；config/default.yaml#L41-L66"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "配置 yaml 打包系统/实例提示模板、示范轨迹与工具和模型范围，经 --config 按名选用后由框架装进会话（docs/config/config.md 的 Configuration 小节），符合 role_template「可按名选用、可附带工具和模型范围的角色定义」；乙的 known_absent 不成立，absent_rule 要求全无装载机制，而配置模板装载就是一种。",
+      "evidence": "https://github.com/SWE-agent/SWE-agent/blob/3ea751c087f32b16e039a2233dd6eefecef325d5/docs/config/config.md#L1-L29; sweagent/agent/agents.py#L60-L125"
+    }
+  }
+}

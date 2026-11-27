@@ -1,0 +1,216 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B16__zcode__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-5",
+    "gpt": "batch-5"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按总则 R6、R3 与 F02 未知规则：subagents 页仅列出工具名 TodoWrite，不足以归类；goal 页的摘要面板清单和待办校验只出现在用户需用 /goal 进入的可选路径（第二档），默认路径上 TodoWrite 的数据结构、展示方式及默认系统提示均未交代，应判 unknown（closed_source）。",
+      "evidence": "docs-pages.txt L3092（subagents: Tools and MCP）；L1181-L1204（goal: Setting a goal / Verification）；L270-L277（agents: Available Modes）"
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "model_self_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R6 与 F04 model_self_repair 判定：hooks 执行顺序明确工具失败走 PostToolUseFailure 且可向模型追加恢复建议、诊断或重试约束，共用同一 ZCode Agent 工具循环的 idle-time-tasks 页亦明写“The Agent gets an explicit error if it tries”，足以按闭源规则推断 model_self_repair；call_retry 仅见 3.17.2 安全拦截不再重试的反面线索，不进取值。",
+      "evidence": "docs-pages.txt L1250-L1266（hooks: Execution Order And Events）；L1590（idle-time）；changelog.txt L94"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "subprocess"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按现行码本 fields-0.10 F06 范围规则：configuration 页明写终端命令以子进程运行，可推断 subprocess；Read/Edit/Write 等文件工具仅列工具名，remote-control 与 remote-development 页只说在本地桌面机或工作区环境运行、未说由谁执行，码本明定此类情形不记 main_process、只进 unresolved。",
+      "evidence": "docs-pages.txt L956-L958（configuration: What the HTTP Proxy Covers）；L2579、L2665（remote-development）；L3092"
+    },
+    "F14": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R2、R6 与 F14 判定：configuration 与 qa #9 明示自动压缩常开无开关，commands 页写保留关键信息，idle-time-tasks 页直接将 automatic context compaction 列为自动运行时发出的模型请求，足以推断 summarization；skill 页明示 SKILL.md 正文超 100KB 装载时截短且每回合技能描述截为 250 字符并有固定元数据预算降级，默认已启用内置技能，符合单条内容进入上下文按预设上限截短的 truncation。",
+      "evidence": "docs-pages.txt L925-L930、L2436-L2444（自动压缩）；L1580（idle-time: What's Free）；L649-L653（/compact）；L2929-L2935（skill: Format Limits / Skill Count）"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "messages",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F17 未知规则与 external_reference 判定：qa #12 与重启恢复说明支持记 messages；qa #13 明写 ~/.zcode/cli/exec 持久保存历史命令输出、从不自动清理，删除后历史任务无法再查看命令输出而会话记录不受影响，直接说明原文不在会话记录内而由记录外部引用，符合 external_reference。",
+      "evidence": "docs-pages.txt L2459-L2473（qa #12、#13）；L1044-L1047（edit-history: Undo）"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在 R6 的“足以归类”门槛（读法分歧）。默认恢复入口是任务列表里的历史会话：重启后会话可恢复并重开、旧会话沿用创建时的型号接着对话；goal 页说关掉再开后已完成轮次与 tool-call history 仍在、从停下处继续（下一轮仍由模型与验证决定）；强制退出会中断正在运行的任务，中断的半截回复以 interrupted 状态留在历史里。这些外部表现已触及 rebuild_and_rerun 的关键条件（读回对话、未完成的工作不由框架接续），文档无任何执行检查点的说法，按 R6 推断 rebuild_and_rerun（low），不属于“只知道支持恢复”。",
+      "evidence": "changelog.txt#L147; changelog.txt#L174; changelog.txt#L197; docs-pages.txt#L1209-L1210 (goal: Stepping in); docs-pages.txt#L325 (Forking a Conversation); docs-pages.txt#L2435 (qa #8); docs-pages.txt#L1911 (memory)"
+    },
+    "F19": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "conversation",
+        "task_plan"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R6 与 F19 判定：goal 页明写关闭会话再回来时已完成轮次（completed rounds）、工具调用历史和系统保存的 goal 状态均保留并可从原处继续，结合 memory 页重启恢复会话及发布说明对加载历史会话消息与附件的描述，conversation 与 task_plan 均站得住（task_plan 按 F19 判定不因 /goal 为第二档而排除）；工具结果是否回到模型上下文未明，不计 tool_results。",
+      "evidence": "docs-pages.txt L1209-L1211（goal: Stepping in）；changelog.txt L147、L174"
+    },
+    "F24": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "事实上两位读者都承认文档没描述会话记录格式，分歧在能否从“会话历史本机保存、重开后 tool-call history 仍在、exec 目录存历史命令输出”推出逐调用可对上（读法分歧）。F24 的关键条件是参数被持久记录且按调用编号或顺序相邻唯一对上；文档只给出记录存在、目录名和任务级的输出查看，没说记了哪些字段、命令输出如何挂到具体调用，属 R6 所说的线索级材料，按 F24 unknown_rule 与 R6 判 unknown（closed_source）。hook 的 transcript_path 是临时文件，不作持久依据。",
+      "evidence": "docs-pages.txt#L1209-L1210 (goal: Stepping in); docs-pages.txt#L2470-L2473 (qa #12, #13); docs-pages.txt#L1397-L1420 (hooks 输入); docs-pages.txt#L1515 (hooks Troubleshooting); docs-pages.txt#L226; docs-pages.txt#L3220"
+    },
+    "F26": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R4 与 F25、F26 判定：除主代理派发内置子代理（main_agent）与定时任务开新会话运行（event_scheduling）外，repo-wiki 页明示目录与页面生成由工具驱动（tool-driven）、模型在独立读取视图里自主浏览目录树并按需读文件，属于多步调用工具的框架跟踪代理；用户点 Generate wiki 按钮启动且可 Stop、结果进 wiki 视图符合 user，每回合结束在已有 wiki 时自动检测代码变更并刷新符合 framework_internal。",
+      "evidence": "docs-pages.txt L3020-L3022（subagents）；L372-L398（automations）；L2748-L2770、L2783-L2794（repo-wiki）"
+    },
+    "F27": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "independent_context"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按现行码本 fields-0.10 F27 shared_files 判定：闭源文档只说子代理能读写文件、没说在哪个目录的，不算 shared_files；subagents 页只写 general-purpose 可读、改、运行命令并在隔离上下文工作，未明写与主代理共用同一工作目录（agents 页共用工作区的说法属于会话分叉 Forking，不在 F26 路径内），只应记 independent_context。",
+      "evidence": "docs-pages.txt L3020-L3028、L3099-L3108（subagents）；L326（fork）"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end",
+        "context_compaction",
+        "session_start"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R5、R8 与 F31 判定：hooks 页明确 SessionStart 按 source 匹配 startup / clear / compact（quickstart 示例亦给出 startup|clear|compact），用户或插件可通过 matcher 单独在压缩后挂处理器并注入上下文；F31 规定事件名不影响判定且 context_compaction 覆盖压缩前后，startup/clear 与 compact 属两个不同阶段触发路径，除 input、tool_before_after、end、session_start 外应计入 context_compaction。",
+      "evidence": "docs-pages.txt L1250-L1267（hooks: Execution Order And Events）；L2282"
+    },
+    "F34": {
+      "choice": "opus",
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R1、R6 与 F34 判定：即使不借用 3.15.3 Linux 升级故障恢复说明，多项适用于 macOS 的官方文档（install 页拖拽 ZCode.app 启动且无系统服务、Windows 托盘节明言不退出应用才让定时与闲时任务继续、automations 页应用关闭时不触发、repo-wiki 页中途关闭应用则任务标为 stopped、remote-control 页桌面关闭后无法继续、agents 页退出应用关闭侧会话）一致表明执行核心随桌面应用进程结束，足以推断 foreground_process。",
+      "evidence": "docs-pages.txt L449-L451（automations: Limitations）；L1712（Windows-Specific Settings）；changelog.txt L193-L197"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R6、R9 与 F35 判定：取本配置可用队列的最强一层即原生定时任务（闲时任务需订阅属其他环境、/goal 属第二档、交互队列崩溃语义未明）；automations 页写明任务默认无限重复、按月/年排期并占永久名额直到删除，且“应用关闭时不触发、错过的一次性运行记为 skipped 而不补跑”，说明定义持久保存并在应用重启后由调度器核对并按计划继续触发，可按闭源规则推断 persistent。",
+      "evidence": "docs-pages.txt L420-L451（automations: When It Stops / Managing and Running / Limitations）"
+    }
+  }
+}

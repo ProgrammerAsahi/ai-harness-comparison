@@ -1,0 +1,141 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "D01__dify__compose-agent-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F07": {
+      "choice": "gpt",
+      "status": "known",
+      "value": "state_service",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F07（分层口径同 F05），会话消息与 AgentWorkspaceBinding.session_snapshot 持久保存在 PostgreSQL，浏览器前端不持有权威副本，执行核心 agent_backend 也不直接落库，而是由独立后端服务 api 代理读写库并在每次运行前后交接快照，符合 state_service。",
+      "evidence": "api/core/app/apps/agent_app/session_store.py#L60-L80, #L137-L160"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "源码确认新建空白新 Agent 的 AgentSoulConfig.app_features.file_upload 默认 enabled=True，前端 Build 聊天输入区默认渲染附件上传入口、后端构建文件对象并交 user_prompt 层处理，支持 user_specified；同时经典知识库挂载位默认开放、Weaviate 默认启动、OpenAI 凭据支持嵌入且默认检索方式为 SEMANTIC_SEARCH，按总则 R2 在代理定义中挂上知识库属添加内容，计入 semantic_retrieval。",
+      "evidence": "api/models/agent_config_entities.py#L589-L597; api/core/app/apps/agent_app/runtime_request_builder.py#L213; dify-agent/src/dify_agent/layers/knowledge/layer.py#L160-L196; web/app/components/datasets/create/step-two/hooks/use-indexing-config.ts#L67-L70, #L22"
+    },
+    "F16": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "auto_summary"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按现行码本 F16 的 auto_summary 判定，Build 模式内置提示要求模型维护 notes，并提供专用持久化接口（dify-agent config note push 经 /agent-stub/config/note 整份覆写 agent_soul.config_note，非通用文件编辑），用户 Apply 后新会话通过 config manifest 自动整份带入，文档也明确称其跨构建对话充当记忆，可归入 auto_summary 而非 vocabulary_gap。",
+      "evidence": "api/controllers/console/app/completion.py#L120-L140; web/features/agent-v2/agent-detail/configure/use-agent-configure-build-draft.ts#L383-L395; docs 自托管 Build an Agent › The Build Note"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "除双方共识的 messages（Message/MessageAgentThought 及 history 消息）与 state_snapshot（session_snapshot 及 Build 点 Apply 后的 Home 快照）外，源码确认新建新 Agent 的 file_upload 默认 enabled=True，用户上传附件存为外部 UploadFile、消息库中 MessageFile 仅保存 upload_file_id/url 引用，按 F17 scope_rule 应计入 external_reference。",
+      "evidence": "web/features/agent-v2/agent-detail/configure/components/preview/chat-session.tsx#L153-L165; web/app/components/base/file-uploader/hooks.ts#L470-L481; api/core/app/apps/message_based_app_generator.py#L231-L242; api/models/model.py#L1857-L1882"
+    },
+    "F31": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "input",
+        "tool_before_after",
+        "end"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "neither",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者都认 Service API 的 agent_thought→tool_before_after、message_end→end（仅观察），只差 input。新 Agent 的内容审核前端写死关闭、只剩无对外文档的控制台接口，按 R10 我同意读者二不据审核计 input；但 R5 收同一发行版官方有文档的全部入口，随 Compose 发行的 agent_backend 有自己的 mkdocs 用户手册，写明 POST /runs 后订阅事件流（任意程序凭令牌可用，非浏览器内部接口），其中逐轮的 run_started 在运行开始、交给模型前发出，按 F31 scope_rule 与 session_start 判定句归 input（仅观察）。取值因此是 input、tool_before_after、end，与甲相同。",
+      "evidence": "docs-llms-full.txt :: Agent API › Send Messages and Stream Replies; dify-agent/docs/dify-agent/get-started/index.md#L1-L4; dify-agent/mkdocs.yml#L1-L20; dify-agent/src/dify_agent/protocol/schemas.py#L197-L245; dify-agent/src/dify_agent/server/routes/runs.py#L44-L96; web/features/agent-v2/agent-detail/configure/feature-flags.ts#L1-L3; api/core/app/apps/agent_app/app_generator.py#L360-L397"
+    },
+    "F32": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "service_api",
+        "public_protocol"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "差在 MCP 服务端算不算驱动本核心。agent 模式本身确实不被 MCP 服务端处理（读者二对），但官方文档写明同一个新 Agent 可放进 Workflow 的 Agent 节点（Compose 默认开 NEXT_PUBLIC_ENABLE_AGENT_V2），agent_v2 节点经 clients.agent_backend 跑同一 dify-agent 循环；Workflow 应用可按文档发布为 MCP Server（WORKFLOW 分支受支持），MCP 工具能接一项任务并让本核心跑完整代理循环，满足 public_protocol 判定句。取值 service_api、public_protocol，与甲相同。",
+      "evidence": "docs-llms-full.txt :: MCP Server › Configure Your Dify App as an MCP Server; docs-llms-full.txt :: new-agent/overview › Inside a Workflow (L37481-L37511); api/core/mcp/server/streamable_http.py#L206-L237; api/core/mcp/server/streamable_http.py#L331-L339; api/core/workflow/nodes/agent_v2/agent_node.py#L1-L30"
+    },
+    "F34": {
+      "choice": "opus",
+      "status": "known",
+      "value": "local_service",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "现行码本 fields-0.10 对 F34 明确规定：核心运行在容器里、官方编排文件带重启策略并由容器运行时负责重启的，记 local_service。默认启动为 docker compose up -d，agent_backend 配置 restart: always，且浏览器断开不取消运行，应选 local_service。",
+      "evidence": "docker/docker-compose.yaml#L746-L749"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": "none",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F35 判定，Build 聊天界面在回复进行中拒绝新提交而非排队，新 Agent 入口也没有定时任务或待重试队列；dify-agent 的 run_scheduler.py 明文说明没有作业队列，active_tasks 仅登记当前正在运行的异步任务句柄而非待执行工作项队列，应判 known_absent 与 none。",
+      "evidence": "dify-agent/src/dify_agent/runtime/run_scheduler.py#L1-L14; web/app/components/base/chat/chat/chat-input-area/index.tsx#L144-L150; api/core/app/apps/agent_app/app_generator.py#L188-L214"
+    }
+  }
+}

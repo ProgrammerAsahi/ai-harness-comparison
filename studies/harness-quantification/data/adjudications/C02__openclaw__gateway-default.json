@@ -1,0 +1,135 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C02__openclaw__gateway-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F11": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "分歧在事实：cyberFailover 默认 auto，但只在 agentMeta.providerRefusal 为 provider openai、category cyber 时触发；cyber 类拒绝诊断只由 ChatGPT 认证的 openai-chatgpt-responses 传输写入，钉住环境只有 OPENAI_API_KEY，openai 提供方走 api.openai.com 的 openai-responses 传输，该传输只给 misalignment 类拒绝打标，全仓库没有别的路径产生 cyber 类别。按 R2 末句（钉住的前提下没有触发来源）写“其他环境：”，不计 failover；未配 fallbacks，主链只剩 model_selected_delegation。",
+      "evidence": "src/agents/embedded-agent-runner/embedded-cyber-failover.ts#L18-L31,L58-L70; src/agents/embedded-agent-runner/run-entry.ts#L430-L460; packages/ai/src/providers/openai-responses-shared.ts#L308-L320; packages/ai/src/providers/openai-chatgpt-responses.ts#L660-L672,L733-L758; extensions/openai/openclaw.plugin.json#L61-L64; docs/concepts/model-failover.md#L120-L127「Automatic cyber-policy escalation」"
+    },
+    "F14": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F14 判定标准写明同一流程里先截短、不够再把整条工具结果换成占位的两步分别计 truncation 和 tool_result_replacement。溢出恢复先逐条截短，第二遍 clearToolResultText 把整条工具结果文本换成省略标记或 spill 引用（tool-result-truncation.ts 两遍循环 clear=false/true），属工具结果替换，乙记入正确。",
+      "evidence": "src/agents/embedded-agent-runner/tool-result-truncation.ts#L310-L314,L1023-L1076,L1094-L1130,L1211-L1216,L665-L695; src/agents/embedded-agent-runner/run/attempt-prompt-build.ts#L495-L510"
+    },
+    "F20": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "neither",
+        "r3": "neither"
+      },
+      "rationale": "session_branch 无争议。idempotency_key 两位读者都认、编码者甲漏判：Code Mode 默认生效、Swarm 默认 enabled，agents.run 用按调用内容算出的 replay id 在持久注册表里按键和请求哈希查重，命中即返回原回执；agentSpawn 被列为可重放，主会话重启恢复会重跑带可重放检查点的回合，即一条会重发已记录调用的重入路径，只覆盖 Code Mode 脚本里的派生。workspace_snapshot 是读法分歧：技能工坊的版本归档与 Undo 只管 <state-dir>/agents/<id>/agent/workshop-skills 下框架自有的学到技能文件，不在钉住的工作区 ~/.openclaw/workspace；代理改工作区文件时没有快照与恢复入口，按字段问题（把工作区退回）不计，写 value_note。",
+      "evidence": "src/agents/code-mode-swarm.runtime.ts#L146-L183; src/agents/code-mode-bridge.ts#L127-L148; src/agents/code-mode-state.ts#L488-L512; src/agents/main-session-recovery/main-session-restart-recovery-resume-policy.ts#L203-L219; src/agents/main-session-recovery/main-session-recovery-checkpoint.ts#L17-L48; src/agents/subagents/swarm/swarm-config.ts#L5-L12; docs/tools/skill-workshop.md「Undo」#L53-L92「Where files live」#L214-L227"
+    },
+    "F23": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "application_check",
+        "runtime_sandbox"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "runtime_sandbox 判定标准明写“官方文档或源码注释写明它不是安全边界的，仍按代码行为判”。默认 Node 执行器把脚本放进 node:vm 客体（createContext(Object.create(null))），客体无 fs/net/process/require，只能经登记的宿主桥与外界交互，文档所称非安全边界引在 value_note、confidence 不高于 medium；只覆盖 Code Mode 单元照总则 R2 计入。乙以“明示不是安全边界”排除与判定标准相悖，甲站得住。",
+      "evidence": "docs/tools/code-mode/executors.md#L11-L45; src/agents/code-mode-node.worker.ts#L4,L258; extensions/openai/openclaw.plugin.json#L100-L123; docs/tools/code-mode.md#L21-L22"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "synchronous_return 判定看父代理在委派到拿结果之间能否再推理或调工具：Code Mode required cell（awaitResults: true）保持工具调用未完成、VM 停驻等收集结果就绪再续跑，期间不返回 waiting 句柄也不做模型轮询，属同步返回；该参数模型可自选，按总则 R3 第一档算默认。默认 sessions_spawn 非阻塞另记 async_wait，乙两者并记正确。",
+      "evidence": "docs/tools/code-mode/tool-surface.md「Required results」#L154-L178"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "project_rules",
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "role_template 判定句“可建多个、按名选给某个会话或话题后自动载入的，算这一项”：agents add / Control UI New agent 可新增带 AGENTS.md/SOUL.md 角色说明的代理并按名选用，agents team create 预设协调者等角色合同，用户不写代码、不另装包即可新增或修改。prompt_template 要求技能目录之外另有独立命令文件装载路径；快照里 $name/斜杠只是技能按名调用（归 skill_directory），无独立命令模板目录，乙记 prompt_template 不成立，甲站得住。",
+      "evidence": "docs/concepts/multi-agent.md「What is one agent」「Agent helper」「Team preset」; docs/plugins/bundles.md#L80-L95,L291; docs/install/migrating-claude.md#L56-L58"
+    },
+    "F36": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "suggest_task 卡是模型提出、操作者接受后才启动的任务提议，按 F36 scope_rule 启动前的批准不记本字段；它也不是工作完成情况的交接单，不记 structured_handoff。",
+      "evidence": ""
+    }
+  }
+}

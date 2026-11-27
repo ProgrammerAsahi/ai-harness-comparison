@@ -1,0 +1,117 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A15__openhands__canvas-local-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-2",
+    "gpt": "batch-2"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "现行码本 F17 明写“用户上传的附件另存、记录里只留路径或编号的，计入”：上传文件存进工作区，消息里只留文件名（引用），external_reference 成立；“external_reference 收只在超限、超时等条件下才发生的默认行为”也覆盖终端超限输出另存 observations 且消息附路径这一默认分支。甲称“事件记录本身仍存全文”与代码不符——事件在采集时已截断到 3 万字符，全文不在事件里；甲把上传件当“用户材料”排除也与该明文规则相反。event_log、state_snapshot 两人一致（控制条目事件流、base_state.json 恢复读回）。",
+      "evidence": "OpenHands/OpenHands@e14b76cc src/utils/send-message-with-attachments.ts#L60-L76；src/api/conversation-file-upload.api.ts#L155-L171；software-agent-sdk@a2ffb6ec openhands-tools/openhands/tools/terminal/terminal/terminal_session.py#L275-L277、openhands-tools/openhands/tools/terminal/definition.py#L191-L198、openhands-sdk/openhands/sdk/utils/truncate.py#L50-L120"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot",
+        "idempotency_key"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "idempotency_key 判定要求默认配置下存在会重新发出已记录调用的路径、且靠存储里的标识跳过已执行调用：socket 重连回落 resend_mode=all 或重载后的 REST/WS 竞态会重放客户端工具 ActionEvent，claimClientToolCall 用 localStorage 的调用编号账本在执行前占位去重（覆盖 launch_child_conversation、request_secret），标识跨重启可查，按总则 R2 只覆盖部分调用也计入。甲以“恢复时只补错误事件”为由排除，那是另一条修补历史的路径，不否定重放查重的存在。",
+      "evidence": "OpenHands/OpenHands@e14b76cc src/utils/claim-client-tool-call.ts#L1-L34；src/services/child-conversation-launch.ts#L511-L525；src/services/secret-request.ts#L42-L55"
+    },
+    "F21": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "tool_category"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "allowed_domains 只能经档案 tools[].params 这个任意字典透传，文档、界面和模式定义都没有点名；同一透传能到的 allowed_edits_files 也没有人记 file_path。按“被点名才算用户可写规则”统一，不记 network_target。",
+      "evidence": ""
+    },
+    "F26": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "event_scheduling"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "/plan 是用户命令直接创建规划子会话（createLocalPlanningConversation，不经主代理决定），框架以 parent_conversation_id/sub_conversation_ids 跟踪其运行，规划事件与 PLAN.md 预览并入发起会话界面、Build 把执行指令交回父会话，按 F25 判定算框架派出的代理，故 user 记入（F26 scope 明定 user 不按总则 R3 第二档排除）。main_agent、event_scheduling 两人一致，无其他创建路径。",
+      "evidence": "OpenHands/OpenHands@e14b76cc src/hooks/chat/use-plan-mode-interceptor.ts#L16-L60；src/hooks/use-handle-plan-click.ts；src/api/conversation-service/agent-server-conversation-service.api.ts#L792-L845；src/api/agent-server-adapter.ts#L1310-L1400；src/components/features/chat/plan-preview.tsx"
+    },
+    "F28": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F26 记入 user 路径后本字段按默认路径算：删除父会话（取消父运行的一种）时 Canvas 先逐个删除其规划子会话，框架自动连带取消子代理的运行（Agent Server 本身只孤立子会话），符合 cancel_propagation“父会话关闭时框架把子代理运行关掉也算”；打断当前回合只作用于本会话、默认委派路径无等待中的调用，故只有一种取消方式连带。乙按 launch_child_conversation 不连带直接写 known_absent，漏了 F26 记入的 user 路径。",
+      "evidence": "OpenHands/OpenHands@e14b76cc src/api/conversation-service/agent-server-conversation-service.api.ts#L1167-L1199"
+    },
+    "F36": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "message_notification",
+        "resumable_todo"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "浏览器标签页标题按会话状态加前缀：完成或等待用户为 ✅、出错或卡住为 🔴，切到其他标签页仍可见，满足“离开当前对话流也能收到的提醒”且只在需要人注意的状态显示，按“终端状态序列”同类的标题状态提示记入并注明依赖浏览器显示标签页标题（码本对这类序列允许注明依赖条件）。resumable_todo（request_secret 持久待办）两人一致；blocking_approval 默认 NeverConfirm、上限直接 ERROR，均不记。",
+      "evidence": "OpenHands/OpenHands@e14b76cc src/utils/agent-state-emoji.ts#L1-L32；src/hooks/use-app-title.ts#L12-L45；src/hooks/use-agent-notification.ts#L12-L48"
+    }
+  }
+}

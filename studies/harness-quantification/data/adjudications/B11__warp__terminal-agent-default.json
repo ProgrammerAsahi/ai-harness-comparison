@@ -1,0 +1,179 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B11__warp__terminal-agent-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-5",
+    "gpt": "batch-5"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "call_mcp_tool.rs 的 coerce_integer_args 在执行前按工具输入 schema 把整值浮点数转成整数，避免严格 MCP 服务器校验拒绝，符合 framework_input_repair 判定（执行前按输入模式做类型转换使调用免于校验失败），甲漏了这一项。",
+      "evidence": "app/src/ai/blocklist/action_model/execute/call_mcp_tool.rs#L109-L129；changelog.txt“Fixed MCP tool calls with integer-typed parameters failing due to being serialized as floats”；app/src/ai/blocklist/controller/response_stream.rs#L27-L35"
+    },
+    "F10": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "F10 unknown_rule 明确要求文档写明走模型接口的函数或工具调用字段才记 native_structured；客户端收到的 protobuf ToolCall 是 Warp 内部结构，模型到服务端一段不可见、文档未写明原生函数字段，只确认 MCP 协议转换。",
+      "evidence": "app/src/ai/agent/api/impl.rs#L82；app/src/ai/agent/api/convert_from.rs ToolCall 分支；docs-llms-full.txt 检索 function call/tool call 无相关说明"
+    },
+    "F11": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "per_role",
+        "per_request_routing",
+        "failover",
+        "model_selected_delegation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "文档写明 Auto 按任务动态选型号（per_request_routing 判定含「任务开始时按特征挑一次也算」），以及所选型号不可用时沿预定义链自动回退继续对话（failover 判定含不可用）；乙只看到客户端槽位代码、未采信服务端文档依据。",
+      "evidence": "docs-llms-full.txt Agent model choice › Auto models（L7998-L8024）与 Model fallback（L8148-L8158）；app/src/ai/llms.rs ModelsByFeature::default"
+    },
+    "F12": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "分歧在事实认定：读者二认为模型调用循环在服务端、看不到上限，故记 unknown。但 response_stream.rs 注释写明一轮代理由多次 MAA 请求组成、每次工具结果往返都是客户端发起的新请求，循环由客户端推进；客户端 profile 配置模式、请求构造和 stream_finished 各结束原因里都没有步数、Token、时长或金额阈值，文档里只有订阅／计费一侧的 spend limit（F12 不计）。服务端单次输出上限按 output_limit 判定句不算；其余维度没有指向具体机制的迹象，按 absent_rule 与 R7 记 known_absent 和 []。",
+      "evidence": "app/src/ai/blocklist/controller/response_stream.rs#L27-L60；crates/cloud_object_models/src/ai_execution_profile.rs#L354-L418；app/src/ai/blocklist/controller.rs#L4087-L4244；docs-llms-full.txt Enterprise billing › Monthly spending limits（L20772-L20799）"
+    },
+    "F15": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval",
+        "structural_index"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "SearchCodebase 嵌入检索失败时回退读文件符号提纲交服务端选文件，这是框架自带、模型可调的查询按代码结构（符号）取回材料，符合 structural_index 判定；甲放 unresolved 过于保守，R2 明确失败分支也算。",
+      "evidence": "app/src/ai/get_relevant_files/controller.rs#L241-L340；crates/warp_features/src/lib.rs#L1062-L1066"
+    },
+    "F16": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "structured_records"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "规则建议产物有 name/content/sync_id/revision_ts、可经 rule_editor 单独增删改，是逐条存取的结构化记录条目，码本明确「逐条存取的记忆条目…记 structured_records，不记 auto_summary」；甲误归为 auto_summary。",
+      "evidence": "app/src/ai/facts/view/rule_editor.rs#L41-L55；docs-llms-full.txt Rules › Global Rules（L2199-L2209）与 Rules as Agent context（L2325）；All settings reference rule_suggestions_enabled"
+    },
+    "F20": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧在码本读法：RunAgents 的查重按规范化子代理名、对照会话里已保存的 Launched 结果拒绝模型新发出的同名派发，作用是让模型改用 send_message_to_agent，并不是在重试、恢复重跑或重入路径上跳过一条已记录调用；按 action_id 的 pending 防重表和 finished_action_results 跳过都只在内存。idempotency_key 判别句要求有一条重新执行已记录调用的路径并靠标识跳过，这里不满足，所以不计；session_branch 和 workspace_snapshot 双方一致。",
+      "evidence": "app/src/ai/blocklist/action_model/execute/run_agents.rs#L60-L78、L400-L431、L606-L691；app/src/ai/blocklist/action_model.rs#L1033-L1046"
+    },
+    "F24": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result",
+        "identity"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "云端会话元数据默认持久化（is_cloud_conversation_storage_enabled 默认 true）并带 creator（登录账户编号），能按会话 ID 对上动作；码本规定「多账户登录、记录带登录账户编号的，即使部署后暂时只有一个账户也算」，满足 identity 判定。",
+      "evidence": "app/src/settings/privacy.rs#L109-L119；app/src/server/server_api/ai.rs#L4210-L4245；docs-llms-full.txt All settings reference › Agents 与 Conversation storage（L9193-L9205）"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "分歧在 R5 的“官方有文档”：源码中 oz agent run 在 --output-format json/ndjson 下确实输出 tool_call、conversation_started 等类型化消息，但官方文档的 oz agent run 一节只说运行时打印工具调用和回复，--output-format 只在 whoami、artifact get、run list 等命令上举例，没有 ndjson 取值，也没有 agent run 的事件格式；更新日志里同样没有。F31 只收发行版里官方有文档、可挂处理器的事件点，未写入文档的输出格式不算有文档的订阅接口；文档里其他 hooks／webhooks 属于第三方 CLI 代理或云端服务，所以记 known_absent。",
+      "evidence": "docs-llms-full.txt Oz CLI reference › Running locally: oz agent run（L4635-L4659）、whoami（L4570-L4578）、artifact get（L5353-L5356）；crates/warp_cli/src/lib.rs#L100-L121；crates/warp_cli/src/agent.rs#L19-L34；app/src/ai/agent_sdk/driver/output.rs#L611-L664"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "编排事件经服务端持久消息总线投递、客户端 SQLite 持久化游标，重启后 on_restored_conversations 重建投递、handle_pending_events_ready 自动注入父对话开下一轮，用户只需重新打开会话不必再发消息——符合 persistent 判定；码本 R9 取最强一层保证。乙只看交互输入队列（in_memory），未取编排事件层的持久保证。",
+      "evidence": "app/src/ai/blocklist/orchestration_event_streamer.rs#L1859-L1923；app/src/ai/blocklist/controller.rs#L2586-L2606；docs-llms-full.txt Messaging between agents（L53322-L53334）"
+    }
+  }
+}

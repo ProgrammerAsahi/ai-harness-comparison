@@ -1,0 +1,67 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A03__gemini-cli__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F17 state_snapshot 判定「某一时刻工作区文件或执行状态的持久副本，而且恢复或回退流程会读取它」：编辑工具在 write-file.ts 的 resultDisplay 中持久化 originalContent（改前原文），rewindFileOps.ts 的 revertFileChanges 从记录里读取该原文恢复文件，与码本示例「每次改文件前把原文存一份，回退命令按它把文件改回去」完全吻合。scope_rule 排除的派生缓存、会话元数据、压缩提示快照均不适用；general.checkpointing 默认 false 排除的是 Git 影子仓库快照，不影响编辑工具自身保存的原文副本是否满足 state_snapshot 判定。",
+      "evidence": "packages/core/src/tools/write-file.ts#L547-L557; packages/core/src/core/geminiChat.ts#L1839-L1872; packages/core/src/services/chatRecordingService.ts#L1168-L1230; packages/cli/src/ui/utils/rewindFileOps.ts#L183-L257"
+    },
+    "F20": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F20 session_branch 判定「在当前位置复制出独立会话、两边都能继续的，也算」：/resume save <tag> 在当前位置保存带标签的会话检查点，之后 /resume resume <tag> 载入继续；原自动保存的会话仍在 /resume 列表里可打开继续，两边都能独立续接。scope_rule 明确「回退本来由用户发起：用官方命令、按键或界面按钮发起的，算默认机制，不按总则 R3 降为可选」，此命令属默认可用。/rewind 裁掉后续消息属不计情形，与 checkpoint 机制是两条不同路径。",
+      "evidence": "packages/cli/src/ui/commands/chatCommand.ts#L91-L235; packages/cli/src/ui/commands/resumeCommand.ts#L15-L31; packages/cli/src/ui/hooks/slashCommandProcessor.ts#L552-L558; packages/core/src/core/geminiChat.ts#L1386-L1405"
+    },
+    "F36": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "message_notification"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F36 message_notification 判定「终端状态序列只在表示需要人注意（完成、等待输入、出错、被阻塞）时记」：dynamicWindowTitle 默认 true，等待审批时经 OSC 0 写入终端标题「✋ Action Required」（被阻塞），符合计入条件；「只显示进度或标题的不记」排除的是纯进度（Working）和描述性标题，Action Required 是明确的注意力信号而非纯标题展示。enableNotifications 默认 false 只排除 OSC 9/Bell 系统通知，不影响终端标题序列。",
+      "evidence": "packages/cli/src/utils/windowTitle.ts#L32-L78; packages/cli/src/config/settingsSchema.ts#L547-L553, #L579-L587; packages/cli/src/ui/AppContainer.tsx#L2455-L2474"
+    }
+  }
+}

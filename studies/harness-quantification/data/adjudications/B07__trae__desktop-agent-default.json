@@ -1,0 +1,188 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B07__trae__desktop-agent-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-5",
+    "gpt": "batch-5"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F03": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "budget",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者是对 4000002 的事实认定不同：它写的是 reasoning count 超限、要 reduce the rounds of reasoning，按次数/轮数计、停下等用户 Continue，与 987 按长度截断单次输出不是同一机制，不属 budget 判定句排除的“只截断单次输出”；Max mode 单任务 200 轮与 Tool Call Rounds 内置默认值只作旁证（核心有按任务的轮数上限）。按 R6 推断 budget 成立（low），与 F12 的 call_count 硬截止对应。",
+      "evidence": "docs-pages.txt#L12012（4000002）; #L11983（987 对照）; #L4667（Tool Call Rounds 单任务轮数、留空用内置默认）; #L4712（Max 单任务最多 200 轮）"
+    },
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "分歧只在 model_self_repair。其判定句写明“工具报错作为结果回传”就算，闭源按总则 R6“文档写明报错交回代理”即够：PostToolUse 参考写工具执行后默认“continue processing the result of this tool call”，MCP 排障页写历史 tool responses 持续占模型上下文，onRestrict fail_immediately 明写“Immediately return an error to the model”，构成报错交回模型的文档链。call_retry、escalate_to_human 双方一致且分别有 v3.5.67 重试说明与沙箱失败询问支持，甲的三项取值站得住。",
+      "evidence": "changelog.txt#L346-L356; docs-pages.txt#L5168 (Built-in tools: Terminal); #L6521; #L10230"
+    },
+    "F09": {
+      "choice": "neither",
+      "status": "known",
+      "value": "protocol_gateway",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "neither"
+      },
+      "rationale": "分歧在读法：钉住 Free 档只有 Auto mode，Auto 不用自定义模型，自定义模型两种 API 格式要换档才用得上（R3 第三档；F09 按能力判的例外只放宽凭据），不计入，乙的 adapter_layer 不成立；默认路径用内置模型，内置表跨 Seed/GPT/Grok/Gemini/Kimi 多家，按 token 计入 TRAE 账户额度、按档位排队、服务错误归 TRAE's own service，符合 protocol_gateway 判定句的闭源条件（多家型号、调用都经厂商服务），按 R6 记厂商云端网关（low），甲的 unknown 不必。",
+      "evidence": "docs-pages.txt#L4520-L4535（内置多家型号、按 1M token 计价）; #L4757-L4766（Auto 只选内置、不用自定义模型）; #L11076-L11077（Free 仅 Auto、排队档位）; #L11973（-1 TRAE's own service）; #L12002（4023 后端模型表）"
+    },
+    "F10": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "protocol_translation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "分歧只在 native_structured。F10 unknown_rule 明写“错误码、参数模式、工具清单只算线索，要文档写明走模型接口的函数或工具调用字段才记 native_structured”；甲举证的 4027 参数模式不兼容、hook 的 tool_input/llm_tool_name、4000003 无效 JSON 全属被排除的线索类别，快照里没有任何一句写明调用走模型接口的函数/工具调用字段。protocol_translation 双方一致（MCP 工具包装与 tools/call 转换），乙只记 protocol_translation 站得住。",
+      "evidence": "docs-pages.txt#L12003 (4027); #L9050-L9064; grep 'function call|tool calling' 无相关命中"
+    },
+    "F12": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "output_limit",
+        "call_count"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "output_limit 双方一致；分歧在 call_count 的事实认定。4000002 明写按 reasoning count/rounds 计数超限即停、等用户 Continue，命中“按模型调用次数、对话轮数或代理步数设上限”，且到达后停下等确认属 hard_stop；它不是单次输出截断（那是 987）。错误码表是通用的，默认路径适用；Max 与 Tool Call Rounds 只作旁证。按 R6 推断（low）记 [output_limit, call_count]。",
+      "evidence": "docs-pages.txt#L11983（987）; #L12012（4000002）; #L4667; #L4710-L4714"
+    },
+    "F13": {
+      "choice": "opus",
+      "status": "known",
+      "value": "sequential_messages",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "甲 known/sequential_messages 对乙 unknown(closed_source)。F13 unknown_rule 专条允许推断：“文档说对话历史逐轮累积进请求、只在接近窗口时压缩的，可以记 sequential_messages（confidence low，value_note 写推断）”。context-compaction 页写“as queries are continuously sent, the context of a chat gradually accumulates”，且仅在“context used exceeds the allowed context window”时才自动压缩一次，正落在这条上。乙按“未说明请求构造”判未知，忽略了该专条，甲站得住。",
+      "evidence": "docs-pages.txt#L4974-L4999 (Context compaction)"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "messages",
+        "state_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "分歧只在 state_snapshot。其判定句要“某一时刻工作区文件或执行状态的持久副本，而且恢复或回退流程会读取它”：故障排查页明写本机存有“snapshot data used to revert to the state before a specific chat took place”（Reset data/清库才丢失，L11870-L11874 目录跨重启存在），chat 页 Revert 写回退会回滚这些消息产生的文件改动，worktree 页（仅 Agent 窗口）写合并后分隔线以上聊天内容“cannot be reverted”，佐证 Agent 窗口自带回退入口、回退读该快照。按总则 R6 外部表现足以归类，messages+state_snapshot 的甲站得住；乙只列疑似不必要。",
+      "evidence": "docs-pages.txt#L11816-L11819; #L11866-L11876; #L4471-L4476"
+    },
+    "F18": {
+      "choice": "opus",
+      "status": "known",
+      "value": "rebuild_and_rerun",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "甲 known/rebuild_and_rerun 对乙 unknown。rebuild_and_rerun 判定句的关键条件是“把保存的对话记录读回、重建上下文，再从下一条用户输入接着跑”：My Artifacts 页写 Open in task“inherits the context from the original task”、可继续让 AI 修改，而 Start a new chat“does not inherit the context from the original conversation”，对照出恢复走的是任务对话历史；任务=持久聊天（聊天历史存本机数据库、两窗口同步、任务列表可打开继续）。文档没有任何步骤级检查点/执行状态恢复机制（checkpoint_resume 的关键条件无据），F18 unknown_rule 的“看不出读回对话还是执行状态”不成立，甲的推断站得住。",
+      "evidence": "docs-pages.txt#L8293-L8294; #L7860-L7868; #L11816; #L12016"
+    },
+    "F20": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "session_branch",
+        "workspace_snapshot"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "分歧只在 session_branch。其判定句“从过去某一点分出一条新路线，原路线仍然保存、可以切回；在当前位置复制出独立会话、两边都能继续的，也算”，chat 页 Fork a chat 正对判定句（从任一 AI 回复新建独立聊天、继承此前全部历史、原聊天不变，且原聊天留列表可切回）。适用性按总则 R6 借用条款：Agent 窗口页明写“Chat history ... automatically synchronized between the Agent and IDE windows”，同页 Revert 小节用“task/Stop”措辞、worktree 页（仅 Agent 窗口）佐证同一聊天流有回退图标，无任何两边不同的说明。乙把 session_branch、workspace_snapshot 都记入取值站得住；甲只列疑似低估了借用条款。",
+      "evidence": "docs-pages.txt#L4465-L4476; #L8199"
+    },
+    "F27": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "independent_context",
+        "shared_files"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "independent_context 一致，分歧在闭源专条的读法。默认子代理 Search 明写为 Agent 检查“the project structure, relevant code, configuration files”，unit-test-writer 示例写明读项目源码与既有测试、在项目里 create/edit test files，都点名了项目目录；文档讲的隔离只有上下文隔离，worktree 是任务级执行位置而非子代理隔离，未见子代理另设工作目录。属于“写明在项目目录读写、默认不隔离”，记 shared_files（low）。",
+      "evidence": "docs-pages.txt#L5107-L5110（Search 检查项目文件、separate contexts）; #L5237-L5256（独立上下文窗口）; #L5279（Context isolation 指上下文）; #L5437-L5461（unit-test-writer）"
+    },
+    "F34": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "甲 known/foreground_process 对乙 unknown(closed_source)。F34 absent_rule 明写“查不清时按 unknown_rule 处理，不要用 foreground_process 代替”，continues_after_ui_exit 也要求“文档写明是前台进程”才可推断。快照只有防休眠句（“the computer will not enter sleep mode when TRAE Desktop is running, ensuring that task execution will not be interrupted”，防休眠语境）与 976（休眠致进程/网络中断）这类间接线索，没有一句写核心进程随应用整体退出而结束，也没有守护进程/系统服务维持的记载，属文档未涉及。乙记 unknown(closed_source) 站得住。",
+      "evidence": "docs-pages.txt#L397-L399; #L1015; #L476-L481"
+    }
+  }
+}

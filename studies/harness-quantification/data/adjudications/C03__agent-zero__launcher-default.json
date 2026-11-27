@@ -1,0 +1,170 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C03__agent-zero__launcher-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F14": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization",
+        "tool_result_replacement"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "分歧在于整条换掉的 raw 消息算不算工具结果。快照里 RawMessage 只由工具产生：vision_load 在没有独立视觉模型时把读到的图片作为 RawMessage 加进历史，MCP 工具把结果里的 raw_content 拆成紧跟工具结果的一条 RawMessage，用户附件不走这条路。compress_large_messages 遇到超大 raw 消息就整条换成固定说明（普通消息则截短），trim_embeds 超过 max_embeds 时把较早的整条换成“embedded data removed”。这两处都是对工具产出的单条内容做整条占位替换，不是按长度或位置成段丢历史。按 F14 truncation 判定句“只针对工具结果、把整条结果换成占位的，记 tool_result_replacement”（字段明写，优先于 R8 的词表先后）和 R2（只覆盖一个默认工具也计入），应记 tool_result_replacement，甲的取值对。",
+      "evidence": "helpers/history.py#L233-L270, #L428-L433, #L465-L521, #L653-L662; tools/vision_load.py#L235-L256; helpers/mcp_handler.py#L491-L512"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 fields-0.10 F15，user_specified 要求用户显式指定的材料“由框架读入上下文”。网页上传附件只保存到 /a0/usr/uploads 并在用户消息 JSON 中附带路径列表，框架不读入文件内容，须由模型自行调工具读取，故不计 user_specified。",
+      "evidence": "api/message.py#L30-L79；prompts/fw.user_message.md；agent.py#L748-L774（hist_add_user_message 只填 attachments 路径）；extensions/python/user_message_ui、hist_add_before 下无附件读入"
+    },
+    "F16": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user_maintained_files",
+        "auto_summary",
+        "structured_records",
+        "retrieval_store"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 fields-0.10 F16，记忆库条目带固定 id/area/timestamp 且由专用 memory 工具逐条存取、按 ID 删改及按 filter 查询，应记 structured_records；同时默认注册的 behavior_adjustment 工具调用工具模型合并规则并整份覆写 behavior.md、新会话整份注入系统提示，满足 auto_summary；叠加 _promptinclude（user_maintained_files）和 FAISS 向量召回（retrieval_store），四项皆成立。",
+      "evidence": "plugins/_memory/helpers/memory.py#L469-L487；plugins/_memory/tools/memory.py#L28-L80；plugins/_behavior_adjustment/tools/behavior_adjustment.py；plugins/_behavior_adjustment/prompts/behavior.merge.sys.md"
+    },
+    "F17": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "chat.json 的历史里 Bulk 是只由压缩产生、有独立 _cls、单独存于 bulks 列表、回放时用 summary 取代其内记录的条目，按 scope_rule 算控制条目，记 event_log（甲对、乙记 messages 不对）。用户上传附件另存 usr/uploads（持久挂载、未见清理），消息只留路径，scope_rule 明写计入 external_reference（乙对、甲漏）。500 字符以上工具结果另存但原文仍在，不计。",
+      "evidence": "helpers/history.py#L308-L371（Topic/Bulk to_dict、Bulk.output 用 summary 取代）, #L527-L541, #L593-L625；api/message.py#L37-L50；extensions/python/hist_add_tool_result/_90_save_tool_call_file.py#L1-L44"
+    },
+    "F23": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "application_check",
+        "container_policy"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 fields-0.10 F23，默认空策略的 tool_access 不算默认生效保护，但默认注册的 document_query 工具在抓取远程 HTTP/HTTPS 文档时无条件调用 validate_public_http_url，执行前拒绝 localhost 及非公网 IP 目标；F23 明确规定检查动作作用范围（含主机）且只管单个工具入口的亦记 application_check（总则 R2），与 container_policy 并记。",
+      "evidence": "helpers/network.py#L75-L96, #L111；plugins/_document_query/helpers/fetch.py#L124-L150"
+    },
+    "F27": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files",
+        "shared_state"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 fields-0.10 F27，默认注册的 scheduler 工具对主代理、子代理及独立任务代理均开放，可无隔离地共同读写框架维护的全局 TaskScheduler 任务表（list_tasks/show_task/update_task 及运行结果写回），符合 shared_state 判定。",
+      "evidence": "plugins/_scheduler/plugin.yaml；plugins/_scheduler/tools/scheduler.py#L170-L222（list_tasks/show_task/run_task 用全局 TaskScheduler）"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "shared_board",
+        "cancel_propagation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者都认可调度器这条路参与本字段：模型用默认 scheduler 工具 create_adhoc_task（dedicated_context 默认为真）建任务，再用 run_task 在独立上下文里跑完整的 agent.monologue。分歧在于这条路是只记 async_wait，还是另记 shared_board。run_task 立即返回，wait_for_task 再去等，这一点归 async_wait；结果的汇总走另一条路：每个任务代理开跑时被标成 RUNNING，完成后 on_success/on_error 把 state 和 last_result 写回框架维护、持久保存的全局 TaskScheduler 任务表，调用方用 list_tasks、show_task 从这张表汇总多个任务。这正合 shared_board“写到框架维护的同一张任务表、调用方从那里汇总”。两者回答本字段“汇总”和“等待”两个不同的问题，就像 call_subordinate 同一条路上同时记了 synchronous_return 和 cancel_propagation，所以不按 R8 合成一项。乙的取值对。",
+      "evidence": "plugins/_scheduler/tools/scheduler.py#L170-L222, #L361-L382, #L413-L445; plugins/_scheduler/prompts/agent.system.tool.scheduler.md#L4-L12; helpers/task_scheduler.py#L248-L278, #L878-L980"
+    },
+    "F33": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "api",
+        "schedule",
+        "user_interaction"
+      ],
+      "unknown_reason": null,
+      "settled_by": "lead",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "邮件入口是人经通道发来的消息，归 user_interaction；没有专门的订阅或监视机制把外部事件转成新任务。与 A12、C05 的通道记法一致。",
+      "evidence": ""
+    },
+    "F34": {
+      "choice": "opus",
+      "status": "known",
+      "value": "background_daemon",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 fields-0.10 F34 scope_rule，容器运行按最外层判定：官方桌面快速开始 docker run -d 与 docker-compose.yml 均无重启策略，Launcher 文档未声称设置容器重启策略或开机自启；容器内 supervisord 只负责容器内重启，不改变取值，故记 background_daemon。",
+      "evidence": "README.md#L84-L100；docker/run/docker-compose.yml；docs/setup/vps-deployment.md#L176"
+    }
+  }
+}

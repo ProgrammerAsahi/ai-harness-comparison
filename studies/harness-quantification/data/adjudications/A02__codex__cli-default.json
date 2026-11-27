@@ -1,0 +1,70 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "A02__codex__cli-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-1",
+    "gpt": "batch-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "framework_input_repair 的判定标准明确排除对每次调用都做的规范化（修剪参数值首尾空白、把空字符串当作未提供）。甲引证的 mcp_resource.rs normalize 函数（去首尾空白、空串归 None）和 goal 工具的 objective.trim() 均属此类规范化，不做也不会失败，不构成使调用免于校验失败的修正。快照中未见其他输入格式转换或工具名映射。",
+      "evidence": "codex-rs/core/src/tools/handlers/mcp_resource.rs#L392-L411; codex-rs/core/src/tools/router.rs#L271-L340; codex-rs/protocol/src/tool_name.rs#L39-L44; codex-rs/core/src/tools/runtimes/apply_patch.rs#L120-L145"
+    },
+    "F17": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "event_log"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "gpt"
+      },
+      "rationale": "两位读者对事实无分歧（rollout 含 Compacted、TurnContext 等控制条目记 event_log），分歧在 history.jsonl 算不算一份运行记录。实现里它是 TUI 输入框跨会话的提示回溯历史（append_message_history_entry 只写用户提交的提示文字，供 Up/Ctrl+R 召回），不含模型和工具结果，记录的不是运行过程而只是输入框的一类子对象，按 F17 question_rule 与 scope_rule“只记某一个子对象的日志不计”不另记 messages；文档称其为 session transcripts，与实现不符，按 R10 以实现为准，写 value_note。",
+      "evidence": "codex-rs/message-history/src/lib.rs#L1-L15, #L62-L66; codex-rs/tui/src/app/thread_routing.rs#L624-L633; codex-rs/tui/src/bottom_pane/chat_composer_history.rs#L1-L17; codex-rs/rollout/src/policy.rs#L21-L50; docs-llms-full.txt L12777-L12786（History persistence）"
+    },
+    "F24": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result",
+        "identity"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "approval 判定要求能从记录里分出人工批准和自动放行。auto_approved 字段仅出现在 ItemStarted 事件（events.rs L258 写入 Some 值），而 policy.rs L215 将 ItemStarted 列为瞬时不落盘事件。持久化的 ItemCompleted 中 FileChangeItem 的 auto_approved 为 None（events.rs L614）。命令条目仅有 Declined 状态。审批请求事件（ExecApprovalRequest 等）也是瞬时事件。持久记录无法区分人工批准与自动放行，不满足 approval 判定。",
+      "evidence": "codex-rs/core/src/tools/events.rs#L243-L264, #L598-L618; codex-rs/rollout/src/policy.rs#L128-L141, #L190-L225; codex-rs/protocol/src/protocol.rs#L4042-L4046"
+    }
+  }
+}

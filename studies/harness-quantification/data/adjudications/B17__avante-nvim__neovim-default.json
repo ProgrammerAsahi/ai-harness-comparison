@@ -1,0 +1,65 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B17__avante-nvim__neovim-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "batch-3",
+    "gpt": "batch-3"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro)",
+    "r2": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "现行码本 framework_input_repair 明确收“框架接受一个没有发给模型的工具名（旧名、兼容别名），映射到已注册的工具后照常执行”的修正，且写明只有“别名本身就作为工具名声明给模型的”才不记。快照里 str_replace_editor／str_replace_based_edit_tool 不在注册表也不在发给模型的工具清单里，process_tool_use 在查注册表之前把这两个名字直接映射到本地编辑实现（init.lua L1223-L1227），没有这一步会返回“This tool is not provided”（L1234）；另有缺 new_str 时改填 file_text（L136-L138）和 write_to_file 非字符串 the_content 先 JSON 编码（write_to_file.lua L68）两处执行前修正。乙按“显式支持的编辑工具别名不按畸形名称修正计”把整类别名排除，与现行码本的界线不符。call_retry、model_self_repair 两人一致，故整体取甲。",
+      "evidence": "lua/avante/llm_tools/init.lua#L110-L143, #L1199-L1238; lua/avante/llm_tools/write_to_file.lua#L64-L68; crates/avante-llm/src/lib.rs（无编辑器内置工具声明）"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "event_log"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "同一份会话 JSON 里，消息列表之外单独存放着 memory 对象（压缩摘要 content、last_summarized_timestamp、last_message_uuid），满足 scope_rule 对压缩摘要控制条目的两条：作为消息列表之外的独立对象，且回放时据它决定从哪里取起——get_history_messages_for_api 按 memory.last_message_uuid 丢弃其之前的消息、滤掉 is_compacted 消息（sidebar.lua L3089-L3115）；storage.lua M.write 把整个 ChatHistory（含 memory）编成一份 JSON 写盘。turn_contexts 每回合固定写一条的配置记录按码本不算控制条目，但 memory 一项已足以记 event_log；乙的 messages 要求同一份记录里没有控制条目，不成立。",
+      "evidence": "lua/avante/types.d.lua#L503-L525; lua/avante/sidebar.lua#L2605-L2622, #L3082-L3100, #L3212, #L3614-L3630; lua/avante/history/storage.lua#L244-L270"
+    },
+    "F23": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "application_check（路径范围检查）两人一致；分歧只在 run_python 的容器策略。run_python 靠本机 Docker 执行，无 docker 可执行文件时直接返回“不可用”错误、不启动容器（init.lua L508-L511）。配置记录的环境前提由研究负责人确认“环境里按没有 Docker 算”，钉住值达不到容器机制的门槛，按总则 R1/R2 应写“其他环境：”不计入（即便按“没列为环境前提”读，run_python 需另装产品之外的 Docker，也按 R3 第三档只写“可选：”）；钉住环境下容器策略并不生效。故取乙的 [application_check]。",
+      "evidence": "lua/avante/llm_tools/init.lua#L486-L530（vim.fn.executable(\"docker\") == 0 时返回不可用）; lua/avante/llm_tools/helpers.lua#L185-L208"
+    }
+  }
+}

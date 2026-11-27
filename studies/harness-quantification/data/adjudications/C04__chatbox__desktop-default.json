@@ -1,0 +1,64 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C04__chatbox__desktop-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "MiMo V2.6 Pro (mimo-pro-long)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F04": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "call_retry",
+        "model_self_repair",
+        "escalate_to_human",
+        "framework_input_repair"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 escalate_to_human 判定句「框架为这次失败给出的专门入口（错误处的重试或继续按钮）算留下待答的选择」：MessageErrTips 只在 msg.error 时渲染 Retry，有工具步骤时 handleErrorTipRetry 走 retryFromLastToolCallAfterApiError，keepContentPartsThroughToolCall 保留此前结果后 appendToMessage 续原任务，属失败专用入口且从原处接着走；其余三项双方一致，乙的集合站得住。",
+      "evidence": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/components/chat/MessageErrTips.tsx#L13-L25; src/renderer/components/chat/GenericMessageError.tsx#L343-L362; src/renderer/components/chat/Message.tsx#L407-L410; #L825-L831"
+    },
+    "F23": {
+      "choice": "opus",
+      "status": "known_absent",
+      "value": [],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "事实两位读者一致（聊天模式 filesystemRead 未注册，read_file 只在本会话登记的 /__chatbox__/files/<uuidv5> 句柄表里查，查不到返回 File not found），分歧在码本读法：这是按不透明句柄查资源表的存在性查找，没有任何可配置或成文的限制规则（权限、路径、命令、审核结论），前缀判断在源码里的作用是把非句柄路径分流给工作模式的 filesystemRead，聊天模式下只是落空；性质接近判定句排除的『只核对工具存不存在』，不是对动作作用范围的检查。聊天模式能力边界靠不注册工具落实，不在封闭词表内；工作模式的沙箱和审批属另一入口，故 known_absent []。",
+      "evidence": "src/renderer/packages/model-calls/toolsets/file.ts#L111-L145; src/shared/uploaded-file-tools.ts#L7-L15; src/renderer/stores/session/tools-builder.ts#L344-L357, #L412-L424, #L491-L495"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "persistent",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 scope_rule「同一配置有几层队列时取最强一层」：聊天模式生成中用户手动压缩经 requestManualCompaction 把 QueuedCompactionRequest 排进会话队列，与消息同写 localStorage（chatbox-message-queue-state），重启恢复时清 inFlight 以便重试，重开会话由队列栏 wakeQueuedUserMessages 唤醒 drain 自动执行压缩，符合 persistent 判定句；乙的 known_absent 前提（运行中不接受新工作项）不成立。",
+      "evidence": "https://github.com/chatboxai/chatbox/blob/75bb9355f826f9070ff5c53527674aab93eb8b9f/src/renderer/packages/context-management/compaction.ts#L125-L166; src/renderer/stores/session/message-queue.ts#L45-L131; src/renderer/components/InputBox/QueuedMessagesBar.tsx#L291-L299; src/renderer/components/InputBox/InputBox.tsx#L2108-L2114"
+    }
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "B04__kiro__ide-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5",
+    "r3": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F02": {
+      "choice": "gpt",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F02 absent_rule、unknown_rule 与总则 R6，判 known_absent(none) 前须核查默认系统提示与完整工具清单；闭源的 Default 代理系统提示未公开（无从确认是否要求先写计划），且工具目录未声明穷尽 IDE 内部工具、聊天界面另见未说明来源的 Task list 按钮，故应记 unknown(closed_source)。",
+      "evidence": "docs-pages.txt 各页以 Source: 行为第0行：tools#L10-L64；custom-agents/built-in#L22-L87；custom-agents/subagents#L68-L89"
+    },
+    "F03": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "model_end_signal",
+        "verification_condition",
+        "user_interrupt"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F03 verification_condition 与总则 R3 第一档、R4，自动派生子任务结束时由框架按模型派生参数做的检查也计入；Default 代理默认的 invoke_sub_agent 支持事先规划、执行中不可改的 DAG 与 Review loops（target/trigger/max_iterations），阶段输出命中触发词时框架拦住结束并回退重跑目标阶段，成立 verification_condition；Validation 子代理属分批放量，按 R10 不计。",
+      "evidence": "docs-pages.txt custom-agents/subagents#L91-L108；how-kiro-works#L45-L54；ide/chat/autopilot#L87-L90；custom-agents/built-in#L118-L120"
+    },
+    "F05": {
+      "choice": "opus",
+      "status": "known",
+      "value": "subprocess_protocol",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在读法：stdio 一句算不算 R6 所说“一句连接方式”的线索。快照里不止这一句：how-kiro-works 写 harness 是独立进程、不是编进应用的库，本机客户端经 stdio 连接，第三方编辑器“connect the same way Kiro's own clients do”，cli/acp 写编辑器“spawn this command”经 stdin/stdout 通信，说到了“由应用拉起”这一关键条件；云会话页和 focus-mode 又把“客户端断开、关窗后仍继续”单列为云会话的特点。按 R6 足以低置信度推断为 subprocess_protocol；local_service_api 要求经端口或套接字接入且界面退出后存活，没有依据。",
+      "evidence": "docs-pages.txt#L793-L801 (how-kiro-works: The boundary is a protocol); docs-pages.txt#L19443-L19449 (cli/acp: Quick start); docs-pages.txt#L11831, #L11851 (cloud-sessions); docs-pages.txt#L15522 (ide/experimental/focus-mode: Cloud Sessions)"
+    },
+    "F06": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "frontend_host"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "两位读者差在读法：F06 scope_rule 里“文档说命令经 shell 或在终端里执行的按 subprocess 推断”是文档没说由谁执行时的兜底。本配置的 IDE 文档说得更具体：命令跑在编辑器的 agent terminal（按终端配置文件复用，后台命令开专用终端、出现在终端列表、随关闭 Kiro 结束），shell 集成把 Kiro 接到终端才能自动执行并读取结果，ACP 页把编辑器原生的文件、终端回调归客户端，how-kiro-works 写 IDE 用编辑器 API 做文件操作，tools 页的进程控制工具只在 IDE 有。shell 由编辑器的终端拉起，不是核心另起的子进程，记 frontend_host；sandbox 页“run by Kiro's agent harness”是跨形态泛述，沙箱默认也关。",
+      "evidence": "docs-pages.txt#L843, #L852 (how-kiro-works: Where the agent runs / What each surface adds); docs-pages.txt#L3059-L3066 (acp: What is shared and what differs); docs-pages.txt#L15255-L15259 (ide/chat/terminal: Shell selection on Windows); docs-pages.txt#L15302-L15311 (ide/chat/dev-servers: How it works); docs-pages.txt#L29304-L29306 (ide/troubleshooting: Shell integration issues); docs-pages.txt#L12609, #L12658 (tools)"
+    },
+    "F07": {
+      "choice": "opus",
+      "status": "known",
+      "value": "execution_core",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F07 与总则 R6 共用核心借证规则，how-kiro-works 与 acp 明说 IDE 与 CLI V3 共用独立 harness 且走标准 ACP 会话生命周期，permissions 称会话存在代理会话存储 ~/.kiro/sessions/，cli/v3/acp-migration 明确会话存储由服务端持有（Treat storage as server-owned）并由 session/load 恢复回放，足以推断为 execution_core；whats-new-v1/compaction 的“由 IDE 管理、不写进项目目录”是相对项目仓库而言，不构成与核心归属的直接冲突。",
+      "evidence": "docs-pages.txt how-kiro-works#L14-L41；permissions#L302；ide/whats-new-v1/compaction#L14-L20；ide/chat#L152-L172"
+    },
+    "F14": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "truncation",
+        "summarization"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "truncation、summarization 两位读者一致，差在 web_fetch 的 selective 模式算不算 segment_selection，属读法分歧。selective 取的是模型在调用参数里给出的搜索词附近的文字（示例里 searching for: … 由调用带入），相当于模型自己指定要读什么，判定句明确排除“模型或用户自己指定……去读的”；它也不是框架按与当前任务的相关性自动挑选材料或旧轮次。该工具 8,000 字符的上限已按 truncation 记，selective 不另记。",
+      "evidence": "docs-pages.txt#L12838-L12860 (tools/web: web_fetch / Fetch modes); docs-pages.txt#L25901 (reference/built-in-tools: web_fetch modes)"
+    },
+    "F15": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "structural_index"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "user_specified（# 提供器）与 keyword（grep_search）两人一致。structural_index 应计：code-intelligence 页明写 tree-sitter 符号搜索、AST 模式搜索、代码库概览跨面含 IDE；tools 页说 IDE 不注册 code 工具，但‘equivalent capabilities are built in as editor-native tools’，两处可以并读，不是矛盾。semantic_retrieval 不计：introspect 检索的是 Kiro 官方文档索引，不是判定句要求的项目文件或用户资料库。",
+      "evidence": "docs-pages.txt tools/code-intelligence#L10-L30；tools#L16-L21,L43,L66；ide/chat（Context providers）"
+    },
+    "F24": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "intent",
+        "actual_operation",
+        "result"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "neither"
+      },
+      "rationale": "intent、actual_operation 两位读者一致，差在 result 证据够不够，属事实认定。IDE 本身写会话默认保存、可搜索和恢复，执行历史含执行的命令、搜索结果和文件操作，导出的 messages.jsonl 按顺序每行一条保存完整线程；how-kiro-works 写 IDE 与 CLI V3 共用同一 harness，按 R6 可借：terminal-ui 写大工具结果完整随会话保存，acp-migration 写 session/load 恢复并回放会话，tool_call_update 带输出和终态、按 toolCallId 对上原调用。据此按 R6 低置信度推断 result 也能对上具体调用；approval、identity 文档未涉及持久化与关联，不计。",
+      "evidence": "docs-pages.txt#L14740-L14743 (ide/chat: Execution history); docs-pages.txt#L15183-L15201 (ide/chat/chat-export: Overview / What's in the zip); docs-pages.txt#L795 (how-kiro-works: harness 即 CLI V3); docs-pages.txt#L16406-L16408 (cli/terminal-ui: Large tool results in V3); docs-pages.txt#L22643, #L22733-L22747 (cli/v3/acp-migration: Handle session updates)"
+    },
+    "F26": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "main_agent",
+        "workflow"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "main_agent 双方一致。custom-agents/subagents 的 Task dependencies 与 Review loops 明确主代理在任何子代理启动前一次规划完整 DAG 及回环参数、执行中不可修改，由运行时校验约束并按依赖与触发词调度子代理，符合 F26 workflow（模型当场写的流程定义）。IDE 斜杠命令页虽说可直接调用 /context-gatherer 等，但同页后文又说明 IDE 内置斜杠命令是把 steering 或代理人格装进上下文，无法确认其绕过主代理模型直接由框架创建子代理，故 user 不进取值。",
+      "evidence": "docs-pages.txt custom-agents/subagents#L21-L28,L68-L108；ide/chat/slash-commands#L44-L61,L131-L135"
+    },
+    "F29": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "internal_code",
+        "external_protocol_service",
+        "embedder_declared"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "gpt",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "internal_code、external_protocol_service 一致，差在 embedder_declared，属读法分歧：IDE 发行版里有没有“有文档的嵌入接口”。how-kiro-works 和 acp 页写明 IDE 本身就是经 ACP（官方文档写明的公共协议边界）连接 harness 的客户端，而且“客户端可以提供自己的工具代替 harness 内置工具”，IDE 用编辑器 API 做文件操作并加上编辑器原生的代码分析；tools 页列出只在 IDE 有的 read_code、语义重命名、进程控制工具，ACP 页把编辑器原生的文件、终端、代码智能回调归客户端。这正是 embedder_declared 判定句和 R2 里“官方自带的前端经嵌入接口为会话声明的工具，算本项在用”的情形；第三方能不能接 IDE 自带的 harness，影响的是 F32/F33 的 api，不影响这一项。",
+      "evidence": "docs-pages.txt#L793-L801, #L852 (how-kiro-works: The boundary is a protocol / What each surface adds); docs-pages.txt#L3038-L3066 (acp: What is shared and what differs); docs-pages.txt#L12607-L12609 (tools)"
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "unknown",
+      "value": null,
+      "unknown_reason": "closed_source",
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R5 与 F32 scope_rule，单独安装、自带完整交互界面、能替代 IDE 的 Kiro CLI 属另一形态（即使共用 harness），其 kiro-cli acp 与 headless 不计入 IDE 发行版；acp 页所有外部客户端接入指引均指向 kiro-cli acp，IDE 自身经 ACP 连内置 harness 属只供自家前端用的内部接口（不计）。因文档未提供 IDE 发行版完整的命令行／扩展接口／发布包清单，按 F32 absent_rule 与 R6 不判 known_absent，应记 unknown(closed_source)。",
+      "evidence": "docs-pages.txt acp#L8-L16,L73-L96；how-kiro-works#L39-L43；ide/setup#L30-L36"
+    },
+    "F33": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_interaction"
+      ],
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "neither",
+        "r2": "opus",
+        "r3": "opus"
+      },
+      "rationale": "user_interaction 一致；api 两位读者都不记（ACP、headless 属 Kiro CLI 另一形态）。差在 Workflows watch 节点算不算 external_event，属读法分歧。R5 只把 R3 第二、三档的排除对 F33 免掉，R10 的放量规则照样适用：workflows 页写“If Workflows is absent, it is not available for your account yet”，配置记录也写账号未开放就看不到开关，属服务端为账户开放、本地默认关，按 R10 不进取值，写“服务端可改：”。另外 watch 是用户已启动的工作流运行里的一个等待节点，事件到来后推进的是同一次运行的下一步，也更接近内部续办。",
+      "evidence": "docs-pages.txt#L9572-L9578 (workflows: Turn it on); docs-pages.txt#L9993-L9997 (workflows/authoring: Watch); docs-pages.txt#L14078 (Workspace Configuration)"
+    },
+    "F34": {
+      "choice": "opus",
+      "status": "known",
+      "value": "foreground_process",
+      "unknown_reason": null,
+      "settled_by": "third_reader",
+      "picks": {
+        "r1": "opus",
+        "r2": "gpt",
+        "r3": "opus"
+      },
+      "rationale": "差在 R6 下证据够不够，和 F05 是同一处分歧。文档说 IDE 像第三方编辑器一样拉起 harness、经 stdio 连接，没有任何注册系统服务或脱离 IDE 常驻的说明；代理起的后台进程“persist until you stop them or close Kiro”，“关窗、合盖、客户端断开后仍继续”多处单列为云会话区别于本机会话的特点。按 scope_rule 的判定顺序（非系统服务、非自行常驻则记前台进程），这些说明说到了“随应用退出”的关键条件，可按 R6 低置信度推断为 foreground_process，不属于 absent_rule 所说查不清而拿前台进程充数；与 F05 记 subprocess_protocol 一致。",
+      "evidence": "docs-pages.txt#L793-L801, #L843-L844 (how-kiro-works: The boundary is a protocol / Where the agent runs); docs-pages.txt#L19449 (cli/acp: Quick start); docs-pages.txt#L15311 (ide/chat/dev-servers: How it works); docs-pages.txt#L11851 (cloud-sessions: How cloud sessions work); docs-pages.txt#L15522 (ide/experimental/focus-mode: Cloud Sessions)"
+    }
+  }
+}

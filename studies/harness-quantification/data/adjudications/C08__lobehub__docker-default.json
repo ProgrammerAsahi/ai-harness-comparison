@@ -1,0 +1,233 @@
+{
+  "schema_version": "adjudication-0.1",
+  "synthetic": false,
+  "round": "adjudication-1",
+  "config_id": "C08__lobehub__docker-default",
+  "codebook_version": "fields-0.10",
+  "codings": {
+    "opus": "recode-1",
+    "gpt": "recode-1"
+  },
+  "adjudicated_at": "2026-11-27",
+  "readers": {
+    "r1": "Gemini 4 Neon (gemini-4-neon)",
+    "r2": "Claude Opus 5.5"
+  },
+  "fields": {
+    "F11": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "model_selected_delegation"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按总则 R3 第一档，模型可用常驻的 lobe-activator 自行启用发现池里的内置工具 lobe-task（即使启用需用户批准仍属第一档）；启用后 runTask/runTasks 与 editTask 均开放 model/provider 参数且代码无用户命令校验，在已配 OpenAI 密钥的环境下可为子任务指定其他 OpenAI 型号，故 model_selected_delegation 成立，single_fixed 不成立。Verify 默认解析到未配密钥的 zhipu 型号，按总则 R1 不计入主链 per_role。",
+      "evidence": "packages/builtin-tool-task/src/manifest.ts#L373-L403; apps/server/src/services/toolExecution/serverRuntimes/task.ts#L900-L925; apps/server/src/services/taskRunner/index.ts#L359-L364,L422-L427; apps/server/src/modules/AgentRuntime/executorHelpers.ts#L708-L727"
+    },
+    "F12": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "output_limit"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F12 output_limit 判定“或者对截断有专门的续写、重试处理，才算”，builtin.ts 在解析工具参数失败时专门调用 detectTruncatedJSON 区分截断与普通 JSON 语法错，返回 TRUNCATED_ARGUMENTS 错误码并向模型注入拆分成更小片段重调的恢复提示。其余四维（total_tokens/call_count/time/money）在默认 web 对话与子代理路径均无默认上限。",
+      "evidence": "apps/server/src/services/toolExecution/builtin.ts#L147-L181"
+    },
+    "F15": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "user_specified",
+        "keyword",
+        "semantic_retrieval"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R2，用户创建知识库、上传文件并绑定到代理（agents_knowledge_bases.enabled 默认 true，无全局关闭开关）属于添加用户资料与内容而非改动产品级设置，随后 defaultToolIds 里的 lobe-knowledge-base 自动注册；其 searchKnowledgeBase 在本配置默认自带的 ParadeDB（pgvector + pg_search）与已配 OpenAI 密钥下同时执行文件分块向量检索（semantic_retrieval）和文档 BM25 全文检索（keyword），连同用户上传附件（user_specified）三项均成立。",
+      "evidence": "apps/server/src/services/aiAgent/pipeline/toolDiscovery/index.ts#L357-L366; packages/database/src/schemas/agent.ts#L145-L160; packages/builtin-tool-knowledge-base/src/manifest.ts#L98-L102"
+    },
+    "F17": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "event_log",
+        "state_snapshot",
+        "external_reference"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F17 scope_rule“消息和事件日志按同一份记录里有没有控制条目只记一项：没有的记 messages，有的记 event_log”。PostgreSQL 会话记录在默认开启上下文压缩下将压缩摘要存为独立的 message_groups（type='compression'）对象，并在查询回放时据此替换被压缩消息，因此该会话记录本身已属 event_log 而非纯 messages；生产镜像另存的 S3 运行轨迹亦属 event_log，不存在不含控制条目的独立纯消息记录。",
+      "evidence": "packages/database/src/schemas/message.ts#L37-L75; packages/database/src/models/message/queryByIds.ts#L482"
+    },
+    "F23": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "application_check"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按 F23 question_rule 与 scope_rule（“机制所管的动作在默认配置里能够发生，而且发生时机制已在起作用”），lobe 容器虽以非 root 用户运行且仅挂内部卷，但默认 web 入口代理没有任何在 lobe 容器内读写本地文件或起进程的工具（命令走远端云沙箱，设备工具未启用，容器对外网无限制，私网拦截靠应用层 ssrf-safe-fetch），容器仅作服务端部署封装而非约束默认代理动作的强制机制，故只记 application_check。",
+      "evidence": "packages/builtin-tool-skills/src/ExecutionRuntime/index.ts#L351-L375; Dockerfile#L367-L373; apps/server/src/services/toolExecution/serverRuntimes/skills.ts#L339-L391"
+    },
+    "F26": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "user",
+        "main_agent",
+        "workflow",
+        "event_scheduling",
+        "framework_internal"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "任务完成时 TaskLifecycleService.completeTask 直接调用 TaskRunnerService.cascadeOnCompletion，由框架运行时按任务依赖图确定性地发现已解锁任务并调用 runTask 启动下游代理，不逐次经模型决定，符合 F26 workflow 判定；连同双方一致的 user、main_agent、event_scheduling、framework_internal 共五项成立。",
+      "evidence": "apps/server/src/services/taskLifecycle/index.ts#L615-L637; apps/server/src/services/taskRunner/index.ts#L633-L675; packages/builtin-tool-task/src/manifest.ts#L288-L355"
+    },
+    "F27": {
+      "choice": "neither",
+      "status": "known",
+      "value": [
+        "independent_context",
+        "messages",
+        "shared_files",
+        "shared_state"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "neither",
+        "r2": "neither"
+      },
+      "rationale": "callSubAgent 子代理是同一 agentId 的匿名克隆，inbox 运行时注入 lobe-agent-documents，父子读写同一组代理文档；该工具自述为 touch/cat/rm/mkdir/mv/ls 等价的文件树，按“同一文件区”记 shared_files（乙漏）。任务路径（F26 已计入）里主代理与任务运行代理都读写框架维护的任务表（状态、评论、子任务）、互见改动，记 shared_state（甲漏）。",
+      "evidence": "packages/builtin-agents/src/agents/inbox/index.ts#L14-L18; apps/server/src/modules/AgentRuntime/executorHelpers.ts#L281-L300; packages/builtin-tool-agent-documents/src/systemRole.ts#L3-L25; apps/server/src/services/taskRunner/index.ts#L339-L351; packages/builtin-skills/src/task/SKILL.md#L1-L30"
+    },
+    "F28": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "synchronous_return",
+        "async_wait",
+        "shared_board"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "按 F28 scope_rule 覆盖 F26 记入的全部创建路径：任务执行路径将各代理的状态、进度与 handoff 汇总写回框架维护的共用任务表供调用方与协调者读取，符合 shared_board；同时 operationControl.interruptOperation 仅中断单个 operation、不遍历子运行（与 2026-08-03 变更日志一致），不计 cancel_propagation。",
+      "evidence": "apps/server/src/services/taskLifecycle/index.ts#L864-L910; apps/server/src/services/toolExecution/serverRuntimes/task.ts#L605-L627"
+    },
+    "F30": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "skill_directory",
+        "role_template"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "F30 问的是“可复用指导”及“按名调用”的装载机制。任务表里的具体任务及其阻塞依赖（T-1 阻塞 T-2）是一次性执行实例的依赖图，完成后即置为 completed，不是保存后可在会话里按名反复调用的可复用工作流指导，不记 workflow_definition；agent documents 属单代理范围，不构成跨所有会话的 project_rules，故只记 skill_directory 与 role_template。",
+      "evidence": "packages/builtin-tool-task/src/manifest.ts#L288-L403"
+    },
+    "F31": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "input",
+        "model_call",
+        "tool_before_after",
+        "end",
+        "context_compaction"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R5 与 F31 scope_rule（“订阅整条类型化事件流的接口，事件流里有标出某一阶段开始或结束的事件类型时，按该阶段记一个事件点”）及 session_start 判定（“每轮运行开始都触发的事件归输入，事件名叫什么不影响判定”），OpenAPI/SDK 文档化的 /api/v1/responses 流式接口在每次运行开始、executeResponseRun 调模型前均发出 response.created 事件，故 input（仅观察）成立。",
+      "evidence": "packages/openapi/openapi.yml#L21192; packages/sdk/README.md#L31-L53; packages/openapi/src/services/responses.service.ts#L456-L479"
+    },
+    "F32": {
+      "choice": "opus",
+      "status": "known",
+      "value": [
+        "public_protocol",
+        "cli_subprocess",
+        "service_api"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "按总则 R5 与 F32 cli_subprocess 判定，同一源码提交 apps/cli 随附并在官方文档导出的 @lobehub/cli（lh，面向自动化而非替代网页的完整交互界面）提供 lh agent run -p ... --json 非交互子进程模式，带明确命令行参数、标准输出 JSON 事件流和 0/1/2/3 退出码，底层调内部 tRPC 与网关流而非包装公开 REST API 的客户端库，故与 public_protocol、service_api 并列记入 cli_subprocess。",
+      "evidence": "apps/cli/src/commands/agent/run.ts#L1-L31; docs-llms-full.txt: Official CLI (agent-ready automation); docs/development/start.mdx#L24-L25"
+    },
+    "F35": {
+      "choice": "opus",
+      "status": "known",
+      "value": "in_memory",
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "opus",
+        "r2": "opus"
+      },
+      "rationale": "核查服务端启动钩子与所有恢复路径可见崩溃后语义明确：src/instrumentation.ts 启动时只拉起 IM 网关与 agent-transfer 回填，不重排 LocalTaskScheduler 的进程内 setTimeout，也不消费 Redis steerQueue；startQueuedFollowUp 仅在运行正常完成时触发，重开网页后 serverSteerQueue 的孤儿回收（reclaimServerQueuedMessages）仅将排队消息收归客户端并按 queuedFollowUp.findOrphanedQueueKey 等用户下次发送时一并带走。按 F35“工作项写进了记录，但进程重启后框架不会自动执行它、要人重新发起的，也记本项”，应判 known / in_memory。",
+      "evidence": "src/store/chat/slices/agentRun/actions/lifecycle/queuedFollowUp.ts#L12-L29; apps/server/src/services/taskScheduler/impls/local.ts#L14-L52; apps/server/src/services/agentRuntime/AbandonOperationService.ts"
+    },
+    "F36": {
+      "choice": "gpt",
+      "status": "known",
+      "value": [
+        "blocking_approval",
+        "resumable_todo",
+        "structured_handoff"
+      ],
+      "unknown_reason": null,
+      "settled_by": "readers_agree",
+      "picks": {
+        "r1": "gpt",
+        "r2": "gpt"
+      },
+      "rationale": "框架在 taskTopicHandoff.ts 定义了固定必填字段（title/summary/keyFindings/nextAction）的 JSON Schema，任务完成时由 TaskLifecycleService 经 generateObject 生成并落库，再经 taskResultBridge 格式化为带分节的 taskCallback 卡片直接呈现在面向人的对话界面（TaskCallback）与任务详情活动流（task/detail.ts），完全符合 F36 structured_handoff 判定。",
+      "evidence": "packages/prompts/src/chains/taskTopicHandoff.ts#L77-L91; apps/server/src/services/taskLifecycle/index.ts#L864-L910; apps/server/src/services/taskResultBridge/index.ts#L46-L73"
+    }
+  }
+}
