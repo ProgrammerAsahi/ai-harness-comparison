@@ -4,7 +4,8 @@
 
 For each config the round lists with role "recode", three pairs are compared field by field with
 compare_codings.compare_pair under the current codebook: the two original codings (archived in
-batches/<original round>/), the two new codings (data/codings/), and each coder's new coding against
+batches/<original round>/), the two new codings (data/codings/ while the round is current,
+batches/<round>/ once a codebook revision has archived it), and each coder's new coding against
 its own original. Fields are split into those whose definition the latest codebook revision touched
 (REVISED) and the rest. Agreement counts the same outcomes as compare_codings.py and has no chance
 correction. compare_round computes and returns the numbers; main only prints them. Run from the
@@ -43,6 +44,8 @@ def compare_round(name="recode-1", root=None):
     data = root / "data"
     schema = load(data / "schema" / "fields.json")
     rnd = load(data / "rounds" / f"{name}.json")
+    archived = root / "batches" / name
+    newbase = archived if (archived / "opus").is_dir() else data / "codings"
     rows, per_field = [], defaultdict(lambda: [0, 0])
     for t in rnd["tools"]:
         if t.get("role") != "recode":
@@ -50,7 +53,7 @@ def compare_round(name="recode-1", root=None):
         cid = t["config_id"]
         first = load(data / "configs" / f"{cid}.json")["round"]
         old = {c: load(root / "batches" / first / c / f"{cid}.json") for c in ("opus", "gpt")}
-        new = {c: load(data / "codings" / c / f"{cid}.json") for c in ("opus", "gpt")}
+        new = {c: load(newbase / c / f"{cid}.json") for c in ("opus", "gpt")}
         po, pn = compare_pair(schema, old["opus"], old["gpt"]), compare_pair(schema, new["opus"], new["gpt"])
         selfs = {c: compare_pair(schema, new[c], old[c])["agreement_rate"] for c in ("opus", "gpt")}
         split = {}

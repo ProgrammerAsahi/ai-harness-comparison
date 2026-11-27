@@ -1,9 +1,10 @@
 """MIT. Unit tests for the trial structural distance rules (report sections 5.5, 7, 8)."""
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
-from trial_distance import adjudicated, agreed, distance, spearman
+from trial_distance import adjudicated, agreed, distance, latest_codings, spearman
 
 SCHEMA = json.loads((Path(__file__).parent / "data" / "schema" / "fields.json").read_text(encoding="utf-8"))
 FIELDS = {f["id"]: f for f in SCHEMA["fields"]}
@@ -68,6 +69,25 @@ class TrialDistance(unittest.TestCase):
         self.assertEqual(c["F02"], {"status": "unknown", "value": None})
         self.assertEqual(c["F03"], {"status": "known", "value": a["F03"]["value"]})
         self.assertEqual(adjudicated(a, None)["F01"], {"status": "known", "value": a["F01"]["value"]})
+
+    def test_latest_codings_order_batches_then_recodes_then_current(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+
+            def put(folder, cid, rnd):
+                for c in ("opus", "gpt"):
+                    (root / folder / c).mkdir(parents=True, exist_ok=True)
+                    (root / folder / c / f"{cid}.json").write_text(json.dumps({"round": rnd}), encoding="utf-8")
+
+            put("batches/batch-2", "Z1", "batch-2")
+            put("batches/batch-10", "Z1", "batch-10")
+            put("batches/batch-2", "Z2", "batch-2")
+            put("batches/recode-1", "Z2", "recode-1")
+            put("batches/batch-2", "Z3", "batch-2")
+            put("batches/recode-1", "Z3", "recode-1")
+            put("data/codings", "Z3", "recode-2")
+            got = {cid: rnd for cid, (rnd, _) in latest_codings(root).items()}
+            self.assertEqual(got, {"Z1": "batch-10", "Z2": "recode-1", "Z3": "recode-2"})
 
     def test_spearman_handles_ties(self):
         self.assertAlmostEqual(spearman([1, 2, 2, 3], [1, 2, 2, 3]), 1)

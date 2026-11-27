@@ -1,6 +1,7 @@
 """MIT. Unit tests for adjudicating the coders' disagreements (synthetic records only, plus the real tree)."""
 import copy
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -135,6 +136,16 @@ class Adjudicate(unittest.TestCase):
         self.assertTrue(any("must be coded" in e for e in errs), errs)
         merged = adj.merged_fields(p["opus"], adjudication(pair()))
         self.assertEqual(merged["F01"]["value"], second_value("F01"))
+
+    def test_codebooks_include_archived_copies(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "data" / "schema").mkdir(parents=True)
+            (root / "batches" / "recode-9").mkdir(parents=True)
+            old = dict(SCHEMA, schema_version="fields-0.1")
+            (root / "batches" / "recode-9" / "fields-0.1.json").write_text(json.dumps(old), encoding="utf-8")
+            (root / "data" / "schema" / "fields.json").write_text(json.dumps(SCHEMA), encoding="utf-8")
+            self.assertEqual(sorted(adj.codebooks(root)), sorted({"fields-0.1", SCHEMA["schema_version"]}))
 
     def test_real_adjudications_are_valid(self):
         self.assertEqual(adj.check_all(), [])

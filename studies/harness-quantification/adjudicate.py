@@ -185,7 +185,7 @@ def check_adjudication(rec, codings, ctx):
     if rec["schema_version"] != SCHEMA_VERSION or rec["round"] != ROUND or rec["synthetic"] is not False:
         errors.append(f"{where}: schema_version {SCHEMA_VERSION}, round {ROUND}, synthetic false")
     if rec["codebook_version"] != ctx.schema["schema_version"]:
-        errors.append(f"{where}: adjudicated under {rec['codebook_version']}, current codebook is {ctx.schema['version']}")
+        errors.append(f"{where}: adjudicated under {rec['codebook_version']}, but checked against {ctx.schema['schema_version']}")
     if rec["codings"] != {c: pair[c]["round"] for c in CODERS}:
         errors.append(f"{where}: codings must name the rounds of the latest codings {({c: pair[c]['round'] for c in CODERS})}")
     if vd._date(rec["adjudicated_at"]) is None:
@@ -231,15 +231,31 @@ def check_adjudication(rec, codings, ctx):
     return errors
 
 
+def codebooks(root=HERE):
+    """schema_version -> schema: the current fields.json and the copies archived with earlier rounds."""
+    out = {}
+    for p in sorted((root / "batches").glob("*/fields-*.json")) + [root / "data" / "schema" / "fields.json"]:
+        s = td.load_json(p)
+        out[s["schema_version"]] = s
+    return out
+
+
 def check_all(root=HERE):
-    ctx = vd.Context(td.load_json(root / "data" / "schema" / "fields.json"))
+    books = codebooks(root)
+    ctxs = {}
     codings = td.latest_codings(root)
     errors = []
     for p in sorted((root / "data" / "adjudications").glob("*.json")):
         rec = td.load_json(p)
         if rec.get("config_id") != p.stem:
             errors.append(f"adjudications/{p.name}: file name must equal config_id")
-        errors += check_adjudication(rec, codings, ctx)
+        ver = rec.get("codebook_version") if isinstance(rec, dict) else None
+        if ver not in books:
+            errors.append(f"adjudications/{p.name}: codebook {ver!r} is neither current nor archived under batches/")
+            continue
+        if ver not in ctxs:
+            ctxs[ver] = vd.Context(books[ver])
+        errors += check_adjudication(rec, codings, ctxs[ver])
     return errors
 
 

@@ -49,7 +49,7 @@ def coding(config_id, round_name, coder, overrides):
         fields[fid] = {"status": "known", "value": value}
     return {
         "schema_version": "coding-0.1",
-        "codebook_version": "fields-0.10",
+        "codebook_version": SCHEMA["schema_version"],
         "synthetic": True,
         "round": round_name,
         "config_id": config_id,
@@ -98,7 +98,7 @@ class SyntheticTree(unittest.TestCase):
             {"tool_id": "Z92", "role": "holdout", "config_id": CFG_C},
         ]
         (root / "data" / "rounds" / f"{ROUND}.json").write_text(
-            json.dumps({"round": ROUND, "synthetic": True, "codebook_version": "fields-0.10",
+            json.dumps({"round": ROUND, "synthetic": True, "codebook_version": SCHEMA["schema_version"],
                         "tools": tools}, ensure_ascii=False), encoding="utf-8")
         batch_of = {CFG_A: BATCH_A, CFG_B: BATCH_B, CFG_C: BATCH_A}
         for cfg in (CFG_A, CFG_B, CFG_C):

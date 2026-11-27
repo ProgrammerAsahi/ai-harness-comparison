@@ -47,10 +47,18 @@ def load_json(p):
     return json.loads(Path(p).read_text(encoding="utf-8"))
 
 
+def archived_rounds(root=HERE):
+    """Archived coding folders in precedence order: batches by number, then recode rounds by number."""
+    num = lambda p: int(p.name.rsplit("-", 1)[1])
+    return (sorted((root / "batches").glob("batch-*/"), key=num)
+            + sorted((root / "batches").glob("recode-*/"), key=num))
+
+
 def latest_codings(root=HERE):
-    """config_id -> (round, {coder: record}); recode codings in data/codings win over batch archives."""
+    """config_id -> (round, {coder: record}); archived recode rounds win over batch archives, and
+    codings still in data/codings win over both."""
     out = {}
-    for b in sorted((root / "batches").glob("batch-*/")):
+    for b in archived_rounds(root):
         for p in (b / "opus").glob("*.json"):
             out[p.stem] = (b.name, {c: load_json(b / c / p.name) for c in CODERS})
     for p in (root / "data" / "codings" / "opus").glob("*.json"):
@@ -192,8 +200,10 @@ def round_agreement(res, root=HERE):
     """Inter-coder agreement per round, recomputed with compare_codings.compare_pair under the current codebook."""
     from compare_codings import compare_pair
     schema, closed = res["schema"], res["closed"]
-    rounds = [(b.name, b) for b in sorted((root / "batches").glob("batch-*/"))]
-    rounds.append(("recode-1", root / "data" / "codings"))
+    rounds = [(b.name, b) for b in archived_rounds(root)]
+    current = sorted((root / "data" / "codings" / "opus").glob("*.json"))
+    if current:
+        rounds.append((load_json(current[0])["round"], root / "data" / "codings"))
     out = ["round | codebook | configs | mean agreement | closed (n) | open (n) | agree-value among both-known"]
     for name, base in rounds:
         rates, cl, op, av, bk, cb = [], [], [], 0, 0, set()
